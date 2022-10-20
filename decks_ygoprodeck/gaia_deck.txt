@@ -1,0 +1,36 @@
+// Yu-Gi-Oh! Deck List
+== MONSTER CARDS (23 cards) ==
+3 Battle Ox
+2 Gaia The Fierce Knight
+3 Wall of Illusion
+3 Curse of Dragon
+3 Neo the Magic Swordsman
+3 Man-Eater Bug
+3 Summoned Skull
+3 La Jinn the Mystical Genie of the Lamp
+== SPELL CARDS (24 cards) ==
+1 Change of Heart
+1 Raigeki
+2 De-Spell
+2 Polymerization
+2 The Flute of Summoning Dragon
+1 Dark Hole
+1 Pot of Greed
+3 Stop Defense
+3 Fissure
+3 Soul Exchange
+2 Swords of Revealing Light
+2 Card Destruction
+1 Monster Reborn
+== TRAP CARDS (9 cards) ==
+3 Trap Hole
+3 Waboku
+3 Reinforcements
+== EXTRA DECK (15 cards) ==
+1 Fusionist
+3 Metal Dragon
+1 Darkfire Dragon
+3 Flame Swordsman
+1 Flame Ghost
+3 Gaia the Dragon Champion
+3 Flower Wolf

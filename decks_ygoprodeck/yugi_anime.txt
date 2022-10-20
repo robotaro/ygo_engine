@@ -1,0 +1,33 @@
+// Yu-Gi-Oh! Deck List
+== MONSTER CARDS (24 cards) ==
+3 The Tricky
+3 Mystical Elf
+1 Magician of Black Chaos
+1 Sphere Kuriboh
+1 Electromagnetic Turtle
+1 Dark Magician Girl
+1 Kuriboh
+1 Dark Magician of Chaos
+1 Dark Magician
+1 Obnoxious Celtic Guard
+1 Big Shield Gardna
+3 Breaker the Magical Warrior
+3 Skilled Dark Magician
+3 Mystic Tomato
+== SPELL CARDS (13 cards) ==
+1 Mystical Space Typhoon
+1 Raigeki
+3 Lucky Iron Axe
+1 Swords of Revealing Light
+1 Card Destruction
+1 Dark World Dealings
+1 Hand Destruction
+1 Black Magic Ritual
+1 Monster Reborn
+1 Brain Control
+1 Dark Magic Curtain
+== TRAP CARDS (3 cards) ==
+1 Spellbinding Circle
+1 Mirror Force
+1 Magic Cylinder
+== EXTRA DECK (0 cards) ==
