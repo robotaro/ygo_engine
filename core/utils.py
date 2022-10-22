@@ -1,8 +1,7 @@
 import os
-
+import re
 import pandas as pd
 import requests
-import re
 from bs4 import BeautifulSoup
 import concurrent.futures
 
@@ -178,67 +177,3 @@ def get_card_db_from_wiki(num_threads=32) -> pd.DataFrame:
     return card_db
 
 
-def load_ygoprodeck_deck(fpath: str):
-
-    with open(fpath, 'r') as file:
-
-        lines = file.readlines()
-        valid_lines = [line for line in lines if len(line) > 0]
-        section = 'main'
-
-        # Prepare deck
-        deck = dict()
-        deck['main'] = []
-        deck['extra'] = []
-
-        for line in valid_lines:
-
-            if 'EXTRA DECK' in line:
-                section = 'extra'
-                continue
-
-            matches = re.findall(r'([0-9]*) (.*)', line)
-
-            if matches is None or len(matches) == 0:
-                continue
-
-            if len(matches[0][0]) == 0 or len(matches[0][1]) == 0:
-                continue
-
-            try:
-                num_cards = int(matches[0][0])
-            except Exception:
-                continue
-
-            deck[section].append((num_cards, matches[0][1]))
-
-    return deck
-
-
-def create_deck_df(deck_blueprint: dict):
-
-    zone_index = 0
-    card_list = []
-    for (num_cards, card_name) in deck_blueprint['main']:
-
-        for _ in range(num_cards):
-            new_card = {
-                "name": card_name,
-                "status": "idle",
-                "counter": 0,
-                "location": "deck",
-                "index": zone_index
-            }
-            card_list.append(new_card)
-            zone_index += 1
-    return pd.DataFrame(card_list)
-
-
-if __name__ == "__main__":
-
-    fields = ['id', 'counter', 'location', 'location_index']
-
-    deck_fpath = r"D:\git_repositories\alexandrepv\webscrappers\yugioh_pro_deck\yugioh_engine\decks_ygoprodeck\gaia_deck.txt"
-    deck_blueprint = load_ygoprodeck_deck(fpath=deck_fpath)
-    deck_df = create_deck_df(deck_blueprint=deck_blueprint)
-    g = 0

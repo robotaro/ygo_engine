@@ -3,7 +3,6 @@ import json
 import pandas as pd
 import requests
 
-from yugioh_pro_deck import utils
 import argparse
 import concurrent.futures
 import os
