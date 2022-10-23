@@ -1,0 +1,44 @@
+// Yu-Gi-Oh! Deck List
+== MONSTER CARDS (27 cards) ==
+2 Don Turtle
+1 Amazon of the Seas
+1 Tin Goldfish
+2 Abyss Soldier
+1 The Legendary Fisherman II
+1 7 Colored Fish
+1 Drill Barnacle
+2 Mermaid Knight
+1 Rainbow Marine Mermaid
+1 Silent Sea Nettle
+1 Aqua Spirit
+2 Warrior of Atlantis
+1 Aurora Wing
+1 Enchanting Mermaid
+1 Gale Lizard
+1 Gora Turtle
+2 Cure Mermaid
+2 Mermaid Shark
+1 Medium of the Ice Barrier
+1 Torpedo Fish
+1 Friller Rabca
+== SPELL CARDS (11 cards) ==
+1 A Legendary Ocean
+1 Level Limit - Area B
+1 Aqua Jet
+1 Contact with the Aquamirror
+1 Moray of Greed
+1 Umi
+1 Water Hazard
+1 Big Wave Small Wave
+1 Stop Defense
+1 Penguin Sword
+1 Monster Reborn
+== TRAP CARDS (7 cards) ==
+1 Negate Attack
+1 Tornado Wall
+1 Sea Stealth Attack
+1 Quaking Mirror Force
+1 Forgotten Temple of the Deep
+1 Mirror Force
+1 Torrential Tribute
+== EXTRA DECK (0 cards) ==

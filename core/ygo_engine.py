@@ -1,10 +1,10 @@
 import pandas as pd
+from core.card_database import CardDatabase
 from core.deck import Deck
-from core import utils
 
 DEFAULT_LIFE_POINTS = 8000
 
-DECK_SECTIONS = ['main', 'extra', 'fusion']
+
 GAME_PHASES = ["draw_phase",
                "standby_phase",
                "main_phase_1",
@@ -42,21 +42,49 @@ class Player:
 
 class YGOEngine:
 
-    def __init__(self):
+    def __init__(self, card_database: CardDatabase):
 
-        self.card_db_df = None
-        self.decks = {'player_1': Deck(),
-                      'player_2': Deck()}
+        self.card_db = card_database
+        self.players = dict()
 
-    def load_card_db(self, fpath: str):
-        self.card_db_df = pd.read_csv(fpath)
+    def print_status(self):
 
-    def load_player_deck(self, player_id: str, fpath: str):
-        self.decks[player_id].load_ygoprodeck_deck(blueprint_fpath=fpath)
+        print('[ YGO Engine Status ]')
+
+        # Card Database
+        print(' > Card DB: ', end='')
+        if self.card_db is None:
+            print('Not Loaded')
+        else:
+            print(f'{self.card_db_df.index.size} cards loaded')
+
+        # Player decks
+        for player_name, deck in self.decks.items():
+            print(' > Player Deck: ', end='')
+            if deck is None:
+                print('Not Loaded')
+            else:
+                print(f'{deck.size} cards loaded '
+                      f'(Main: {deck.main_section_size}, '
+                      f'Extra: {deck.extra_section_size}, '
+                      f'Fusion: {deck.fusion_section_size})')
+
+
+    def add_player(self, player_id: str, deck: Deck):
+
+        # Add new player
+        self.players[player_id] = {"life_points": DEFAULT_LIFE_POINTS,  "deck": deck}
+
+        # Remove any cards now supported in the current card database
+
+
+        self.decks[player_id].load(fpath=fpath)
         valid_card_names = self.card_db_df['Name'].tolist()
         self.decks[player_id].remove_cards_not_in_list(valid_card_names=valid_card_names)
 
-    def play(self, num_turns=10, debug=False):
+    def play(self, num_turns=10):
+
+        self.decks['player_1'].shuffle_cards(seed=123)
 
         for turn_index in range(num_turns):
             print(f'\n==== Game Turn {turn_index + 1} ====')
