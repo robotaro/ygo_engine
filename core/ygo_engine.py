@@ -1,16 +1,18 @@
 import pandas as pd
 from core.card_database import CardDatabase
+from game_state_visualiser import GameStateVisualiser
 from core.deck import Deck
 
 DEFAULT_LIFE_POINTS = 8000
 
-
-GAME_PHASES = ["draw_phase",
-               "standby_phase",
-               "main_phase_1",
-               "battle_phase",
-               "main_phase_2",
-               "end_phase"]
+PLAYER_PHASES = [
+    "draw_phase",
+    "standby_phase",
+    "main_phase_1",
+    "battle_phase",
+    "main_phase_2",
+    "end_phase"
+]
 
 class PlayField:
 
@@ -26,12 +28,6 @@ class PlayField:
         self.field_zone = None
 
 
-class Card:
-
-    def __init__(self):
-        pass
-
-
 class Player:
 
     def __init__(self, name: str, deck: Deck, life_points=DEFAULT_LIFE_POINTS):
@@ -42,8 +38,9 @@ class Player:
 
 class YGOEngine:
 
-    def __init__(self, card_database: CardDatabase):
+    def __init__(self, card_database: CardDatabase, life_points=DEFAULT_LIFE_POINTS):
 
+        self.initial_player_life_points = life_points
         self.card_db = card_database
         self.players = dict()
 
@@ -69,27 +66,41 @@ class YGOEngine:
                       f'Extra: {deck.extra_section_size}, '
                       f'Fusion: {deck.fusion_section_size})')
 
-
     def add_player(self, player_id: str, deck: Deck):
 
-        # Add new player
-        self.players[player_id] = {"life_points": DEFAULT_LIFE_POINTS,  "deck": deck}
-
-        # Remove any cards now supported in the current card database
-
-
-        self.decks[player_id].load(fpath=fpath)
-        valid_card_names = self.card_db_df['Name'].tolist()
-        self.decks[player_id].remove_cards_not_in_list(valid_card_names=valid_card_names)
+        self.players[player_id] = {
+            "life_points": self.initial_player_life_points,
+            "deck": deck
+        }
 
     def play(self, num_turns=10):
 
-        self.decks['player_1'].shuffle_cards(seed=123)
+        # Generate game phases
+        game_phases = [(player, phase) for player in self.players for phase in PLAYER_PHASES]
 
+        print(' > Game Started:')
+        phase_counter = 0
         for turn_index in range(num_turns):
-            print(f'\n==== Game Turn {turn_index + 1} ====')
-            for player_id, deck in self.decks.items():
-                print(f'> Player: {player_id}')
-                for phase in GAME_PHASES:
-                    print(f'  - {phase}')
 
+            for _ in range(len(PLAYER_PHASES)):
+
+                current_phase = game_phases[phase_counter % len(game_phases)]
+                next_phase = game_phases[(phase_counter + 1) % len(game_phases)]
+
+                self.callback_phase_state(current_stage=current_phase)
+                self.callback_phase_transition(stage_from=current_phase, stage_to=next_phase)
+
+                phase_counter += 1
+
+    def callback_phase_transition(self, stage_from: tuple, stage_to: tuple):
+
+        print(f' > {stage_from} -> {stage_to}')
+
+
+    def callback_phase_state(self, current_stage: tuple):
+        print(f' > {current_stage}')
+
+    def show_game_state(self):
+
+        viz = GameStateVisualiser()
+        viz.show_game_state()

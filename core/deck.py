@@ -28,6 +28,10 @@ DECK_SECTIONS = [DECK_MAIN_SECTION, DECK_EXTRA_SECTION, DECK_FUSION_SECTION]
 
 class Deck:
 
+    """
+    The deck class stores all cards and performs all operations that change card states.
+    """
+
     def __init__(self):
 
         # Main variables
@@ -88,7 +92,7 @@ class Deck:
     #                    Deck Construction Functions
     # ================================================================
 
-    def load(self, fpath) -> None:
+    def load(self, fpath: str) -> None:
 
         """
         This function loads a deck from a blueprint into a dataframe that is stored in self.cards_df.
@@ -119,20 +123,17 @@ class Deck:
 
         deck_blueprint = self.deck_loading_function_map[deck_blueprint_type](fpath)
 
-        valid_deck_blueprint, invalid_deck_blueprint = self._validate_deck_blueprint(
-            deck_blueprint=deck_blueprint
-        )
+        self.cards_df = self.deck_blueprint2cards_df(deck_blueprint=deck_blueprint)
 
-        self.cards_df = self._create_deck_df(deck_blueprint=valid_deck_blueprint)
-
-    def _validate_deck_blueprint(self, deck_blueprint: dict, card_db_df: pd.DataFrame):
+    @staticmethod
+    def validate_deck_blueprint(deck_blueprint: dict, card_db_df: pd.DataFrame):
 
         """
         This function returns a valid version of the deck. It automatically removes any missing cards and return
         them as an "invalid deck"
 
         :param deck_blueprint: dict, deck blueprint
-        :param card_db_df:
+        :param card_db_df: Pandas Dataframe
         :return:
         """
 
@@ -150,8 +151,7 @@ class Deck:
         return valid_deck_blueprint, invalid_deck_blueprint
 
     def remove_cards_not_in_list(self, valid_card_names: list):
-        valid_card_indices = [card.Index for card in self.cards_df.itertuples()
-                                if card.name in valid_card_names]
+        valid_card_indices = [card.Index for card in self.cards_df.itertuples() if card.name in valid_card_names]
         self.cards_df = self.cards_df.iloc[valid_card_indices]
         self.cards_df.reset_index(inplace=True, drop=True)
 
@@ -197,7 +197,7 @@ class Deck:
                 blueprint[section].append((num_cards, matches[0][1]))
         return blueprint
 
-    def _create_deck_df(self, deck_blueprint: dict, auto_validate=True) -> pd.DataFrame:
+    def deck_blueprint2cards_df(self, deck_blueprint: dict) -> pd.DataFrame:
 
         """
         Converts a deck blueprint to a deck dataframe state so it can be used by the game engine
@@ -208,7 +208,6 @@ class Deck:
 
         zone_index = 0
         card_list = []
-
 
         for section_name, section_cards in deck_blueprint.items():
             for (num_cards, card_name) in deck_blueprint[section_name]:
