@@ -6,6 +6,7 @@
   let draggedIid = null
   let selectedAttacker = null
   let pendingTribute = null // {iid, zoneIndex, needed, chosen[], mode}
+  let pendingTarget = null // {iid, zoneIndex, candidates[], needed, chosen[]}
   let seedInput = ''
 
   onMount(() => newGame())
@@ -22,6 +23,13 @@
   $: validTargets =
     selectedAttacker != null && $legal ? attackTargets(selectedAttacker) || [] : []
   $: mustDiscard = !!$legal?.discards?.length
+  $: pendingName = pendingTribute
+    ? (you?.hand.find((c) => c.iid === pendingTribute.iid)?.name ?? 'monster')
+    : ''
+  $: targetCandidates = pendingTarget ? pendingTarget.candidates : []
+  $: pendingTargetName = pendingTarget
+    ? (you?.hand.find((c) => c.iid === pendingTarget.iid)?.name ?? 'spell')
+    : ''
 
   const PHASE_LABEL = {
     draw_phase: 'Draw',
@@ -44,8 +52,11 @@
   function attackTargets(iid) {
     return $legal?.attackers?.[String(iid)] || null
   }
+  function activateOptions(iid) {
+    return $legal?.activatable?.[String(iid)] || null // [[target iids]...]
+  }
   function canActivate(iid) {
-    return $legal?.activatable?.includes(iid)
+    return !!activateOptions(iid)
   }
   function firstEmptySpellZone() {
     const z = you?.spellTrapZones || []
@@ -87,11 +98,34 @@
     if (!yourTurn || draggedIid == null) return
     const iid = draggedIid
     draggedIid = null
-    if (canActivate(iid)) sendIntent({ kind: 'activate', iid, zoneIndex })
+    beginActivate(iid, zoneIndex)
   }
 
   function activateSpell(iid) {
-    if (canActivate(iid)) sendIntent({ kind: 'activate', iid, zoneIndex: firstEmptySpellZone() })
+    beginActivate(iid, firstEmptySpellZone())
+  }
+
+  function beginActivate(iid, zoneIndex) {
+    const opts = activateOptions(iid)
+    if (!opts) return
+    if (opts.some((t) => t.length === 0)) {
+      sendIntent({ kind: 'activate', iid, targets: [], zoneIndex }) // no target needed
+      return
+    }
+    const candidates = [...new Set(opts.flat())]
+    pendingTarget = { iid, zoneIndex, candidates, needed: opts[0].length, chosen: [] }
+  }
+
+  function chooseTarget(iid) {
+    const pt = pendingTarget
+    if (!pt || !pt.candidates.includes(iid) || pt.chosen.includes(iid)) return
+    const chosen = [...pt.chosen, iid]
+    if (chosen.length >= pt.needed) {
+      sendIntent({ kind: 'activate', iid: pt.iid, targets: chosen, zoneIndex: pt.zoneIndex })
+      pendingTarget = null
+    } else {
+      pendingTarget = { ...pt, chosen }
+    }
   }
 
   function onSet(iid) {
@@ -120,6 +154,10 @@
 
   function onClickOwnMonster(iid) {
     if (!yourTurn) return
+    if (pendingTarget) {
+      chooseTarget(iid)
+      return
+    }
     if (pendingTribute) {
       toggleTribute(iid)
       return
@@ -133,7 +171,12 @@
   }
 
   function onClickOppMonster(iid) {
-    if (!yourTurn || phase !== 'battle_phase' || selectedAttacker == null) return
+    if (!yourTurn) return
+    if (pendingTarget) {
+      chooseTarget(iid)
+      return
+    }
+    if (phase !== 'battle_phase' || selectedAttacker == null) return
     if (validTargets.includes(iid)) {
       sendIntent({ kind: 'attack', attacker: selectedAttacker, target: iid })
       selectedAttacker = null
@@ -155,6 +198,7 @@
   function nextPhase() {
     selectedAttacker = null
     pendingTribute = null
+    pendingTarget = null
     sendIntent({ kind: 'pass' })
   }
 
@@ -199,7 +243,9 @@
         {#each opp.monsterZones as slot}
           <div
             class="slot mon"
-            class:targetable={selectedAttacker != null && slot && validTargets.includes(slot.iid)}
+            class:targetable={slot &&
+              ((selectedAttacker != null && validTargets.includes(slot.iid)) ||
+                targetCandidates.includes(slot.iid))}
             onclick={() => slot && onClickOppMonster(slot.iid)}
           >
             <CardTile card={slot} faceDown={slot?.faceDown} defense={isDefense(slot)} small />
@@ -225,8 +271,13 @@
               class="slot mon own"
               class:selected={selectedAttacker === slot.iid}
               class:tribute={pendingTribute?.chosen.includes(slot.iid)}
+              class:targetable={targetCandidates.includes(slot.iid)}
               class:actionable={yourTurn &&
-                (attackTargets(slot.iid) || canFlip(slot.iid) || canChangePos(slot.iid) || pendingTribute)}
+                (attackTargets(slot.iid) ||
+                  canFlip(slot.iid) ||
+                  canChangePos(slot.iid) ||
+                  pendingTribute ||
+                  pendingTarget)}
               onclick={() => onClickOwnMonster(slot.iid)}
             >
               <CardTile card={slot} defense={isDefense(slot)} small />
@@ -267,10 +318,17 @@
       </div>
 
       <!-- Hand -->
-      {#if pendingTribute}
+      {#if pendingTarget}
         <div class="banner">
-          Select {pendingTribute.needed} monster(s) to Tribute
-          ({pendingTribute.chosen.length}/{pendingTribute.needed}) — click your monsters
+          <strong>{pendingTargetName}</strong> — click a highlighted target
+          ({pendingTarget.chosen.length}/{pendingTarget.needed})
+          <button onclick={() => (pendingTarget = null)}>Cancel</button>
+        </div>
+      {:else if pendingTribute}
+        <div class="banner">
+          Tribute Summon <strong>{pendingName}</strong> — click
+          {pendingTribute.needed} of your monsters to Tribute
+          ({pendingTribute.chosen.length}/{pendingTribute.needed})
           <button onclick={() => (pendingTribute = null)}>Cancel</button>
         </div>
       {:else if mustDiscard}

@@ -164,7 +164,7 @@ class Engine:
         self.log(f"  {s.players[tp].name} activates {card.name}")
         self._changed()
         self._pace()
-        resolve_card_effects(s, action.iid)
+        resolve_card_effects(s, action.iid, action.targets)
         self._check_life_points()
         self._changed()
         self._pace()

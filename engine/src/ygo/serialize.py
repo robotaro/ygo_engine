@@ -109,7 +109,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
     flips: list[int] = []
     position_changes: list[int] = []
     discards: list[int] = []
-    activatable: list[int] = []
+    activatable: dict[int, list[list[int]]] = {}
 
     for a in legal:
         if isinstance(a, NormalSummon):
@@ -125,7 +125,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         elif isinstance(a, DeclareAttack):
             attackers.setdefault(a.attacker, []).append(a.target)
         elif isinstance(a, ActivateSpell):
-            activatable.append(a.iid)
+            activatable.setdefault(a.iid, []).append(list(a.targets))
         elif isinstance(a, DiscardCard):
             discards.append(a.iid)
 
@@ -136,7 +136,8 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         "attackers": {str(k): v for k, v in attackers.items()},
         "flips": flips,
         "positionChanges": position_changes,
-        "activatable": activatable,
+        # iid -> [[target iids]...]; [[]] means "activatable, no target"
+        "activatable": {str(k): v for k, v in activatable.items()},
         "discards": discards,
         "canPass": with_pass,
     }
@@ -182,9 +183,18 @@ def match_intent(intent: dict, legal: list[Action], state: GameState) -> Action 
 
     if kind == "activate":
         iid = intent.get("iid")
-        if any(isinstance(a, ActivateSpell) and a.iid == iid for a in legal):
-            return ActivateSpell(iid=iid, zone_index=intent.get("zoneIndex"))
-        return None
+        targets = tuple(intent.get("targets", []))
+        match = next(
+            (
+                a
+                for a in legal
+                if isinstance(a, ActivateSpell) and a.iid == iid and set(a.targets) == set(targets)
+            ),
+            None,
+        )
+        if match is None:
+            return None
+        return ActivateSpell(iid=iid, targets=targets, zone_index=intent.get("zoneIndex"))
 
     if kind in ("summon", "set"):
         iid = intent.get("iid")

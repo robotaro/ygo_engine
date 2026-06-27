@@ -14,6 +14,16 @@
   // A monster slot reports faceDown + a null name when hidden from us.
   let hidden = $derived(faceDown || (card && card.name == null))
   let accent = $derived(card && card.attribute ? ATTR_COLORS[card.attribute] : '#4a4a55')
+  // Tributes needed to Normal Summon: 1-4 none, 5-6 one, 7+ two.
+  let tributeCost = $derived(
+    card && card.cardType === 'monster' && card.level
+      ? card.level <= 4
+        ? 0
+        : card.level <= 6
+          ? 1
+          : 2
+      : 0,
+  )
 </script>
 
 {#if !card}
@@ -32,7 +42,14 @@
   >
     <div class="name">{card.name}</div>
     {#if card.cardType === 'monster'}
-      {#if card.level != null}<div class="level">{'★'.repeat(Math.min(card.level, 12))}</div>{/if}
+      <div class="lvline">
+        {#if card.level != null}<span class="lv">Lv{card.level}</span>{/if}
+        {#if tributeCost > 0}
+          <span class="trib" title={`Requires ${tributeCost} Tribute(s) to Normal Summon`}>
+            ✦{tributeCost}
+          </span>
+        {/if}
+      </div>
       <div class="stats">
         <span class="atk">{card.attack ?? '?'}</span>
         <span class="slash">/</span>
@@ -82,12 +99,22 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
   }
-  .level {
-    font-size: 8px;
+  .lvline {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    font-size: 9px;
+  }
+  .lv {
     color: #ffcf5c;
-    letter-spacing: -1px;
-    overflow: hidden;
-    white-space: nowrap;
+    font-weight: 700;
+  }
+  .trib {
+    background: #c0651c;
+    color: #fff;
+    font-weight: 800;
+    border-radius: 3px;
+    padding: 0 4px;
   }
   .stats {
     font-size: 11px;

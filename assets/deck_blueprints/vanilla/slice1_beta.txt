@@ -1,4 +1,4 @@
-// Slice 1 test deck — slice1_beta (vanilla + simple spells)
+// Test deck — slice1_beta (vanilla + Slice 1/2 spells)
 3 Axe Raider
 3 Battle Ox
 3 Beta The Magnet Warrior
@@ -10,9 +10,13 @@
 2 Twin-Headed Fire Dragon
 2 Ushi Oni
 2 Wingweaver
-2 Zoa
-3 Pot of Greed
-3 Dark Hole
-2 Raigeki
 1 Neo the Magic Swordsman
 1 Guardian of the Throne Room
+1 High Tide Gyojin
+1 Whiptail Crow
+2 Pot of Greed
+2 Dark Hole
+1 Raigeki
+1 Fissure
+1 Stop Defense
+1 Tremendous Fire

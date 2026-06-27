@@ -60,10 +60,16 @@ class GreedyAgent(Agent):
                 return a
         return legal[0]
 
+    # No-target spells the CPU happily fires when legal (no choice to get wrong).
+    AUTO_SPELLS = {"Pot of Greed", "Fissure", "Tremendous Fire", "Hinotama", "Raigeki"}
+
     def _main(self, state: GameState, legal: list[Action]) -> Action:
-        # Free card advantage: always pop Pot of Greed.
         for a in legal:
-            if isinstance(a, ActivateSpell) and state.inst(a.iid).card.name == "Pot of Greed":
+            if (
+                isinstance(a, ActivateSpell)
+                and not a.targets
+                and state.inst(a.iid).card.name in self.AUTO_SPELLS
+            ):
                 return a
         summons = [a for a in legal if isinstance(a, NormalSummon)]
         if summons:

@@ -73,9 +73,10 @@ class DeclareAttack(Action):
 
 @dataclass(frozen=True)
 class ActivateSpell(Action):
-    """Activate a Spell from the hand (Slice 1: Ignition spells, no cost/target)."""
+    """Activate a Spell from the hand (Ignition timing; may carry chosen targets)."""
 
     iid: int
+    targets: tuple[int, ...] = ()
     zone_index: int | None = None
 
 
@@ -154,14 +155,39 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         elif inst.position in (Position.FACE_UP_ATTACK, Position.FACE_UP_DEFENSE):
             actions.append(ChangePosition(iid))
 
-    # Spell activations from the hand (Slice 1: Ignition spells only)
+    # Spell activations from the hand (Ignition timing; one activation per legal target set)
     if state.first_empty_spell_trap_zone(player) is not None:
         for iid in p.hand:
             card = state.inst(iid).card
-            if card.is_spell and any(e.timing == "ignition" for e in card.effects):
-                actions.append(ActivateSpell(iid))
+            if not card.is_spell:
+                continue
+            effect = next((e for e in card.effects if e.timing == "ignition"), None)
+            if effect is None:
+                continue
+            if effect.condition is not None and not effect.condition(state, player):
+                continue
+            for target_set in _enumerate_targets(state, player, effect.target):
+                actions.append(ActivateSpell(iid, targets=target_set))
 
     return actions
+
+
+def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[int, ...]]:
+    """List the legal target sets for an effect (``[()]`` means 'no target')."""
+    if spec is None:
+        return [()]
+    opp = state.opponent_of(controller)
+    if spec.where == "opponent_monsters":
+        candidates = [i for i in state.players[opp].monster_zones if i is not None]
+    elif spec.where == "any_monster":
+        candidates = [
+            i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None
+        ]
+    else:
+        candidates = []
+    if spec.count == 1:
+        return [(c,) for c in candidates]
+    return [tuple(combo) for combo in combinations(candidates, spec.count)]
 
 
 def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
@@ -232,10 +258,14 @@ def place_activated_spell(state: GameState, iid: int, zone_index: int | None = N
     state.place_spell_trap(iid, player, zone_index, Position.FACE_UP_ATTACK)
 
 
-def resolve_card_effects(state: GameState, source_iid: int) -> None:
+def resolve_card_effects(
+    state: GameState, source_iid: int, targets: tuple[int, ...] = ()
+) -> None:
     """Run every primitive of every effect on the card at ``source_iid``."""
     inst = state.inst(source_iid)
-    ctx = EffectContext(state=state, controller=inst.controller, source_iid=source_iid)
+    ctx = EffectContext(
+        state=state, controller=inst.controller, source_iid=source_iid, targets=list(targets)
+    )
     for effect in inst.card.effects:
         for primitive in effect.resolve:
             primitive.execute(ctx)
@@ -249,7 +279,7 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
     """
     card = state.inst(action.iid).card
     place_activated_spell(state, action.iid, action.zone_index)
-    resolve_card_effects(state, action.iid)
+    resolve_card_effects(state, action.iid, action.targets)
     state.send_to_graveyard(action.iid)  # Normal Spell to the Graveyard after resolving
     return f"activates {card.name}"
 

@@ -64,3 +64,48 @@ def test_spell_appears_as_legal_action_in_main_phase():
     pot = _spell_in_hand(state, 0, "Pot of Greed")
     actions = legal_actions(state, 0)
     assert any(isinstance(a, ActivateSpell) and a.iid == pot.iid for a in actions)
+
+
+# ---- Slice 2: targeting + burn ----
+def test_stop_defense_targets_an_opponent_monster():
+    state = GameState.new(("A", "B"), seed=1)
+    state.phase = Phase.MAIN_1
+    foe = state.spawn_on_field(reg.get("Battle Ox"), 1, 0, Position.FACE_DOWN_DEFENSE)
+    spell = _spell_in_hand(state, 0, "Stop Defense")
+
+    # one ActivateSpell per legal target; here exactly one target exists
+    options = [a for a in legal_actions(state, 0) if isinstance(a, ActivateSpell) and a.iid == spell.iid]
+    assert options and options[0].targets == (foe.iid,)
+
+    apply(state, options[0])
+    assert state.inst(foe.iid).position is Position.FACE_UP_ATTACK  # flipped up to attack
+
+
+def test_fissure_auto_targets_weakest_and_is_gated():
+    state = GameState.new(("A", "B"), seed=1)
+    state.phase = Phase.MAIN_1
+    state.spawn_on_field(reg.get("Blue-Eyes White Dragon"), 1, 0, Position.FACE_UP_ATTACK)
+    weak = state.spawn_on_field(reg.get("Battle Ox"), 1, 1, Position.FACE_UP_ATTACK)
+    fissure = _spell_in_hand(state, 0, "Fissure")
+
+    apply(state, ActivateSpell(fissure.iid))
+    assert state.inst(weak.iid).zone is Zone.GRAVEYARD  # lowest ATK destroyed
+    assert state.players[1].monster_zones[0] is not None  # Blue-Eyes survives
+
+
+def test_fissure_not_activatable_without_opponent_monster():
+    state = GameState.new(("A", "B"), seed=1)
+    state.phase = Phase.MAIN_1
+    fissure = _spell_in_hand(state, 0, "Fissure")
+    assert not any(
+        isinstance(a, ActivateSpell) and a.iid == fissure.iid for a in legal_actions(state, 0)
+    )
+
+
+def test_tremendous_fire_burns_both_players():
+    state = GameState.new(("A", "B"), seed=1)
+    state.phase = Phase.MAIN_1
+    fire = _spell_in_hand(state, 0, "Tremendous Fire")
+    apply(state, ActivateSpell(fire.iid))
+    assert state.players[1].life_points == 8000 - 1000  # opponent
+    assert state.players[0].life_points == 8000 - 500  # self
