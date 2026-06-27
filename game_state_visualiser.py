@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from core.deck import Deck
 import numpy as np
 import pandas as pd
 
-# Useful Matplolib links
+# Useful Matplotlib links
 # https://matplotlib.org/stable/tutorials/text/text_props.html#sphx-glr-tutorials-text-text-props-py
 # https://matplotlib.org/stable/gallery/text_labels_and_annotations/demo_text_rotation_mode.html#sphx-glr-gallery-text-labels-and-annotations-demo-text-rotation-mode-py
 
@@ -118,7 +119,7 @@ class GameStateVisualiser:
     def add_player_field_to_axes(self, figure_axes: plt.Axes, center_x: float, center_y: float, rotated=False) -> dict:
 
         """
-        Draw a card square
+        Draw a card square on the field
         :param figure_axes:
         :param center_x: Center for board
         :param center_y:
@@ -167,10 +168,11 @@ class GameStateVisualiser:
 
         return board
 
-    def show_game_state(self):
+    def show_game_state(self, player_1_deck: Deck, player_2_deck: Deck):
 
         fig = plt.figure(figsize=(8, 8))
         figure_axes = fig.add_axes([0, 0, 1, 1])
+
         player_1_card_locations = self.add_player_field_to_axes(figure_axes=figure_axes,
                                                                 center_x=0.5,
                                                                 center_y=0.25)
@@ -191,9 +193,3 @@ class GameStateVisualiser:
         plt.show()
 
         pass
-
-
-if __name__ == "__main__":
-
-    viz = GameStateVisualiser()
-    viz.show_game_state()

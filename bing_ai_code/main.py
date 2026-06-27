@@ -2,9 +2,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 
-"""
-Great, now let's look into the logic of the game. Each card contains a short description of it's illustration and/or effects. For cards with effects, these are designed to change the battle mechanics so that the flow of the game changes in favour of the player. Here is an example of a trap card description: "Select 1 of your opponent's face-up monsters. The ATK of the selected monster is decreased by 700 points and its battle position cannot be changed. When the monster is destroyed, this card is also destroyed."
-"""
 
 class Card:
     def __init__(self, name, description):
