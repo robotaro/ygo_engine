@@ -15,6 +15,7 @@ from __future__ import annotations
 from .enums import Position
 from .moves import (
     Action,
+    ActivateSpell,
     ChangePosition,
     DeclareAttack,
     DiscardCard,
@@ -108,6 +109,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
     flips: list[int] = []
     position_changes: list[int] = []
     discards: list[int] = []
+    activatable: list[int] = []
 
     for a in legal:
         if isinstance(a, NormalSummon):
@@ -122,6 +124,8 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
             position_changes.append(a.iid)
         elif isinstance(a, DeclareAttack):
             attackers.setdefault(a.attacker, []).append(a.target)
+        elif isinstance(a, ActivateSpell):
+            activatable.append(a.iid)
         elif isinstance(a, DiscardCard):
             discards.append(a.iid)
 
@@ -132,6 +136,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         "attackers": {str(k): v for k, v in attackers.items()},
         "flips": flips,
         "positionChanges": position_changes,
+        "activatable": activatable,
         "discards": discards,
         "canPass": with_pass,
     }
@@ -174,6 +179,12 @@ def match_intent(intent: dict, legal: list[Action], state: GameState) -> Action 
     if kind == "discard":
         iid = intent.get("iid")
         return next((a for a in legal if isinstance(a, DiscardCard) and a.iid == iid), None)
+
+    if kind == "activate":
+        iid = intent.get("iid")
+        if any(isinstance(a, ActivateSpell) and a.iid == iid for a in legal):
+            return ActivateSpell(iid=iid, zone_index=intent.get("zoneIndex"))
+        return None
 
     if kind in ("summon", "set"):
         iid = intent.get("iid")

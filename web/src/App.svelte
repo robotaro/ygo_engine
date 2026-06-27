@@ -42,6 +42,14 @@
   function attackTargets(iid) {
     return $legal?.attackers?.[String(iid)] || null
   }
+  function canActivate(iid) {
+    return $legal?.activatable?.includes(iid)
+  }
+  function firstEmptySpellZone() {
+    const z = you?.spellTrapZones || []
+    const i = z.findIndex((s) => s === null)
+    return i < 0 ? null : i
+  }
   function canFlip(iid) {
     return $legal?.flips?.includes(iid)
   }
@@ -70,6 +78,18 @@
     } else if (opts.summon.length) {
       pendingTribute = { iid, zoneIndex, needed: opts.summon[0].length, chosen: [], mode: 'summon' }
     }
+  }
+
+  function onDropActivate(e, zoneIndex) {
+    e.preventDefault()
+    if (!yourTurn || draggedIid == null) return
+    const iid = draggedIid
+    draggedIid = null
+    if (canActivate(iid)) sendIntent({ kind: 'activate', iid, zoneIndex })
+  }
+
+  function activateSpell(iid) {
+    if (canActivate(iid)) sendIntent({ kind: 'activate', iid, zoneIndex: firstEmptySpellZone() })
   }
 
   function onSet(iid) {
@@ -222,8 +242,19 @@
         {/each}
       </div>
       <div class="zonerow">
-        {#each you.spellTrapZones as slot}
-          <div class="slot st"><CardTile card={slot} small /></div>
+        {#each you.spellTrapZones as slot, i}
+          {#if slot}
+            <div class="slot st"><CardTile card={slot} small /></div>
+          {:else}
+            <div
+              class="slot st drop"
+              class:armed={dragging}
+              ondragover={(e) => e.preventDefault()}
+              ondrop={(e) => onDropActivate(e, i)}
+            >
+              <CardTile card={null} small />
+            </div>
+          {/if}
         {/each}
       </div>
 
@@ -247,16 +278,19 @@
       <div class="hand">
         {#each you.hand as card}
           {@const opts = summonOptions(card.iid)}
-          <div class="handcard" class:dim={yourTurn && !opts && !mustDiscard}>
+          {@const activatable = canActivate(card.iid)}
+          <div class="handcard" class:dim={yourTurn && !opts && !activatable && !mustDiscard}>
             <div
-              draggable={yourTurn && !!opts}
+              draggable={yourTurn && (!!opts || activatable)}
               ondragstart={() => (draggedIid = card.iid)}
               ondragend={() => (draggedIid = null)}
               onclick={() => onHandClick(card.iid)}
             >
               <CardTile {card} />
             </div>
-            {#if yourTurn && opts?.set?.length}
+            {#if yourTurn && activatable}
+              <button class="setbtn" onclick={() => activateSpell(card.iid)}>Activate</button>
+            {:else if yourTurn && opts?.set?.length}
               <button class="setbtn" onclick={() => onSet(card.iid)}>Set</button>
             {/if}
           </div>

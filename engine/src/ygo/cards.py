@@ -14,6 +14,7 @@ import csv
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .card_effects import EFFECTS
 from .enums import Attribute, CardType, MonsterCategory, SpellTrapProperty
 from .paths import DEFAULT_CARD_DB
 
@@ -148,6 +149,8 @@ def card_from_row(row: dict) -> CardDef:
     text = _clean(row.get("Description"))
     status = _clean(row.get("Status")) or None
 
+    effects = EFFECTS.get(name, ())
+
     if type_field == "Magic":  # v6.0 wording for Spell
         return CardDef(
             name=name,
@@ -155,6 +158,7 @@ def card_from_row(row: dict) -> CardDef:
             text=text,
             subtype=_parse_property(row.get("Property")) or SpellTrapProperty.NORMAL,
             status=status,
+            effects=effects,
         )
     if type_field == "Trap":
         return CardDef(
@@ -163,6 +167,7 @@ def card_from_row(row: dict) -> CardDef:
             text=text,
             subtype=_parse_property(row.get("Property")) or SpellTrapProperty.NORMAL,
             status=status,
+            effects=effects,
         )
 
     race, categories = _parse_monster_type(type_field)
@@ -177,6 +182,7 @@ def card_from_row(row: dict) -> CardDef:
         defense=_to_int(row.get("Defense")),
         categories=categories,
         status=status,
+        effects=effects,
     )
 
 

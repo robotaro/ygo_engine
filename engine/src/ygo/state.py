@@ -191,9 +191,24 @@ class GameState:
         inst.position = position
         return inst
 
+    def place_spell_trap(self, iid: int, player: int, index: int, position: Position) -> None:
+        """Put a card into a Spell & Trap Zone slot."""
+        self._remove_from_current_location(iid)
+        inst = self.cards[iid]
+        self.players[player].spell_trap_zones[index] = iid
+        inst.zone = Zone.SPELL_TRAP
+        inst.controller = player
+        inst.zone_index = index
+        inst.position = position
+
     def first_empty_monster_zone(self, player: int) -> int | None:
-        zones = self.players[player].monster_zones
-        for i, slot in enumerate(zones):
+        for i, slot in enumerate(self.players[player].monster_zones):
+            if slot is None:
+                return i
+        return None
+
+    def first_empty_spell_trap_zone(self, player: int) -> int | None:
+        for i, slot in enumerate(self.players[player].spell_trap_zones):
             if slot is None:
                 return i
         return None

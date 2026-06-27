@@ -12,7 +12,7 @@ from __future__ import annotations
 import random
 
 from .enums import Phase, Position
-from .moves import Action, DeclareAttack, DiscardCard, NormalSummon, Pass
+from .moves import Action, ActivateSpell, DeclareAttack, DiscardCard, NormalSummon, Pass
 from .state import GameState
 
 
@@ -61,6 +61,10 @@ class GreedyAgent(Agent):
         return legal[0]
 
     def _main(self, state: GameState, legal: list[Action]) -> Action:
+        # Free card advantage: always pop Pot of Greed.
+        for a in legal:
+            if isinstance(a, ActivateSpell) and state.inst(a.iid).card.name == "Pot of Greed":
+                return a
         summons = [a for a in legal if isinstance(a, NormalSummon)]
         if summons:
             # biggest ATK, fewest tributes

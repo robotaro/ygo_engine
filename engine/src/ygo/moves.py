@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import combinations
 
+from .effects import EffectContext
 from .enums import Phase, Position
 from .state import GameState
 
@@ -68,6 +69,14 @@ class DeclareAttack(Action):
 
     attacker: int
     target: int | None = None
+
+
+@dataclass(frozen=True)
+class ActivateSpell(Action):
+    """Activate a Spell from the hand (Slice 1: Ignition spells, no cost/target)."""
+
+    iid: int
+    zone_index: int | None = None
 
 
 @dataclass(frozen=True)
@@ -145,6 +154,13 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         elif inst.position in (Position.FACE_UP_ATTACK, Position.FACE_UP_DEFENSE):
             actions.append(ChangePosition(iid))
 
+    # Spell activations from the hand (Slice 1: Ignition spells only)
+    if state.first_empty_spell_trap_zone(player) is not None:
+        for iid in p.hand:
+            card = state.inst(iid).card
+            if card.is_spell and any(e.timing == "ignition" for e in card.effects):
+                actions.append(ActivateSpell(iid))
+
     return actions
 
 
@@ -198,11 +214,36 @@ def apply(state: GameState, action: Action) -> str:
         return f"switches {inst.name} to {new} Position"
     if isinstance(action, DeclareAttack):
         return _resolve_attack(state, action)
+    if isinstance(action, ActivateSpell):
+        return _activate_spell(state, action)
     if isinstance(action, DiscardCard):
         name = state.inst(action.iid).name
         state.send_to_graveyard(action.iid)
         return f"discards {name}"
     raise ValueError(f"cannot apply action: {action!r}")
+
+
+def _activate_spell(state: GameState, action: ActivateSpell) -> str:
+    """Activate a Normal/Ignition Spell: place it face-up, resolve, send to GY.
+
+    With no Chain yet (Slice 1), the effect resolves immediately on activation.
+    """
+    inst = state.inst(action.iid)
+    player = inst.controller
+    card = inst.card
+
+    zone_index = action.zone_index
+    if zone_index is None or state.players[player].spell_trap_zones[zone_index] is not None:
+        zone_index = state.first_empty_spell_trap_zone(player)
+    state.place_spell_trap(action.iid, player, zone_index, Position.FACE_UP_ATTACK)
+
+    ctx = EffectContext(state=state, controller=player, source_iid=action.iid)
+    for effect in card.effects:
+        for primitive in effect.resolve:
+            primitive.execute(ctx)
+
+    state.send_to_graveyard(action.iid)  # Normal Spell to the Graveyard after resolving
+    return f"activates {card.name}"
 
 
 def _summon(

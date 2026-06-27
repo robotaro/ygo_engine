@@ -27,8 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DECK_A = DECKS_DIR / "vanilla" / "beatdown_alpha.txt"
-DECK_B = DECKS_DIR / "vanilla" / "beatdown_beta.txt"
+DECK_A = DECKS_DIR / "vanilla" / "slice1_alpha.txt"
+DECK_B = DECKS_DIR / "vanilla" / "slice1_beta.txt"
 
 
 @app.get("/api/health")
