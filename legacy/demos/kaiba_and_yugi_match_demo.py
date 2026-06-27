@@ -7,7 +7,7 @@ from game_state_visualiser import GameStateVisualiser
 
 if __name__ == "__main__":
 
-    card_db_fpath = r"D:\git_repositories\alexandrepv\ygo_engine\card_databases\card_db_worldwide_edition_stariway_to_the_destined_duel.csv"
+    card_db_fpath = r"card_databases/card_db_worldwide_edition_stariway_to_the_destined_duel.csv"
     player_1_deck_fpath = r"deck_blueprints/ygoprodeck/kaiba_deck.txt"
     player_2_deck_fpath = r"deck_blueprints/ygoprodeck/ninja_dice_deck.txt"
 

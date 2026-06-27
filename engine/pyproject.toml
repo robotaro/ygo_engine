@@ -1,0 +1,23 @@
+[project]
+name = "ygo"
+version = "0.1.0"
+description = "A Yu-Gi-Oh! rules engine (Rulebook v6.0 + modern errata), headless and bot-friendly"
+requires-python = ">=3.10"
+# The core engine deliberately has ZERO runtime dependencies: it loads card data
+# with the stdlib `csv` module so it stays fast and embeddable (bots run it in tight loops).
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+# Added at Milestone 1.5 when we wire the Svelte frontend:
+server = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "websockets>=12"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ygo"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
