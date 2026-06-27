@@ -61,6 +61,7 @@ class Engine:
         self._log = log
         self._on_change = on_change
         self._pacer = pacer
+        self._processing_gy = False  # re-entrancy guard for "sent to GY" triggers
 
     def log(self, message: str) -> None:
         if self._log is not None:
@@ -157,11 +158,17 @@ class Engine:
                 return
             if isinstance(choice, ActivateSpell):
                 self._activate_as_chain(choice, tp)
-            elif isinstance(choice, (NormalSummon, FlipSummon)):
+            elif isinstance(choice, NormalSummon):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._changed()
+                self._check_field_to_gy_triggers()  # a Tribute may send a trigger monster
                 # The opponent may respond to the Summon (e.g. Trap Hole).
                 self._response_window({"kind": "summon", "player": tp, "monster": choice.iid})
+                self._check_life_points()
+            elif isinstance(choice, FlipSummon):
+                self.log(f"  {s.players[tp].name} {apply(s, choice)}")
+                self._changed()
+                self._trigger_flip_effect(choice.iid)  # e.g. Man-Eater Bug
                 self._check_life_points()
             else:
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
@@ -214,9 +221,25 @@ class Engine:
             self._changed()  # the target left the field; the attack fizzles
             return
 
+        # A face-down monster being attacked is flipped — note its Flip Effect first.
+        flip_pending = None
+        if target is not None:
+            tinst = s.cards.get(target)
+            if tinst is not None and tinst.position is Position.FACE_DOWN_DEFENSE:
+                effect = self._flip_effect(tinst.card)
+                if effect is not None:
+                    flip_pending = (target, tinst.controller, effect)
+
         self.log(f"  {s.players[tp].name}: {apply(s, DeclareAttack(attacker, target))}")
         self._check_life_points()
         self._changed()
+        self._check_field_to_gy_triggers()  # combat may have sent a trigger monster to GY
+
+        # Flip Effects resolve after damage (even if the monster was destroyed in battle).
+        if flip_pending is not None and self.result is None:
+            iid, controller, effect = flip_pending
+            self._trigger_effect(iid, effect, controller)
+            self._check_life_points()
 
     # ------------------------------------------------------------------ #
     #  The Chain
@@ -288,6 +311,54 @@ class Engine:
                 s.send_to_graveyard(link.source_iid)
         s.chain = []
         self._changed()
+        self._check_field_to_gy_triggers()  # resolution may have sent trigger monsters to GY
+
+    # ------------------------------------------------------------------ #
+    #  Monster-effect triggers
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _flip_effect(card):
+        return next((e for e in card.effects if e.timing == "flip"), None)
+
+    def _trigger_flip_effect(self, iid: int) -> None:
+        inst = self.state.cards.get(iid)
+        if inst is None:
+            return
+        effect = self._flip_effect(inst.card)
+        if effect is not None:
+            self._trigger_effect(iid, effect, inst.controller)
+
+    def _trigger_effect(self, source_iid: int, effect, controller: int, event: dict | None = None):
+        """Put a triggered/flip monster effect onto a fresh Chain and resolve it."""
+        self.log(f"  {self.state.players[controller].name}'s {self.state.inst(source_iid).name} effect activates")
+        self._run_chain([ChainLink(source_iid, effect, controller, (), event)])
+
+    def _check_field_to_gy_triggers(self) -> None:
+        """Fire "when sent from the field to the Graveyard" effects (e.g. Sangan)."""
+        if self._processing_gy:
+            return  # a nested resolution; the outer loop will drain the queue
+        self._processing_gy = True
+        try:
+            s = self.state
+            while s.gy_from_field and self.result is None:
+                iid = s.gy_from_field.pop(0)
+                inst = s.cards.get(iid)
+                if inst is None:
+                    continue
+                effect = next(
+                    (
+                        e
+                        for e in inst.card.effects
+                        if e.timing == "trigger"
+                        and e.trigger is not None
+                        and e.trigger.kind == "sent_to_gy_from_field"
+                    ),
+                    None,
+                )
+                if effect is not None:
+                    self._trigger_effect(iid, effect, inst.controller)
+        finally:
+            self._processing_gy = False
 
     def _end_phase(self, tp: int) -> None:
         s = self.state

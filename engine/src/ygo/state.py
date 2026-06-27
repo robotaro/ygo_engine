@@ -87,6 +87,7 @@ class GameState:
     normal_summon_used: bool = False  # one Normal Summon/Set per turn; reset each turn
     chain: list = field(default_factory=list)  # ChainLink stack, last-in-first-out
     attack_negated: bool = False  # transient flag set while resolving an attack response
+    gy_from_field: list = field(default_factory=list)  # monsters just sent field->GY (trigger queue)
     seed: int = 0
     rng: random.Random = field(default_factory=random.Random)
     _next_iid: int = 0
@@ -170,8 +171,9 @@ class GameState:
 
     def send_to_graveyard(self, iid: int) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags."""
-        self._remove_from_current_location(iid)
         inst = self.cards[iid]
+        from_field = inst.zone in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD)
+        self._remove_from_current_location(iid)
         inst.zone = Zone.GRAVEYARD
         inst.controller = inst.owner
         inst.position = None
@@ -180,6 +182,9 @@ class GameState:
         inst.position_changed_this_turn = False
         inst.set_on_turn = None
         self.players[inst.owner].graveyard.append(iid)
+        # Queue "sent from the field to the Graveyard" triggers for the engine.
+        if from_field and inst.card.is_monster:
+            self.gy_from_field.append(iid)
 
     def spawn_on_field(
         self, card: CardDef, player: int, index: int, position: Position, owner: int | None = None

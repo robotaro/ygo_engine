@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Callable
 
-from .enums import Position
+from .enums import Position, Zone
 
 if TYPE_CHECKING:
     from .state import GameState
@@ -185,6 +185,57 @@ class DamageEqualToAttackerAtk(Primitive):
             return
         dmg = ctx.state.inst(attacker).card.attack or 0
         ctx.state.players[attacker_player].life_points -= dmg
+
+
+# --- Slice 4: monster-effect primitives (auto-resolving) ---
+@dataclass(frozen=True)
+class DestroyStrongestOpponentMonster(Primitive):
+    """Man-Eater Bug (auto-targeted): destroy the opponent's highest-ATK monster."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        opp = ctx.state.opponent_of(ctx.controller)
+        monsters = [iid for iid in ctx.state.players[opp].monster_zones if iid is not None]
+        if not monsters:
+            return
+        victim = max(monsters, key=lambda i: ctx.state.inst(i).card.attack or 0)
+        ctx.state.send_to_graveyard(victim)
+
+
+@dataclass(frozen=True)
+class SearchMonsterToHand(Primitive):
+    """Sangan (auto): move the best Deck monster with ATK <= max_atk to hand, then shuffle."""
+
+    max_atk: int = 1500
+
+    def execute(self, ctx: EffectContext) -> None:
+        player = ctx.state.players[ctx.controller]
+        eligible = [
+            iid
+            for iid in player.deck
+            if ctx.state.inst(iid).card.is_monster
+            and (ctx.state.inst(iid).card.attack or 0) <= self.max_atk
+        ]
+        if eligible:
+            best = max(eligible, key=lambda i: ctx.state.inst(i).card.attack or 0)
+            player.deck.remove(best)
+            player.hand.append(best)
+            ctx.state.inst(best).zone = Zone.HAND
+        ctx.state.rng.shuffle(player.deck)
+
+
+@dataclass(frozen=True)
+class ReturnSpellFromGraveyardToHand(Primitive):
+    """Magician of Faith (auto): return the most recently used Spell from your GY to hand."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        player = ctx.state.players[ctx.controller]
+        spells = [iid for iid in player.graveyard if ctx.state.inst(iid).card.is_spell]
+        if not spells:
+            return
+        iid = spells[-1]
+        player.graveyard.remove(iid)
+        player.hand.append(iid)
+        ctx.state.inst(iid).zone = Zone.HAND
 
 
 # --------------------------------------------------------------------------- #

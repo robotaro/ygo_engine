@@ -16,11 +16,14 @@ from .effects import (
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
     DestroyLowestAtkOpponentMonster,
+    DestroyStrongestOpponentMonster,
     DestroyTargets,
     Draw,
     Effect,
     InflictDamage,
     NegateAttack,
+    ReturnSpellFromGraveyardToHand,
+    SearchMonsterToHand,
     SwitchTargetsToAttack,
     TargetSpec,
     Trigger,
@@ -88,6 +91,21 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="quick",
             target=TargetSpec(count=1, where="spell_trap_field"),
             resolve=(DestroyTargets(),),
+        ),
+    ),
+    # --- Slice 4: monster effects (Flip + Trigger) ---
+    "Man-Eater Bug": (
+        Effect(speed=1, timing="flip", resolve=(DestroyStrongestOpponentMonster(),)),
+    ),
+    "Magician of Faith": (
+        Effect(speed=1, timing="flip", resolve=(ReturnSpellFromGraveyardToHand(),)),
+    ),
+    "Sangan": (
+        Effect(
+            speed=1,
+            timing="trigger",
+            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
+            resolve=(SearchMonsterToHand(1500),),
         ),
     ),
 }
