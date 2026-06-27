@@ -19,6 +19,8 @@ from .effects import (
     DestroyTargets,
     Draw,
     Effect,
+    EquipMod,
+    EquipToTarget,
     InflictDamage,
     NegateAttack,
     ReturnSpellFromGraveyardToHand,
@@ -27,6 +29,9 @@ from .effects import (
     TargetSpec,
     Trigger,
 )
+
+# Equip-target spec shared by the Equip Spells below.
+_EQUIP_TARGET = TargetSpec(count=1, where="any_monster")
 
 
 def _opponent_has_faceup_monster(state, controller) -> bool:
@@ -112,4 +117,16 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(SearchMonsterToHand(1500),),
         ),
     ),
+    # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
+    "Axe of Despair": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
+    "United We Stand": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
+    "Mage Power": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
+}
+
+
+# Passive modifiers applied while a card is face-up on the field (the "layers").
+CONTINUOUS: dict[str, tuple] = {
+    "Axe of Despair": (EquipMod(atk=1000),),
+    "United We Stand": (EquipMod(scaling="face_up_monsters", scale_atk=800, scale_defn=800),),
+    "Mage Power": (EquipMod(scaling="spell_trap", scale_atk=500, scale_defn=500),),
 }

@@ -64,7 +64,11 @@
       <span class="trib" title={`Requires ${tributeCost} Tribute(s)`}>✦{tributeCost}</span>
     {/if}
     {#if card.cardType === 'monster'}
-      <span class="stat-badge">{defense ? card.defense : card.attack}</span>
+      {@const shown = defense ? (card.effDef ?? card.defense) : (card.effAtk ?? card.attack)}
+      {@const base = defense ? card.defense : card.attack}
+      <span class="stat-badge" class:boosted={shown > base} class:weakened={shown < base}>
+        {shown}
+      </span>
     {/if}
   </div>
 {/if}
@@ -167,6 +171,12 @@
     font-weight: 800;
     border-radius: 3px;
     padding: 0 4px;
+  }
+  .stat-badge.boosted {
+    color: #7dff9e;
+  }
+  .stat-badge.weakened {
+    color: #ff8a7a;
   }
   .back {
     border: 2px solid #7a5c1e;

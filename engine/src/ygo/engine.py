@@ -347,8 +347,23 @@ class Engine:
         self.log(f"  {s.players[controller].name}'s {s.inst(source_iid).name} effect activates")
         self._run_chain([ChainLink(source_iid, effect, controller, targets, event)])
 
+    def _cleanup_equips(self) -> None:
+        """Destroy Equip cards whose equipped monster is no longer on the field."""
+        s = self.state
+        for player in s.players:
+            for sid in list(player.spell_trap_zones):
+                if sid is None:
+                    continue
+                equip = s.inst(sid)
+                if equip.equipped_to is None:
+                    continue
+                monster = s.cards.get(equip.equipped_to)
+                if monster is None or monster.zone is not Zone.MONSTER:
+                    s.send_to_graveyard(sid)
+
     def _check_field_to_gy_triggers(self) -> None:
-        """Fire "when sent from the field to the Graveyard" effects (e.g. Sangan)."""
+        """Destroy orphaned Equips, then fire "sent from field to GY" effects (Sangan)."""
+        self._cleanup_equips()
         if self._processing_gy:
             return  # a nested resolution; the outer loop will drain the queue
         self._processing_gy = True

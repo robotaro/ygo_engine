@@ -1,9 +1,8 @@
-// Test deck — slice1_alpha (vanilla + Slice 1-4 cards)
+// Test deck — slice1_alpha (vanilla + Slice 1-5 cards)
 3 Gemini Elf
 3 Vorse Raider
 3 Mechanicalchaser
 3 7 Colored Fish
-3 Dunames Dark Witch
 2 Cyber-Tech Alligator
 2 Summoned Skull
 1 Blue-Eyes White Dragon
@@ -12,13 +11,16 @@
 1 Magician of Faith
 2 Sangan
 1 Pot of Greed
-2 Dark Hole
+1 Dark Hole
 1 Raigeki
 1 Fissure
 2 Mirror Force
 2 Trap Hole
 1 Magic Cylinder
+2 Axe of Despair
+1 United We Stand
+1 Mage Power
 1 Mystical Space Typhoon
+1 Dunames Dark Witch
 1 Giant Red Seasnake
 1 Harpie's Brother
-1 La Jinn the Mystical Genie of the Lamp

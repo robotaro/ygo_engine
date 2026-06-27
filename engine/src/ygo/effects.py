@@ -41,6 +41,24 @@ class EffectContext:
 
 
 @dataclass(frozen=True)
+class EquipMod:
+    """A continuous ATK/DEF modifier applied while an Equip is face-up & attached.
+
+    Flat: ``EquipMod(atk=1000)``. Scaling: ``EquipMod(scaling="face_up_monsters",
+    scale_atk=800, scale_defn=800)`` adds 800 per face-up monster the equip's
+    controller has (United We Stand); "spell_trap" counts their Spell/Trap cards
+    (Mage Power). Read by ``GameState.effective_attack`` — never stored on the
+    monster, so it's always correct as the board changes ("layers").
+    """
+
+    atk: int = 0
+    defn: int = 0
+    scaling: str | None = None  # None | "face_up_monsters" | "spell_trap"
+    scale_atk: int = 0
+    scale_defn: int = 0
+
+
+@dataclass(frozen=True)
 class TargetSpec:
     """What an effect targets, chosen by the controller at activation.
 
@@ -185,6 +203,21 @@ class DamageEqualToAttackerAtk(Primitive):
             return
         dmg = ctx.state.inst(attacker).card.attack or 0
         ctx.state.players[attacker_player].life_points -= dmg
+
+
+@dataclass(frozen=True)
+class EquipToTarget(Primitive):
+    """Attach this Equip card to the targeted monster (it stays on the field)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        equip = ctx.state.inst(ctx.source_iid)
+        target = ctx.targets[0] if ctx.targets else None
+        from .enums import Zone
+
+        if target is not None and target in ctx.state.cards and ctx.state.inst(target).zone is Zone.MONSTER:
+            equip.equipped_to = target
+        else:
+            ctx.state.send_to_graveyard(ctx.source_iid)  # nothing to equip -> to the GY
 
 
 # --- Slice 4: monster-effect primitives ---

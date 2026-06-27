@@ -41,6 +41,8 @@ class CardInstance:
     position_changed_this_turn: bool = False
     # The turn on which a Spell/Trap was Set face-down (it can't activate that turn).
     set_on_turn: int | None = None
+    # For an Equip card: the iid of the monster it is attached to.
+    equipped_to: int | None = None
 
     @property
     def name(self) -> str:
@@ -181,10 +183,56 @@ class GameState:
         inst.attacked_this_turn = False
         inst.position_changed_this_turn = False
         inst.set_on_turn = None
+        inst.equipped_to = None
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine.
         if from_field and inst.card.is_monster:
             self.gy_from_field.append(iid)
+
+    # ----- derived stats (the "layers": printed value + active modifiers) -----
+    def _equip_mods_on(self, monster_iid: int):
+        """Yield (EquipMod, equip_controller) for every face-up Equip attached here."""
+        for player in self.players:
+            for sid in player.spell_trap_zones:
+                if sid is None:
+                    continue
+                equip = self.cards[sid]
+                if equip.equipped_to == monster_iid and equip.is_face_up:
+                    for mod in equip.card.continuous:
+                        yield mod, equip.controller
+
+    def _mod_delta(self, mod, controller: int, which: str) -> int:
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        if mod.scaling is None:
+            return flat
+        if mod.scaling == "face_up_monsters":
+            count = sum(
+                1 for i in self.players[controller].monster_zones if i is not None and self.cards[i].is_face_up
+            )
+            return flat + per * count
+        if mod.scaling == "spell_trap":
+            count = sum(1 for i in self.players[controller].spell_trap_zones if i is not None)
+            return flat + per * count
+        return flat
+
+    def effective_attack(self, iid: int) -> int:
+        inst = self.cards[iid]
+        if not inst.card.is_monster:
+            return 0
+        total = (inst.card.attack or 0) + sum(
+            self._mod_delta(mod, ctrl, "atk") for mod, ctrl in self._equip_mods_on(iid)
+        )
+        return max(0, total)
+
+    def effective_defense(self, iid: int) -> int:
+        inst = self.cards[iid]
+        if not inst.card.is_monster:
+            return 0
+        total = (inst.card.defense or 0) + sum(
+            self._mod_delta(mod, ctrl, "def") for mod, ctrl in self._equip_mods_on(iid)
+        )
+        return max(0, total)
 
     def spawn_on_field(
         self, card: CardDef, player: int, index: int, position: Position, owner: int | None = None

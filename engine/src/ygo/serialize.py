@@ -65,6 +65,11 @@ def _monster_slot(state: GameState, iid: int | None, *, hide_face_down: bool) ->
         cell["name"] = None  # hidden from the opponent
     else:
         cell.update(_card_public(inst))
+        if inst.card.is_monster:  # current (post-modifier) stats for the board
+            cell["effAtk"] = state.effective_attack(iid)
+            cell["effDef"] = state.effective_defense(iid)
+        if inst.equipped_to is not None:
+            cell["equippedTo"] = inst.equipped_to
     return cell
 
 

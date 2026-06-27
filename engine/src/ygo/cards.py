@@ -15,7 +15,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .card_effects import EFFECTS
+from .card_effects import CONTINUOUS, EFFECTS
 from .enums import Attribute, CardType, MonsterCategory, SpellTrapProperty
 from .paths import CARD_DB_DIR, DEFAULT_CARD_DB
 
@@ -61,8 +61,9 @@ class CardDef:
     status: str | None = None  # banlist: Forbidden / Limited / Semi-Limited / None
     image_id: int | None = None  # YGOPRODeck art id (None -> no downloaded art)
 
-    # Reserved for the declarative effect layer (Milestone 2).
-    effects: tuple = ()
+    # Declarative effect layer.
+    effects: tuple = ()  # activated/triggered abilities
+    continuous: tuple = ()  # passive modifiers while face-up (e.g. Equip ATK boosts)
 
     # ----- convenience predicates -----
     @property
@@ -172,6 +173,7 @@ def card_from_row(row: dict) -> CardDef:
     status = _clean(row.get("Status")) or None
 
     effects = EFFECTS.get(name, ())
+    continuous = CONTINUOUS.get(name, ())
     image_id = _IMAGE_IDS.get(name)
 
     if type_field == "Magic":  # v6.0 wording for Spell
@@ -183,6 +185,7 @@ def card_from_row(row: dict) -> CardDef:
             status=status,
             image_id=image_id,
             effects=effects,
+            continuous=continuous,
         )
     if type_field == "Trap":
         return CardDef(
@@ -193,6 +196,7 @@ def card_from_row(row: dict) -> CardDef:
             status=status,
             image_id=image_id,
             effects=effects,
+            continuous=continuous,
         )
 
     race, categories = _parse_monster_type(type_field)
@@ -209,6 +213,7 @@ def card_from_row(row: dict) -> CardDef:
         status=status,
         image_id=image_id,
         effects=effects,
+        continuous=continuous,
     )
 
 

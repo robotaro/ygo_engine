@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import random
 
-from .enums import Phase, Position
+from .enums import Phase, Position, Zone
 from .moves import (
     Action,
     ActivateSpell,
@@ -82,7 +82,10 @@ class GreedyAgent(Agent):
     # -- helpers --
     @staticmethod
     def _atk(state: GameState, iid: int) -> int:
-        return state.inst(iid).card.attack or 0
+        inst = state.inst(iid)
+        if inst.zone is Zone.MONSTER:
+            return state.effective_attack(iid)  # include Equip boosts on the field
+        return inst.card.attack or 0
 
     @staticmethod
     def _pass_or_first(legal: list[Action]) -> Action:
@@ -95,6 +98,7 @@ class GreedyAgent(Agent):
     AUTO_SPELLS = {"Pot of Greed", "Fissure", "Tremendous Fire", "Hinotama", "Raigeki"}
 
     def _main(self, state: GameState, legal: list[Action]) -> Action:
+        player = state.turn_player  # Main Phase actions are the turn player's
         for a in legal:
             if (
                 isinstance(a, ActivateSpell)
@@ -106,6 +110,17 @@ class GreedyAgent(Agent):
         if summons:
             # biggest ATK, fewest tributes
             return max(summons, key=lambda a: (self._atk(state, a.iid), -len(a.tributes)))
+        # Equip a Spell onto our own strongest monster, if we drew one.
+        equips = [
+            a
+            for a in legal
+            if isinstance(a, ActivateSpell)
+            and state.inst(a.iid).card.is_permanent
+            and a.targets
+            and state.inst(a.targets[0]).controller == player
+        ]
+        if equips:
+            return max(equips, key=lambda a: self._atk(state, a.targets[0]))
         # Otherwise, Set a Trap so it can be sprung on the opponent's turn.
         sets = [a for a in legal if isinstance(a, SetSpellTrap) and state.inst(a.iid).card.is_trap]
         if sets:
@@ -125,10 +140,10 @@ class GreedyAgent(Agent):
                 if tgt.position is Position.FACE_DOWN_DEFENSE:
                     score = (1, atk)  # unknown DEF — mild gamble
                 elif tgt.position is Position.FACE_UP_ATTACK:
-                    other = tgt.card.attack or 0
+                    other = state.effective_attack(a.target)
                     score = (2, atk - other) if atk > other else (-1, atk - other)
                 else:  # face-up defense
-                    dfn = tgt.card.defense or 0
+                    dfn = state.effective_defense(a.target)
                     score = (1, 0) if atk > dfn else (-1, atk - dfn)
             if best_score is None or score > best_score:
                 best, best_score = a, score

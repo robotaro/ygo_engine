@@ -425,7 +425,10 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
     card = state.inst(action.iid).card
     place_activated_spell(state, action.iid, action.zone_index)
     resolve_card_effects(state, action.iid, action.targets)
-    state.send_to_graveyard(action.iid)  # Normal Spell to the Graveyard after resolving
+    # A Normal Spell heads to the Graveyard; a permanent one (Equip/Continuous/Field) stays.
+    inst = state.inst(action.iid)
+    if inst.zone is Zone.SPELL_TRAP and not card.is_permanent:
+        state.send_to_graveyard(action.iid)
     return f"activates {card.name}"
 
 
@@ -461,7 +464,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     attacker.attacked_this_turn = True
     me = attacker.controller
     opp = state.opponent_of(me)
-    atk = attacker.card.attack or 0
+    atk = state.effective_attack(action.attacker)
 
     if action.target is None:
         state.players[opp].life_points -= atk
@@ -474,7 +477,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         prefix = f"(flips up {target.name}) "
 
     if target.position is Position.FACE_UP_ATTACK:
-        other = target.card.attack or 0
+        other = state.effective_attack(action.target)
         if atk > other:
             state.send_to_graveyard(target.iid)
             state.players[opp].life_points -= atk - other
@@ -488,7 +491,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         return f"{prefix}{attacker.name} and {target.name} ({atk}) destroy each other"
 
     # defending monster: ATK vs DEF, no piercing in v6.0 vanilla play
-    dfn = target.card.defense or 0
+    dfn = state.effective_defense(action.target)
     if atk > dfn:
         state.send_to_graveyard(target.iid)
         return f"{prefix}{attacker.name} ({atk}) destroys defending {target.name} (DEF {dfn})"
