@@ -37,6 +37,7 @@ class Engine:
         first_player_skips_draw: bool = True,  # modern errata
         max_turns: int = 200,
         log: Callable[[str], None] | None = None,
+        on_change: Callable[[], None] | None = None,
     ):
         self.state = state
         self.agents = agents
@@ -44,10 +45,16 @@ class Engine:
         self.max_turns = max_turns
         self.result: DuelResult | None = None
         self._log = log
+        self._on_change = on_change
 
     def log(self, message: str) -> None:
         if self._log is not None:
             self._log(message)
+
+    def _changed(self) -> None:
+        """Notify observers (e.g. the web server) that the state advanced."""
+        if self._on_change is not None:
+            self._on_change()
 
     # ------------------------------------------------------------------ #
     def run(self) -> DuelResult:
@@ -75,6 +82,7 @@ class Engine:
             if self.result is not None:
                 return
             s.phase = phase
+            self._changed()
             self._run_phase(phase, tp)
         if self.result is not None:
             return
@@ -115,6 +123,7 @@ class Engine:
             self.result = DuelResult(s.opponent_of(tp), f"{s.players[tp].name} decked out")
             return
         self.log(f"{s.players[tp].name} draws {s.inst(drawn[0]).name}")
+        self._changed()
 
     def _interactive_phase(self, tp: int) -> None:
         """Main Phase 1 / 2: the turn player takes moves until they Pass."""
@@ -128,6 +137,7 @@ class Engine:
                 return
             self.log(f"  {s.players[tp].name} {apply(s, choice)}")
             self._check_life_points()
+            self._changed()
 
     def _battle_phase(self, tp: int) -> None:
         s = self.state
@@ -142,6 +152,7 @@ class Engine:
                 return
             self.log(f"  {s.players[tp].name}: {apply(s, choice)}")
             self._check_life_points()
+            self._changed()
 
     def _end_phase(self, tp: int) -> None:
         s = self.state
@@ -151,6 +162,7 @@ class Engine:
                 return
             choice = self.agents[tp].decide(s, menu)
             self.log(f"  {s.players[tp].name} {apply(s, choice)} (hand-size limit)")
+            self._changed()
 
     # ------------------------------------------------------------------ #
     def _check_life_points(self) -> None:

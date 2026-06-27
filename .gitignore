@@ -9,5 +9,11 @@ venv/
 .idea/
 .vscode/
 
+# Node / web
+node_modules/
+dist/
+.svelte-kit/
+*.local
+
 # OS
 .DS_Store

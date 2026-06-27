@@ -1,0 +1,12 @@
+/* Minimal reset; the board owns its own styling in App.svelte. */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+#app {
+  width: 100%;
+}
