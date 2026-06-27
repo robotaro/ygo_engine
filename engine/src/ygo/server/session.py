@@ -32,6 +32,25 @@ class EngineAborted(Exception):
     """Raised inside the engine thread when the client disconnects."""
 
 
+def _describe_event(state: GameState, event: dict | None, viewer: int) -> str:
+    if not event:
+        return "Respond?"
+    actor = state.players[event["player"]].name
+    if event["kind"] == "attack_declared":
+        return f"{actor} is attacking with {state.inst(event['attacker']).name}"
+    if event["kind"] == "summon":
+        return f"{actor} Summoned {state.inst(event['monster']).name}"
+    return f"{actor} acted"
+
+
+def _option_label(state: GameState, option) -> str:
+    label = state.inst(option.iid).card.name
+    if option.targets:
+        names = ", ".join(state.inst(t).name for t in option.targets)
+        label += f" → {names}"
+    return label
+
+
 class HumanAgent(Agent):
     def __init__(self, session: "GameSession", player: int):
         self.session = session
@@ -43,6 +62,7 @@ class HumanAgent(Agent):
             self.session.send(
                 {
                     "type": "decision",
+                    "context": "main",
                     "player": self.player,
                     "state": state_to_dict(state, self.player),
                     "legal": legal_to_dict(state, self.player, with_pass=with_pass),
@@ -54,6 +74,35 @@ class HumanAgent(Agent):
             action = match_intent(intent, legal, state)
             if action is not None:
                 return action
+            self.session.send({"type": "illegal", "intent": intent})
+
+    def respond(self, state: GameState, options: list[Action], event):
+        """Chain response window: pick a card to activate, or pass."""
+        self.session.send(
+            {
+                "type": "decision",
+                "context": "response",
+                "player": self.player,
+                "state": state_to_dict(state, self.player),
+                "event": _describe_event(state, event, self.player),
+                "options": [
+                    {"iid": o.iid, "targets": list(o.targets), "label": _option_label(state, o)}
+                    for o in options
+                ],
+            }
+        )
+        while True:
+            intent = self.session.wait_for_intent()
+            if intent is None:
+                raise EngineAborted()
+            if intent.get("kind") == "pass":
+                return None
+            iid, targets = intent.get("iid"), set(intent.get("targets", []))
+            chosen = next(
+                (o for o in options if o.iid == iid and set(o.targets) == targets), None
+            )
+            if chosen is not None:
+                return chosen
             self.session.send({"type": "illegal", "intent": intent})
 
 

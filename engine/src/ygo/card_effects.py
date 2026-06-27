@@ -12,13 +12,18 @@ from __future__ import annotations
 from .effects import (
     OPPONENT,
     SELF,
+    DamageEqualToAttackerAtk,
     DestroyAllMonsters,
+    DestroyAttackingAttackPositionMonsters,
     DestroyLowestAtkOpponentMonster,
+    DestroyTargets,
     Draw,
     Effect,
     InflictDamage,
+    NegateAttack,
     SwitchTargetsToAttack,
     TargetSpec,
+    Trigger,
 )
 
 
@@ -52,4 +57,37 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         Effect(resolve=(InflictDamage(OPPONENT, 1000), InflictDamage(SELF, 500))),
     ),
     "Hinotama": (Effect(resolve=(InflictDamage(OPPONENT, 500),)),),
+    # --- Slice 3: the Chain — Traps & Quick-Play (speed 2) ---
+    "Trap Hole": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=OPPONENT, subject="monster", min_atk=1000),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Mirror Force": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            resolve=(NegateAttack(), DestroyAttackingAttackPositionMonsters()),
+        ),
+    ),
+    "Magic Cylinder": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            resolve=(NegateAttack(), DamageEqualToAttackerAtk()),
+        ),
+    ),
+    "Mystical Space Typhoon": (
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="spell_trap_field"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
 }

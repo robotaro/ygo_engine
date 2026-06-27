@@ -1,4 +1,4 @@
-// Test deck — slice1_alpha (vanilla + Slice 1/2 spells)
+// Test deck — slice1_alpha (vanilla + Slice 1/2/3 cards)
 3 Gemini Elf
 3 Vorse Raider
 3 Mechanicalchaser
@@ -8,15 +8,16 @@
 2 Cyber-Tech Alligator
 2 Summoned Skull
 2 Amphibian Beast
-2 Firewing Pegasus
-2 Blue-Eyes White Dragon
+1 Blue-Eyes White Dragon
+1 Cosmo Queen
 1 Harpie's Brother
 1 La Jinn the Mystical Genie of the Lamp
-1 Axe Raider
-1 Battle Ox
-2 Pot of Greed
+1 Pot of Greed
 2 Dark Hole
 1 Raigeki
 1 Fissure
 1 Stop Defense
-1 Tremendous Fire
+2 Mirror Force
+2 Trap Hole
+1 Magic Cylinder
+1 Mystical Space Typhoon

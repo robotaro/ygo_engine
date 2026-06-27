@@ -39,6 +39,8 @@ class CardInstance:
     summoned_this_turn: bool = False
     attacked_this_turn: bool = False
     position_changed_this_turn: bool = False
+    # The turn on which a Spell/Trap was Set face-down (it can't activate that turn).
+    set_on_turn: int | None = None
 
     @property
     def name(self) -> str:
@@ -83,6 +85,8 @@ class GameState:
     turn_count: int = 1
     phase: Phase = Phase.DRAW
     normal_summon_used: bool = False  # one Normal Summon/Set per turn; reset each turn
+    chain: list = field(default_factory=list)  # ChainLink stack, last-in-first-out
+    attack_negated: bool = False  # transient flag set while resolving an attack response
     seed: int = 0
     rng: random.Random = field(default_factory=random.Random)
     _next_iid: int = 0
@@ -174,6 +178,7 @@ class GameState:
         inst.summoned_this_turn = False
         inst.attacked_this_turn = False
         inst.position_changed_this_turn = False
+        inst.set_on_turn = None
         self.players[inst.owner].graveyard.append(iid)
 
     def spawn_on_field(

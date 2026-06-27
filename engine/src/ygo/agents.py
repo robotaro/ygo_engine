@@ -12,13 +12,25 @@ from __future__ import annotations
 import random
 
 from .enums import Phase, Position
-from .moves import Action, ActivateSpell, DeclareAttack, DiscardCard, NormalSummon, Pass
+from .moves import (
+    Action,
+    ActivateSpell,
+    DeclareAttack,
+    DiscardCard,
+    NormalSummon,
+    Pass,
+    SetSpellTrap,
+)
 from .state import GameState
 
 
 class Agent:
     def decide(self, state: GameState, legal: list[Action]) -> Action:
         raise NotImplementedError
+
+    def respond(self, state: GameState, options: list[Action], event):
+        """Chain response window: activate one of ``options`` or None to pass."""
+        return None
 
 
 class RandomAgent(Agent):
@@ -29,6 +41,9 @@ class RandomAgent(Agent):
 
     def decide(self, state: GameState, legal: list[Action]) -> Action:
         return self.rng.choice(legal)
+
+    def respond(self, state: GameState, options: list[Action], event):
+        return self.rng.choice([*options, None])
 
 
 class GreedyAgent(Agent):
@@ -75,6 +90,10 @@ class GreedyAgent(Agent):
         if summons:
             # biggest ATK, fewest tributes
             return max(summons, key=lambda a: (self._atk(state, a.iid), -len(a.tributes)))
+        # Otherwise, Set a Trap so it can be sprung on the opponent's turn.
+        sets = [a for a in legal if isinstance(a, SetSpellTrap) and state.inst(a.iid).card.is_trap]
+        if sets:
+            return sets[0]
         return self._pass_or_first(legal)
 
     def _battle(self, state: GameState, legal: list[Action]) -> Action:
@@ -106,3 +125,10 @@ class GreedyAgent(Agent):
         if discards:
             return min(discards, key=lambda a: self._atk(state, a.iid))
         return self._pass_or_first(legal)
+
+    def respond(self, state: GameState, options: list[Action], event):
+        # Fire a triggered Trap when it comes up; don't waste Quick-Play spells.
+        for a in options:
+            if state.inst(a.iid).card.is_trap:
+                return a
+        return None

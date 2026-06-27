@@ -16,11 +16,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import combinations
 
-from .effects import EffectContext
-from .enums import Phase, Position
+from .effects import OPPONENT, EffectContext
+from .enums import Phase, Position, Zone
 from .state import GameState
 
 HAND_SIZE_LIMIT = 6
+
+
+@dataclass
+class ChainLink:
+    """One activated effect waiting on the Chain (resolved last-in-first-out)."""
+
+    source_iid: int
+    effect: object  # an Effect
+    controller: int
+    targets: tuple[int, ...] = ()
+    event: dict | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -73,10 +84,18 @@ class DeclareAttack(Action):
 
 @dataclass(frozen=True)
 class ActivateSpell(Action):
-    """Activate a Spell from the hand (Ignition timing; may carry chosen targets)."""
+    """Activate a Spell/Trap (from hand or a Set card); may carry chosen targets."""
 
     iid: int
     targets: tuple[int, ...] = ()
+    zone_index: int | None = None
+
+
+@dataclass(frozen=True)
+class SetSpellTrap(Action):
+    """Set a Spell/Trap face-down in a Spell & Trap Zone."""
+
+    iid: int
     zone_index: int | None = None
 
 
@@ -155,19 +174,21 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         elif inst.position in (Position.FACE_UP_ATTACK, Position.FACE_UP_DEFENSE):
             actions.append(ChangePosition(iid))
 
-    # Spell activations from the hand (Ignition timing; one activation per legal target set)
+    # Spell activations (Ignition/Quick from the hand) + Set Spell/Trap
     if state.first_empty_spell_trap_zone(player) is not None:
         for iid in p.hand:
             card = state.inst(iid).card
-            if not card.is_spell:
-                continue
-            effect = next((e for e in card.effects if e.timing == "ignition"), None)
-            if effect is None:
-                continue
-            if effect.condition is not None and not effect.condition(state, player):
-                continue
-            for target_set in _enumerate_targets(state, player, effect.target):
-                actions.append(ActivateSpell(iid, targets=target_set))
+            if card.is_spell:
+                effect = next(
+                    (e for e in card.effects if e.timing in ("ignition", "quick")), None
+                )
+                if effect is not None and (
+                    effect.condition is None or effect.condition(state, player)
+                ):
+                    for target_set in _enumerate_targets(state, player, effect.target):
+                        actions.append(ActivateSpell(iid, targets=target_set))
+            if card.is_spell or card.is_trap:
+                actions.append(SetSpellTrap(iid))
 
     return actions
 
@@ -183,11 +204,84 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
         candidates = [
             i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None
         ]
+    elif spec.where == "spell_trap_field":
+        candidates = [
+            i for pl in (0, 1) for i in state.players[pl].spell_trap_zones if i is not None
+        ]
     else:
         candidates = []
     if spec.count == 1:
         return [(c,) for c in candidates]
     return [tuple(combo) for combo in combinations(candidates, spec.count)]
+
+
+# --------------------------------------------------------------------------- #
+#  Chain responses — what a player may activate in a response window
+# --------------------------------------------------------------------------- #
+def response_options(
+    state: GameState, player: int, event: dict | None, last_speed: int
+) -> list[ActivateSpell]:
+    """Cards ``player`` may activate right now (speed >= last_speed)."""
+    options: list[ActivateSpell] = []
+
+    # Set Spell/Traps on the field, set on an earlier turn.
+    for iid in state.players[player].spell_trap_zones:
+        if iid is None:
+            continue
+        inst = state.inst(iid)
+        if inst.position is not Position.FACE_DOWN:
+            continue
+        if inst.set_on_turn is None or inst.set_on_turn >= state.turn_count:
+            continue
+        effect = inst.card.effects[0] if inst.card.effects else None
+        if effect is None or effect.speed < last_speed:
+            continue
+        options += _activations_for_effect(state, player, iid, effect, event)
+
+    # Quick-Play spells straight from the hand (only on your own turn).
+    if state.turn_player == player and state.first_empty_spell_trap_zone(player) is not None:
+        for iid in state.players[player].hand:
+            card = state.inst(iid).card
+            effect = card.effects[0] if card.effects else None
+            if not card.is_spell or effect is None or effect.timing != "quick":
+                continue
+            if effect.speed < last_speed:
+                continue
+            options += _activations_for_effect(state, player, iid, effect, event)
+
+    return options
+
+
+def _activations_for_effect(state, player, iid, effect, event):
+    if effect.timing == "trigger":
+        if event is None or not _trigger_matches(state, player, effect.trigger, event):
+            return []
+        return [ActivateSpell(iid, targets=_trigger_targets(effect.trigger, event))]
+    if effect.timing == "quick":
+        if effect.condition is not None and not effect.condition(state, player):
+            return []
+        return [ActivateSpell(iid, targets=t) for t in _enumerate_targets(state, player, effect.target)]
+    return []
+
+
+def _trigger_matches(state, player, trigger, event) -> bool:
+    if trigger is None or trigger.kind != event.get("kind"):
+        return False
+    if trigger.by == OPPONENT and event.get("player") != state.opponent_of(player):
+        return False
+    if trigger.min_atk is not None:
+        mon = event.get("monster")
+        if mon is None or (state.inst(mon).card.attack or 0) < trigger.min_atk:
+            return False
+    return True
+
+
+def _trigger_targets(trigger, event) -> tuple[int, ...]:
+    if trigger.subject == "monster" and event.get("monster") is not None:
+        return (event["monster"],)
+    if trigger.subject == "attacker" and event.get("attacker") is not None:
+        return (event["attacker"],)
+    return ()
 
 
 def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
@@ -242,6 +336,8 @@ def apply(state: GameState, action: Action) -> str:
         return _resolve_attack(state, action)
     if isinstance(action, ActivateSpell):
         return _activate_spell(state, action)
+    if isinstance(action, SetSpellTrap):
+        return _set_spell_trap(state, action)
     if isinstance(action, DiscardCard):
         name = state.inst(action.iid).name
         state.send_to_graveyard(action.iid)
@@ -258,17 +354,52 @@ def place_activated_spell(state: GameState, iid: int, zone_index: int | None = N
     state.place_spell_trap(iid, player, zone_index, Position.FACE_UP_ATTACK)
 
 
+def reveal_for_activation(state: GameState, iid: int, zone_index: int | None = None) -> None:
+    """Make a card visible as it activates: place a hand card, or flip a Set card up."""
+    inst = state.inst(iid)
+    if inst.zone is Zone.HAND:
+        place_activated_spell(state, iid, zone_index)
+    else:  # already Set in the Spell/Trap zone
+        inst.position = Position.FACE_UP_ATTACK
+
+
+def resolve_effect(
+    state: GameState,
+    effect,
+    source_iid: int,
+    targets: tuple[int, ...] = (),
+    event: dict | None = None,
+) -> None:
+    """Run the primitives of a single effect."""
+    inst = state.inst(source_iid)
+    ctx = EffectContext(
+        state=state,
+        controller=inst.controller,
+        source_iid=source_iid,
+        targets=list(targets),
+        event=event,
+    )
+    for primitive in effect.resolve:
+        primitive.execute(ctx)
+
+
 def resolve_card_effects(
     state: GameState, source_iid: int, targets: tuple[int, ...] = ()
 ) -> None:
-    """Run every primitive of every effect on the card at ``source_iid``."""
-    inst = state.inst(source_iid)
-    ctx = EffectContext(
-        state=state, controller=inst.controller, source_iid=source_iid, targets=list(targets)
-    )
-    for effect in inst.card.effects:
-        for primitive in effect.resolve:
-            primitive.execute(ctx)
+    """Run every effect on the card at ``source_iid`` (used by the atomic path)."""
+    for effect in state.inst(source_iid).card.effects:
+        resolve_effect(state, effect, source_iid, targets)
+
+
+def _set_spell_trap(state: GameState, action: SetSpellTrap) -> str:
+    inst = state.inst(action.iid)
+    player = inst.controller
+    zone_index = action.zone_index
+    if zone_index is None or state.players[player].spell_trap_zones[zone_index] is not None:
+        zone_index = state.first_empty_spell_trap_zone(player)
+    state.place_spell_trap(action.iid, player, zone_index, Position.FACE_DOWN)
+    inst.set_on_turn = state.turn_count
+    return "Sets a card"
 
 
 def _activate_spell(state: GameState, action: ActivateSpell) -> str:

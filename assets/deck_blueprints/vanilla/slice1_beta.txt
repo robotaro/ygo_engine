@@ -1,22 +1,23 @@
-// Test deck — slice1_beta (vanilla + Slice 1/2 spells)
+// Test deck — slice1_beta (vanilla + Slice 1/2/3 cards)
 3 Axe Raider
 3 Battle Ox
 3 Beta The Magnet Warrior
 3 Darkfire Soldier #1
 3 Darkfire Soldier #2
 3 Girochin Kuwagata
+2 Firewing Pegasus
 2 Empress Mantis
 2 Judge Man
-2 Twin-Headed Fire Dragon
-2 Ushi Oni
-2 Wingweaver
+1 Tri-Horned Dragon
+1 Sengenjin
 1 Neo the Magic Swordsman
 1 Guardian of the Throne Room
-1 High Tide Gyojin
-1 Whiptail Crow
-2 Pot of Greed
+1 Pot of Greed
 2 Dark Hole
 1 Raigeki
 1 Fissure
 1 Stop Defense
-1 Tremendous Fire
+2 Mirror Force
+2 Trap Hole
+1 Magic Cylinder
+1 Mystical Space Typhoon

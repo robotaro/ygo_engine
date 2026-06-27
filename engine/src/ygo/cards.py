@@ -87,6 +87,15 @@ class CardDef:
         return self.is_fusion
 
     @property
+    def is_permanent(self) -> bool:
+        """A Spell/Trap that stays on the field after activating (vs. going to GY)."""
+        return self.subtype in (
+            SpellTrapProperty.CONTINUOUS,
+            SpellTrapProperty.EQUIP,
+            SpellTrapProperty.FIELD,
+        )
+
+    @property
     def can_normal_summon(self) -> bool:
         """True if this monster reaches the field via Normal/Tribute Summon.
 

@@ -23,6 +23,7 @@ from .moves import (
     NormalSummon,
     Pass,
     SetMonster,
+    SetSpellTrap,
     legal_actions,
 )
 from .state import CardInstance, GameState
@@ -96,6 +97,14 @@ def state_to_dict(state: GameState, viewer: int) -> dict:
         "phase": state.phase.value,
         "you": _player_view(state, viewer, is_viewer=True),
         "opponent": _player_view(state, opp, is_viewer=False),
+        "chain": [
+            {
+                "controller": link.controller,
+                "youAreController": link.controller == viewer,
+                "name": state.inst(link.source_iid).name,
+            }
+            for link in state.chain
+        ],
     }
 
 
@@ -110,6 +119,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
     position_changes: list[int] = []
     discards: list[int] = []
     activatable: dict[int, list[list[int]]] = {}
+    settable: list[int] = []
 
     for a in legal:
         if isinstance(a, NormalSummon):
@@ -126,6 +136,8 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
             attackers.setdefault(a.attacker, []).append(a.target)
         elif isinstance(a, ActivateSpell):
             activatable.setdefault(a.iid, []).append(list(a.targets))
+        elif isinstance(a, SetSpellTrap):
+            settable.append(a.iid)
         elif isinstance(a, DiscardCard):
             discards.append(a.iid)
 
@@ -138,6 +150,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         "positionChanges": position_changes,
         # iid -> [[target iids]...]; [[]] means "activatable, no target"
         "activatable": {str(k): v for k, v in activatable.items()},
+        "settable": settable,
         "discards": discards,
         "canPass": with_pass,
     }
@@ -195,6 +208,12 @@ def match_intent(intent: dict, legal: list[Action], state: GameState) -> Action 
         if match is None:
             return None
         return ActivateSpell(iid=iid, targets=targets, zone_index=intent.get("zoneIndex"))
+
+    if kind == "set":
+        iid = intent.get("iid")
+        if any(isinstance(a, SetSpellTrap) and a.iid == iid for a in legal):
+            return SetSpellTrap(iid=iid, zone_index=intent.get("zoneIndex"))
+        return None
 
     if kind in ("summon", "set"):
         iid = intent.get("iid")

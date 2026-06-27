@@ -2,7 +2,8 @@ import { writable } from 'svelte/store'
 
 // Live game state pushed from the engine.
 export const board = writable(null) // latest board snapshot
-export const legal = writable(null) // affordances, present only on your turn
+export const legal = writable(null) // affordances, present only on your main-phase turn
+export const responsePrompt = writable(null) // {options, event} during a chain response window
 export const awaiting = writable(false) // true == engine is waiting on your move
 export const logs = writable([]) // narration lines
 export const result = writable(null) // {winner, youWin, reason} when the duel ends
@@ -21,6 +22,7 @@ export function newGame(seed) {
   awaiting.set(false)
   board.set(null)
   legal.set(null)
+  responsePrompt.set(null)
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws'
   ws = new WebSocket(`${proto}://${location.host}/ws?seed=${seed}`)
@@ -35,7 +37,13 @@ export function newGame(seed) {
         break
       case 'decision':
         board.set(msg.state)
-        legal.set(msg.legal)
+        if (msg.context === 'response') {
+          responsePrompt.set({ options: msg.options, event: msg.event })
+          legal.set(null)
+        } else {
+          legal.set(msg.legal)
+          responsePrompt.set(null)
+        }
         awaiting.set(true)
         break
       case 'log':

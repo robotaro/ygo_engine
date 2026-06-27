@@ -1,7 +1,17 @@
 <script>
   import { onMount } from 'svelte'
   import CardTile from './lib/CardTile.svelte'
-  import { board, legal, awaiting, logs, result, connected, newGame, sendIntent } from './lib/store.js'
+  import {
+    board,
+    legal,
+    responsePrompt,
+    awaiting,
+    logs,
+    result,
+    connected,
+    newGame,
+    sendIntent,
+  } from './lib/store.js'
 
   let draggedIid = null
   let selectedAttacker = null
@@ -18,7 +28,7 @@
   $: yourTurn = $awaiting
   $: dragging = draggedIid != null
   $: draggingMonster = draggedIid != null && !!summonOptions(draggedIid)
-  $: draggingSpell = draggedIid != null && canActivate(draggedIid)
+  $: draggingSpellTrap = draggedIid != null && (canActivate(draggedIid) || canSet(draggedIid))
   $: if (phase !== 'battle_phase') selectedAttacker = null
   $: validTargets =
     selectedAttacker != null && $legal ? attackTargets(selectedAttacker) || [] : []
@@ -58,6 +68,9 @@
   function canActivate(iid) {
     return !!activateOptions(iid)
   }
+  function canSet(iid) {
+    return $legal?.settable?.includes(iid)
+  }
   function firstEmptySpellZone() {
     const z = you?.spellTrapZones || []
     const i = z.findIndex((s) => s === null)
@@ -93,16 +106,29 @@
     }
   }
 
-  function onDropActivate(e, zoneIndex) {
+  function onDropSpellTrap(e, zoneIndex) {
     e.preventDefault()
     if (!yourTurn || draggedIid == null) return
     const iid = draggedIid
     draggedIid = null
-    beginActivate(iid, zoneIndex)
+    if (canActivate(iid)) beginActivate(iid, zoneIndex)
+    else if (canSet(iid)) sendIntent({ kind: 'set', iid, zoneIndex }) // Traps are Set face-down
   }
 
   function activateSpell(iid) {
     beginActivate(iid, firstEmptySpellZone())
+  }
+
+  function setCard(iid) {
+    if (canSet(iid)) sendIntent({ kind: 'set', iid, zoneIndex: firstEmptySpellZone() })
+  }
+
+  // chain response window
+  function respondWith(option) {
+    sendIntent({ kind: 'respond', iid: option.iid, targets: option.targets })
+  }
+  function respondPass() {
+    sendIntent({ kind: 'pass' })
   }
 
   function beginActivate(iid, zoneIndex) {
@@ -263,6 +289,13 @@
         {/if}
       </div>
 
+      {#if $board.chain?.length}
+        <div class="chainbar">
+          ⛓ Chain:
+          {#each $board.chain as link, i}{i > 0 ? ' → ' : ' '}{link.name}{/each}
+        </div>
+      {/if}
+
       <!-- You -->
       <div class="zonerow">
         {#each you.monsterZones as slot, i}
@@ -301,9 +334,9 @@
           {:else}
             <div
               class="slot st drop"
-              class:armed={draggingSpell}
+              class:armed={draggingSpellTrap}
               ondragover={(e) => e.preventDefault()}
-              ondrop={(e) => onDropActivate(e, i)}
+              ondrop={(e) => onDropSpellTrap(e, i)}
             >
               <CardTile card={null} small />
             </div>
@@ -339,9 +372,13 @@
         {#each you.hand as card}
           {@const opts = summonOptions(card.iid)}
           {@const activatable = canActivate(card.iid)}
-          <div class="handcard" class:dim={yourTurn && !opts && !activatable && !mustDiscard}>
+          {@const settable = canSet(card.iid)}
+          <div
+            class="handcard"
+            class:dim={yourTurn && !opts && !activatable && !settable && !mustDiscard}
+          >
             <div
-              draggable={yourTurn && (!!opts || activatable)}
+              draggable={yourTurn && (!!opts || activatable || settable)}
               ondragstart={() => (draggedIid = card.iid)}
               ondragend={() => (draggedIid = null)}
               onclick={() => onHandClick(card.iid)}
@@ -350,6 +387,8 @@
             </div>
             {#if yourTurn && activatable}
               <button class="setbtn" onclick={() => activateSpell(card.iid)}>Activate</button>
+            {:else if yourTurn && settable}
+              <button class="setbtn" onclick={() => setCard(card.iid)}>Set</button>
             {:else if yourTurn && opts?.set?.length}
               <button class="setbtn" onclick={() => onSet(card.iid)}>Set</button>
             {/if}
@@ -364,6 +403,21 @@
         {#each $logs as line}<div class="logline">{line}</div>{/each}
       </div>
     </aside>
+  {/if}
+
+  {#if $responsePrompt && $awaiting}
+    <div class="overlay">
+      <div class="resultcard respond">
+        <h2>Your response?</h2>
+        <p>{$responsePrompt.event}</p>
+        <div class="respond-options">
+          {#each $responsePrompt.options as opt}
+            <button onclick={() => respondWith(opt)}>{opt.label}</button>
+          {/each}
+          <button class="passbtn" onclick={respondPass}>Pass</button>
+        </div>
+      </div>
+    </div>
   {/if}
 
   {#if $result}
@@ -540,6 +594,27 @@
   }
   .next {
     margin-left: 8px;
+  }
+  .chainbar {
+    text-align: center;
+    font-size: 13px;
+    color: #c9b3ff;
+    background: rgba(107, 63, 160, 0.25);
+    border-radius: 6px;
+    padding: 4px;
+  }
+  .respond {
+    border-color: #c9b3ff;
+  }
+  .respond-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .passbtn {
+    background: #555;
+    color: #eee;
   }
   .banner {
     text-align: center;

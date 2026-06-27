@@ -14,14 +14,20 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .agents import Agent
-from .enums import Phase, TURN_PHASES
+from .enums import Phase, Position, TURN_PHASES, Zone
 from .moves import (
     ActivateSpell,
+    ChainLink,
+    DeclareAttack,
+    FlipSummon,
+    NormalSummon,
     Pass,
+    SetSpellTrap,
     apply,
     legal_actions,
-    place_activated_spell,
-    resolve_card_effects,
+    response_options,
+    resolve_effect,
+    reveal_for_activation,
 )
 from .state import GameState
 
@@ -150,26 +156,17 @@ class Engine:
             if isinstance(choice, Pass):
                 return
             if isinstance(choice, ActivateSpell):
-                self._activate_spell(choice, tp)
+                self._activate_as_chain(choice, tp)
+            elif isinstance(choice, (NormalSummon, FlipSummon)):
+                self.log(f"  {s.players[tp].name} {apply(s, choice)}")
+                self._changed()
+                # The opponent may respond to the Summon (e.g. Trap Hole).
+                self._response_window({"kind": "summon", "player": tp, "monster": choice.iid})
+                self._check_life_points()
             else:
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._check_life_points()
                 self._changed()
-
-    def _activate_spell(self, action: ActivateSpell, tp: int) -> None:
-        """Activate a Spell as watchable steps: place -> (pause) -> resolve -> (pause) -> GY."""
-        s = self.state
-        card = s.inst(action.iid).card
-        place_activated_spell(s, action.iid, action.zone_index)
-        self.log(f"  {s.players[tp].name} activates {card.name}")
-        self._changed()
-        self._pace()
-        resolve_card_effects(s, action.iid, action.targets)
-        self._check_life_points()
-        self._changed()
-        self._pace()
-        s.send_to_graveyard(action.iid)
-        self._changed()
 
     def _battle_phase(self, tp: int) -> None:
         s = self.state
@@ -182,9 +179,115 @@ class Engine:
             choice = self.agents[tp].decide(s, menu)
             if isinstance(choice, Pass):
                 return
-            self.log(f"  {s.players[tp].name}: {apply(s, choice)}")
+            if isinstance(choice, DeclareAttack):
+                self._declare_attack(choice, tp)
+            else:
+                self.log(f"  {s.players[tp].name}: {apply(s, choice)}")
+                self._check_life_points()
+                self._changed()
+
+    def _declare_attack(self, action: DeclareAttack, tp: int) -> None:
+        """Declare an attack, open a response window, then resolve it if still valid."""
+        s = self.state
+        attacker, target = action.attacker, action.target
+        s.attack_negated = False
+        s.inst(attacker).attacked_this_turn = True
+        self.log(f"  {s.players[tp].name} declares an attack with {s.inst(attacker).name}")
+        self._changed()
+
+        self._response_window(
+            {"kind": "attack_declared", "player": tp, "attacker": attacker, "target": target}
+        )
+        if self.result is not None:
+            return
+
+        if s.attack_negated:
+            self.log("  the attack is negated")
+            self._changed()
+            return
+        atk = s.cards.get(attacker)
+        if atk is None or atk.zone is not Zone.MONSTER or atk.position is not Position.FACE_UP_ATTACK:
+            self.log("  the attacker is no longer able to attack")
+            self._changed()
+            return
+        if target is not None and target not in s.cards:
+            self._changed()  # the target left the field; the attack fizzles
+            return
+
+        self.log(f"  {s.players[tp].name}: {apply(s, DeclareAttack(attacker, target))}")
+        self._check_life_points()
+        self._changed()
+
+    # ------------------------------------------------------------------ #
+    #  The Chain
+    # ------------------------------------------------------------------ #
+    def _activate_as_chain(self, action: ActivateSpell, controller: int) -> None:
+        """Turn player activates a Spell: it becomes Chain Link 1, then build/resolve."""
+        s = self.state
+        card = s.inst(action.iid).card
+        effect = next((e for e in card.effects if e.timing in ("ignition", "quick")), card.effects[0])
+        reveal_for_activation(s, action.iid, action.zone_index)
+        self.log(f"  {s.players[controller].name} activates {card.name}")
+        self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
+
+    def _response_window(self, event: dict) -> None:
+        """Give the opponent of the acting player a chance to start a chain."""
+        s = self.state
+        responder = s.opponent_of(event["player"])
+        link = self._offer_response(responder, event, last_speed=1)
+        if link is not None:
+            self._run_chain([link])
+
+    def _run_chain(self, links: list[ChainLink]) -> None:
+        """Build the chain by alternating priority, then resolve last-in-first-out."""
+        s = self.state
+        s.chain = list(links)
+        self._changed()
+        self._pace()
+
+        responder = s.opponent_of(s.chain[-1].controller)
+        passes = 0
+        while passes < 2 and self.result is None:
+            link = self._offer_response(responder, event=None, last_speed=s.chain[-1].effect.speed)
+            if link is not None:
+                s.chain.append(link)
+                passes = 0
+                self._changed()
+                self._pace()
+            else:
+                passes += 1
+            responder = s.opponent_of(responder)
+
+        self._resolve_chain()
+
+    def _offer_response(self, player: int, event: dict | None, last_speed: int):
+        """Ask ``player`` to activate a fast-enough effect, or pass. Returns a link or None."""
+        s = self.state
+        options = response_options(s, player, event, last_speed)
+        if not options:
+            return None
+        chosen = self.agents[player].respond(s, options, event)
+        if chosen is None:
+            return None
+        card = s.inst(chosen.iid).card
+        reveal_for_activation(s, chosen.iid, chosen.zone_index)
+        self.log(f"  {s.players[player].name} activates {card.name}")
+        return ChainLink(chosen.iid, card.effects[0], player, tuple(chosen.targets), event)
+
+    def _resolve_chain(self) -> None:
+        s = self.state
+        for link in reversed(s.chain):
+            resolve_effect(s, link.effect, link.source_iid, link.targets, link.event)
             self._check_life_points()
             self._changed()
+            self._pace()
+        # Spent, non-permanent Spells/Traps go to the Graveyard.
+        for link in s.chain:
+            inst = s.cards.get(link.source_iid)
+            if inst is not None and inst.zone is Zone.SPELL_TRAP and not inst.card.is_permanent:
+                s.send_to_graveyard(link.source_iid)
+        s.chain = []
+        self._changed()
 
     def _end_phase(self, tp: int) -> None:
         s = self.state
