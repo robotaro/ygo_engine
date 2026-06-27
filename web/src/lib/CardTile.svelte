@@ -11,10 +11,8 @@
     DIVINE: '#b8860b',
   }
 
-  // A monster slot reports faceDown + a null name when hidden from us.
   let hidden = $derived(faceDown || (card && card.name == null))
   let accent = $derived(card && card.attribute ? ATTR_COLORS[card.attribute] : '#4a4a55')
-  // Tributes needed to Normal Summon: 1-4 none, 5-6 one, 7+ two.
   let tributeCost = $derived(
     card && card.cardType === 'monster' && card.level
       ? card.level <= 4
@@ -38,25 +36,35 @@
     class:small
     class:rot={defense}
     style="--accent:{accent}"
-    title={card.text || ''}
+    title={card.text || card.name}
   >
+    <!-- Text fallback (shown if there is no art, or the art fails to load). -->
     <div class="name">{card.name}</div>
     {#if card.cardType === 'monster'}
-      <div class="lvline">
-        {#if card.level != null}<span class="lv">Lv{card.level}</span>{/if}
-        {#if tributeCost > 0}
-          <span class="trib" title={`Requires ${tributeCost} Tribute(s) to Normal Summon`}>
-            ✦{tributeCost}
-          </span>
-        {/if}
-      </div>
+      {#if card.level != null}<div class="lv">Lv{card.level}</div>{/if}
       <div class="stats">
-        <span class="atk">{card.attack ?? '?'}</span>
-        <span class="slash">/</span>
-        <span class="def">{card.defense ?? '?'}</span>
+        <span class="atk">{card.attack ?? '?'}</span><span class="slash">/</span><span
+          class="def">{card.defense ?? '?'}</span>
       </div>
     {:else}
       <div class="kind">{card.cardType}</div>
+    {/if}
+
+    {#if card.imageId}
+      <img
+        class="art"
+        src={`/cards/${card.imageId}.jpg`}
+        alt={card.name}
+        onerror={(e) => e.currentTarget.remove()}
+      />
+    {/if}
+
+    <!-- Legibility overlays, above the art. -->
+    {#if tributeCost > 0}
+      <span class="trib" title={`Requires ${tributeCost} Tribute(s)`}>✦{tributeCost}</span>
+    {/if}
+    {#if card.cardType === 'monster'}
+      <span class="stat-badge">{defense ? card.defense : card.attack}</span>
     {/if}
   </div>
 {/if}
@@ -67,9 +75,6 @@
     height: 118px;
     border-radius: 7px;
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
     user-select: none;
   }
   .tile.small {
@@ -81,14 +86,28 @@
     background: rgba(255, 255, 255, 0.02);
   }
   .card {
+    position: relative;
+    overflow: hidden;
     border: 2px solid var(--accent);
     background: linear-gradient(160deg, #2b2b33, #1c1c22);
     padding: 5px;
     color: #f3f3f3;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   }
   .rot {
     transform: rotate(90deg);
+  }
+  .art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+    z-index: 1;
   }
   .name {
     font-size: 10px;
@@ -99,22 +118,10 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
   }
-  .lvline {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-    font-size: 9px;
-  }
   .lv {
+    font-size: 8px;
     color: #ffcf5c;
     font-weight: 700;
-  }
-  .trib {
-    background: #c0651c;
-    color: #fff;
-    font-weight: 800;
-    border-radius: 3px;
-    padding: 0 4px;
   }
   .stats {
     font-size: 11px;
@@ -135,6 +142,31 @@
     text-transform: uppercase;
     color: #bdbdbd;
     text-align: right;
+  }
+  /* overlays sit above the art */
+  .trib {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    z-index: 2;
+    background: #c0651c;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    border-radius: 3px;
+    padding: 0 3px;
+  }
+  .stat-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.78);
+    color: #ffd9a0;
+    font-size: 10px;
+    font-weight: 800;
+    border-radius: 3px;
+    padding: 0 4px;
   }
   .back {
     border: 2px solid #7a5c1e;

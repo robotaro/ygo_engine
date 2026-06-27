@@ -45,6 +45,7 @@ def _card_public(inst: CardInstance) -> dict:
         "attribute": c.attribute.value if c.attribute else None,
         "race": c.race,
         "text": c.text,
+        "imageId": c.image_id,
     }
 
 

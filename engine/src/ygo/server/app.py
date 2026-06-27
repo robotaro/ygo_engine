@@ -16,7 +16,9 @@ import threading
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from ..paths import DECKS_DIR, REPO_ROOT
+from fastapi.staticfiles import StaticFiles
+
+from ..paths import ASSETS, DECKS_DIR, REPO_ROOT
 from .session import GameSession
 
 app = FastAPI(title="ygo_engine")
@@ -65,9 +67,12 @@ async def duel_ws(websocket: WebSocket) -> None:
         pump.cancel()
 
 
+# Card art (downloaded by scripts/download_card_images.py). Mounted before "/".
+_cards_dir = ASSETS / "card_images" / "cards"
+if _cards_dir.is_dir():
+    app.mount("/cards", StaticFiles(directory=str(_cards_dir)), name="cards")
+
 # Serve the built frontend if present (optional; dev uses the Vite server).
 _dist = REPO_ROOT / "web" / "dist"
 if _dist.is_dir():
-    from fastapi.staticfiles import StaticFiles
-
     app.mount("/", StaticFiles(directory=str(_dist), html=True), name="web")

@@ -15,5 +15,8 @@ dist/
 .svelte-kit/
 *.local
 
+# Downloaded card art (136MB; regenerate with engine/scripts/download_card_images.py)
+assets/card_images/cards/
+
 # OS
 .DS_Store

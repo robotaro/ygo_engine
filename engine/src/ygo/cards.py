@@ -11,12 +11,24 @@ which we'll author against current rulings rather than the loose v6.0 wording.
 from __future__ import annotations
 
 import csv
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from .card_effects import EFFECTS
 from .enums import Attribute, CardType, MonsterCategory, SpellTrapProperty
-from .paths import DEFAULT_CARD_DB
+from .paths import CARD_DB_DIR, DEFAULT_CARD_DB
+
+
+def _load_image_ids() -> dict[str, int]:
+    """name -> YGOPRODeck image id, produced by scripts/download_card_images.py."""
+    path = CARD_DB_DIR / "card_image_ids.json"
+    if path.exists():
+        return json.loads(path.read_text())
+    return {}
+
+
+_IMAGE_IDS = _load_image_ids()
 
 # The CSV Type column folds race + categories together, e.g.
 #   "Aqua"                         -> vanilla Aqua monster
@@ -47,6 +59,7 @@ class CardDef:
 
     # --- meta ---
     status: str | None = None  # banlist: Forbidden / Limited / Semi-Limited / None
+    image_id: int | None = None  # YGOPRODeck art id (None -> no downloaded art)
 
     # Reserved for the declarative effect layer (Milestone 2).
     effects: tuple = ()
@@ -159,6 +172,7 @@ def card_from_row(row: dict) -> CardDef:
     status = _clean(row.get("Status")) or None
 
     effects = EFFECTS.get(name, ())
+    image_id = _IMAGE_IDS.get(name)
 
     if type_field == "Magic":  # v6.0 wording for Spell
         return CardDef(
@@ -167,6 +181,7 @@ def card_from_row(row: dict) -> CardDef:
             text=text,
             subtype=_parse_property(row.get("Property")) or SpellTrapProperty.NORMAL,
             status=status,
+            image_id=image_id,
             effects=effects,
         )
     if type_field == "Trap":
@@ -176,6 +191,7 @@ def card_from_row(row: dict) -> CardDef:
             text=text,
             subtype=_parse_property(row.get("Property")) or SpellTrapProperty.NORMAL,
             status=status,
+            image_id=image_id,
             effects=effects,
         )
 
@@ -191,6 +207,7 @@ def card_from_row(row: dict) -> CardDef:
         defense=_to_int(row.get("Defense")),
         categories=categories,
         status=status,
+        image_id=image_id,
         effects=effects,
     )
 

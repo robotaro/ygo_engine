@@ -8,6 +8,7 @@ export default defineConfig({
     proxy: {
       '/ws': { target: 'ws://localhost:8000', ws: true },
       '/api': 'http://localhost:8000',
+      '/cards': 'http://localhost:8000',
     },
   },
 })
