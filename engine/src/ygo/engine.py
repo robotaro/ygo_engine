@@ -15,7 +15,14 @@ from typing import Callable
 
 from .agents import Agent
 from .enums import Phase, TURN_PHASES
-from .moves import Pass, apply, legal_actions
+from .moves import (
+    ActivateSpell,
+    Pass,
+    apply,
+    legal_actions,
+    place_activated_spell,
+    resolve_card_effects,
+)
 from .state import GameState
 
 # Safety cap so a misbehaving agent can never spin a phase forever.
@@ -38,6 +45,7 @@ class Engine:
         max_turns: int = 200,
         log: Callable[[str], None] | None = None,
         on_change: Callable[[], None] | None = None,
+        pacer: Callable[[], None] | None = None,
     ):
         self.state = state
         self.agents = agents
@@ -46,6 +54,7 @@ class Engine:
         self.result: DuelResult | None = None
         self._log = log
         self._on_change = on_change
+        self._pacer = pacer
 
     def log(self, message: str) -> None:
         if self._log is not None:
@@ -55,6 +64,11 @@ class Engine:
         """Notify observers (e.g. the web server) that the state advanced."""
         if self._on_change is not None:
             self._on_change()
+
+    def _pace(self) -> None:
+        """Dramatic pause at a resolution step (no-op when running headless)."""
+        if self._pacer is not None:
+            self._pacer()
 
     # ------------------------------------------------------------------ #
     def run(self) -> DuelResult:
@@ -135,9 +149,27 @@ class Engine:
             choice = self.agents[tp].decide(s, menu)
             if isinstance(choice, Pass):
                 return
-            self.log(f"  {s.players[tp].name} {apply(s, choice)}")
-            self._check_life_points()
-            self._changed()
+            if isinstance(choice, ActivateSpell):
+                self._activate_spell(choice, tp)
+            else:
+                self.log(f"  {s.players[tp].name} {apply(s, choice)}")
+                self._check_life_points()
+                self._changed()
+
+    def _activate_spell(self, action: ActivateSpell, tp: int) -> None:
+        """Activate a Spell as watchable steps: place -> (pause) -> resolve -> (pause) -> GY."""
+        s = self.state
+        card = s.inst(action.iid).card
+        place_activated_spell(s, action.iid, action.zone_index)
+        self.log(f"  {s.players[tp].name} activates {card.name}")
+        self._changed()
+        self._pace()
+        resolve_card_effects(s, action.iid)
+        self._check_life_points()
+        self._changed()
+        self._pace()
+        s.send_to_graveyard(action.iid)
+        self._changed()
 
     def _battle_phase(self, tp: int) -> None:
         s = self.state

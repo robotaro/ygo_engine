@@ -15,6 +15,7 @@ GreedyAgent opponent runs inline. No engine changes were needed beyond an
 from __future__ import annotations
 
 import queue
+import time
 from pathlib import Path
 
 from ..agents import Agent, GreedyAgent
@@ -80,7 +81,11 @@ class GameSession:
         agents[self.human_player] = HumanAgent(self, self.human_player)
 
         self.engine = Engine(
-            self.state, agents, log=self._on_log, on_change=self._push_state
+            self.state,
+            agents,
+            log=self._on_log,
+            on_change=self._push_state,
+            pacer=lambda: time.sleep(0.7),  # let resolution steps breathe in the UI
         )
         self._push_state()
         try:

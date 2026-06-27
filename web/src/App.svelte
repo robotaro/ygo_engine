@@ -16,6 +16,8 @@
   $: phase = $board?.phase
   $: yourTurn = $awaiting
   $: dragging = draggedIid != null
+  $: draggingMonster = draggedIid != null && !!summonOptions(draggedIid)
+  $: draggingSpell = draggedIid != null && canActivate(draggedIid)
   $: if (phase !== 'battle_phase') selectedAttacker = null
   $: validTargets =
     selectedAttacker != null && $legal ? attackTargets(selectedAttacker) || [] : []
@@ -232,7 +234,7 @@
           {:else}
             <div
               class="slot mon drop"
-              class:armed={dragging}
+              class:armed={draggingMonster}
               ondragover={(e) => e.preventDefault()}
               ondrop={(e) => onDropSummon(e, i)}
             >
@@ -248,7 +250,7 @@
           {:else}
             <div
               class="slot st drop"
-              class:armed={dragging}
+              class:armed={draggingSpell}
               ondragover={(e) => e.preventDefault()}
               ondrop={(e) => onDropActivate(e, i)}
             >

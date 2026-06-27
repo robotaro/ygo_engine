@@ -223,25 +223,33 @@ def apply(state: GameState, action: Action) -> str:
     raise ValueError(f"cannot apply action: {action!r}")
 
 
-def _activate_spell(state: GameState, action: ActivateSpell) -> str:
-    """Activate a Normal/Ignition Spell: place it face-up, resolve, send to GY.
-
-    With no Chain yet (Slice 1), the effect resolves immediately on activation.
-    """
-    inst = state.inst(action.iid)
+def place_activated_spell(state: GameState, iid: int, zone_index: int | None = None) -> None:
+    """Put an activated Spell face-up in a Spell/Trap zone (it is now 'on the chain')."""
+    inst = state.inst(iid)
     player = inst.controller
-    card = inst.card
-
-    zone_index = action.zone_index
     if zone_index is None or state.players[player].spell_trap_zones[zone_index] is not None:
         zone_index = state.first_empty_spell_trap_zone(player)
-    state.place_spell_trap(action.iid, player, zone_index, Position.FACE_UP_ATTACK)
+    state.place_spell_trap(iid, player, zone_index, Position.FACE_UP_ATTACK)
 
-    ctx = EffectContext(state=state, controller=player, source_iid=action.iid)
-    for effect in card.effects:
+
+def resolve_card_effects(state: GameState, source_iid: int) -> None:
+    """Run every primitive of every effect on the card at ``source_iid``."""
+    inst = state.inst(source_iid)
+    ctx = EffectContext(state=state, controller=inst.controller, source_iid=source_iid)
+    for effect in inst.card.effects:
         for primitive in effect.resolve:
             primitive.execute(ctx)
 
+
+def _activate_spell(state: GameState, action: ActivateSpell) -> str:
+    """Atomically activate a Normal Spell: place, resolve, send to GY.
+
+    Used headless (CLI/tests). The interactive engine runs these three steps with
+    pauses in between so the activation is watchable; both share the helpers above.
+    """
+    card = state.inst(action.iid).card
+    place_activated_spell(state, action.iid, action.zone_index)
+    resolve_card_effects(state, action.iid)
     state.send_to_graveyard(action.iid)  # Normal Spell to the Graveyard after resolving
     return f"activates {card.name}"
 
