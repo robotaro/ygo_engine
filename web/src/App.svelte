@@ -5,6 +5,7 @@
     board,
     legal,
     responsePrompt,
+    targetRequest,
     awaiting,
     logs,
     result,
@@ -17,6 +18,7 @@
   let selectedAttacker = null
   let pendingTribute = null // {iid, zoneIndex, needed, chosen[], mode}
   let pendingTarget = null // {iid, zoneIndex, candidates[], needed, chosen[]}
+  let targetChosen = [] // accumulating clicks for an engine-driven target prompt
   let seedInput = ''
 
   onMount(() => newGame())
@@ -36,7 +38,13 @@
   $: pendingName = pendingTribute
     ? (you?.hand.find((c) => c.iid === pendingTribute.iid)?.name ?? 'monster')
     : ''
-  $: targetCandidates = pendingTarget ? pendingTarget.candidates : []
+  $: engineTargets = $targetRequest ? $targetRequest.candidates : []
+  $: if (!$targetRequest) targetChosen = []
+  $: targetCandidates = pendingTarget
+    ? pendingTarget.candidates
+    : $targetRequest
+      ? engineTargets
+      : []
   $: pendingTargetName = pendingTarget
     ? (you?.hand.find((c) => c.iid === pendingTarget.iid)?.name ?? 'spell')
     : ''
@@ -131,6 +139,19 @@
     sendIntent({ kind: 'pass' })
   }
 
+  // engine-driven target prompt (forced effects, e.g. Man-Eater Bug)
+  function chooseEngineTarget(iid) {
+    const tr = $targetRequest
+    if (!tr || !tr.candidates.includes(iid) || targetChosen.includes(iid)) return
+    const chosen = [...targetChosen, iid]
+    if (chosen.length >= tr.count) {
+      sendIntent({ kind: 'target', targets: chosen })
+      targetChosen = []
+    } else {
+      targetChosen = chosen
+    }
+  }
+
   function beginActivate(iid, zoneIndex) {
     const opts = activateOptions(iid)
     if (!opts) return
@@ -180,6 +201,10 @@
 
   function onClickOwnMonster(iid) {
     if (!yourTurn) return
+    if ($targetRequest) {
+      chooseEngineTarget(iid)
+      return
+    }
     if (pendingTarget) {
       chooseTarget(iid)
       return
@@ -198,6 +223,10 @@
 
   function onClickOppMonster(iid) {
     if (!yourTurn) return
+    if ($targetRequest) {
+      chooseEngineTarget(iid)
+      return
+    }
     if (pendingTarget) {
       chooseTarget(iid)
       return
@@ -310,7 +339,8 @@
                   canFlip(slot.iid) ||
                   canChangePos(slot.iid) ||
                   pendingTribute ||
-                  pendingTarget)}
+                  pendingTarget ||
+                  $targetRequest)}
               onclick={() => onClickOwnMonster(slot.iid)}
             >
               <CardTile card={slot} defense={isDefense(slot)} small />
@@ -351,7 +381,12 @@
       </div>
 
       <!-- Hand -->
-      {#if pendingTarget}
+      {#if $targetRequest}
+        <div class="banner">
+          <strong>{$targetRequest.source}</strong> — {$targetRequest.prompt}
+          (click a highlighted monster · {targetChosen.length}/{$targetRequest.count})
+        </div>
+      {:else if pendingTarget}
         <div class="banner">
           <strong>{pendingTargetName}</strong> — click a highlighted target
           ({pendingTarget.chosen.length}/{pendingTarget.needed})

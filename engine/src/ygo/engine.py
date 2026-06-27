@@ -28,6 +28,7 @@ from .moves import (
     response_options,
     resolve_effect,
     reveal_for_activation,
+    target_candidates,
 )
 from .state import GameState
 
@@ -329,9 +330,22 @@ class Engine:
             self._trigger_effect(iid, effect, inst.controller)
 
     def _trigger_effect(self, source_iid: int, effect, controller: int, event: dict | None = None):
-        """Put a triggered/flip monster effect onto a fresh Chain and resolve it."""
-        self.log(f"  {self.state.players[controller].name}'s {self.state.inst(source_iid).name} effect activates")
-        self._run_chain([ChainLink(source_iid, effect, controller, (), event)])
+        """Put a triggered/flip monster effect onto a fresh Chain and resolve it.
+
+        If the effect targets, the controller chooses (human via a prompt, bot via
+        heuristic). With no legal target the effect simply doesn't activate.
+        """
+        s = self.state
+        targets: tuple[int, ...] = ()
+        if effect.target is not None:
+            candidates = target_candidates(s, controller, effect.target)
+            if len(candidates) < effect.target.count:
+                return
+            targets = tuple(
+                self.agents[controller].choose_targets(s, source_iid, effect.target, candidates)
+            )
+        self.log(f"  {s.players[controller].name}'s {s.inst(source_iid).name} effect activates")
+        self._run_chain([ChainLink(source_iid, effect, controller, targets, event)])
 
     def _check_field_to_gy_triggers(self) -> None:
         """Fire "when sent from the field to the Graveyard" effects (e.g. Sangan)."""

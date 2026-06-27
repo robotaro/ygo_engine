@@ -32,6 +32,19 @@ class Agent:
         """Chain response window: activate one of ``options`` or None to pass."""
         return None
 
+    def choose_targets(self, state: GameState, source_iid: int, spec, candidates: list[int]):
+        """Pick ``spec.count`` targets for a forced effect.
+
+        Sensible default for removal effects: prefer the opponent's monsters,
+        strongest first (avoids self-targeting when better options exist).
+        """
+        me = state.inst(source_iid).controller
+        ranked = sorted(
+            candidates,
+            key=lambda i: (state.inst(i).controller == me, -(state.inst(i).card.attack or 0)),
+        )
+        return tuple(ranked[: spec.count])
+
 
 class RandomAgent(Agent):
     """Picks uniformly at random. Useful for fuzzing every rules path."""
@@ -44,6 +57,9 @@ class RandomAgent(Agent):
 
     def respond(self, state: GameState, options: list[Action], event):
         return self.rng.choice([*options, None])
+
+    def choose_targets(self, state: GameState, source_iid: int, spec, candidates: list[int]):
+        return tuple(self.rng.sample(candidates, spec.count))
 
 
 class GreedyAgent(Agent):

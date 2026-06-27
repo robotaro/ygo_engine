@@ -9,11 +9,13 @@ from ygo.enums import Phase, Position, Zone
 from ygo.moves import (
     DeclareAttack,
     Pass,
+    SetMonster,
     SetSpellTrap,
     apply,
     legal_actions,
     response_options,
 )
+from ygo.serialize import match_intent
 from ygo.paths import DECKS_DIR
 from ygo.setup import new_duel
 from ygo.state import GameState
@@ -63,6 +65,19 @@ def test_set_spell_trap_goes_face_down_and_records_turn():
     assert inst.zone is Zone.SPELL_TRAP
     assert inst.position is Position.FACE_DOWN
     assert inst.set_on_turn == 3
+
+
+def test_set_intent_disambiguates_monster_from_spell_trap():
+    # A "set" intent must resolve to SetMonster or SetSpellTrap based on the card.
+    s = GameState.new(("A", "B"), seed=0)
+    s.phase, s.turn_count = Phase.MAIN_1, 2
+    mon = s.create_instance(reg.get("Battle Ox"), owner=0, zone=Zone.HAND)
+    s.players[0].hand.append(mon.iid)
+    trap = s.create_instance(reg.get("Mirror Force"), owner=0, zone=Zone.HAND)
+    s.players[0].hand.append(trap.iid)
+    legal = legal_actions(s, 0)
+    assert isinstance(match_intent({"kind": "set", "iid": mon.iid, "tributes": []}, legal, s), SetMonster)
+    assert isinstance(match_intent({"kind": "set", "iid": trap.iid}, legal, s), SetSpellTrap)
 
 
 def test_trap_cannot_activate_the_turn_it_was_set():

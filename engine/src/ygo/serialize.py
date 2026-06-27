@@ -211,27 +211,27 @@ def match_intent(intent: dict, legal: list[Action], state: GameState) -> Action 
         return ActivateSpell(iid=iid, targets=targets, zone_index=intent.get("zoneIndex"))
 
     if kind == "set":
+        # A card iid is either a Spell/Trap (Set face-down in the S/T row) or a
+        # monster (Set face-down in Defense) — disambiguate by what's legal.
         iid = intent.get("iid")
         if any(isinstance(a, SetSpellTrap) and a.iid == iid for a in legal):
             return SetSpellTrap(iid=iid, zone_index=intent.get("zoneIndex"))
+        tributes = tuple(intent.get("tributes", []))
+        if any(
+            isinstance(a, SetMonster) and a.iid == iid and set(a.tributes) == set(tributes)
+            for a in legal
+        ):
+            return SetMonster(iid=iid, tributes=tributes, zone_index=intent.get("zoneIndex"))
         return None
 
-    if kind in ("summon", "set"):
+    if kind == "summon":
         iid = intent.get("iid")
         tributes = tuple(intent.get("tributes", []))
-        zone_index = intent.get("zoneIndex")
-        want = NormalSummon if kind == "summon" else SetMonster
-        legal_match = next(
-            (
-                a
-                for a in legal
-                if isinstance(a, want) and a.iid == iid and set(a.tributes) == set(tributes)
-            ),
-            None,
-        )
-        if legal_match is None:
-            return None
-        # rebuild honouring the client's requested zone
-        return want(iid=iid, tributes=tributes, zone_index=zone_index)
+        if any(
+            isinstance(a, NormalSummon) and a.iid == iid and set(a.tributes) == set(tributes)
+            for a in legal
+        ):
+            return NormalSummon(iid=iid, tributes=tributes, zone_index=intent.get("zoneIndex"))
+        return None
 
     return None

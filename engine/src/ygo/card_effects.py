@@ -16,7 +16,6 @@ from .effects import (
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
     DestroyLowestAtkOpponentMonster,
-    DestroyStrongestOpponentMonster,
     DestroyTargets,
     Draw,
     Effect,
@@ -95,7 +94,12 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     ),
     # --- Slice 4: monster effects (Flip + Trigger) ---
     "Man-Eater Bug": (
-        Effect(speed=1, timing="flip", resolve=(DestroyStrongestOpponentMonster(),)),
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="any_monster"),  # "regardless of position"
+            resolve=(DestroyTargets(),),
+        ),
     ),
     "Magician of Faith": (
         Effect(speed=1, timing="flip", resolve=(ReturnSpellFromGraveyardToHand(),)),

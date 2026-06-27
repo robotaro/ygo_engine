@@ -105,6 +105,35 @@ class HumanAgent(Agent):
                 return chosen
             self.session.send({"type": "illegal", "intent": intent})
 
+    def choose_targets(self, state: GameState, source_iid: int, spec, candidates: list[int]):
+        """Forced-effect target prompt: the player clicks highlighted monster(s)."""
+        source = state.inst(source_iid).name
+        self.session.send(
+            {
+                "type": "decision",
+                "context": "target",
+                "player": self.player,
+                "state": state_to_dict(state, self.player),
+                "source": source,
+                "prompt": f"Choose {spec.count} target(s) for {source}",
+                "candidates": list(candidates),
+                "count": spec.count,
+            }
+        )
+        while True:
+            intent = self.session.wait_for_intent()
+            if intent is None:
+                raise EngineAborted()
+            chosen = intent.get("targets", [])
+            if (
+                intent.get("kind") == "target"
+                and len(chosen) == spec.count
+                and len(set(chosen)) == spec.count
+                and all(c in candidates for c in chosen)
+            ):
+                return tuple(chosen)
+            self.session.send({"type": "illegal", "intent": intent})
+
 
 class GameSession:
     def __init__(self, *, deck_a: Path, deck_b: Path, seed: int = 0, human_player: int = 0):

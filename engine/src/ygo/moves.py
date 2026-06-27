@@ -215,6 +215,20 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
     return [tuple(combo) for combo in combinations(candidates, spec.count)]
 
 
+def target_candidates(state: GameState, controller: int, spec) -> list[int]:
+    """Flat list of individual iids an effect controlled by ``controller`` may target."""
+    if spec is None:
+        return []
+    opp = state.opponent_of(controller)
+    if spec.where == "opponent_monsters":
+        return [i for i in state.players[opp].monster_zones if i is not None]
+    if spec.where == "any_monster":
+        return [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
+    if spec.where == "spell_trap_field":
+        return [i for pl in (0, 1) for i in state.players[pl].spell_trap_zones if i is not None]
+    return []
+
+
 # --------------------------------------------------------------------------- #
 #  Chain responses — what a player may activate in a response window
 # --------------------------------------------------------------------------- #

@@ -187,20 +187,7 @@ class DamageEqualToAttackerAtk(Primitive):
         ctx.state.players[attacker_player].life_points -= dmg
 
 
-# --- Slice 4: monster-effect primitives (auto-resolving) ---
-@dataclass(frozen=True)
-class DestroyStrongestOpponentMonster(Primitive):
-    """Man-Eater Bug (auto-targeted): destroy the opponent's highest-ATK monster."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        opp = ctx.state.opponent_of(ctx.controller)
-        monsters = [iid for iid in ctx.state.players[opp].monster_zones if iid is not None]
-        if not monsters:
-            return
-        victim = max(monsters, key=lambda i: ctx.state.inst(i).card.attack or 0)
-        ctx.state.send_to_graveyard(victim)
-
-
+# --- Slice 4: monster-effect primitives ---
 @dataclass(frozen=True)
 class SearchMonsterToHand(Primitive):
     """Sangan (auto): move the best Deck monster with ATK <= max_atk to hand, then shuffle."""

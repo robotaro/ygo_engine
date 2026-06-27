@@ -61,6 +61,25 @@ def test_man_eater_bug_destroys_attacker_when_attacked():
     assert s.inst(attacker.iid).zone is Zone.GRAVEYARD
 
 
+def test_controller_chooses_man_eater_bug_target():
+    # Two opponent monsters; the player deliberately picks the WEAKER one,
+    # proving the target is a choice (not auto "strongest").
+    s = GameState.new(("A", "B"), seed=0)
+    s.turn_count, s.turn_player, s.phase = 3, 0, Phase.MAIN_1
+    meb = _spawn(s, "Man-Eater Bug", 0, 0, Position.FACE_DOWN_DEFENSE)
+    meb.summoned_this_turn = False
+    strong = _spawn(s, "Blue-Eyes White Dragon", 1, 0, Position.FACE_UP_ATTACK)  # 3000
+    weak = _spawn(s, "Battle Ox", 1, 1, Position.FACE_UP_ATTACK)  # 1700
+
+    class PickWeak(FlipThenPass):
+        def choose_targets(self, state, source_iid, spec, candidates):
+            return (weak.iid,)
+
+    Engine(s, [PickWeak(meb.iid), GreedyAgent()])._interactive_phase(0)
+    assert s.inst(weak.iid).zone is Zone.GRAVEYARD  # chosen target destroyed
+    assert s.inst(strong.iid).zone is Zone.MONSTER  # the stronger one survives
+
+
 def test_magician_of_faith_returns_a_spell_from_graveyard():
     s = GameState.new(("A", "B"), seed=0)
     s.turn_count, s.turn_player, s.phase = 3, 0, Phase.MAIN_1
