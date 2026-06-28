@@ -99,7 +99,7 @@ def _call_of_the_haunted_revives(seed=0):
     s = GameState.new(("A", "B"), seed=seed)
     s.turn_count, s.turn_player, s.phase = 3, 0, Phase.MAIN_1
     skull = _in_graveyard(s, "Summoned Skull", 0)
-    coth = s.create_instance(reg.get("Call Of The Haunted"), owner=0, zone=Zone.DECK)
+    coth = s.create_instance(reg.get("Call of the Haunted"), owner=0, zone=Zone.DECK)
     s.players[0].deck.append(coth.iid)
     s.place_spell_trap(coth.iid, 0, 0, Position.FACE_DOWN)
     coth.set_on_turn = 1  # Set on an earlier turn, so it may activate now
@@ -140,7 +140,7 @@ def test_call_of_the_haunted_revives_sangan_and_chains_its_trigger():
     sangan = _in_graveyard(s, "Sangan", 0)
     elf = s.create_instance(reg.get("Mystical Elf"), owner=0, zone=Zone.DECK)  # 800 ATK -> searchable
     s.players[0].deck.append(elf.iid)
-    coth = s.create_instance(reg.get("Call Of The Haunted"), owner=0, zone=Zone.DECK)
+    coth = s.create_instance(reg.get("Call of the Haunted"), owner=0, zone=Zone.DECK)
     s.players[0].deck.append(coth.iid)
     s.place_spell_trap(coth.iid, 0, 0, Position.FACE_DOWN)
     coth.set_on_turn = 1
@@ -166,7 +166,7 @@ def test_bot_duel_with_revival_cards_completes():
     )
     s = duel.state
     for pl in (0, 1):
-        for name in ("Monster Reborn", "Call Of The Haunted", "Call Of The Haunted"):
+        for name in ("Monster Reborn", "Call of the Haunted", "Call of the Haunted"):
             inst = s.create_instance(reg.get(name), owner=pl, zone=Zone.DECK)
             s.players[pl].deck.append(inst.iid)
         s.shuffle_deck(pl)
@@ -199,7 +199,7 @@ def test_web_contract_set_call_of_the_haunted_is_activatable():
     s = GameState.new(("You", "CPU"), seed=0)
     s.turn_count, s.turn_player, s.phase = 3, 0, Phase.MAIN_1
     skull = _in_graveyard(s, "Summoned Skull", 0)
-    coth = s.create_instance(reg.get("Call Of The Haunted"), owner=0, zone=Zone.DECK)
+    coth = s.create_instance(reg.get("Call of the Haunted"), owner=0, zone=Zone.DECK)
     s.players[0].deck.append(coth.iid)
     s.place_spell_trap(coth.iid, 0, 0, Position.FACE_DOWN)
     coth.set_on_turn = 1

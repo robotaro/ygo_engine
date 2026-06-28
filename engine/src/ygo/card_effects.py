@@ -167,9 +167,9 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(SpecialSummonFromGraveyard(),),
         ),
     ),
-    # Call Of The Haunted — Continuous Trap (CSV spells it with capital O/T/H):
-    # revive from *your own* Graveyard and bond to it (linked destruction below).
-    "Call Of The Haunted": (
+    # Call of the Haunted — Continuous Trap: revive from *your own* Graveyard and
+    # bond to it (linked destruction below).
+    "Call of the Haunted": (
         Effect(
             speed=2,
             timing="ignition",
@@ -242,7 +242,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
 FUSIONS: dict[str, tuple[str, ...]] = {
     "Gaia the Dragon Champion": ("Gaia The Fierce Knight", "Curse of Dragon"),
     "Flame Swordsman": ("Flame Manipulator", "Masaki the Legendary Swordsman"),
-    "B. Skull Dragon": ("Summoned Skull", "Red-Eyes B. Dragon"),
+    "Black Skull Dragon": ("Summoned Skull", "Red-Eyes Black Dragon"),
 }
 
 # Ritual recipes (Slice 12): Ritual Spell name -> the Ritual Monster it summons

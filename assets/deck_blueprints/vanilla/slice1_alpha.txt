@@ -23,10 +23,10 @@
 1 Mystical Space Typhoon
 1 Dunames Dark Witch
 1 Giant Red Seasnake
-1 Harpie's Brother
+1 Dark Blade
 // Slice 6 — Special Summon from the Graveyard
 1 Monster Reborn
-2 Call Of The Haunted
+2 Call of the Haunted
 // Slice 7 — Field Spells + a Continuous Spell
 1 Sogen
 1 Yami

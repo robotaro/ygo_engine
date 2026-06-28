@@ -1,6 +1,6 @@
 // Test deck — slice1_beta (vanilla + Slice 1-7 cards)
 3 Giant Red Seasnake
-3 Harpie's Brother
+3 Dark Blade
 3 La Jinn the Mystical Genie of the Lamp
 3 Axe Raider
 2 Amphibian Beast
@@ -26,7 +26,7 @@
 1 Darkfire Soldier #1
 // Slice 6 — Special Summon from the Graveyard
 1 Monster Reborn
-2 Call Of The Haunted
+2 Call of the Haunted
 // Slice 7 — Field Spells + a Continuous Spell
 1 Sogen
 1 Gaia Power
