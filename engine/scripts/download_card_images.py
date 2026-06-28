@@ -1,91 +1,90 @@
-"""Download card art for our card pool from the YGOPRODeck API.
+"""Download card art for our card pool from YGOPRODeck.
 
 YGOPRODeck asks apps to download and host images locally rather than hotlink, so
-this fetches each matched card once into assets/card_images/cards/<id>.jpg and
-writes a name -> image-id map the engine loads.
+this fetches each card's front once into assets/card_images/cards/<id>.jpg. The
+card pool comes from the same source the CSV is built from (a saved JSON blob or
+a live download), so this covers every card in the v6.0 pool.
 
-Run:  uv run python scripts/download_card_images.py
+Run:  uv run python scripts/download_card_images.py            # uses the saved v6.0 blob
+      uv run python scripts/download_card_images.py --download  # fresh OCG pre-Synchro pull
 Idempotent: existing images are skipped, so re-runs only fetch what's missing.
 """
 
 from __future__ import annotations
 
+import argparse
 import concurrent.futures
-import json
 import urllib.request
 from pathlib import Path
 
-from ygo.cards import CardRegistry
 from ygo.paths import ASSETS, CARD_DB_DIR
+from ygo.ygoprodeck import UA, load_cards
 
-API = "https://db.ygoprodeck.com/api/v7/cardinfo.php"
 IMG_DIR = ASSETS / "card_images" / "cards"
-MAP_PATH = CARD_DB_DIR / "card_image_ids.json"
-UA = {"User-Agent": "ygo_engine/0.1 (personal toy project)"}
+CARD_BACK = ASSETS / "card_images" / "card_back.jpg"
+CARD_BACK_URL = "https://images.ygoprodeck.com/images/cards/back.jpg"
+DEFAULT_SOURCE = CARD_DB_DIR / "card_db_ocg_pre_synchro_v6.json"
 
 
-def _norm(name: str) -> str:
-    return "".join(ch for ch in name.lower() if ch.isalnum())
-
-
-def fetch_all_cards() -> list[dict]:
-    req = urllib.request.Request(API, headers=UA)
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        return json.load(resp)["data"]
-
-
-def download(item: tuple[int, str]) -> bool:
-    card_id, url = item
+def _fetch(url: str, dest: Path) -> bool:
     try:
         req = urllib.request.Request(url, headers=UA)
         with urllib.request.urlopen(req, timeout=30) as resp:
-            (IMG_DIR / f"{card_id}.jpg").write_bytes(resp.read())
+            dest.write_bytes(resp.read())
         return True
     except Exception:
         return False
 
 
+def ensure_card_back() -> None:
+    if CARD_BACK.exists():
+        print(f"card back present: {CARD_BACK}")
+        return
+    print("card back missing; downloading one...")
+    if _fetch(CARD_BACK_URL, CARD_BACK):
+        print(f"  saved {CARD_BACK}")
+    else:
+        print(f"  FAILED to fetch card back from {CARD_BACK_URL} (add it manually)")
+
+
 def main() -> None:
-    reg = CardRegistry.load_csv()
-    our_names = [c.name for c in reg]
-    print(f"card pool: {len(our_names)} cards")
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--source", type=Path, help="YGOPRODeck JSON blob to read the pool from")
+    ap.add_argument("--download", action="store_true", help="fetch a fresh pool from the API")
+    ap.add_argument("--workers", type=int, default=8, help="parallel downloads (be polite)")
+    args = ap.parse_args()
 
-    print("fetching the YGOPRODeck card database (one request)...")
-    cards = fetch_all_cards()
-    by_name: dict[str, dict] = {}
-    by_norm: dict[str, dict] = {}
+    ensure_card_back()
+
+    if args.download:
+        source = None
+    elif args.source:
+        source = args.source
+    elif DEFAULT_SOURCE.exists():
+        source = DEFAULT_SOURCE
+    else:
+        source = None
+    cards = load_cards(source)
+    print(f"card pool: {len(cards)} cards")
+
+    # One front per card (the first/original art); de-dupe by image id.
+    fronts: dict[int, str] = {}
     for c in cards:
-        image = c["card_images"][0]
-        by_name[c["name"].lower()] = image
-        by_norm.setdefault(_norm(c["name"]), image)
-
-    mapping: dict[str, int] = {}
-    urls: dict[int, str] = {}
-    misses: list[str] = []
-    for name in our_names:
-        image = by_name.get(name.lower()) or by_norm.get(_norm(name))
-        if image is None:
-            misses.append(name)
-            continue
-        mapping[name] = image["id"]
-        urls[image["id"]] = image["image_url"]
-
-    print(f"matched {len(mapping)}/{len(our_names)} cards; {len(misses)} unmatched")
-    if misses:
-        print("  unmatched (no art):", ", ".join(sorted(misses)[:25]), "..." if len(misses) > 25 else "")
-
-    MAP_PATH.write_text(json.dumps(mapping, indent=0, sort_keys=True))
-    print(f"wrote name->id map: {MAP_PATH}")
+        images = c.get("card_images") or []
+        if images:
+            fronts[images[0]["id"]] = images[0]["image_url"]
 
     IMG_DIR.mkdir(parents=True, exist_ok=True)
-    todo = [(cid, urls[cid]) for cid in set(mapping.values()) if not (IMG_DIR / f"{cid}.jpg").exists()]
-    print(f"downloading {len(todo)} images ({len(set(mapping.values())) - len(todo)} already present)...")
+    todo = [(cid, url) for cid, url in fronts.items() if not (IMG_DIR / f"{cid}.jpg").exists()]
+    present = len(fronts) - len(todo)
+    print(f"downloading {len(todo)} fronts ({present} already present)...")
 
     ok = 0
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-        for i, success in enumerate(pool.map(download, todo), 1):
-            ok += success
-            if i % 100 == 0:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
+        futures = {pool.submit(_fetch, url, IMG_DIR / f"{cid}.jpg"): cid for cid, url in todo}
+        for i, fut in enumerate(concurrent.futures.as_completed(futures), 1):
+            ok += fut.result()
+            if i % 200 == 0:
                 print(f"  {i}/{len(todo)}")
     print(f"done: {ok}/{len(todo)} new images; {len(list(IMG_DIR.glob('*.jpg')))} total on disk")
 
