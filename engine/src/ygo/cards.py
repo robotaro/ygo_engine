@@ -15,7 +15,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .card_effects import CONTINUOUS, EFFECTS
+from .card_effects import CONTINUOUS, EFFECTS, HAND_SUMMONS
 from .enums import Attribute, CardType, MonsterCategory, SpellTrapProperty
 from .paths import CARD_DB_DIR, DEFAULT_CARD_DB
 
@@ -64,6 +64,7 @@ class CardDef:
     # Declarative effect layer.
     effects: tuple = ()  # activated/triggered abilities
     continuous: tuple = ()  # passive modifiers while face-up (e.g. Equip ATK boosts)
+    hand_summon: object | None = None  # a HandSpecialSummon (self-SS from hand), or None
 
     # ----- convenience predicates -----
     @property
@@ -235,6 +236,7 @@ def card_from_row(row: dict) -> CardDef:
         image_id=image_id,
         effects=effects,
         continuous=continuous,
+        hand_summon=HAND_SUMMONS.get(name),
     )
 
 

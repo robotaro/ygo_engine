@@ -21,6 +21,7 @@ from .moves import (
     NormalSummon,
     Pass,
     SetSpellTrap,
+    SpecialSummonFromHand,
 )
 from .state import GameState
 
@@ -177,6 +178,11 @@ class GreedyAgent(Agent):
         ]
         if rituals:
             return rituals[0]
+        # Special Summon from the hand (Cyber Dragon, etc.) — a free body that
+        # doesn't cost the Normal Summon, so grab the biggest available.
+        hand_ss = [a for a in legal if isinstance(a, SpecialSummonFromHand)]
+        if hand_ss:
+            return max(hand_ss, key=lambda a: self._atk(state, a.iid))
         summons = [a for a in legal if isinstance(a, NormalSummon)]
         if summons:
             # biggest ATK, fewest tributes

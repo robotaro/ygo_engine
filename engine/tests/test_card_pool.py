@@ -5,7 +5,7 @@ silently turning an effect card into a vanilla."""
 
 from __future__ import annotations
 
-from ygo.card_effects import CONTINUOUS, EFFECTS, FUSIONS, RITUALS
+from ygo.card_effects import CONTINUOUS, EFFECTS, FUSIONS, HAND_SUMMONS, RITUALS
 from ygo.cards import CardRegistry
 from ygo.decks import parse_blueprint
 from ygo.paths import DECKS_DIR
@@ -17,6 +17,7 @@ reg = CardRegistry.load_csv()  # the default pool
 def _referenced_names() -> set[str]:
     names: set[str] = set(EFFECTS) | set(CONTINUOUS) | set(RITUALS) | set(RITUALS.values())
     names |= set(FUSIONS)  # Fusion monster names
+    names |= set(HAND_SUMMONS)  # self-Special-Summon-from-hand monsters
     for materials in FUSIONS.values():
         names |= set(materials)
     for deck in ("slice1_alpha.txt", "slice1_beta.txt"):

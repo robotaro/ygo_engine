@@ -28,9 +28,11 @@ from .effects import (
     EquipToTarget,
     FieldMod,
     GainLifePoints,
+    HandSpecialSummon,
     InflictDamage,
     ModifyStatsTemporary,
     NegateAttack,
+    Piercing,
     ReturnSpellFromGraveyardToHand,
     SearchMonsterToHand,
     SelfStatMod,
@@ -80,6 +82,44 @@ def _opponent_has_faceup_monster(state, controller) -> bool:
 def _has_free_monster_zone(state, controller) -> bool:
     """Gate the Special Summon: you need an open Monster Zone to revive into."""
     return state.first_empty_monster_zone(controller) is not None
+
+
+def _control_no_monsters(state, controller) -> bool:
+    """Self-SS gate (Evil HERO Infernal Prodigy-style): your Monster Zones are empty."""
+    return all(i is None for i in state.players[controller].monster_zones)
+
+
+def _only_opponent_controls_monster(state, controller) -> bool:
+    """Cyber Dragon's gate: the opponent controls a monster and you control none."""
+    opp = state.opponent_of(controller)
+    you_have = any(i is not None for i in state.players[controller].monster_zones)
+    opp_has = any(i is not None for i in state.players[opp].monster_zones)
+    return opp_has and not you_have
+
+
+def _opponent_controls_at_least_more(n: int):
+    """The Fiend Megacyber's gate: the opponent controls at least ``n`` more
+    monsters than you do."""
+
+    def cond(state, controller) -> bool:
+        opp = state.opponent_of(controller)
+        mine = sum(1 for i in state.players[controller].monster_zones if i is not None)
+        theirs = sum(1 for i in state.players[opp].monster_zones if i is not None)
+        return theirs >= mine + n
+
+    return cond
+
+
+def _controls_named_face_up(name: str):
+    """Ancient Gear's gate: you control a face-up monster with this exact name."""
+
+    def cond(state, controller) -> bool:
+        return any(
+            i is not None and state.inst(i).is_face_up and state.inst(i).card.name == name
+            for i in state.players[controller].monster_zones
+        )
+
+    return cond
 
 
 def _lp_above(amount: int):
@@ -376,6 +416,18 @@ RITUALS: dict[str, str] = {
 }
 
 
+# --- Effects Batch 7: Special Summon from the hand (a monster's own ability) ---
+# A monster carries a HandSpecialSummon on its CardDef.hand_summon slot; `moves`
+# offers it during the controller's Main Phase as a SpecialSummonFromHand action
+# when the board condition holds (it does *not* use up the Normal Summon). These
+# are the cleanly-modellable, condition-only (no-cost) ignition self-summons.
+HAND_SUMMONS: dict[str, HandSpecialSummon] = {
+    "Cyber Dragon": HandSpecialSummon(condition=_only_opponent_controls_monster),
+    "The Fiend Megacyber": HandSpecialSummon(condition=_opponent_controls_at_least_more(2)),
+    "Ancient Gear": HandSpecialSummon(condition=_controls_named_face_up("Ancient Gear")),
+}
+
+
 # Passive modifiers applied while a card is face-up on the field (the "layers").
 # A card may radiate EquipMods (attached Equips), FieldMods (field-wide stat
 # layers), or AttackRestrictions (continuous rules limits) — consumers filter by
@@ -455,4 +507,9 @@ CONTINUOUS: dict[str, tuple] = {
         UnionMod(host_names=frozenset({"X-Head Cannon"})),
         EquipMod(atk=400, defn=400),
     ),
+    # --- Effects Batch 7: piercing battle damage (a continuous combat rider) ---
+    # When these attack a Defense Position monster, the excess (ATK - DEF) is dealt
+    # to the defending player (handled in moves._resolve_attack via has_piercing).
+    "Dark Driceratops": (Piercing(),),
+    "Mad Sword Beast": (Piercing(),),
 }

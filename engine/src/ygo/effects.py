@@ -90,6 +90,30 @@ class SelfStatMod:
 
 
 @dataclass(frozen=True)
+class HandSpecialSummon:
+    """A monster's built-in ability to Special Summon *itself from the hand* during
+    its controller's Main Phase, when a board condition holds (Cyber Dragon, The
+    Fiend Megacyber). It is *not* a Chain activation: ``moves`` enumerates it as a
+    ``SpecialSummonFromHand`` action — parallel to a Normal Summon, but it does not
+    use up the turn's Normal Summon. ``condition`` is ``(state, controller) ->
+    bool`` (None = always allowed); ``position`` is the battle position the monster
+    arrives in (face-up Attack across the whole v6.0 pool). Carried on its own
+    ``CardDef.hand_summon`` slot, not in ``effects``."""
+
+    condition: "Callable[[GameState, int], bool] | None" = None
+    position: Position = Position.FACE_UP_ATTACK
+
+
+@dataclass(frozen=True)
+class Piercing:
+    """A face-up monster's continuous rider: when it attacks a Defense Position
+    monster and its ATK exceeds the target's DEF, the excess (ATK - DEF) is dealt
+    to the defending player as battle damage (Dark Driceratops, Mad Sword Beast).
+    Read by the battle step off the attacker's own ``continuous`` list; suppressed
+    while the monster's effect is inactive (an un-Summoned Gemini)."""
+
+
+@dataclass(frozen=True)
 class FieldMod:
     """A continuous flat ATK/DEF modifier a face-up Field/Continuous Spell radiates
     over every monster on the field that matches its filter (the "field layer").

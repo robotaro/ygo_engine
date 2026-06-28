@@ -16,7 +16,7 @@ import random
 from dataclasses import dataclass, field
 
 from .cards import CardDef
-from .effects import EquipMod, FieldMod, SelfStatMod
+from .effects import EquipMod, FieldMod, Piercing, SelfStatMod
 from .enums import Phase, Position, Zone
 
 STARTING_LIFE_POINTS = 8000
@@ -333,6 +333,14 @@ class GameState:
             (mod.atk if which == "atk" else mod.defn)
             for mod in inst.card.continuous
             if isinstance(mod, SelfStatMod)
+        )
+
+    def has_piercing(self, iid: int) -> bool:
+        """Whether the monster deals piercing battle damage to a defender (a face-up
+        Piercing rider on its own card, active only while its effect is on)."""
+        inst = self.cards[iid]
+        return inst.effects_active and any(
+            isinstance(mod, Piercing) for mod in inst.card.continuous
         )
 
     def effective_attack(self, iid: int) -> int:

@@ -102,6 +102,12 @@
   function canGeminiSummon(iid) {
     return $legal?.geminiSummonable?.includes(iid)
   }
+  function canSpecialSummon(iid) {
+    return $legal?.specialSummonable?.includes(iid)
+  }
+  function specialSummon(iid) {
+    if (canSpecialSummon(iid)) sendIntent({ kind: 'specialSummon', iid })
+  }
   function canUnionEquip(iid) {
     return !!$legal?.unionEquippable?.[iid]?.length
   }
@@ -629,9 +635,15 @@
           {@const opts = summonOptions(card.iid)}
           {@const activatable = canActivate(card.iid)}
           {@const settable = canSet(card.iid)}
+          {@const specialSummonable = canSpecialSummon(card.iid)}
           <div
             class="handcard"
-            class:dim={yourTurn && !opts && !activatable && !settable && !mustDiscard}
+            class:dim={yourTurn &&
+              !opts &&
+              !activatable &&
+              !settable &&
+              !specialSummonable &&
+              !mustDiscard}
           >
             <div
               draggable={yourTurn && (!!opts || activatable || settable)}
@@ -641,7 +653,9 @@
             >
               <CardTile {card} />
             </div>
-            {#if yourTurn && activatable}
+            {#if yourTurn && specialSummonable}
+              <button class="setbtn" onclick={() => specialSummon(card.iid)}>Sp. Summon</button>
+            {:else if yourTurn && activatable}
               <button class="setbtn" onclick={() => activateSpell(card.iid)}>Activate</button>
             {:else if yourTurn && settable}
               <button class="setbtn" onclick={() => setCard(card.iid)}>Set</button>

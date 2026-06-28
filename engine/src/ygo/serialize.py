@@ -25,6 +25,7 @@ from .moves import (
     Pass,
     SetMonster,
     SetSpellTrap,
+    SpecialSummonFromHand,
     UnionEquip,
     UnionUnequip,
     legal_actions,
@@ -133,6 +134,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
     activatable: dict[int, list[list[int]]] = {}
     settable: list[int] = []
     gemini_summonable: list[int] = []
+    special_summonable: list[int] = []
     union_equippable: dict[int, list[int]] = {}
     union_unequippable: list[int] = []
 
@@ -143,6 +145,8 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         elif isinstance(a, SetMonster):
             entry = summonable.setdefault(a.iid, {"summon": [], "set": []})
             entry["set"].append(list(a.tributes))
+        elif isinstance(a, SpecialSummonFromHand):
+            special_summonable.append(a.iid)
         elif isinstance(a, GeminiSummon):
             gemini_summonable.append(a.iid)
         elif isinstance(a, UnionEquip):
@@ -169,6 +173,8 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         "attackers": {str(k): v for k, v in attackers.items()},
         "flips": flips,
         "geminiSummonable": gemini_summonable,
+        # iids in hand that may Special Summon themselves (Cyber Dragon, etc.)
+        "specialSummonable": special_summonable,
         # union iid -> [valid host iids]; equipped-Union iids that may unequip
         "unionEquippable": {str(k): v for k, v in union_equippable.items()},
         "unionUnequippable": union_unequippable,
@@ -214,6 +220,12 @@ def match_intent(intent: dict, legal: list[Action], state: GameState) -> Action 
     if kind == "geminiSummon":
         iid = intent.get("iid")
         return next((a for a in legal if isinstance(a, GeminiSummon) and a.iid == iid), None)
+
+    if kind == "specialSummon":
+        iid = intent.get("iid")
+        return next(
+            (a for a in legal if isinstance(a, SpecialSummonFromHand) and a.iid == iid), None
+        )
 
     if kind == "unionEquip":
         union = intent.get("union")

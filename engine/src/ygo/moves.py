@@ -61,6 +61,17 @@ class SetMonster(Action):
 
 
 @dataclass(frozen=True)
+class SpecialSummonFromHand(Action):
+    """Special Summon a monster from the hand using its own built-in ability
+    (its ``CardDef.hand_summon``) — e.g. Cyber Dragon. Unlike a Normal Summon it
+    does *not* consume the turn's Normal Summon; the board condition is checked at
+    enumeration time."""
+
+    iid: int
+    zone_index: int | None = None
+
+
+@dataclass(frozen=True)
 class GeminiSummon(Action):
     """A 2nd Normal Summon on a face-up Gemini monster you already control, to
     treat it as an Effect Monster (it stays in its zone/position). Uses up your
@@ -210,6 +221,17 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             inst = state.inst(iid)
             if inst.card.is_gemini and inst.is_face_up and not inst.gemini_unlocked:
                 actions.append(GeminiSummon(iid))
+
+    # Special Summon from the hand via a monster's own ability (Cyber Dragon, The
+    # Fiend Megacyber, ...). Independent of the Normal Summon; gated by the card's
+    # board condition and needing a free Monster Zone.
+    if state.first_empty_monster_zone(player) is not None:
+        for iid in p.hand:
+            rule = state.inst(iid).card.hand_summon
+            if rule is None:
+                continue
+            if rule.condition is None or rule.condition(state, player):
+                actions.append(SpecialSummonFromHand(iid))
 
     # battle-position changes (not on the turn a monster was summoned/already changed)
     for iid in p.monster_zones:
@@ -649,6 +671,8 @@ def apply(state: GameState, action: Action) -> str:
         return _summon(state, action.iid, action.tributes, action.zone_index, face_up=True)
     if isinstance(action, SetMonster):
         return _summon(state, action.iid, action.tributes, action.zone_index, face_up=False)
+    if isinstance(action, SpecialSummonFromHand):
+        return _special_summon_from_hand(state, action)
     if isinstance(action, GeminiSummon):
         inst = state.inst(action.iid)
         inst.gemini_unlocked = True
@@ -790,6 +814,21 @@ def _union_unequip(state: GameState, action: UnionUnequip) -> str:
     return f"unequips {union.name} (Special Summon)"
 
 
+def _special_summon_from_hand(state: GameState, action: SpecialSummonFromHand) -> str:
+    """Special Summon a monster from the hand via its own ability. Does not consume
+    the Normal Summon; the board condition was already checked at enumeration."""
+    inst = state.inst(action.iid)
+    player = inst.owner
+    rule = inst.card.hand_summon
+    index = action.zone_index
+    if index is None or state.players[player].monster_zones[index] is not None:
+        index = state.first_empty_monster_zone(player)
+    position = rule.position if rule is not None else Position.FACE_UP_ATTACK
+    state.place_monster(action.iid, player, index, position)
+    inst.summoned_this_turn = True
+    return f"Special Summons {inst.name} (from the hand)"
+
+
 def _summon(
     state: GameState,
     iid: int,
@@ -848,10 +887,15 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         state.send_to_graveyard(target.iid)
         return f"{prefix}{attacker.name} and {target.name} ({atk}) destroy each other"
 
-    # defending monster: ATK vs DEF, no piercing in v6.0 vanilla play
+    # defending monster: ATK vs DEF. No battle damage on a clean break — unless the
+    # attacker has a piercing rider (Dark Driceratops), which deals the excess.
     dfn = state.effective_defense(action.target)
     if atk > dfn:
         state.send_to_graveyard(target.iid)
+        if state.has_piercing(action.attacker):
+            dmg = atk - dfn
+            state.players[opp].life_points -= dmg
+            return f"{prefix}{attacker.name} ({atk}) pierces {target.name} (DEF {dfn}) — {dmg} damage"
         return f"{prefix}{attacker.name} ({atk}) destroys defending {target.name} (DEF {dfn})"
     if atk < dfn:
         state.players[me].life_points -= dfn - atk
