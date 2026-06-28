@@ -25,6 +25,7 @@ from .effects import (
     NegateAttack,
     ReturnSpellFromGraveyardToHand,
     SearchMonsterToHand,
+    SpecialSummonFromGraveyard,
     SwitchTargetsToAttack,
     TargetSpec,
     Trigger,
@@ -40,6 +41,11 @@ def _opponent_has_faceup_monster(state, controller) -> bool:
         iid is not None and state.inst(iid).is_face_up
         for iid in state.players[opp].monster_zones
     )
+
+
+def _has_free_monster_zone(state, controller) -> bool:
+    """Gate the Special Summon: you need an open Monster Zone to revive into."""
+    return state.first_empty_monster_zone(controller) is not None
 
 
 EFFECTS: dict[str, tuple[Effect, ...]] = {
@@ -121,6 +127,27 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Axe of Despair": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
     "United We Stand": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
     "Mage Power": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
+    # --- Slice 6: Special Summon from the Graveyard ---
+    # Monster Reborn — Normal Spell: revive a monster from *either* Graveyard.
+    "Monster Reborn": (
+        Effect(
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="any_graveyard_monster"),
+            resolve=(SpecialSummonFromGraveyard(),),
+        ),
+    ),
+    # Call Of The Haunted — Continuous Trap (CSV spells it with capital O/T/H):
+    # revive from *your own* Graveyard and bond to it (linked destruction below).
+    "Call Of The Haunted": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="own_graveyard_monster"),
+            resolve=(SpecialSummonFromGraveyard(link=True),),
+        ),
+    ),
 }
 
 

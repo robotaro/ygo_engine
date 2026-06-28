@@ -9,6 +9,8 @@ Scope:
   * Slice 2 — targeting (player-chosen + automatic) and damage.
   * Slice 3 — the Chain: triggers, spell speed, Traps & Quick-Play (Mirror Force,
     Trap Hole, Magic Cylinder, Mystical Space Typhoon).
+  * Slice 6 — Special Summon from the Graveyard (Monster Reborn, Call of the
+    Haunted), graveyard target pools, and the Call-of-the-Haunted bond.
 """
 
 from __future__ import annotations
@@ -63,7 +65,8 @@ class TargetSpec:
     """What an effect targets, chosen by the controller at activation.
 
     ``where`` names a pool the engine can enumerate: "opponent_monsters",
-    "any_monster", "spell_trap_field".
+    "any_monster", "spell_trap_field", "any_graveyard_monster" (either GY),
+    "own_graveyard_monster" (the controller's GY only).
     """
 
     count: int = 1
@@ -256,6 +259,37 @@ class ReturnSpellFromGraveyardToHand(Primitive):
         player.graveyard.remove(iid)
         player.hand.append(iid)
         ctx.state.inst(iid).zone = Zone.HAND
+
+
+# --- Slice 6: Special Summon from the Graveyard ---
+@dataclass(frozen=True)
+class SpecialSummonFromGraveyard(Primitive):
+    """Special Summon the targeted Graveyard monster to the controller's side.
+
+    The monster arrives face-up Attack (Monster Reborn also allows Defense; we
+    keep Attack for now). With ``link`` set (Call of the Haunted), the source card
+    and the summoned monster are bonded both ways: if either later leaves the
+    field, ``GameState`` / the engine destroy the other (see ``_cleanup_linked``).
+    The summon fails quietly with no free Monster Zone or no valid target.
+    """
+
+    link: bool = False
+
+    def execute(self, ctx: EffectContext) -> None:
+        target = ctx.targets[0] if ctx.targets else None
+        if target is None or target not in ctx.state.cards:
+            return
+        inst = ctx.state.inst(target)
+        if inst.zone is not Zone.GRAVEYARD or not inst.card.is_monster:
+            return
+        index = ctx.state.first_empty_monster_zone(ctx.controller)
+        if index is None:
+            return
+        ctx.state.place_monster(target, ctx.controller, index, Position.FACE_UP_ATTACK)
+        inst.summoned_this_turn = True
+        if self.link:
+            ctx.state.inst(ctx.source_iid).linked_to = target
+            inst.linked_to = ctx.source_iid
 
 
 # --------------------------------------------------------------------------- #

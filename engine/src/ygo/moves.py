@@ -190,6 +190,24 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             if card.is_spell or card.is_trap:
                 actions.append(SetSpellTrap(iid))
 
+    # Activate a Set card already on the field whose effect you may start at will
+    # on your own turn (e.g. the Continuous Trap Call of the Haunted). Purely
+    # reactive Traps (Mirror Force, Trap Hole) have no "ignition" effect and are
+    # offered only in a response window instead.
+    for iid in p.spell_trap_zones:
+        if iid is None:
+            continue
+        inst = state.inst(iid)
+        if inst.position is not Position.FACE_DOWN:
+            continue
+        if inst.set_on_turn is None or inst.set_on_turn >= state.turn_count:
+            continue  # can't activate the turn it was Set
+        effect = next((e for e in inst.card.effects if e.timing == "ignition"), None)
+        if effect is None or (effect.condition is not None and not effect.condition(state, player)):
+            continue
+        for target_set in _enumerate_targets(state, player, effect.target):
+            actions.append(ActivateSpell(iid, targets=target_set))
+
     return actions
 
 
@@ -208,11 +226,25 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
         candidates = [
             i for pl in (0, 1) for i in state.players[pl].spell_trap_zones if i is not None
         ]
+    elif spec.where == "any_graveyard_monster":
+        candidates = _graveyard_monsters(state, (0, 1))
+    elif spec.where == "own_graveyard_monster":
+        candidates = _graveyard_monsters(state, (controller,))
     else:
         candidates = []
     if spec.count == 1:
         return [(c,) for c in candidates]
     return [tuple(combo) for combo in combinations(candidates, spec.count)]
+
+
+def _graveyard_monsters(state: GameState, players: tuple[int, ...]) -> list[int]:
+    """Monster iids sitting in the given players' Graveyards (a target pool)."""
+    return [
+        i
+        for pl in players
+        for i in state.players[pl].graveyard
+        if state.inst(i).card.is_monster
+    ]
 
 
 def target_candidates(state: GameState, controller: int, spec) -> list[int]:
@@ -226,6 +258,10 @@ def target_candidates(state: GameState, controller: int, spec) -> list[int]:
         return [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
     if spec.where == "spell_trap_field":
         return [i for pl in (0, 1) for i in state.players[pl].spell_trap_zones if i is not None]
+    if spec.where == "any_graveyard_monster":
+        return _graveyard_monsters(state, (0, 1))
+    if spec.where == "own_graveyard_monster":
+        return _graveyard_monsters(state, (controller,))
     return []
 
 

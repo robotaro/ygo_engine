@@ -43,6 +43,9 @@ class CardInstance:
     set_on_turn: int | None = None
     # For an Equip card: the iid of the monster it is attached to.
     equipped_to: int | None = None
+    # A two-way bond (Call of the Haunted): if either partner leaves the field,
+    # the other is destroyed. Set on both the card and the monster it summoned.
+    linked_to: int | None = None
 
     @property
     def name(self) -> str:
@@ -184,6 +187,7 @@ class GameState:
         inst.position_changed_this_turn = False
         inst.set_on_turn = None
         inst.equipped_to = None
+        inst.linked_to = None
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine.
         if from_field and inst.card.is_monster:

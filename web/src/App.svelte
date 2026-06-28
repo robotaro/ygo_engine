@@ -246,6 +246,20 @@
     }
   }
 
+  // A Graveyard card may be a target (Monster Reborn picks either GY; Call of
+  // the Haunted picks your own) for the active activation/forced-effect prompt.
+  function onClickGraveyard(iid) {
+    if (!yourTurn) return
+    if ($targetRequest) chooseEngineTarget(iid)
+    else if (pendingTarget) chooseTarget(iid)
+  }
+
+  // Activate a Set Continuous Trap already on your field (e.g. Call of the Haunted).
+  function onClickOwnSpellTrap(iid, zoneIndex) {
+    if (!yourTurn) return
+    if (canActivate(iid)) beginActivate(iid, zoneIndex)
+  }
+
   function onHandClick(iid) {
     if (mustDiscard) sendIntent({ kind: 'discard', iid })
   }
@@ -308,6 +322,21 @@
         {/each}
       </div>
 
+      {#if opp.graveyard.length}
+        <div class="gyrow opp">
+          <span class="gylabel">Graveyard</span>
+          {#each opp.graveyard as gy}
+            <div
+              class="gycard"
+              class:targetable={targetCandidates.includes(gy.iid)}
+              onclick={() => onClickGraveyard(gy.iid)}
+            >
+              <CardTile card={gy} small />
+            </div>
+          {/each}
+        </div>
+      {/if}
+
       <!-- Center status -->
       <div class="status">
         <span class="turn">Turn {$board.turnCount}</span>
@@ -360,7 +389,13 @@
       <div class="zonerow">
         {#each you.spellTrapZones as slot, i}
           {#if slot}
-            <div class="slot st"><CardTile card={slot} small /></div>
+            <div
+              class="slot st"
+              class:actionable={yourTurn && canActivate(slot.iid)}
+              onclick={() => onClickOwnSpellTrap(slot.iid, i)}
+            >
+              <CardTile card={slot} small />
+            </div>
           {:else}
             <div
               class="slot st drop"
@@ -373,6 +408,21 @@
           {/if}
         {/each}
       </div>
+
+      {#if you.graveyard.length}
+        <div class="gyrow you">
+          <span class="gylabel">Graveyard</span>
+          {#each you.graveyard as gy}
+            <div
+              class="gycard"
+              class:targetable={targetCandidates.includes(gy.iid)}
+              onclick={() => onClickGraveyard(gy.iid)}
+            >
+              <CardTile card={gy} small />
+            </div>
+          {/each}
+        </div>
+      {/if}
 
       <div class="playerbar you">
         <div class="who">{you.name}</div>
@@ -605,6 +655,38 @@
   .slot.targetable {
     outline: 2px solid #ff6b6b;
     cursor: crosshair;
+  }
+  .slot.st.actionable {
+    cursor: pointer;
+  }
+  .slot.st.actionable:hover {
+    outline: 2px solid #c9b3ff;
+  }
+  .gyrow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 2px 6px;
+    opacity: 0.85;
+  }
+  .gylabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8a8a8a;
+    margin-right: 4px;
+  }
+  /* Graveyard cards are shown shrunk; they only matter as revive targets. */
+  .gycard {
+    transform: scale(0.6);
+    margin: -18px -12px;
+  }
+  .gycard.targetable :global(.tile) {
+    outline: 3px solid #ff6b6b;
+    cursor: crosshair;
+    border-radius: 8px;
   }
   .status {
     display: flex;

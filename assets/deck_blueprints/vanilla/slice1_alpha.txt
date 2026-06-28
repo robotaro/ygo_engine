@@ -1,4 +1,4 @@
-// Test deck — slice1_alpha (vanilla + Slice 1-5 cards)
+// Test deck — slice1_alpha (vanilla + Slice 1-6 cards)
 3 Gemini Elf
 3 Vorse Raider
 3 Mechanicalchaser
@@ -24,3 +24,6 @@
 1 Dunames Dark Witch
 1 Giant Red Seasnake
 1 Harpie's Brother
+// Slice 6 — Special Summon from the Graveyard
+1 Monster Reborn
+2 Call Of The Haunted

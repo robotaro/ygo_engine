@@ -361,9 +361,23 @@ class Engine:
                 if monster is None or monster.zone is not Zone.MONSTER:
                     s.send_to_graveyard(sid)
 
+    def _cleanup_linked(self) -> None:
+        """Enforce Call-of-the-Haunted bonds: if either partner has left the field,
+        the other is destroyed too. The link is recorded on both cards, so this is
+        direction-agnostic (trap destroyed -> monster dies; monster dies -> trap goes)."""
+        s = self.state
+        for inst in list(s.cards.values()):
+            if inst.linked_to is None or inst.zone not in (Zone.MONSTER, Zone.SPELL_TRAP):
+                continue  # not bonded, or already gone (cleaned up via its partner)
+            partner = s.cards.get(inst.linked_to)
+            if partner is None or partner.zone not in (Zone.MONSTER, Zone.SPELL_TRAP):
+                s.send_to_graveyard(inst.iid)
+
     def _check_field_to_gy_triggers(self) -> None:
-        """Destroy orphaned Equips, then fire "sent from field to GY" effects (Sangan)."""
+        """Reconcile the board after cards leave the field: destroy orphaned Equips
+        and broken bonds, then fire "sent from field to GY" effects (Sangan)."""
         self._cleanup_equips()
+        self._cleanup_linked()
         if self._processing_gy:
             return  # a nested resolution; the outer loop will drain the queue
         self._processing_gy = True
@@ -386,6 +400,9 @@ class Engine:
                 )
                 if effect is not None:
                     self._trigger_effect(iid, effect, inst.controller)
+                # That resolution may have broken more bonds / orphaned more Equips.
+                self._cleanup_equips()
+                self._cleanup_linked()
         finally:
             self._processing_gy = False
 

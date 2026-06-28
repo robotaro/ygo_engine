@@ -1,4 +1,4 @@
-// Test deck — slice1_beta (vanilla + Slice 1-5 cards)
+// Test deck — slice1_beta (vanilla + Slice 1-6 cards)
 3 Giant Red Seasnake
 3 Harpie's Brother
 3 La Jinn the Mystical Genie of the Lamp
@@ -24,3 +24,6 @@
 1 Battle Ox
 1 Beta The Magnet Warrior
 1 Darkfire Soldier #1
+// Slice 6 — Special Summon from the Graveyard
+1 Monster Reborn
+2 Call Of The Haunted

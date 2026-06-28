@@ -106,6 +106,18 @@ class GreedyAgent(Agent):
                 and state.inst(a.iid).card.name in self.AUTO_SPELLS
             ):
                 return a
+        # Revive the strongest monster we can (Monster Reborn, a Set Call of the
+        # Haunted) — any activation that targets a monster sitting in a Graveyard.
+        revivals = [
+            a
+            for a in legal
+            if isinstance(a, ActivateSpell)
+            and a.targets
+            and state.inst(a.targets[0]).zone is Zone.GRAVEYARD
+            and state.inst(a.targets[0]).card.is_monster
+        ]
+        if revivals:
+            return max(revivals, key=lambda a: state.inst(a.targets[0]).card.attack or 0)
         summons = [a for a in legal if isinstance(a, NormalSummon)]
         if summons:
             # biggest ATK, fewest tributes
