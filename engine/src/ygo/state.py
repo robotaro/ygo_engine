@@ -246,6 +246,16 @@ class GameState:
         if from_field and inst.card.is_monster:
             self.gy_from_field.append(iid)
 
+    def banish(self, iid: int) -> None:
+        """Remove a card from play to its *owner's* banished pile, clearing field
+        flags. Banishing is not 'sent to the Graveyard', so it raises no GY trigger
+        (a card removed this way skips Sangan-style "sent to GY" effects)."""
+        inst = self.cards[iid]
+        self._remove_from_current_location(iid)
+        inst.zone = Zone.BANISHED
+        self._clear_field_flags(inst)
+        self.players[inst.owner].banished.append(iid)
+
     def return_to_hand(self, iid: int) -> None:
         """Bounce a card to its *owner's* hand (Spirit monsters at the End Phase,
         and future bounce effects), clearing its field bookkeeping."""

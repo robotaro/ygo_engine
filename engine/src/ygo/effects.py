@@ -270,6 +270,19 @@ class DestroyTargets(Primitive):
 
 
 @dataclass(frozen=True)
+class BanishTargets(Primitive):
+    """Banish (remove from play) whatever the effect targeted — to the owner's
+    banished pile instead of the Graveyard (Dark Core, Dimensional Prison). For a
+    card that 'destroys then banishes' (Bottomless Trap Hole) the end state is the
+    same: the card ends up banished, so we move it there directly."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        for iid in list(ctx.targets):
+            if iid in ctx.state.cards:
+                ctx.state.banish(iid)
+
+
+@dataclass(frozen=True)
 class DestroyAllFieldSpells(Primitive):
     """Burning Land: destroy every Field Spell on the field (both players')."""
 

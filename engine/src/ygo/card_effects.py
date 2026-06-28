@@ -13,6 +13,7 @@ from .effects import (
     OPPONENT,
     SELF,
     AttackRestriction,
+    BanishTargets,
     DamageEqualToAttackerAtk,
     DestroyAllFieldSpells,
     DestroyAllMonsters,
@@ -215,6 +216,35 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             discard_cost=1,
             target=TargetSpec(count=1, where="any_monster", face_up=True),
             resolve=(ModifyStatsTemporary(atk=1500),),
+        ),
+    ),
+    # --- Effects Batch 9: banish (remove from play) payloads ---
+    # Dark Core — Normal Spell: discard 1, then banish a face-up monster.
+    "Dark Core": (
+        Effect(
+            discard_cost=1,
+            target=TargetSpec(count=1, where="any_monster", face_up=True),
+            resolve=(BanishTargets(),),
+        ),
+    ),
+    # Dimensional Prison — Normal Trap: banish the attacking monster (the attack then
+    # fizzles, since the attacker has left the field).
+    "Dimensional Prison": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            resolve=(BanishTargets(),),
+        ),
+    ),
+    # Bottomless Trap Hole — Normal Trap: when the opponent Summons a monster with
+    # ATK >= 1500, banish it (we move it straight to the banished pile).
+    "Bottomless Trap Hole": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=OPPONENT, subject="monster", min_atk=1500),
+            resolve=(BanishTargets(),),
         ),
     ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---

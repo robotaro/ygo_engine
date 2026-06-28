@@ -95,6 +95,7 @@ def _player_view(state: GameState, player: int, *, is_viewer: bool) -> dict:
         "deckCount": len(p.deck),
         "extraCount": len(p.extra_deck),
         "graveyard": [_card_public(state.inst(i)) for i in p.graveyard],
+        "banished": [_card_public(state.inst(i)) for i in p.banished],
         "monsterZones": [_monster_slot(state, i, hide_face_down=hide) for i in p.monster_zones],
         "spellTrapZones": [_monster_slot(state, i, hide_face_down=hide) for i in p.spell_trap_zones],
         "fieldZone": _monster_slot(state, p.field_zone, hide_face_down=hide),
