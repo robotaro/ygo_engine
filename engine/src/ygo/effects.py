@@ -283,6 +283,46 @@ class BanishTargets(Primitive):
 
 
 @dataclass(frozen=True)
+class BounceTargetsToHand(Primitive):
+    """Return the targeted cards to their owners' hands (Compulsory Evacuation
+    Device, Hane-Hane, Gravekeeper's Guard)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        for iid in list(ctx.targets):
+            if iid in ctx.state.cards:
+                ctx.state.return_to_hand(iid)
+
+
+@dataclass(frozen=True)
+class BounceTargetsToDeck(Primitive):
+    """Return the targeted cards to their owners' Decks — on top by default (Back
+    to Square One, Phoenix Wing Wind Blast)."""
+
+    to_top: bool = True
+
+    def execute(self, ctx: EffectContext) -> None:
+        for iid in list(ctx.targets):
+            if iid in ctx.state.cards:
+                ctx.state.return_to_deck(iid, to_top=self.to_top)
+
+
+@dataclass(frozen=True)
+class ReturnAllSpellTrapsToHand(Primitive):
+    """Giant Trunade: return every Spell/Trap on the field (both players', including
+    Field Spells and the activating card itself) to its owner's hand."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        victims: list[int] = []
+        for pl in (0, 1):
+            victims += [i for i in s.players[pl].spell_trap_zones if i is not None]
+            if s.players[pl].field_zone is not None:
+                victims.append(s.players[pl].field_zone)
+        for iid in victims:
+            s.return_to_hand(iid)
+
+
+@dataclass(frozen=True)
 class DestroyAllFieldSpells(Primitive):
     """Burning Land: destroy every Field Spell on the field (both players')."""
 

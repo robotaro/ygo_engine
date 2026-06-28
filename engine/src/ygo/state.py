@@ -265,6 +265,19 @@ class GameState:
         self._clear_field_flags(inst)
         self.players[inst.owner].hand.append(iid)
 
+    def return_to_deck(self, iid: int, to_top: bool = True) -> None:
+        """Return a card to its *owner's* Deck — placed on top (``to_top``) or
+        shuffled in — clearing its field bookkeeping. The top of the deck is the
+        end of the list (``draw`` pops from there)."""
+        inst = self.cards[iid]
+        self._remove_from_current_location(iid)
+        inst.zone = Zone.DECK
+        self._clear_field_flags(inst)
+        deck = self.players[inst.owner].deck
+        deck.append(iid)
+        if not to_top:
+            self.rng.shuffle(deck)
+
     # ----- derived stats (the "layers": printed value + active modifiers) -----
     def _equip_mods_on(self, monster_iid: int):
         """Yield (EquipMod, equip_controller) for every face-up Equip attached here."""

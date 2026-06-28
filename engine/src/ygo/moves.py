@@ -380,6 +380,8 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
         candidates = _spell_trap_field(state)
     elif spec.where == "any_card_field":
         candidates = _all_field_cards(state)
+    elif spec.where == "opponent_card_field":
+        candidates = _opponent_field_cards(state, controller)
     elif spec.where == "any_graveyard_monster":
         candidates = _graveyard_monsters(state, (0, 1))
     elif spec.where == "own_graveyard_monster":
@@ -541,6 +543,8 @@ def target_candidates(state: GameState, controller: int, spec) -> list[int]:
         candidates = _spell_trap_field(state)
     elif spec.where == "any_card_field":
         candidates = _all_field_cards(state)
+    elif spec.where == "opponent_card_field":
+        candidates = _opponent_field_cards(state, controller)
     elif spec.where == "any_graveyard_monster":
         candidates = _graveyard_monsters(state, (0, 1))
     elif spec.where == "own_graveyard_monster":
@@ -563,11 +567,22 @@ def _spell_trap_field(state: GameState) -> list[int]:
 
 def _all_field_cards(state: GameState) -> list[int]:
     """Every card on the field, both players' — monsters and Spells/Traps/Field
-    alike (Raigeki Break / Phoenix Wing Wind Blast target 'any card on the field')."""
+    alike (Raigeki Break targets 'any card on the field')."""
     out: list[int] = []
     for pl in (0, 1):
         out += [i for i in state.players[pl].monster_zones if i is not None]
     return out + _spell_trap_field(state)
+
+
+def _opponent_field_cards(state: GameState, controller: int) -> list[int]:
+    """Every card the opponent controls — monsters, Spells/Traps, and Field Spell
+    (Phoenix Wing Wind Blast / Spiritualism target 'a card your opponent controls')."""
+    opp = state.opponent_of(controller)
+    out = [i for i in state.players[opp].monster_zones if i is not None]
+    out += [i for i in state.players[opp].spell_trap_zones if i is not None]
+    if state.players[opp].field_zone is not None:
+        out.append(state.players[opp].field_zone)
+    return out
 
 
 # --------------------------------------------------------------------------- #

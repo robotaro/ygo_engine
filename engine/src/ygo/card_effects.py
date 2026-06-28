@@ -14,6 +14,8 @@ from .effects import (
     SELF,
     AttackRestriction,
     BanishTargets,
+    BounceTargetsToDeck,
+    BounceTargetsToHand,
     DamageEqualToAttackerAtk,
     DestroyAllFieldSpells,
     DestroyAllMonsters,
@@ -34,6 +36,7 @@ from .effects import (
     ModifyStatsTemporary,
     NegateAttack,
     Piercing,
+    ReturnAllSpellTrapsToHand,
     ReturnSpellFromGraveyardToHand,
     SearchMonsterToHand,
     SelfStatMod,
@@ -245,6 +248,59 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="summon", by=OPPONENT, subject="monster", min_atk=1500),
             resolve=(BanishTargets(),),
+        ),
+    ),
+    # --- Effects Batch 10: bounce (return to hand / Deck) ---
+    # Return a monster to the hand.
+    "Compulsory Evacuation Device": (  # Normal Trap, any time
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="any_monster"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    "Hane-Hane": (  # FLIP: bounce 1 monster on the field
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="any_monster"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    "Gravekeeper's Guard": (  # FLIP: bounce 1 of the opponent's monsters
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    "Gale Lizard": (  # FLIP: bounce 1 of the opponent's monsters
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    # Giant Trunade — return every Spell/Trap on the field to hand.
+    "Giant Trunade": (Effect(resolve=(ReturnAllSpellTrapsToHand(),)),),
+    # Bounce to the top of the Deck (these compose Batch 8's discard cost).
+    "Back to Square One": (  # discard 1; put 1 monster on top of its owner's Deck
+        Effect(
+            discard_cost=1,
+            target=TargetSpec(count=1, where="any_monster"),
+            resolve=(BounceTargetsToDeck(to_top=True),),
+        ),
+    ),
+    "Phoenix Wing Wind Blast": (  # Normal Trap: discard 1; a card the opponent controls -> top of Deck
+        Effect(
+            speed=2,
+            timing="quick",
+            discard_cost=1,
+            target=TargetSpec(count=1, where="opponent_card_field"),
+            resolve=(BounceTargetsToDeck(to_top=True),),
         ),
     ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---
