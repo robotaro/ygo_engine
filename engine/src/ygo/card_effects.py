@@ -25,6 +25,7 @@ from .effects import (
     EquipMod,
     EquipToTarget,
     FieldMod,
+    GainLifePoints,
     InflictDamage,
     NegateAttack,
     ReturnSpellFromGraveyardToHand,
@@ -129,6 +130,15 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         Effect(resolve=(InflictDamage(OPPONENT, 1000), InflictDamage(SELF, 500))),
     ),
     "Hinotama": (Effect(resolve=(InflictDamage(OPPONENT, 500),)),),
+    # --- Effects Batch 3: fixed burn / heal Normal Spells ---
+    "Sparks": (Effect(resolve=(InflictDamage(OPPONENT, 200),)),),
+    "Final Flame": (Effect(resolve=(InflictDamage(OPPONENT, 600),)),),
+    "Ookazi": (Effect(resolve=(InflictDamage(OPPONENT, 800),)),),
+    "Blue Medicine": (Effect(resolve=(GainLifePoints(SELF, 400),)),),
+    "Red Medicine": (Effect(resolve=(GainLifePoints(SELF, 500),)),),
+    "Goblin's Secret Remedy": (Effect(resolve=(GainLifePoints(SELF, 600),)),),
+    "Soul of the Pure": (Effect(resolve=(GainLifePoints(SELF, 800),)),),
+    "Dian Keto the Cure Master": (Effect(resolve=(GainLifePoints(SELF, 1000),)),),
     # --- Slice 3: the Chain — Traps & Quick-Play (speed 2) ---
     "Trap Hole": (
         Effect(

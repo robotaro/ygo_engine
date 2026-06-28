@@ -290,6 +290,17 @@ class InflictDamage(Primitive):
         ctx.state.players[ctx.side(self.player)].life_points -= self.amount
 
 
+@dataclass(frozen=True)
+class GainLifePoints(Primitive):
+    """Increase a player's Life Points by a fixed amount (the healing spells)."""
+
+    player: str = SELF
+    amount: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.players[ctx.side(self.player)].life_points += self.amount
+
+
 # --- Slice 3: reactive primitives (read the triggering event) ---
 @dataclass(frozen=True)
 class NegateAttack(Primitive):
