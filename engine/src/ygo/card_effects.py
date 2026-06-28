@@ -197,6 +197,18 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Yami": _ACTIVATE_ONTO_FIELD,
     "Gaia Power": _ACTIVATE_ONTO_FIELD,
     "The Dark Door": _ACTIVATE_ONTO_FIELD,
+    # --- Effects Batch 1: more Field Spells (pure stat layers, see CONTINUOUS) ---
+    "Forest": _ACTIVATE_ONTO_FIELD,
+    "Mountain": _ACTIVATE_ONTO_FIELD,
+    "Wasteland": _ACTIVATE_ONTO_FIELD,
+    "Umi": _ACTIVATE_ONTO_FIELD,
+    "Jurassic World": _ACTIVATE_ONTO_FIELD,
+    "Umiiruka": _ACTIVATE_ONTO_FIELD,
+    "Mystic Plasma Zone": _ACTIVATE_ONTO_FIELD,
+    "Molten Destruction": _ACTIVATE_ONTO_FIELD,
+    "Luminous Spark": _ACTIVATE_ONTO_FIELD,
+    "Rising Air Current": _ACTIVATE_ONTO_FIELD,
+    "Acidic Downpour": _ACTIVATE_ONTO_FIELD,
     # --- Slice 8: Standby-Phase upkeep (maintenance cost / per-Standby burn) ---
     # Messenger of Peace — Continuous Spell with no activation effect; its
     # pay-or-destroy upkeep and ATK>=1500 attack lock live in CONTINUOUS below.
@@ -286,6 +298,23 @@ CONTINUOUS: dict[str, tuple] = {
         FieldMod(atk=-200, defn=-200, races=frozenset({"Fairy"})),
     ),
     "Gaia Power": (FieldMod(atk=500, defn=-400, attributes=frozenset({Attribute.EARTH})),),
+    # --- Effects Batch 1: more Field Spells (field-wide stat layers) ---
+    # Race-based +200/+200 (the classic terrain Field Spells).
+    "Forest": (FieldMod(atk=200, defn=200, races=frozenset({"Insect", "Beast", "Plant", "Beast-Warrior"})),),
+    "Mountain": (FieldMod(atk=200, defn=200, races=frozenset({"Dragon", "Winged Beast", "Thunder"})),),
+    "Wasteland": (FieldMod(atk=200, defn=200, races=frozenset({"Dinosaur", "Zombie", "Rock"})),),
+    "Umi": (
+        FieldMod(atk=200, defn=200, races=frozenset({"Fish", "Sea Serpent", "Thunder", "Aqua"})),
+        FieldMod(atk=-200, defn=-200, races=frozenset({"Machine", "Pyro"})),
+    ),
+    "Jurassic World": (FieldMod(atk=300, defn=300, races=frozenset({"Dinosaur"})),),
+    # Attribute-based "glass cannon" Field Spells (+500 ATK / -400 DEF, or the reverse).
+    "Umiiruka": (FieldMod(atk=500, defn=-400, attributes=frozenset({Attribute.WATER})),),
+    "Mystic Plasma Zone": (FieldMod(atk=500, defn=-400, attributes=frozenset({Attribute.DARK})),),
+    "Molten Destruction": (FieldMod(atk=500, defn=-400, attributes=frozenset({Attribute.FIRE})),),
+    "Luminous Spark": (FieldMod(atk=500, defn=-400, attributes=frozenset({Attribute.LIGHT})),),
+    "Rising Air Current": (FieldMod(atk=500, defn=-400, attributes=frozenset({Attribute.WIND})),),
+    "Acidic Downpour": (FieldMod(atk=-500, defn=400, attributes=frozenset({Attribute.EARTH})),),
     # Continuous Spell — a rules restriction, not a stat layer.
     "The Dark Door": (AttackRestriction(one_per_battle_phase=True),),
     # --- Slice 8: Standby-Phase upkeep ---
