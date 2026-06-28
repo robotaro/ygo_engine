@@ -181,7 +181,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         card = state.inst(iid).card
         if card.is_spell:
             effect = next(
-                (e for e in card.effects if e.timing in ("ignition", "quick", "fusion")), None
+                (e for e in card.effects if e.timing in ("ignition", "quick", "fusion", "ritual")),
+                None,
             )
             if effect is not None and (
                 effect.condition is None or effect.condition(state, player)
@@ -279,6 +280,43 @@ def _match_materials(state: GameState, recipe: tuple[str, ...], pool: list[int])
         remaining.remove(match)
         chosen.append(match)
     return chosen
+
+
+def ritual_monster_in_hand(state: GameState, controller: int, monster_name: str) -> int | None:
+    """The iid of ``monster_name`` in the controller's hand, if present."""
+    return next(
+        (i for i in state.players[controller].hand if state.inst(i).card.name == monster_name),
+        None,
+    )
+
+
+def ritual_tribute_pool(state: GameState, controller: int, exclude_iid: int) -> list[int]:
+    """Monsters the controller may Tribute for a Ritual Summon: any monster in
+    their Monster Zones, plus levelled monsters in hand (minus the Ritual Monster)."""
+    p = state.players[controller]
+    pool = [i for i in p.monster_zones if i is not None]
+    pool += [
+        i
+        for i in p.hand
+        if i != exclude_iid and state.inst(i).card.is_monster and (state.inst(i).card.level or 0) > 0
+    ]
+    return pool
+
+
+def can_ritual_summon(state: GameState, controller: int, monster_name: str) -> bool:
+    """Whether the controller could Ritual Summon ``monster_name`` right now: it's
+    in hand, the Tribute pool's Levels can reach its Level, and a Monster Zone will
+    be open after the Tributes leave."""
+    iid = ritual_monster_in_hand(state, controller, monster_name)
+    if iid is None:
+        return False
+    required = state.inst(iid).card.level or 0
+    pool = ritual_tribute_pool(state, controller, iid)
+    if sum(state.inst(m).card.level or 0 for m in pool) < required:
+        return False
+    free = sum(1 for i in state.players[controller].monster_zones if i is None)
+    on_field = sum(1 for m in pool if state.inst(m).zone is Zone.MONSTER)
+    return free + on_field >= 1  # a field Tribute (or an existing gap) opens the slot
 
 
 def _graveyard_monsters(state: GameState, players: tuple[int, ...]) -> list[int]:

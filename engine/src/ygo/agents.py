@@ -49,6 +49,26 @@ class Agent:
         """Pick one card iid from a list (e.g. which Fusion Monster to summon)."""
         return option_iids[0] if option_iids else None
 
+    def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):
+        """Pick monsters to Tribute whose Levels total >= ``required`` (Ritual
+        Summon). Default: when the field is full, Tribute field monsters first to
+        free a Zone; otherwise the fewest (highest-Level) Tributes."""
+        free = any(i is None for i in state.players[controller].monster_zones)
+        ranked = sorted(
+            candidates,
+            key=lambda i: (
+                (state.inst(i).zone is not Zone.MONSTER) if not free else False,
+                -(state.inst(i).card.level or 0),
+            ),
+        )
+        chosen, total = [], 0
+        for i in ranked:
+            if total >= required:
+                break
+            chosen.append(i)
+            total += state.inst(i).card.level or 0
+        return tuple(chosen)
+
 
 class RandomAgent(Agent):
     """Picks uniformly at random. Useful for fuzzing every rules path."""
@@ -67,6 +87,17 @@ class RandomAgent(Agent):
 
     def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
         return self.rng.choice(option_iids) if option_iids else None
+
+    def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):
+        pool = list(candidates)
+        self.rng.shuffle(pool)
+        chosen, total = [], 0
+        for i in pool:
+            if total >= required:
+                break
+            chosen.append(i)
+            total += state.inst(i).card.level or 0
+        return tuple(chosen)
 
 
 class GreedyAgent(Agent):
@@ -135,6 +166,16 @@ class GreedyAgent(Agent):
         ]
         if fusions:
             return fusions[0]
+        # Ritual Summon when a Ritual Spell can resolve (another free big body).
+        rituals = [
+            a
+            for a in legal
+            if isinstance(a, ActivateSpell)
+            and not a.targets
+            and any(e.timing == "ritual" for e in state.inst(a.iid).card.effects)
+        ]
+        if rituals:
+            return rituals[0]
         summons = [a for a in legal if isinstance(a, NormalSummon)]
         if summons:
             # biggest ATK, fewest tributes

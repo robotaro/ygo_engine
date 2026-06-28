@@ -6,6 +6,7 @@ export const legal = writable(null) // affordances, present only on your main-ph
 export const responsePrompt = writable(null) // {options, event} during a chain response window
 export const targetRequest = writable(null) // {source, prompt, candidates, count} when an effect needs a target
 export const choosePrompt = writable(null) // {prompt, options[]} when picking one card (e.g. a Fusion)
+export const ritualPrompt = writable(null) // {prompt, required, freeZones, options[]} for Ritual Tributes
 export const awaiting = writable(false) // true == engine is waiting on your move
 export const logs = writable([]) // narration lines
 export const result = writable(null) // {winner, youWin, reason} when the duel ends
@@ -27,6 +28,7 @@ export function newGame(seed) {
   responsePrompt.set(null)
   targetRequest.set(null)
   choosePrompt.set(null)
+  ritualPrompt.set(null)
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws'
   ws = new WebSocket(`${proto}://${location.host}/ws?seed=${seed}`)
@@ -45,6 +47,7 @@ export function newGame(seed) {
         responsePrompt.set(null)
         targetRequest.set(null)
         choosePrompt.set(null)
+        ritualPrompt.set(null)
         if (msg.context === 'response') {
           responsePrompt.set({ options: msg.options, event: msg.event })
         } else if (msg.context === 'target') {
@@ -56,6 +59,13 @@ export function newGame(seed) {
           })
         } else if (msg.context === 'choose') {
           choosePrompt.set({ prompt: msg.prompt, options: msg.options })
+        } else if (msg.context === 'tribute') {
+          ritualPrompt.set({
+            prompt: msg.prompt,
+            required: msg.required,
+            freeZones: msg.freeZones,
+            options: msg.options,
+          })
         } else {
           legal.set(msg.legal)
         }

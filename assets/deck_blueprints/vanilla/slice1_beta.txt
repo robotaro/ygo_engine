@@ -49,3 +49,8 @@
 1 Masaki the Legendary Swordsman
 1 Gaia the Dragon Champion
 1 Flame Swordsman
+// Slice 12 — Ritual (the Ritual Monster lives in the Main Deck, summoned from hand)
+1 Black Luster Ritual
+1 Black Luster Soldier
+1 Hamburger Recipe
+1 Hungry Burger

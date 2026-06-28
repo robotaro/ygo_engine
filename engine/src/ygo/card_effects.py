@@ -66,6 +66,18 @@ def _can_fusion_summon(state, controller) -> bool:
     return bool(makeable_fusions(state, controller))
 
 
+def _can_ritual_summon_for(monster_name: str):
+    """Build the activation gate for a Ritual Spell that summons ``monster_name``:
+    that Ritual Monster must be in hand and enough Tribute fodder must be on hand."""
+
+    def cond(state, controller) -> bool:
+        from .moves import can_ritual_summon  # lazy import avoids a module cycle
+
+        return can_ritual_summon(state, controller, monster_name)
+
+    return cond
+
+
 EFFECTS: dict[str, tuple[Effect, ...]] = {
     # --- Slice 1: Ignition Normal Spells, no cost, no targets ---
     "Pot of Greed": (Effect(resolve=(Draw(count=2),)),),
@@ -212,6 +224,16 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # pick a makeable Extra Deck monster, send its materials from hand/field to the
     # GY, and Special Summon it. Only activatable when something is makeable.
     "Polymerization": (Effect(timing="fusion", condition=_can_fusion_summon),),
+    # --- Slice 12: Ritual Summoning ---
+    # A Ritual Spell summons one named Ritual Monster from the hand, Tributing
+    # monsters whose Levels total at least that monster's Level. The "ritual"
+    # timing routes to the engine's Ritual flow.
+    "Black Luster Ritual": (
+        Effect(timing="ritual", condition=_can_ritual_summon_for("Black Luster Soldier")),
+    ),
+    "Hamburger Recipe": (
+        Effect(timing="ritual", condition=_can_ritual_summon_for("Hungry Burger")),
+    ),
 }
 
 
@@ -221,6 +243,13 @@ FUSIONS: dict[str, tuple[str, ...]] = {
     "Gaia the Dragon Champion": ("Gaia The Fierce Knight", "Curse of Dragon"),
     "Flame Swordsman": ("Flame Manipulator", "Masaki the Legendary Swordsman"),
     "B. Skull Dragon": ("Summoned Skull", "Red-Eyes B. Dragon"),
+}
+
+# Ritual recipes (Slice 12): Ritual Spell name -> the Ritual Monster it summons
+# from the hand. The Tributes' total Level must reach that monster's own Level.
+RITUALS: dict[str, str] = {
+    "Black Luster Ritual": "Black Luster Soldier",
+    "Hamburger Recipe": "Hungry Burger",
 }
 
 

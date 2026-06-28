@@ -20,6 +20,7 @@ from pathlib import Path
 
 from ..agents import Agent, GreedyAgent
 from ..engine import Engine
+from ..enums import Zone
 from ..moves import Action, Pass
 from ..serialize import legal_to_dict, match_intent, state_to_dict
 from ..setup import new_duel
@@ -163,6 +164,45 @@ class HumanAgent(Agent):
             iid = intent.get("iid")
             if intent.get("kind") == "choose" and iid in option_iids:
                 return iid
+            self.session.send({"type": "illegal", "intent": intent})
+
+    def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):
+        """Ritual Summon: pick monsters to Tribute (Levels totalling >= required)."""
+        free = sum(1 for i in state.players[controller].monster_zones if i is None)
+        self.session.send(
+            {
+                "type": "decision",
+                "context": "tribute",
+                "player": self.player,
+                "state": state_to_dict(state, self.player),
+                "prompt": f"Tribute monsters totalling Level {required}+",
+                "required": required,
+                "freeZones": free,
+                "options": [
+                    {
+                        "iid": i,
+                        "name": state.inst(i).card.name,
+                        "level": state.inst(i).card.level or 0,
+                        "where": "field" if state.inst(i).zone is Zone.MONSTER else "hand",
+                    }
+                    for i in candidates
+                ],
+            }
+        )
+        while True:
+            intent = self.session.wait_for_intent()
+            if intent is None:
+                raise EngineAborted()
+            chosen = intent.get("tributes", [])
+            on_field = sum(1 for c in chosen if c in candidates and state.inst(c).zone is Zone.MONSTER)
+            if (
+                intent.get("kind") == "tributes"
+                and all(c in candidates for c in chosen)
+                and len(set(chosen)) == len(chosen)
+                and sum((state.inst(c).card.level or 0) for c in chosen) >= required
+                and free + on_field >= 1
+            ):
+                return tuple(chosen)
             self.session.send({"type": "illegal", "intent": intent})
 
 

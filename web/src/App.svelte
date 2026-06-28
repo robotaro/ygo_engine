@@ -7,6 +7,7 @@
     responsePrompt,
     targetRequest,
     choosePrompt,
+    ritualPrompt,
     awaiting,
     logs,
     result,
@@ -22,6 +23,7 @@
   let targetChosen = [] // accumulating clicks for an engine-driven target prompt
   let seedInput = ''
   let openGy = null // which Graveyard's contents are expanded ('you' | 'opp')
+  let ritualChosen = [] // iids picked for a Ritual Tribute
 
   onMount(() => newGame())
 
@@ -148,6 +150,32 @@
   // engine-driven single-card chooser (e.g. which Fusion Monster to summon)
   function chooseCard(iid) {
     sendIntent({ kind: 'choose', iid })
+  }
+
+  // Ritual Tribute selection (multi-select with a Level total target)
+  $: if (!$ritualPrompt) ritualChosen = []
+  $: ritualTotal = $ritualPrompt
+    ? ritualChosen.reduce(
+        (n, iid) => n + ($ritualPrompt.options.find((o) => o.iid === iid)?.level ?? 0),
+        0,
+      )
+    : 0
+  $: ritualFieldPicked = $ritualPrompt
+    ? ritualChosen.filter(
+        (iid) => $ritualPrompt.options.find((o) => o.iid === iid)?.where === 'field',
+      ).length
+    : 0
+  $: ritualValid =
+    !!$ritualPrompt &&
+    ritualTotal >= $ritualPrompt.required &&
+    $ritualPrompt.freeZones + ritualFieldPicked >= 1
+  function toggleTributePick(iid) {
+    ritualChosen = ritualChosen.includes(iid)
+      ? ritualChosen.filter((x) => x !== iid)
+      : [...ritualChosen, iid]
+  }
+  function confirmTributes() {
+    if (ritualValid) sendIntent({ kind: 'tributes', tributes: ritualChosen })
   }
 
   // engine-driven target prompt (forced effects, e.g. Man-Eater Bug)
@@ -598,6 +626,32 @@
     </aside>
   {/if}
 
+  {#if $ritualPrompt && $awaiting}
+    <div class="overlay">
+      <div class="resultcard choose">
+        <h2>{$ritualPrompt.prompt}</h2>
+        <p class="rtotal" class:ok={ritualValid}>
+          selected Level {ritualTotal} / {$ritualPrompt.required}
+        </p>
+        <div class="choose-options">
+          {#each $ritualPrompt.options as opt}
+            <button
+              class="tributepick"
+              class:picked={ritualChosen.includes(opt.iid)}
+              onclick={() => toggleTributePick(opt.iid)}
+            >
+              <span class="cn">{opt.name}</span>
+              <span class="lv">Lv{opt.level} · {opt.where}</span>
+            </button>
+          {/each}
+        </div>
+        <button class="confirm" disabled={!ritualValid} onclick={confirmTributes}>
+          Tribute &amp; Summon
+        </button>
+      </div>
+    </div>
+  {/if}
+
   {#if $choosePrompt && $awaiting}
     <div class="overlay">
       <div class="resultcard choose">
@@ -925,6 +979,39 @@
     font-size: 11px;
     color: #eee;
     max-width: 80px;
+  }
+  .rtotal {
+    color: #ff8a7a;
+    font-weight: 700;
+    margin: 4px 0 0;
+  }
+  .rtotal.ok {
+    color: #7dff9e;
+  }
+  .tributepick {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #2b2b33;
+    color: #eee;
+    border: 2px solid #444;
+    padding: 8px 10px;
+    border-radius: 7px;
+  }
+  .tributepick .lv {
+    font-size: 10px;
+    color: #bbb;
+  }
+  .tributepick.picked {
+    border-color: #6cff9e;
+    background: rgba(108, 255, 158, 0.15);
+  }
+  .confirm {
+    margin-top: 14px;
+  }
+  .confirm:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
   .respond-options {
     display: flex;

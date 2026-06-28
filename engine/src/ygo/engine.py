@@ -25,11 +25,14 @@ from .moves import (
     Pass,
     SetSpellTrap,
     apply,
+    can_ritual_summon,
     legal_actions,
     makeable_fusions,
     response_options,
     resolve_effect,
     reveal_for_activation,
+    ritual_monster_in_hand,
+    ritual_tribute_pool,
     target_candidates,
 )
 from .state import GameState
@@ -347,6 +350,9 @@ class Engine:
         if any(e.timing == "fusion" for e in card.effects):
             self._fusion_summon(action.iid, controller)
             return
+        if any(e.timing == "ritual" for e in card.effects):
+            self._ritual_summon(action.iid, controller)
+            return
         effect = next((e for e in card.effects if e.timing in ("ignition", "quick")), card.effects[0])
         reveal_for_activation(s, action.iid, action.zone_index)
         self.log(f"  {s.players[controller].name} activates {card.name}")
@@ -380,6 +386,48 @@ class Engine:
         self._check_life_points()
         self._changed()
         self._check_field_to_gy_triggers()  # materials leaving the field may trigger (Sangan)
+
+    def _ritual_summon(self, spell_iid: int, controller: int) -> None:
+        """A Ritual Spell: Tribute monsters (Levels >= the Ritual Monster's Level)
+        from hand/field, then Special Summon that monster from the hand."""
+        from .card_effects import RITUALS
+
+        s = self.state
+        monster_name = RITUALS.get(s.inst(spell_iid).card.name)
+        if monster_name is None or not can_ritual_summon(s, controller, monster_name):
+            return  # gated at activation; defensive
+        monster_iid = ritual_monster_in_hand(s, controller, monster_name)
+        required = s.inst(monster_iid).card.level or 0
+        pool = ritual_tribute_pool(s, controller, monster_iid)
+
+        reveal_for_activation(s, spell_iid)  # the Ritual Spell shows in a Spell/Trap zone
+        self.log(f"  {s.players[controller].name} activates {s.inst(spell_iid).name}")
+        self._changed()
+
+        tributes = self.agents[controller].choose_tributes(s, controller, pool, required)
+        valid = (
+            tributes
+            and len(set(tributes)) == len(tributes)
+            and all(t in pool for t in tributes)
+            and sum(s.inst(t).card.level or 0 for t in tributes) >= required
+        )
+        if not valid:  # bad selection — pick a default that satisfies the cost
+            tributes = Agent().choose_tributes(s, controller, pool, required)
+
+        names = ", ".join(s.inst(t).name for t in tributes)
+        for t in tributes:
+            s.send_to_graveyard(t)
+        index = s.first_empty_monster_zone(controller)
+        if index is None:
+            s.send_to_graveyard(spell_iid)  # no room (shouldn't happen) — fizzle
+            return
+        s.place_monster(monster_iid, controller, index, Position.FACE_UP_ATTACK)
+        s.inst(monster_iid).summoned_this_turn = True
+        self.log(f"  Ritual Summon: {s.inst(monster_iid).name} (Tribute: {names})")
+        s.send_to_graveyard(spell_iid)  # the Ritual Spell is spent
+        self._check_life_points()
+        self._changed()
+        self._check_field_to_gy_triggers()
 
     def _response_window(self, event: dict) -> None:
         """Give the opponent of the acting player a chance to start a chain."""
