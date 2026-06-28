@@ -96,6 +96,27 @@ class CardDef:
     def is_ritual(self) -> bool:
         return MonsterCategory.RITUAL in self.categories
 
+    # --- v6.0 monster sub-types (each also carries EFFECT) ---
+    @property
+    def is_flip(self) -> bool:
+        return MonsterCategory.FLIP in self.categories
+
+    @property
+    def is_spirit(self) -> bool:
+        return MonsterCategory.SPIRIT in self.categories
+
+    @property
+    def is_union(self) -> bool:
+        return MonsterCategory.UNION in self.categories
+
+    @property
+    def is_gemini(self) -> bool:
+        return MonsterCategory.GEMINI in self.categories
+
+    @property
+    def is_toon(self) -> bool:
+        return MonsterCategory.TOON in self.categories
+
     @property
     def goes_in_extra_deck(self) -> bool:
         return self.is_fusion

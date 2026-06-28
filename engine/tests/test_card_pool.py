@@ -53,3 +53,27 @@ def test_demo_decks_fully_resolve():
         seed=0,
     )
     assert duel.missing_report == {}, f"unresolved deck cards: {duel.missing_report}"
+
+
+# --- Slice 13: monster sub-types are recognised (not folded to plain Effect) ---
+def test_subtype_categories_present_in_pool():
+    """The converter emits Flip/Spirit/Union/Gemini/Toon tokens; the pool carries
+    the expected v6.0 counts (a regression guard on build_card_db.TYPE_CATEGORIES)."""
+    counts = {"flip": 0, "spirit": 0, "union": 0, "gemini": 0, "toon": 0}
+    for c in reg:
+        if not c.is_monster:
+            continue
+        counts["flip"] += c.is_flip
+        counts["spirit"] += c.is_spirit
+        counts["union"] += c.is_union
+        counts["gemini"] += c.is_gemini
+        counts["toon"] += c.is_toon
+    assert counts == {"flip": 92, "spirit": 12, "union": 18, "gemini": 18, "toon": 9}
+
+
+def test_every_subtype_monster_is_a_nonvanilla_effect_monster():
+    """A sub-type tag always rides alongside EFFECT — so these stay effect monsters
+    (else has_effect/is_vanilla would silently flip and break their authored logic)."""
+    for c in reg:
+        if c.is_monster and (c.is_flip or c.is_spirit or c.is_union or c.is_gemini or c.is_toon):
+            assert c.has_effect and not c.is_vanilla, f"{c.name} lost its EFFECT tag"

@@ -10,9 +10,10 @@ Run:  uv run python scripts/build_card_db.py            # uses the saved v6.0 bl
 
 The engine's CSV `Type` column folds a monster's race and categories together
 (e.g. ``Spellcaster / Fusion / Effect``); Spells use the v6.0 word "Magic" and
-carry their icon in the `Property` column. The engine has no Flip/Spirit/Union/
-Gemini/Toon categories, so those all collapse to a plain `Effect` monster here —
-their special behaviour is authored later in card_effects.py (see the TODO in
+carry their icon in the `Property` column. The Flip/Spirit/Union/Gemini/Toon
+sub-types are emitted as their own category token alongside `Effect` (e.g.
+``Aqua / Flip / Effect``) so the engine can recognise them; their special
+behaviour is authored in card_effects.py / effects.py (see the slices noted in
 src/ygo/MONSTER_SUBTYPES_TODO.md).
 """
 
@@ -37,14 +38,16 @@ FIELDNAMES = [
 
 # YGOPRODeck `type` -> the engine category tokens appended after the race.
 # (Vanilla monsters get no token; the parser defaults them to NORMAL.)
+# Each v6.0 sub-type rides alongside `Effect` so the monster stays a non-vanilla
+# effect monster while also carrying its sub-type tag (see MONSTER_SUBTYPES_TODO.md).
 TYPE_CATEGORIES: dict[str, str] = {
     "Normal Monster": "",
     "Effect Monster": "Effect",
-    "Flip Effect Monster": "Effect",
-    "Gemini Monster": "Effect",
-    "Union Effect Monster": "Effect",
-    "Spirit Monster": "Effect",
-    "Toon Monster": "Effect",
+    "Flip Effect Monster": "Flip / Effect",
+    "Gemini Monster": "Gemini / Effect",
+    "Union Effect Monster": "Union / Effect",
+    "Spirit Monster": "Spirit / Effect",
+    "Toon Monster": "Toon / Effect",
     "Ritual Monster": "Ritual",
     "Ritual Effect Monster": "Ritual / Effect",
     "Token": "Token",

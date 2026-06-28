@@ -31,8 +31,11 @@ class Attribute(Enum):
 class MonsterCategory(Enum):
     """A monster's special categories, parsed from the card's Type line.
 
-    A monster may carry several (e.g. ``Spellcaster / Fusion / Effect``).
-    ``NORMAL`` means a vanilla monster with no effect text.
+    A monster may carry several (e.g. ``Spellcaster / Fusion / Effect``, or
+    ``Aqua / Flip / Effect``). ``NORMAL`` means a vanilla monster with no effect
+    text. The sub-type members (FLIP/SPIRIT/UNION/GEMINI/TOON) always accompany
+    EFFECT — they refine *how* an effect monster behaves, they don't replace the
+    "is an effect monster" bit.
     """
 
     NORMAL = "Normal"
@@ -40,6 +43,12 @@ class MonsterCategory(Enum):
     FUSION = "Fusion"
     RITUAL = "Ritual"
     TOKEN = "Token"
+    # Sub-types (v6.0 pool): each rides alongside EFFECT (see card_effects.py).
+    FLIP = "Flip"
+    SPIRIT = "Spirit"
+    UNION = "Union"
+    GEMINI = "Gemini"
+    TOON = "Toon"
 
 
 class SpellTrapProperty(Enum):
