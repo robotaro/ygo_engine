@@ -30,12 +30,14 @@ from .moves import (
     legal_actions,
     makeable_fusions,
     pay_discard_cost,
+    pay_tribute_cost,
     response_options,
     resolve_effect,
     reveal_for_activation,
     ritual_monster_in_hand,
     ritual_tribute_pool,
     target_candidates,
+    tribute_fodder,
 )
 from .state import GameState
 
@@ -364,21 +366,32 @@ class Engine:
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
 
     def _pay_activation_cost(self, source_iid: int, controller: int, effect) -> None:
-        """Pay an effect's activation cost (currently the discard cost) — the player
-        chooses the fodder (bot via heuristic, human via a prompt), then it's sent to
-        the Graveyard before the effect resolves."""
-        need = getattr(effect, "discard_cost", 0)
-        if not need:
-            return
+        """Pay an effect's activation cost — the discard cost and/or the Tribute
+        cost. The player chooses the fodder (bot via heuristic, human via a prompt),
+        then it's paid before the effect resolves."""
         s = self.state
-        fodder = [i for i in s.players[controller].hand if i != source_iid]
-        chosen = self.agents[controller].choose_discards(s, controller, fodder, need)
-        if len(set(chosen)) != need or any(c not in fodder for c in chosen):
-            chosen = Agent().choose_discards(s, controller, fodder, need)  # safe default
-        discarded = pay_discard_cost(s, controller, source_iid, need, chosen)
-        names = ", ".join(s.inst(i).name for i in discarded)
-        self.log(f"  {s.players[controller].name} discards {names} (cost)")
-        self._changed()
+        need = getattr(effect, "discard_cost", 0)
+        if need:
+            fodder = [i for i in s.players[controller].hand if i != source_iid]
+            chosen = self.agents[controller].choose_discards(s, controller, fodder, need)
+            if len(set(chosen)) != need or any(c not in fodder for c in chosen):
+                chosen = Agent().choose_discards(s, controller, fodder, need)  # safe default
+            discarded = pay_discard_cost(s, controller, source_iid, need, chosen)
+            names = ", ".join(s.inst(i).name for i in discarded)
+            self.log(f"  {s.players[controller].name} discards {names} (cost)")
+            self._changed()
+        tneed = getattr(effect, "tribute_cost", 0)
+        if tneed:
+            fodder = tribute_fodder(s, controller, effect.tribute_races, effect.tribute_attributes)
+            chosen = self.agents[controller].choose_cost_tributes(s, controller, fodder, tneed)
+            if len(set(chosen)) != tneed or any(c not in fodder for c in chosen):
+                chosen = Agent().choose_cost_tributes(s, controller, fodder, tneed)  # safe default
+            tributed = pay_tribute_cost(
+                s, controller, source_iid, tneed, effect.tribute_races, effect.tribute_attributes, chosen
+            )
+            names = ", ".join(s.inst(i).name for i in tributed)
+            self.log(f"  {s.players[controller].name} Tributes {names} (cost)")
+            self._changed()
 
     def _fusion_summon(self, poly_iid: int, controller: int) -> None:
         """Polymerization: pick a makeable Fusion, send its materials from hand/field

@@ -179,12 +179,37 @@ def discard_fodder(state: GameState, controller: int, source_iid: int) -> list[i
     return [i for i in state.players[controller].hand if i != source_iid]
 
 
+def tribute_fodder(state: GameState, controller: int, races=frozenset(), attrs=frozenset()) -> list[int]:
+    """Monsters ``controller`` may Tribute to pay a cost — those they control,
+    narrowed by an optional race / attribute restriction (Spiritual Fire Art needs
+    a FIRE monster, Icarus Attack a Winged Beast). Face-down monsters qualify too
+    (you know your own Set monster's stats)."""
+    out: list[int] = []
+    for iid in state.players[controller].monster_zones:
+        if iid is None:
+            continue
+        card = state.inst(iid).card
+        if races and card.race not in races:
+            continue
+        if attrs and card.attribute not in attrs:
+            continue
+        out.append(iid)
+    return out
+
+
 def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) -> bool:
     """Whether ``controller`` can pay ``effect``'s activation cost right now (used to
-    gate legal enumeration). Currently only the discard cost."""
+    gate legal enumeration). Covers the discard cost and the Tribute cost."""
     need = getattr(effect, "discard_cost", 0)
     if need and len(discard_fodder(state, controller, source_iid)) < need:
         return False
+    tneed = getattr(effect, "tribute_cost", 0)
+    if tneed:
+        fodder = tribute_fodder(
+            state, controller, effect.tribute_races, effect.tribute_attributes
+        )
+        if len(fodder) < tneed:
+            return False
     return True
 
 
@@ -196,6 +221,27 @@ def pay_discard_cost(
     deterministic headless default). Returns the discarded iids."""
     fodder = discard_fodder(state, controller, source_iid)
     picks = [i for i in (chosen or []) if i in fodder][:count] or fodder[:count]
+    for iid in picks:
+        state.send_to_graveyard(iid)
+    return picks
+
+
+def pay_tribute_cost(
+    state: GameState,
+    controller: int,
+    source_iid: int,
+    count: int,
+    races=frozenset(),
+    attrs=frozenset(),
+    chosen=None,
+) -> list[int]:
+    """Tribute ``count`` of ``controller``'s monsters as a cost. ``chosen`` names the
+    monsters (player's pick); without it, the first eligible ones are taken. The
+    picks are recorded on the source card (``tributed_iids``) before they go to the
+    Graveyard, so the payload can read their printed stats. Returns the iids."""
+    fodder = tribute_fodder(state, controller, races, attrs)
+    picks = [i for i in (chosen or []) if i in fodder][:count] or fodder[:count]
+    state.inst(source_iid).tributed_iids = list(picks)
     for iid in picks:
         state.send_to_graveyard(iid)
     return picks
@@ -863,8 +909,21 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
     # the discard fodder deterministically (the interactive engine asks the player).
     controller = state.inst(action.iid).controller
     for effect in card.effects:
+        paid = False
         if getattr(effect, "discard_cost", 0):
             pay_discard_cost(state, controller, action.iid, effect.discard_cost)
+            paid = True
+        if getattr(effect, "tribute_cost", 0):
+            pay_tribute_cost(
+                state,
+                controller,
+                action.iid,
+                effect.tribute_cost,
+                effect.tribute_races,
+                effect.tribute_attributes,
+            )
+            paid = True
+        if paid:
             break
     resolve_card_effects(state, action.iid, action.targets)
     # A Normal Spell heads to the Graveyard; a permanent one (Equip/Continuous/Field) stays.

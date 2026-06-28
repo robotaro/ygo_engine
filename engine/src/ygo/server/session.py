@@ -214,6 +214,44 @@ class HumanAgent(Agent):
                 self.session.send({"type": "illegal", "intent": intent})
         return tuple(chosen)
 
+    def choose_cost_tributes(self, state: GameState, controller: int, candidates: list[int], count: int):
+        """Activation cost: pick ``count`` of your monsters to Tribute. Reuses the
+        generic single-card 'choose' prompt, once per monster to Tribute."""
+        chosen: list[int] = []
+        pool = list(candidates)
+        for _ in range(count):
+            self.session.send(
+                {
+                    "type": "decision",
+                    "context": "choose",
+                    "player": self.player,
+                    "state": state_to_dict(state, self.player),
+                    "prompt": f"Tribute {count} monster(s) as a cost — choose {count - len(chosen)} more",
+                    "options": [
+                        {
+                            "iid": i,
+                            "name": state.inst(i).card.name,
+                            "attack": state.inst(i).card.attack,
+                            "defense": state.inst(i).card.defense,
+                            "level": state.inst(i).card.level,
+                            "imageId": state.inst(i).card.image_id,
+                        }
+                        for i in pool
+                    ],
+                }
+            )
+            while True:
+                intent = self.session.wait_for_intent()
+                if intent is None:
+                    raise EngineAborted()
+                iid = intent.get("iid")
+                if intent.get("kind") == "choose" and iid in pool:
+                    chosen.append(iid)
+                    pool.remove(iid)
+                    break
+                self.session.send({"type": "illegal", "intent": intent})
+        return tuple(chosen)
+
     def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):
         """Ritual Summon: pick monsters to Tribute (Levels totalling >= required)."""
         free = sum(1 for i in state.players[controller].monster_zones if i is None)

@@ -22,6 +22,7 @@ from .effects import (
     DestroyAllSpellTraps,
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
+    DestroyFaceUpMonstersWithDefAtMost,
     DestroyHighestAtkMonster,
     DestroyHighestDefOpponentMonster,
     DestroyLowestAtkOpponentMonster,
@@ -49,6 +50,7 @@ from .effects import (
     TargetAttack,
     TargetSpec,
     Trigger,
+    TributedAttack,
     UnionMod,
 )
 from .enums import Attribute
@@ -396,6 +398,39 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
             resolve=(NegateAttack(), GainLifePoints(SELF, value=TargetAttack())),
+        ),
+    ),
+    # --- Effects Batch 14: Tribute-cost activations (Tribute a monster to activate) ---
+    # The cost is paid before resolution (engine._pay_activation_cost / the atomic
+    # path), and the Tributed monster is recorded so the payload can read its stats.
+    # These Normal Traps have no trigger, so — like Just Desserts — they activate
+    # from the Set zone on your own turn (speed-2 ignition).
+    "Spiritual Fire Art - Kurenai": (  # Tribute 1 FIRE monster; burn = its original ATK
+        Effect(
+            speed=2,
+            timing="ignition",
+            tribute_cost=1,
+            tribute_attributes=frozenset({Attribute.FIRE}),
+            resolve=(InflictDamage(OPPONENT, value=TributedAttack()),),
+        ),
+    ),
+    "Icarus Attack": (  # Tribute 1 Winged Beast; destroy 2 cards on the field
+        Effect(
+            speed=2,
+            timing="ignition",
+            tribute_cost=1,
+            tribute_races=frozenset({"Winged Beast"}),
+            target=TargetSpec(count=2, where="any_card_field"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Burst Breath": (  # Tribute 1 Dragon; destroy all face-up monsters with DEF <= its ATK
+        Effect(
+            speed=2,
+            timing="ignition",
+            tribute_cost=1,
+            tribute_races=frozenset({"Dragon"}),
+            resolve=(DestroyFaceUpMonstersWithDefAtMost(threshold=TributedAttack()),),
         ),
     ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---

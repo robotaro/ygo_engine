@@ -257,6 +257,30 @@ class TargetAttack(ValueSource):
         return ctx.state.effective_attack(iid)
 
 
+def _tributed_atk(ctx: EffectContext) -> int:
+    """Sum of the printed ATK of the monster(s) Tributed as this card's activation
+    cost — read off the source card's recorded ``tributed_iids``. Printed (base)
+    ATK, since the tributed monster is now in the Graveyard."""
+    src = ctx.state.cards.get(ctx.source_iid)
+    if src is None:
+        return 0
+    return sum(
+        (ctx.state.inst(i).card.attack or 0)
+        for i in src.tributed_iids
+        if i in ctx.state.cards
+    )
+
+
+@dataclass(frozen=True)
+class TributedAttack(ValueSource):
+    """The (original/printed) ATK of the monster Tributed to pay this card's cost
+    (Spiritual Fire Art - Kurenai: "damage equal to that monster's original ATK").
+    For a multi-Tribute cost it sums them."""
+
+    def value(self, ctx: EffectContext) -> int:
+        return _tributed_atk(ctx)
+
+
 @dataclass(frozen=True)
 class CountTimes(ValueSource):
     """``per`` × the number of cards in a named pool — the "for each ..." burn/heal
@@ -496,6 +520,28 @@ class DestroyHighestAtkMonster(Primitive):
 
 
 @dataclass(frozen=True)
+class DestroyFaceUpMonstersWithDefAtMost(Primitive):
+    """Burst Breath: destroy every face-up monster on the field whose (effective)
+    DEF is at or below ``threshold`` — a dynamic value (the ATK of the monster
+    Tributed as the cost). With no threshold source it destroys nothing."""
+
+    threshold: ValueSource | None = None
+
+    def execute(self, ctx: EffectContext) -> None:
+        limit = self.threshold.value(ctx) if self.threshold is not None else -1
+        victims = [
+            iid
+            for pl in (0, 1)
+            for iid in ctx.state.players[pl].monster_zones
+            if iid is not None
+            and ctx.state.inst(iid).is_face_up
+            and ctx.state.effective_defense(iid) <= limit
+        ]
+        for iid in victims:
+            ctx.state.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
 class SwitchTargetsToAttack(Primitive):
     """Stop Defense: flip the target face-up into Attack Position."""
 
@@ -708,4 +754,11 @@ class Effect:
     # before resolution). Gated into legal enumeration — the action is only offered
     # when the controller has enough discard fodder (other than the card itself).
     discard_cost: int = 0
+    # Activation cost: Tribute this many monsters you control (Spiritual Fire Art,
+    # Icarus Attack, Burst Breath). ``tribute_races`` / ``tribute_attributes``
+    # restrict which monsters qualify (empty = any). The Tributed monsters are
+    # recorded on the source card so the payload can read their printed stats.
+    tribute_cost: int = 0
+    tribute_races: frozenset = frozenset()
+    tribute_attributes: frozenset = frozenset()
     resolve: tuple[Primitive, ...] = ()

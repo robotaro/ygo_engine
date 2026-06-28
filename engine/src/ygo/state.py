@@ -65,6 +65,10 @@ class CardInstance:
     # accumulate here and the engine clears them in the End Phase.
     temp_atk: int = 0
     temp_def: int = 0
+    # The monster(s) Tributed as this card's activation cost (Spiritual Fire Art,
+    # Burst Breath). Recorded when the cost is paid so the payload can read the
+    # tributed monster's printed stats after it has gone to the Graveyard.
+    tributed_iids: list[int] = field(default_factory=list)
 
     @property
     def name(self) -> str:
