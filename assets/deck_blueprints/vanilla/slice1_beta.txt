@@ -61,3 +61,6 @@
 // Slice 16 — Union monster + its host (Y-Dragon Head equips to X-Head Cannon, +400)
 1 X-Head Cannon
 1 Y-Dragon Head
+// Slice 17 — Toon: Toon World (pay 1000) enables the Toon, which can attack directly
+1 Toon World
+1 Toon Gemini Elf

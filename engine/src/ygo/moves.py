@@ -140,6 +140,17 @@ class Pass(Action):
 # --------------------------------------------------------------------------- #
 #  Summoning requirements
 # --------------------------------------------------------------------------- #
+def controls_toon_world(state: GameState, player: int) -> bool:
+    """Whether ``player`` has a face-up "Toon World" — the enabler a Toon monster
+    needs to be Summoned and to remain on the field."""
+    return any(
+        sid is not None
+        and state.inst(sid).card.name == "Toon World"
+        and state.inst(sid).is_face_up
+        for sid in state.players[player].spell_trap_zones
+    )
+
+
 def tributes_required(level: int | None) -> int:
     """Level 1-4 -> 0, Level 5-6 -> 1, Level 7+ -> 2."""
     lvl = level or 0
@@ -177,6 +188,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             card = state.inst(iid).card
             if not card.can_normal_summon:
                 continue
+            if card.is_toon and not controls_toon_world(state, player):
+                continue  # a Toon monster needs your Toon World face-up to be Summoned
             need = tributes_required(card.level)
             if need == 0:
                 if has_empty:
@@ -562,6 +575,15 @@ def _atk_attack_floor(state: GameState) -> int | None:
     return min(floors) if floors else None
 
 
+def _toon_attack_targets(state: GameState, opp: int, opp_monsters: list[int]) -> list[int | None]:
+    """A Toon may attack directly when the opponent controls no Toon monster; if
+    they do, it must attack a Toon. (It may also attack normal monsters.)"""
+    opp_toons = [m for m in opp_monsters if state.inst(m).card.is_toon]
+    if opp_toons:
+        return list(opp_toons)
+    return [None, *opp_monsters]  # direct attack, or any opponent monster
+
+
 def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
     if _attacks_locked_out(state, player):
         return []
@@ -577,10 +599,15 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
             continue
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
             continue  # Messenger of Peace: too strong to declare an attack
-        if opp_monsters:
-            actions.extend(DeclareAttack(iid, t) for t in opp_monsters)
+        if inst.card.is_toon:
+            if inst.summoned_this_turn:
+                continue  # a Toon can't attack the turn it's Summoned
+            targets = _toon_attack_targets(state, opp, opp_monsters)
+        elif opp_monsters:
+            targets = list(opp_monsters)
         else:
-            actions.append(DeclareAttack(iid, None))  # direct attack
+            targets = [None]  # direct attack
+        actions.extend(DeclareAttack(iid, t) for t in targets)
     return actions
 
 

@@ -61,6 +61,16 @@ def _has_free_monster_zone(state, controller) -> bool:
     return state.first_empty_monster_zone(controller) is not None
 
 
+def _lp_above(amount: int):
+    """Activation gate for a Life-Point cost: the controller must have more than
+    ``amount`` LP to pay it (Toon World's 1000)."""
+
+    def cond(state, controller) -> bool:
+        return state.players[controller].life_points > amount
+
+    return cond
+
+
 def _can_fusion_summon(state, controller) -> bool:
     """Gate Polymerization: at least one Extra Deck Fusion is makeable right now."""
     from .moves import makeable_fusions  # lazy import avoids a card_effects<->moves cycle
@@ -194,6 +204,12 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # Burning Land — Continuous Spell: activating it wipes every Field Spell, then
     # it burns the active player 500 each Standby (the burn lives in CONTINUOUS).
     "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
+    # --- Slice 17: Toon World — Continuous Spell, pay 1000 LP to activate ---
+    # While it's face-up it enables your Toon monsters (the engine checks for it by
+    # name); if it leaves the field, your Toon monsters are destroyed.
+    "Toon World": (
+        Effect(timing="ignition", condition=_lp_above(1000), resolve=(InflictDamage(SELF, 1000),)),
+    ),
     # Cure Mermaid is an Effect Monster with no activated ability — only the
     # continuous Standby recovery below — so it needs no EFFECTS entry.
     # --- Slice 9: take-control ---

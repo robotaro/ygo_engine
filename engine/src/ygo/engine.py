@@ -26,6 +26,7 @@ from .moves import (
     SetSpellTrap,
     apply,
     can_ritual_summon,
+    controls_toon_world,
     legal_actions,
     makeable_fusions,
     response_options,
@@ -563,6 +564,18 @@ class Engine:
             if equip is None or equip.zone is not Zone.SPELL_TRAP or equip.equipped_to != inst.iid:
                 self._return_control(inst)
 
+    def _cleanup_toons(self) -> None:
+        """Destroy a player's Toon monsters once they no longer control a face-up
+        Toon World (Slice 17)."""
+        s = self.state
+        for pl in (0, 1):
+            if controls_toon_world(s, pl):
+                continue
+            for iid in list(s.players[pl].monster_zones):
+                if iid is not None and s.cards[iid].card.is_toon:
+                    self.log(f"  {s.cards[iid].name} is destroyed (no Toon World)")
+                    s.send_to_graveyard(iid)
+
     def _return_control(self, monster) -> None:
         """Hand a monster back to its original controller; if their field is full it
         can't return and is sent to the Graveyard."""
@@ -588,6 +601,7 @@ class Engine:
         self._cleanup_equips()
         self._cleanup_linked()
         self._cleanup_control()
+        self._cleanup_toons()
         if self._processing_gy:
             return  # a nested resolution; the outer loop will drain the queue
         self._processing_gy = True
@@ -614,6 +628,7 @@ class Engine:
                 self._cleanup_equips()
                 self._cleanup_linked()
                 self._cleanup_control()
+                self._cleanup_toons()
         finally:
             self._processing_gy = False
 
