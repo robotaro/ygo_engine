@@ -170,10 +170,16 @@ class TargetSpec:
     ``where`` names a pool the engine can enumerate: "opponent_monsters",
     "any_monster", "spell_trap_field", "any_graveyard_monster" (either GY),
     "own_graveyard_monster" (the controller's GY only).
+
+    ``races`` / ``attributes`` optionally narrow a monster pool to those races
+    (e.g. an Equip that may only attach to a Spellcaster) or attributes — empty
+    means "any".
     """
 
     count: int = 1
     where: str = "opponent_monsters"
+    races: frozenset = frozenset()
+    attributes: frozenset = frozenset()
 
 
 @dataclass(frozen=True)

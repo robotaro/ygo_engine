@@ -48,6 +48,23 @@ _ACTIVATE_ONTO_FIELD = (Effect(timing="ignition"),)
 _EQUIP_TARGET = TargetSpec(count=1, where="any_monster")
 
 
+def _equip_effect(races=(), attributes=()):
+    """A standard Equip Spell: activate by targeting a (race/attribute-restricted)
+    monster, then attach. The ATK/DEF boost lives in CONTINUOUS as an EquipMod."""
+    return (
+        Effect(
+            timing="ignition",
+            target=TargetSpec(
+                count=1,
+                where="any_monster",
+                races=frozenset(races),
+                attributes=frozenset(attributes),
+            ),
+            resolve=(EquipToTarget(),),
+        ),
+    )
+
+
 def _opponent_has_faceup_monster(state, controller) -> bool:
     opp = state.opponent_of(controller)
     return any(
@@ -169,6 +186,22 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Axe of Despair": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
     "United We Stand": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
     "Mage Power": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
+    # --- Effects Batch 2: race/attribute-restricted flat Equip Spells ---
+    # Race-restricted +300 ATK/DEF (the classic "tribal" equips). The host filter
+    # is on the target; the boost is the EquipMod in CONTINUOUS below.
+    "Beast Fangs": _equip_effect(races=("Beast",)),
+    "Book of Secret Arts": _equip_effect(races=("Spellcaster",)),
+    "Dark Energy": _equip_effect(races=("Fiend",)),
+    "Dragon Treasure": _equip_effect(races=("Dragon",)),
+    "Electro-Whip": _equip_effect(races=("Thunder",)),
+    "Follow Wind": _equip_effect(races=("Winged Beast",)),
+    "Silver Bow and Arrow": _equip_effect(races=("Fairy",)),
+    "Vile Germs": _equip_effect(races=("Plant",)),
+    # Attribute-restricted +400 ATK / -200 DEF.
+    "Burning Spear": _equip_effect(attributes=(Attribute.FIRE,)),
+    "Elf's Light": _equip_effect(attributes=(Attribute.LIGHT,)),
+    "Gust Fan": _equip_effect(attributes=(Attribute.WIND,)),
+    "Steel Shell": _equip_effect(attributes=(Attribute.WATER,)),
     # --- Slice 6: Special Summon from the Graveyard ---
     # Monster Reborn — Normal Spell: revive a monster from *either* Graveyard.
     "Monster Reborn": (
@@ -291,6 +324,19 @@ CONTINUOUS: dict[str, tuple] = {
     "Axe of Despair": (EquipMod(atk=1000),),
     "United We Stand": (EquipMod(scaling="face_up_monsters", scale_atk=800, scale_defn=800),),
     "Mage Power": (EquipMod(scaling="spell_trap", scale_atk=500, scale_defn=500),),
+    # --- Effects Batch 2: race/attribute-restricted flat Equip Spells ---
+    "Beast Fangs": (EquipMod(atk=300, defn=300),),
+    "Book of Secret Arts": (EquipMod(atk=300, defn=300),),
+    "Dark Energy": (EquipMod(atk=300, defn=300),),
+    "Dragon Treasure": (EquipMod(atk=300, defn=300),),
+    "Electro-Whip": (EquipMod(atk=300, defn=300),),
+    "Follow Wind": (EquipMod(atk=300, defn=300),),
+    "Silver Bow and Arrow": (EquipMod(atk=300, defn=300),),
+    "Vile Germs": (EquipMod(atk=300, defn=300),),
+    "Burning Spear": (EquipMod(atk=400, defn=-200),),
+    "Elf's Light": (EquipMod(atk=400, defn=-200),),
+    "Gust Fan": (EquipMod(atk=400, defn=-200),),
+    "Steel Shell": (EquipMod(atk=400, defn=-200),),
     # Field Spells — flat ATK/DEF to every matching monster on the field, both sides.
     "Sogen": (FieldMod(atk=200, defn=200, races=frozenset({"Warrior", "Beast-Warrior"})),),
     "Yami": (

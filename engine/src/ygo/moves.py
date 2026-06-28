@@ -289,6 +289,22 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
     return actions
 
 
+def _filter_monster_traits(state: GameState, iids: list[int], spec) -> list[int]:
+    """Narrow a monster pool to ``spec``'s race/attribute restriction (e.g. an
+    Equip that may only attach to a Spellcaster). No restriction -> unchanged."""
+    if spec is None or (not spec.races and not spec.attributes):
+        return iids
+    out: list[int] = []
+    for i in iids:
+        card = state.inst(i).card
+        if spec.races and card.race not in spec.races:
+            continue
+        if spec.attributes and card.attribute not in spec.attributes:
+            continue
+        out.append(i)
+    return out
+
+
 def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[int, ...]]:
     """List the legal target sets for an effect (``[()]`` means 'no target')."""
     if spec is None:
@@ -308,6 +324,7 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
         candidates = _graveyard_monsters(state, (controller,))
     else:
         candidates = []
+    candidates = _filter_monster_traits(state, candidates, spec)
     if spec.count == 1:
         return [(c,) for c in candidates]
     return [tuple(combo) for combo in combinations(candidates, spec.count)]
@@ -455,16 +472,18 @@ def target_candidates(state: GameState, controller: int, spec) -> list[int]:
         return []
     opp = state.opponent_of(controller)
     if spec.where == "opponent_monsters":
-        return [i for i in state.players[opp].monster_zones if i is not None]
-    if spec.where == "any_monster":
-        return [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
-    if spec.where == "spell_trap_field":
-        return _spell_trap_field(state)
-    if spec.where == "any_graveyard_monster":
-        return _graveyard_monsters(state, (0, 1))
-    if spec.where == "own_graveyard_monster":
-        return _graveyard_monsters(state, (controller,))
-    return []
+        candidates = [i for i in state.players[opp].monster_zones if i is not None]
+    elif spec.where == "any_monster":
+        candidates = [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
+    elif spec.where == "spell_trap_field":
+        candidates = _spell_trap_field(state)
+    elif spec.where == "any_graveyard_monster":
+        candidates = _graveyard_monsters(state, (0, 1))
+    elif spec.where == "own_graveyard_monster":
+        candidates = _graveyard_monsters(state, (controller,))
+    else:
+        candidates = []
+    return _filter_monster_traits(state, candidates, spec)
 
 
 def _spell_trap_field(state: GameState) -> list[int]:
