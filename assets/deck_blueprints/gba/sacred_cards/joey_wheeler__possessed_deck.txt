@@ -1,0 +1,23 @@
+// The Sacred Cards (GBA, 2003) — Joey Wheeler — Possessed Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Joey Wheeler's Decks
+// 40 cards; all cards in v6 pool
+1 Baby Dragon
+3 Battle Warrior
+3 Flame Dancer
+3 Hinotama Soul
+3 Mountain Warrior
+3 Rock Ogre Grotto #1
+3 Swordsman of Landstar
+3 Wings of Wicked Flame
+3 Wolf
+1 Rocket Warrior
+1 Time Wizard
+2 Final Flame
+2 Hinotama
+2 Ookazi
+1 Salamandra
+2 Sparks
+2 Tremendous Fire
+1 Kunai with Chain
+#EXTRA DECK
+1 Flame Swordsman

@@ -1,0 +1,872 @@
+{
+ "eternal_duelist_soul": [
+  [
+   "Battle Ox",
+   43,
+   0,
+   "battle_ox.txt"
+  ],
+  [
+   "Black Luster Soldier",
+   16,
+   0,
+   "black_luster_soldier.txt"
+  ],
+  [
+   "Blue Millenium Puzzle",
+   36,
+   0,
+   "blue_millenium_puzzle.txt"
+  ],
+  [
+   "Blue-Eyes Toon Dragon",
+   53,
+   1,
+   "blue_eyes_toon_dragon.txt"
+  ],
+  [
+   "Blue-Eyes Ultimate Dragon",
+   10,
+   1,
+   "blue_eyes_ultimate_dragon.txt"
+  ],
+  [
+   "Blue-Eyes White Dragon",
+   61,
+   0,
+   "blue_eyes_white_dragon.txt"
+  ],
+  [
+   "Buster Blader",
+   54,
+   0,
+   "buster_blader.txt"
+  ],
+  [
+   "Cyber Harpie",
+   50,
+   3,
+   "cyber_harpie.txt"
+  ],
+  [
+   "Dark Magician",
+   40,
+   3,
+   "dark_magician.txt"
+  ],
+  [
+   "Exodia",
+   65,
+   0,
+   "exodia.txt"
+  ],
+  [
+   "Garoozis",
+   47,
+   2,
+   "garoozis.txt"
+  ],
+  [
+   "Gate Guardian",
+   50,
+   1,
+   "gate_guardian.txt"
+  ],
+  [
+   "Gemini Elf",
+   43,
+   2,
+   "gemini_elf.txt"
+  ],
+  [
+   "Great Moth",
+   52,
+   0,
+   "great_moth.txt"
+  ],
+  [
+   "Green Millenium Puzzle",
+   33,
+   1,
+   "green_millenium_puzzle.txt"
+  ],
+  [
+   "Judge Man",
+   33,
+   0,
+   "judge_man.txt"
+  ],
+  [
+   "Launcher Spider",
+   52,
+   1,
+   "launcher_spider.txt"
+  ],
+  [
+   "Millenium Eye",
+   49,
+   1,
+   "millenium_eye.txt"
+  ],
+  [
+   "Multi-colored Millenium Puzzle",
+   39,
+   5,
+   "multi_colored_millenium_puzzle.txt"
+  ],
+  [
+   "Mystical Elf",
+   40,
+   0,
+   "mystical_elf.txt"
+  ],
+  [
+   "Red-Eyes B. Dragon",
+   50,
+   0,
+   "red_eyes_b_dragon.txt"
+  ],
+  [
+   "Relinquished",
+   50,
+   0,
+   "relinquished.txt"
+  ],
+  [
+   "Tiger Axe",
+   31,
+   2,
+   "tiger_axe.txt"
+  ]
+ ],
+ "worldwide_edition": [
+  [
+   "B. Skull Dragon",
+   45,
+   0,
+   "b_skull_dragon.txt"
+  ],
+  [
+   "Barrel Dragon",
+   57,
+   0,
+   "barrel_dragon.txt"
+  ],
+  [
+   "Black Luster Soldier",
+   14,
+   0,
+   "black_luster_soldier.txt"
+  ],
+  [
+   "Blue Millennium Puzzle",
+   74,
+   2,
+   "blue_millennium_puzzle.txt"
+  ],
+  [
+   "Blue-Eyes Toon Dragon",
+   51,
+   0,
+   "blue_eyes_toon_dragon.txt"
+  ],
+  [
+   "Blue-Eyes Ultimate Dragon",
+   9,
+   1,
+   "blue_eyes_ultimate_dragon.txt"
+  ],
+  [
+   "Blue-Eyes White Dragon",
+   51,
+   0,
+   "blue_eyes_white_dragon.txt"
+  ],
+  [
+   "Buster Blader",
+   50,
+   0,
+   "buster_blader.txt"
+  ],
+  [
+   "Challenge Cup Tournament Pack",
+   60,
+   0,
+   "challenge_cup_tournament_pack.txt"
+  ],
+  [
+   "Cyber Harpie",
+   49,
+   1,
+   "cyber_harpie.txt"
+  ],
+  [
+   "Dark Magician",
+   42,
+   1,
+   "dark_magician.txt"
+  ],
+  [
+   "Dark Magician Girl",
+   6,
+   0,
+   "dark_magician_girl.txt"
+  ],
+  [
+   "Duelist Weekly Promotional Cards",
+   99,
+   2,
+   "duelist_weekly_promotional_cards.txt"
+  ],
+  [
+   "Exodia the Forbidden One",
+   62,
+   0,
+   "exodia_the_forbidden_one.txt"
+  ],
+  [
+   "F-I-N-A-L",
+   49,
+   0,
+   "f_i_n_a_l.txt"
+  ],
+  [
+   "Gate Guardian",
+   44,
+   0,
+   "gate_guardian.txt"
+  ],
+  [
+   "Graceful Charity",
+   80,
+   0,
+   "graceful_charity.txt"
+  ],
+  [
+   "Great Moth",
+   50,
+   0,
+   "great_moth.txt"
+  ],
+  [
+   "KC Tournament Pack",
+   48,
+   0,
+   "kc_tournament_pack.txt"
+  ],
+  [
+   "Launcher Spider",
+   49,
+   0,
+   "launcher_spider.txt"
+  ],
+  [
+   "Mystical Elf",
+   40,
+   0,
+   "mystical_elf.txt"
+  ],
+  [
+   "Red Millennium Puzzle",
+   253,
+   6,
+   "red_millennium_puzzle.txt"
+  ],
+  [
+   "Red-Eyes B. Dragon (Japanese)",
+   9,
+   0,
+   "red_eyes_b_dragon_japanese.txt"
+  ],
+  [
+   "Red-Eyes B. Dragon",
+   50,
+   0,
+   "red_eyes_b_dragon.txt"
+  ],
+  [
+   "Relinquished",
+   47,
+   0,
+   "relinquished.txt"
+  ],
+  [
+   "Saturday Commemorative Pack",
+   50,
+   4,
+   "saturday_commemorative_pack.txt"
+  ],
+  [
+   "Special Ghoul Pack",
+   88,
+   3,
+   "special_ghoul_pack.txt"
+  ],
+  [
+   "The Legendary Fisherman",
+   44,
+   0,
+   "the_legendary_fisherman.txt"
+  ],
+  [
+   "The Masked Beast",
+   50,
+   1,
+   "the_masked_beast.txt"
+  ]
+ ],
+ "wct_2004": [
+  [
+   "\"Yugi Pose\" 1",
+   6,
+   0,
+   "yugi_pose_1.txt"
+  ],
+  [
+   "\"Yugi Pose\" 2",
+   8,
+   0,
+   "yugi_pose_2.txt"
+  ],
+  [
+   "\"Yugi Pose\" 3",
+   5,
+   0,
+   "yugi_pose_3.txt"
+  ],
+  [
+   "\"Yugi Pose\" 4",
+   59,
+   1,
+   "yugi_pose_4.txt"
+  ],
+  [
+   "\"Yugi Pose\" 5",
+   7,
+   0,
+   "yugi_pose_5.txt"
+  ],
+  [
+   "B. Skull Dragon",
+   61,
+   0,
+   "b_skull_dragon.txt"
+  ],
+  [
+   "Barrel Dragon",
+   81,
+   0,
+   "barrel_dragon.txt"
+  ],
+  [
+   "Black Luster Soldier",
+   32,
+   1,
+   "black_luster_soldier.txt"
+  ],
+  [
+   "Blue-Eyes White Dragon",
+   62,
+   0,
+   "blue_eyes_white_dragon.txt"
+  ],
+  [
+   "Dark Ruler Ha Des",
+   144,
+   6,
+   "dark_ruler_ha_des.txt"
+  ],
+  [
+   "Guardian Sphinx",
+   97,
+   0,
+   "guardian_sphinx.txt"
+  ],
+  [
+   "Jinzo",
+   57,
+   0,
+   "jinzo.txt"
+  ],
+  [
+   "Red-Eyes B. Dragon",
+   66,
+   0,
+   "red_eyes_b_dragon.txt"
+  ],
+  [
+   "Relinquished",
+   53,
+   0,
+   "relinquished.txt"
+  ],
+  [
+   "The Masked Beast",
+   57,
+   2,
+   "the_masked_beast.txt"
+  ],
+  [
+   "Thousand-Eyes Restrict",
+   52,
+   0,
+   "thousand_eyes_restrict.txt"
+  ],
+  [
+   "Toon Summoned Skull",
+   52,
+   0,
+   "toon_summoned_skull.txt"
+  ],
+  [
+   "Yamata Dragon",
+   145,
+   5,
+   "yamata_dragon.txt"
+  ],
+  [
+   "Zombyra the Dark",
+   93,
+   3,
+   "zombyra_the_dark.txt"
+  ]
+ ],
+ "wct_2005": [
+  [
+   "All Spells",
+   9,
+   0,
+   "all_spells.txt"
+  ],
+  [
+   "All Traps",
+   4,
+   0,
+   "all_traps.txt"
+  ],
+  [
+   "All effect monsters",
+   2,
+   0,
+   "all_effect_monsters.txt"
+  ],
+  [
+   "Beat Down",
+   38,
+   0,
+   "beat_down.txt"
+  ],
+  [
+   "Boosted Exodia",
+   14,
+   0,
+   "boosted_exodia.txt"
+  ],
+  [
+   "Dark Ceremony",
+   26,
+   0,
+   "dark_ceremony.txt"
+  ],
+  [
+   "Darkness Collection",
+   1,
+   0,
+   "darkness_collection.txt"
+  ],
+  [
+   "Dragon Collection",
+   1,
+   0,
+   "dragon_collection.txt"
+  ],
+  [
+   "Forbidden Deck",
+   21,
+   0,
+   "forbidden_deck.txt"
+  ],
+  [
+   "Joey Standard",
+   46,
+   0,
+   "joey_standard.txt"
+  ],
+  [
+   "K.C. Special",
+   18,
+   0,
+   "k_c_special.txt"
+  ],
+  [
+   "Light Collection",
+   1,
+   0,
+   "light_collection.txt"
+  ],
+  [
+   "Quick-Play Collection",
+   19,
+   0,
+   "quick_play_collection.txt"
+  ],
+  [
+   "Seto Standard",
+   41,
+   0,
+   "seto_standard.txt"
+  ],
+  [
+   "Super Unlimited Selection",
+   28,
+   0,
+   "super_unlimited_selection.txt"
+  ],
+  [
+   "Trap and Spell",
+   39,
+   0,
+   "trap_and_spell.txt"
+  ],
+  [
+   "Volume 2",
+   2,
+   0,
+   "volume_2.txt"
+  ],
+  [
+   "Volume 7",
+   1,
+   0,
+   "volume_7.txt"
+  ],
+  [
+   "Warrior Collection",
+   2,
+   0,
+   "warrior_collection.txt"
+  ],
+  [
+   "Yugi Standard",
+   43,
+   0,
+   "yugi_standard.txt"
+  ]
+ ],
+ "wct_2006": [
+  [
+   "Legend of Blue Eyes White Dragon",
+   105,
+   0,
+   "legend_of_blue_eyes_white_dragon.txt"
+  ],
+  [
+   "Rise of Destiny",
+   60,
+   2,
+   "rise_of_destiny.txt"
+  ],
+  [
+   "Special Gift Collection",
+   74,
+   12,
+   "special_gift_collection.txt"
+  ],
+  [
+   "Special Summon Collection C",
+   93,
+   7,
+   "special_summon_collection_c.txt"
+  ],
+  [
+   "Warrior Collection A",
+   87,
+   7,
+   "warrior_collection_a.txt"
+  ]
+ ],
+ "gx_duel_academy": [
+  [
+   "Basic 1-A",
+   40,
+   0,
+   "basic_1_a.txt"
+  ],
+  [
+   "Basic 1-B",
+   40,
+   2,
+   "basic_1_b.txt"
+  ],
+  [
+   "Basic 1-C",
+   40,
+   1,
+   "basic_1_c.txt"
+  ],
+  [
+   "Basic 4-B",
+   40,
+   0,
+   "basic_4_b.txt"
+  ],
+  [
+   "Basic 2-B",
+   40,
+   0,
+   "basic_2_b.txt"
+  ],
+  [
+   "Basic 2-C",
+   40,
+   0,
+   "basic_2_c.txt"
+  ],
+  [
+   "Basic 3-A",
+   40,
+   1,
+   "basic_3_a.txt"
+  ],
+  [
+   "Basic 3-B",
+   40,
+   0,
+   "basic_3_b.txt"
+  ],
+  [
+   "Basic 3-C",
+   40,
+   0,
+   "basic_3_c.txt"
+  ],
+  [
+   "Basic 4-A",
+   40,
+   0,
+   "basic_4_a.txt"
+  ],
+  [
+   "Basic 4-B",
+   40,
+   0,
+   "basic_4_b_2.txt"
+  ],
+  [
+   "Basic 4-C",
+   40,
+   0,
+   "basic_4_c.txt"
+  ],
+  [
+   "Be Quick",
+   19,
+   0,
+   "be_quick.txt"
+  ],
+  [
+   "Beasts in Fight",
+   74,
+   0,
+   "beasts_in_fight.txt"
+  ],
+  [
+   "Continuous Effects",
+   80,
+   1,
+   "continuous_effects.txt"
+  ],
+  [
+   "Dragons in Flight",
+   59,
+   2,
+   "dragons_in_flight.txt"
+  ],
+  [
+   "Effect Monsters",
+   50,
+   2,
+   "effect_monsters.txt"
+  ],
+  [
+   "Effect Monsters Special",
+   36,
+   1,
+   "effect_monsters_special.txt"
+  ],
+  [
+   "Equipments",
+   55,
+   2,
+   "equipments.txt"
+  ],
+  [
+   "Expert I",
+   72,
+   0,
+   "expert_i.txt"
+  ],
+  [
+   "Expert II",
+   72,
+   4,
+   "expert_ii.txt"
+  ],
+  [
+   "Expert III",
+   72,
+   1,
+   "expert_iii.txt"
+  ],
+  [
+   "Expert IV",
+   72,
+   1,
+   "expert_iv.txt"
+  ],
+  [
+   "Fairy Dance",
+   49,
+   0,
+   "fairy_dance.txt"
+  ],
+  [
+   "Fusions",
+   61,
+   0,
+   "fusions.txt"
+  ],
+  [
+   "Insect's Nest",
+   38,
+   1,
+   "insect_s_nest.txt"
+  ],
+  [
+   "Invitation to the Dark",
+   177,
+   3,
+   "invitation_to_the_dark.txt"
+  ],
+  [
+   "Live Vehicles",
+   12,
+   1,
+   "live_vehicles.txt"
+  ],
+  [
+   "Master Fusions",
+   36,
+   2,
+   "master_fusions.txt"
+  ],
+  [
+   "Power Destructions",
+   53,
+   0,
+   "power_destructions.txt"
+  ],
+  [
+   "Pyrogen",
+   77,
+   0,
+   "pyrogen.txt"
+  ],
+  [
+   "Residents of the Sea",
+   89,
+   1,
+   "residents_of_the_sea.txt"
+  ],
+  [
+   "Rituals",
+   51,
+   1,
+   "rituals.txt"
+  ],
+  [
+   "Special Ways",
+   53,
+   2,
+   "special_ways.txt"
+  ],
+  [
+   "Spell Collection 1",
+   33,
+   1,
+   "spell_collection_1.txt"
+  ],
+  [
+   "Spell Collection 2",
+   33,
+   0,
+   "spell_collection_2.txt"
+  ],
+  [
+   "Spell Special 1",
+   33,
+   0,
+   "spell_special_1.txt"
+  ],
+  [
+   "Spell Special 2",
+   33,
+   3,
+   "spell_special_2.txt"
+  ],
+  [
+   "Spellcaster's Dance",
+   91,
+   2,
+   "spellcaster_s_dance.txt"
+  ],
+  [
+   "The HERO",
+   26,
+   0,
+   "the_hero.txt"
+  ],
+  [
+   "The Machines",
+   81,
+   2,
+   "the_machines.txt"
+  ],
+  [
+   "The Warriors",
+   112,
+   3,
+   "the_warriors.txt"
+  ],
+  [
+   "Trap Collection 1",
+   28,
+   1,
+   "trap_collection_1.txt"
+  ],
+  [
+   "Trap Collection 2",
+   28,
+   0,
+   "trap_collection_2.txt"
+  ],
+  [
+   "Trap Special 1",
+   28,
+   2,
+   "trap_special_1.txt"
+  ],
+  [
+   "Trap Special 2",
+   28,
+   3,
+   "trap_special_2.txt"
+  ],
+  [
+   "Various Fields",
+   20,
+   0,
+   "various_fields.txt"
+  ]
+ ]
+}

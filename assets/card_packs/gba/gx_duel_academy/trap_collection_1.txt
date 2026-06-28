@@ -1,0 +1,37 @@
+# Pack: Trap Collection 1 — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Trap Collection 1 (GX1-BP)
+# Cards per pack: 5 | Price: 100 DP | Cards in pack: 28 | Unlocked: Read "Trap" Tutorial (1-6) | Frequency: Once a week
+# 28 distinct cards; 1 not in v6 pool
+## Super Rare
+Negate Attack
+Magic Jammer
+## Rare
+Chain Destruction
+Waboku
+## Common
+House of Adhesive Tape
+Eatgaboon
+Widespread Ruin
+Skull Dice
+Tragedy
+Reinforcements
+Castle Walls
+White Hole
+Call of the Grave
+Anti Raigeki
+Just Desserts
+Gryphon Wing
+Snake Fang
+Michizure
+Time Seal
+Raigeki Break
+Thunder of Ruler
+Altar for Tribute
+Frozen Soul
+Destruction Ring
+Trap Jammer
+Desert Sunlight
+Cemetery Bomb
+Magical Explosion
+#
+# Not in v6 pool: Cemetery Bomb

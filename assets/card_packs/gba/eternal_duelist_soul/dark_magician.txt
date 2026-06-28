@@ -1,0 +1,47 @@
+# Pack: Dark Magician — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Dark Magician (EDS-BP)
+# 40 distinct cards; 3 not in v6 pool
+## Rare
+Beast Fangs
+Book of Secret Arts
+Dark Hole
+Dark Magician
+Fissure
+Gaia The Fierce Knight
+Legendary Sword
+Power of Kaishin
+Trap Hole
+Violet Crystal
+## Common
+Air Marmot of Nefariousness
+Candle of Fate
+Curtain of the Dark Ones
+Dark Gray
+Eyearmor
+Fiend's Hand
+Fire Reaper
+Firegrass
+Haniwa
+Hitodenchak
+Hitotsu-Me Giant
+Hourglass of Life
+Kagemusha of the Blue Flame
+Kaminarikozou
+Kurama
+LaLa Li-oon
+Mammoth Graveyard
+Meotoko
+Nemuriko
+Petit Angel
+Petit Dragon
+Red Medicine
+Sectarian of Secrets
+Silver Fang
+Sparks
+The Drdek
+The Furious Sea King
+Tomozaurus
+Wicked Mirror
+Winged Cleaver
+#
+# Not in v6 pool: Air Marmot of Nefariousness, Kaminarikozou, Wicked Mirror

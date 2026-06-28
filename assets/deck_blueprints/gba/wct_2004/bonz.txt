@@ -1,0 +1,32 @@
+// World Championship Tournament 2004 (GBA, 2004) — Bonz
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+1 Ryu-Ran
+1 Ill Witch
+2 Summoned Skull
+3 La Jinn the Mystical Genie of the Lamp
+1 Arlownay
+1 Boneheimer
+1 Fairywitch
+1 Hyo
+1 Larvas
+1 Monsturtle
+1 Mystical Sheep #2
+1 Stone Armadiller
+1 Stone Ogre Grotto
+2 Magician of Faith
+1 Slate Warrior
+2 The Bistro Butcher
+2 Witch of the Black Forest
+2 Axe of Despair
+2 Black Pendant
+1 Dark Hole
+2 Gravekeeper's Servant
+1 Monster Reborn
+2 Mystical Space Typhoon
+1 Premature Burial
+1 Raigeki
+2 Tribute to the Doomed
+1 Magic Cylinder
+1 Mirror Force
+1 Ring of Destruction

@@ -1,0 +1,28 @@
+// World Championship Tournament 2004 (GBA, 2004) — Ishizu Ishtar
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; 2 not in v6 pool (see _MISMATCHES.md)
+1 Meteor Dragon
+3 Dunames Dark Witch
+1 Kuwagata α
+1 Water Girl
+1 Wow Warrior
+2 Cure Mermaid
+2 Dark Elf
+3 Fire Princess
+3 Kiseitai
+2 Darklord Marie
+3 Nimble Momonga
+2 Bright Castle
+1 Dark Hole
+1 Luminous Spark
+1 Monster Reborn
+1 Raigeki
+1 Swords of Revealing Light
+3 Enchanted Javelin
+2 Life Absorbing Machine
+1 Mirror Force
+2 Numinous Healer
+3 Solemn Wishes
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Bright Castle

@@ -1,0 +1,49 @@
+// GX Duel Academy (GBA, 2006) — Jaden Yuki — Elemental HERO Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Jaden Yuki (Duel Academy)
+// 57 cards; all cards in v6 pool
+1 Cyber-Tech Alligator
+2 Elemental HERO Avian
+2 Elemental HERO Burstinatrix
+2 Elemental HERO Clayman
+2 Elemental HERO Sparkman
+2 Luster Dragon
+2 Luster Dragon #2
+1 Cyber Jar
+2 Elemental HERO Bubbleman
+1 Hane-Hane
+1 Kaiser Glider
+1 Man-Eater Bug
+1 Penguin Soldier
+3 Spear Dragon
+1 Winged Kuriboh
+1 Winged Kuriboh LV10
+1 Card Destruction
+1 Dragon's Mirror
+2 Fusion Weapon
+1 Graceful Charity
+1 Heavy Storm
+1 Mage Power
+1 Miracle Fusion
+1 Monster Reincarnation
+1 Polymerization
+1 Pot of Greed
+1 Premature Burial
+1 Skyscraper
+1 Snatch Steal
+1 Transcendent Wings
+1 United We Stand
+1 A Hero Emerges
+1 Call of the Haunted
+1 Hero Signal
+1 Magic Cylinder
+2 Magic Jammer
+1 Mirror Force
+1 Negate Attack
+2 Seven Tools of the Bandit
+1 Torrential Tribute
+1 Trap Hole
+#EXTRA DECK
+1 Elemental HERO Flame Wingman
+1 Elemental HERO Thunder Giant
+1 Elemental HERO Shining Flare Wingman
+1 Five-Headed Dragon

@@ -1,0 +1,25 @@
+// The Sacred Cards (GBA, 2003) — Yami Marik
+// Source: Yu-Gi-Oh! Fandom wiki — Yami Marik's Decks
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+2 Beast of Talwar
+2 Garnecia Elefantis
+3 Ryu-Kishin Powered
+1 Temple of Skulls
+3 Ancient Lamp
+3 Exarion Universe
+3 Makyura the Destructor
+3 Legendary Fiend
+3 The Bistro Butcher
+3 Viser Des
+1 Winged Dragon of Ra
+2 The Last Warrior from Another Planet
+3 Thousand-Eyes Restrict
+2 Harpie's Feather Duster
+2 Monster Reborn
+1 Revival of Dokurorider
+1 Yami
+1 Anti Raigeki
+1 Torrential Tribute
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Winged Dragon of Ra

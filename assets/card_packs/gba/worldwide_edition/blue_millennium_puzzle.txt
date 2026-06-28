@@ -1,0 +1,81 @@
+# Pack: Blue Millennium Puzzle — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
+# Source: Yu-Gi-Oh! Fandom wiki — Blue Millennium Puzzle (SDD-BP)
+# 74 distinct cards; 2 not in v6 pool
+## Rare
+Blue-Eyes Ultimate Dragon
+Blue-Eyes White Dragon
+Celtic Guardian
+Dark Magician
+Destiny Board
+Flame Swordsman
+Gaia The Fierce Knight
+Graceful Dice
+Launcher Spider
+Pendulum Machine
+Seven Tools of the Bandit
+Skull Dice
+The Legendary Fisherman
+The Masked Beast
+Thousand Dragon
+Tiger Axe
+Total Defense Shogun
+## Common
+Akakieisu
+Alligator Sword
+Ancient Elf
+Armed Ninja
+Axe of Despair
+Black Skull Dragon
+Barrel Dragon
+Beastly Mirror Ritual
+Beautiful Headhuntress
+Berfomet
+Black Luster Soldier
+Bone Mouse
+Book of Secret Arts
+Brave Scizzar
+Buster Blader
+Catapult Turtle
+Crush Card
+Curse of the Masked Beast
+D. Human
+Dark Magician Girl
+Dunames Dark Witch
+Eternal Rest
+Exodia the Forbidden One
+Fortress Whale
+Fortress Whale's Oath
+Giant Soldier of Stone
+Graverobber
+Great White
+Harpie Lady Sisters
+Sky Scout
+Hero of the East
+Holograh
+Hyozanryu
+Insect Queen
+Invitation to a Dark Sleep
+Jinzo
+Kunai with Chain
+Magic Cylinder
+Magician of Black Chaos
+Millennium Shield
+Mon Larvas
+Monster Reborn
+Panther Warrior
+Prevent Rat
+Red-Eyes Black Dragon
+Shining Friendship
+Sleeping Lion
+Swords of Revealing Light
+The Little Swordsman of Aile
+The Snake Hair
+The Thing That Hides in the Mud
+The Wicked Worm Beast
+Time Wizard
+Tornado Wall
+Torrential Tribute
+Twin-Headed Fire Dragon
+Type Zero Magic Crusher
+#
+# Not in v6 pool: Alligator Sword, Crush Card

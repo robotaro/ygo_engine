@@ -1,0 +1,13 @@
+# Pack: All Spells — 7 Trials to Glory: World Championship Tournament 2005 (GBA, 2005)
+# Source: Yu-Gi-Oh! Fandom wiki — All Spells (WC5-BP)
+# 9 distinct cards; all in v6 pool
+## Common
+Painful Choice
+Delinquent Duo
+Pot of Greed
+Graceful Charity
+Harpie's Feather Duster
+Spirit Message "I"
+Spirit Message "N"
+Spirit Message "A"
+Spirit Message "L"

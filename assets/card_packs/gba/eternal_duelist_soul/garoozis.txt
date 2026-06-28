@@ -1,0 +1,53 @@
+# Pack: Garoozis — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Garoozis (EDS-BP)
+# 47 distinct cards; 2 not in v6 pool
+## Common
+Amphibious Bugroth
+Beastking of the Swamps
+Behegon
+Bracchio-raidus
+Crawling Dragon #2
+Crimson Sunbird
+Cyber-Stein
+Dragon Seeker
+Exile of the Wicked
+Fusion Sage
+Gale Dogra
+Garoozis
+Garvas
+Goddess with the Third Eye
+Great Mammoth of Goldfine
+Greenkappa
+Guardian of the Sea
+Hibikime
+Ill Witch
+Invader from Another Dimension
+Kairyu-Shin
+Kaiser Dragon
+Krokodilus
+Last Day of Witch
+Lord of the Lamp
+Machine King
+Magic Thorn
+Marine Beast
+Monster Eye
+Morphing Jar
+Mystical Sand
+Mystical Sheep #1
+Needle Ball
+Needle Worm
+Parrot Dragon
+Penguin Soldier
+Restructer Revolution
+Royal Decree
+Skelgon
+Soul Hunter
+Sword Arm of Dragon
+The Snake Hair
+Trap Master
+Two-Headed King Rex
+Ushi Oni
+Versago the Destroyer
+Water Magician
+#
+# Not in v6 pool: Guardian of the Sea, Magic Thorn

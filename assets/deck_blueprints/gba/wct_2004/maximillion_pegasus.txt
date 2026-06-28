@@ -1,0 +1,30 @@
+// World Championship Tournament 2004 (GBA, 2004) — Maximillion Pegasus
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+2 Summoned Skull
+1 Thousand-Eyes Idol
+3 Vorse Raider
+1 Blue-Eyes Toon Dragon
+1 Cyber Jar
+1 Morphing Jar
+3 Nimble Momonga
+1 Sinister Serpent
+1 Slate Warrior
+3 Toon Mermaid
+2 Toon Summoned Skull
+2 Relinquished
+2 Black Illusion Ritual
+1 Change of Heart
+1 Dark Hole
+1 Monster Reborn
+1 Premature Burial
+1 Raigeki
+1 Snatch Steal
+1 Swords of Revealing Light
+2 Toon World
+2 Enchanted Javelin
+1 Magic Cylinder
+1 Mirror Force
+1 Mirror Wall
+2 Numinous Healer
+1 Ring of Destruction

@@ -1,0 +1,56 @@
+# Pack: Millenium Eye — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Millenium Eye (EDS-BP)
+# 49 distinct cards; 1 not in v6 pool
+## Rare
+Black Skull Dragon
+Barrel Dragon
+Blue-Eyes Toon Dragon
+Buster Blader
+Dark Magician Girl
+Dark-Eyes Illusionist
+Flame Swordsman
+Harpie Lady Sisters
+Hyozanryu
+Insect Queen
+Jinzo
+Lord of D.
+Magic Jammer
+Messenger of Peace
+Metalzoa
+Mirror Force
+Panther Warrior
+Perfectly Ultimate Great Moth
+Red-Eyes Black Dragon
+Relinquished
+Seiyaryu
+Seven Tools of the Bandit
+Slot Machine
+Solemn Judgment
+Spellbinding Circle
+Swords of Revealing Light
+The Cheerful Coffin
+The Flute of Summoning Dragon
+Time Wizard
+Toon Summoned Skull
+Toon World
+Tribute to the Doomed
+Twin-Headed Thunder Dragon
+## Common
+Axe of Despair
+Catapult Turtle
+Cocoon of Evolution
+Dimensional Warrior
+Gaia the Dragon Champion
+Hane-Hane
+Hiro's Shadow Scout
+Magician of Faith
+Man-Eater Bug
+Mask of Darkness
+Muka Muka
+Shadow Ghoul
+Stop Defense
+The Unhappy Maiden
+Thousand Dragon
+Toon Mermaid
+#
+# Not in v6 pool: Dimensional Warrior

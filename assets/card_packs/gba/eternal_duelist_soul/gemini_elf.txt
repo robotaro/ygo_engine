@@ -1,0 +1,50 @@
+# Pack: Gemini Elf — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Gemini Elf (EDS-BP)
+# 43 distinct cards; 2 not in v6 pool
+## Rare
+Castle Walls
+Hourglass of Courage
+Reinforcements
+Reverse Trap
+Ultimate Offering
+## Common
+Amazon of the Seas
+Aqua Dragon
+Axe Raider
+Barrel Rock
+Beautiful Headhuntress
+Big Insect
+Call of the Grave
+Cockroach Knight
+Dark Artist
+Dryad
+Fairy Dragon
+Faith Bird
+Fiend Kraken
+Gemini Elf
+Giant Red Seasnake
+Graceful Charity
+Gruesome Goo
+Hercules Beetle
+Maiden of the Moonlight
+Man-Eating Black Shark
+Mechanicalchaser
+Mechanical Spider
+Orion the Battle King
+Patrol Robo
+Queen of Autumn Leaves
+Rhaimundos of the Red Sword
+Sea Kamen
+Sonic Maid
+Spirit of the Books
+Swordsman from a Distant Land
+Takuhee
+Temple of Skulls
+Tiger Axe
+Vermillion Sparrow
+Warrior of Tradition
+White Hole
+Wodan the Resident of the Forest
+Zone Eater
+#
+# Not in v6 pool: Dryad, Mechanical Spider

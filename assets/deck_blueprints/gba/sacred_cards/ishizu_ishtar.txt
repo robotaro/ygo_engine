@@ -1,0 +1,27 @@
+// The Sacred Cards (GBA, 2003) — Ishizu Ishtar
+// Source: Yu-Gi-Oh! Fandom wiki — Ishizu Ishtar's Decks
+// 40 cards; 2 not in v6 pool (see _MISMATCHES.md)
+2 Dark Witch
+3 Dream Clown
+2 Fairy Dragon
+2 Holograh
+2 Masaki the Legendary Swordsman
+2 Mikazukinoyaiba
+2 Moon Envoy
+3 Mystical Sheep #1
+3 Mystical Sheep #2
+2 Shining Angel
+2 Shining Friendship
+2 Sonic Maid
+2 The Judgement Hand
+2 Goddess with the Third Eye
+2 Lady of Faith
+1 Obelisk the Tormentor
+2 Senju of the Thousand Hands
+1 Amazon Archers
+1 Bad Reaction to Simochi
+1 Goblin Fan
+1 Reverse Trap
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Obelisk the Tormentor, Amazon Archers

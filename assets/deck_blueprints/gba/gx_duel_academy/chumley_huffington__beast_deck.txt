@@ -1,0 +1,37 @@
+// GX Duel Academy (GBA, 2006) — Chumley Huffington — Beast Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Chumley Huffington (Duel Academy)
+// 53 cards; all cards in v6 pool
+3 Big Koala
+2 Frenzied Panda
+3 Des Kangaroo
+3 Des Koala
+3 Des Wombat
+1 Gyaku-Gire Panda
+1 Hane-Hane
+3 Hyena
+3 Kangaroo Champ
+2 Maji-Gire Panda
+1 Man-Eater Bug
+3 Nimble Momonga
+1 Penguin Soldier
+2 Beast Fangs
+1 Card Destruction
+1 Dian Keto the Cure Master
+1 Fusion Gate
+1 Fusion Sage
+1 Gaia Power
+1 Graceful Charity
+1 Heavy Storm
+2 Poison Fangs
+1 Polymerization
+1 Pot of Greed
+1 Premature Burial
+1 Snatch Steal
+1 Call of the Haunted
+1 Magic Cylinder
+2 Magic Jammer
+1 Mirror Force
+1 Torrential Tribute
+1 Trap Hole
+#EXTRA DECK
+2 Master of Oz

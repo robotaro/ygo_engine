@@ -1,0 +1,32 @@
+// The Eternal Duelist Soul (GBA, 2002) — Yami Bakura — Eternal Duelist Soul Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Yami Bakura's Decks
+// 40 cards; 2 not in v6 pool (see _MISMATCHES.md)
+3 Gemini Elf
+1 Giant Soldier of Stone
+2 Summoned Skull
+3 Vorse Raider
+2 Dimensional Warrior
+1 Dream Clown
+2 Kuriboh
+3 Magician of Faith
+2 Man-Eater Bug
+1 Masked Sorcerer
+1 Penguin Soldier
+1 Sinister Serpent
+2 Wall of Illusion
+2 Witch of the Black Forest
+1 Change of Heart
+1 Dark Hole
+2 Graceful Charity
+1 Harpie's Feather Duster
+2 Heavy Storm
+1 Monster Reborn
+1 Pot of Greed
+1 Raigeki
+1 Swords of Revealing Light
+1 Kunai with Chain
+1 Magic Jammer
+1 Mirror Force
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Dimensional Warrior

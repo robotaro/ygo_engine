@@ -1,0 +1,38 @@
+# Pack: Black Luster Soldier — World Championship Tournament 2004 (GBA, 2004)
+# Source: Yu-Gi-Oh! Fandom wiki — Black Luster Soldier (WC4-BP)
+# 32 distinct cards; 1 not in v6 pool
+## (Unsorted)
+Black Luster Soldier
+Chakra
+Crab Turtle
+Dokurorider
+Fiend's Mirror
+Fortress Whale
+Garma Sword
+Hungry Burger
+Javelin Beetle
+Magician of Black Chaos
+Performance of Sword
+Relinquished
+Skull Guardian
+Super War-Lion
+The Masked Beast
+Zera the Mant
+Beastly Mirror Ritual
+Black Illusion Ritual
+Black Luster Ritual
+Commencement Dance
+Curse of the Masked Beast
+Dark Magic Ritual
+Fortress Whale's Oath
+Garma Sword Oath
+Hamburger Recipe
+Javelin Beetle Pact
+Novox's Prayer
+Resurrection of Chakra
+Revival of Dokurorider
+Turtle Oath
+War-Lion Ritual
+Zera Ritual
+#
+# Not in v6 pool: Dark Magic Ritual

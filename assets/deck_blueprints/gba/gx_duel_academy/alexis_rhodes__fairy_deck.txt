@@ -1,0 +1,43 @@
+// GX Duel Academy (GBA, 2006) — Alexis Rhodes — Fairy Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Alexis Rhodes (Duel Academy)
+// 50 cards; all cards in v6 pool
+3 Dunames Dark Witch
+1 Warrior of Zera
+1 Guardian Angel Joan
+3 Hysteric Fairy
+1 Kelbek
+1 Darklord Marie
+1 Mudora
+1 The Forgiving Maiden
+3 Soul of Purity and Light
+1 Absorbing Kid from the Sky
+1 Manju of the Ten Thousand Hands
+1 Agido
+1 Archlord Zerato
+1 Zolga
+1 Outstanding Dog Marron
+1 Shinato, King of a Higher Plane
+1 Big Bang Shot
+1 Card Destruction
+1 Cestus of Dagla
+1 Graceful Charity
+1 Heavy Storm
+1 Mage Power
+1 Pot of Greed
+1 Premature Burial
+1 Snatch Steal
+2 The Sanctuary in the Sky
+1 United We Stand
+1 Polymerization
+1 Shinato's Ark
+1 Enchanted Javelin
+1 Magic Cylinder
+2 Magic Jammer
+3 Numinous Healer
+2 Seven Tools of the Bandit
+1 Torrential Tribute
+1 Solar Ray
+1 Call of the Haunted
+1 Mirror Force
+#EXTRA DECK
+1 St. Joan

@@ -1,0 +1,32 @@
+// 7 Trials to Glory: World Championship Tournament 2005 (GBA, 2005) — Joey Wheeler — Standard Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Joey Wheeler's Decks
+// 40 cards; all cards in v6 pool
+3 Alligator's Sword
+3 Axe Raider
+3 Baby Dragon
+1 Kojikocy
+1 Red-Eyes Black Dragon
+2 Summoned Skull
+1 Goblin Attack Force
+1 Hane-Hane
+1 Man-Eater Bug
+1 Panther Warrior
+1 Penguin Soldier
+3 Spear Dragon
+3 Time Wizard
+1 Zombyra the Dark
+1 Change of Heart
+1 Fusion Sage
+1 Graceful Charity
+1 Graceful Dice
+2 Polymerization
+1 Premature Burial
+1 Raigeki
+1 Magic Jammer
+1 Mirror Force
+1 Seven Tools of the Bandit
+1 Skull Dice
+1 Torrential Tribute
+#EXTRA DECK
+1 Alligator's Sword Dragon
+1 Black Skull Dragon

@@ -1,0 +1,33 @@
+// World Championship Tournament 2004 (GBA, 2004) — Ryou Bakura
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+1 Hyozanryu
+1 Mikazukinoyaiba
+1 Bolt Escargot
+1 Misairuzame
+1 Steel Ogre Grotto #1
+1 Winged Egg of New Life
+1 Candle of Fate
+1 Curtain of the Dark Ones
+1 Droll Bird
+1 Earthbound Spirit
+1 Eyearmor
+1 Fiend's Hand
+1 Ganigumo
+1 Hinotama Soul
+1 Hitodenchak
+1 LaLa Li-oon
+1 Lucky Trinket
+1 Madjinn Gunn
+1 Petit Dragon
+1 Phantom Ghost
+1 Prevent Rat
+1 Zarigun
+3 Maha Vailo
+1 Slate Warrior
+3 Axe of Despair
+3 Black Pendant
+3 Horn of the Unicorn
+1 Mage Power
+3 Sword of Deep-Seated
+1 United We Stand

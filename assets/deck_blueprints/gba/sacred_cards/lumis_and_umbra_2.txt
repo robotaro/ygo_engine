@@ -1,0 +1,25 @@
+// The Sacred Cards (GBA, 2003) — Lumis and Umbra
+// Variant/section: The Sacred Cards (Duel Monsters 7: The Duelcity Legend)
+// Source: Yu-Gi-Oh! Fandom wiki — Lumis and Umbra's Decks
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Akakieisu
+3 Ancient Brain
+3 Claw Reacher
+3 Eldeen
+3 Fairywitch
+3 Giant Germ
+3 King Fog
+3 Mask of Darkness
+3 Masked Clown
+3 Megirus Light
+1 Nuvia the Wicked
+1 Shining Abyss
+1 The Masked Beast
+3 Unknown Warrior of Fiend
+1 Contract of Mask
+1 Dark Hole
+1 Monster Reborn
+1 Yami
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Contract of Mask

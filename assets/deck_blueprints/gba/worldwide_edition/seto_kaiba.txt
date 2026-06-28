@@ -1,0 +1,28 @@
+// Worldwide Edition: Stairway to the Destined Duel (GBA, 2003) — Seto Kaiba
+// Source: Yu-Gi-Oh! Fandom wiki — Seto Kaiba's Decks
+// 42 cards; all cards in v6 pool
+3 Blue-Eyes White Dragon
+2 Cyber-Tech Alligator
+2 Gadget Soldier
+3 Gemini Elf
+3 Vorse Raider
+1 Cyber-Stein
+2 Goblin Attack Force
+2 Magician of Faith
+3 Slate Warrior
+1 Dark Hole
+1 Harpie's Feather Duster
+2 Heavy Storm
+1 Megamorph
+1 Monster Reborn
+1 Polymerization
+2 Premature Burial
+1 Raigeki
+2 Ring of Destruction
+1 Call of the Haunted
+1 Magic Cylinder
+2 Magic Jammer
+1 Mirror Force
+2 Negate Attack
+#EXTRA DECK
+2 Blue-Eyes Ultimate Dragon

@@ -1,0 +1,29 @@
+// Reshef of Destruction (GBA, 2004) — Seto Kaiba
+// Source: Yu-Gi-Oh! Fandom wiki — Seto Kaiba's Decks
+// 48 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Blue-Eyes White Dragon
+3 Vorse Raider
+3 X-Head Cannon
+3 Ancient Lamp
+1 Des Volstgalph
+1 Lord of D.
+1 Obelisk the Tormentor
+3 Y-Dragon Head
+3 Z-Metal Tank
+3 Change of Heart
+3 Harpie's Feather Duster
+3 Megamorph
+3 Monster Reborn
+3 Pot of Greed
+3 Swords of Revealing Light
+3 Torrential Tribute
+#EXTRA DECK
+1 Blue-Eyes Ultimate Dragon
+1 Dragon Master Knight
+1 XY-Dragon Cannon
+1 XYZ-Dragon Cannon
+1 XZ-Tank Cannon
+1 YZ-Tank Dragon
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Obelisk the Tormentor

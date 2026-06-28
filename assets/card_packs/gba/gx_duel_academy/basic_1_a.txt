@@ -1,0 +1,49 @@
+# Pack: Basic 1-A — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Basic 1-A (GX1-BP)
+# Cards per pack: 5 | Price: 100 DP | Cards in pack: 40 | Unlocked: Beginning | Frequency: Once a week
+# 40 distinct cards; all in v6 pool
+## Secret Rare
+Dark Magician
+Monster Reborn
+## Ultra Rare
+Gaia The Fierce Knight
+## Super Rare
+Curse of Dragon
+Mystical Elf
+Trap Hole
+## Rare
+Beast Fangs
+Book of Secret Arts
+Dark Energy
+Fissure
+Laser Cannon Armor
+Legendary Sword
+Machine Conversion Factory
+Power of Kaishin
+## Common
+Armaill
+De-Spell
+Dissolverock
+Dragoness the Wicked Knight
+Faith Bird
+Fiend's Hand
+Final Flame
+Fire Reaper
+Firegrass
+Goblin's Secret Remedy
+Kamionwizard
+Karbonala Warrior
+M-Warrior #1
+M-Warrior #2
+Mavelus
+One-Eyed Shield Dragon
+Petit Angel
+Petit Dragon
+Raise Body Heat
+Red Medicine
+Silver Fang
+Sparks
+Spirit of the Harp
+Tyhone
+Vile Germs
+Violet Crystal

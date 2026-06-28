@@ -1,0 +1,65 @@
+# Pack: Equipments — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Equipments (GX1-BP)
+# Cards per pack: 3 | Price: 100 DP | Cards in pack: 55 | Unlocked: Read "Equip Spell" Tutorial (7-3) | Frequency: Once a week
+# 55 distinct cards; 2 not in v6 pool
+## Ultra Rare
+United We Stand
+Mage Power
+## Super Rare
+Axe of Despair
+Premature Burial
+## Rare
+Horn of the Unicorn
+Sword of Deep-Seated
+Cestus of Dagla
+Big Bang Shot
+Spark Blaster
+## Common
+Legendary Sword
+Sword of Dark Destruction
+Dark Energy
+Laser Cannon Armor
+Insect Armor with Laser Cannon
+Elf's Light
+Beast Fangs
+Steel Shell
+Vile Germs
+Black Pendant
+Silver Bow and Arrow
+Horn of Light
+Dragon Treasure
+Electro-Whip
+Cyber Shield
+Mystical Moon
+Malevolent Nuzzler
+Violet Crystal
+Book of Secret Arts
+Invigoration
+Machine Conversion Factory
+Raise Body Heat
+Follow Wind
+Power of Kaishin
+Salamandra
+Megamorph
+Bright Castle
+Burning Spear
+Gust Fan
+Snatch Steal
+Mask of the Accursed
+Mask of Brutality
+Lightning Blade
+Fairy Meteor Crush
+Scroll of Bewitchment
+Dark Magician's Tome of Black Magic
+Cyclon Laser
+Demotion
+Autonomous Action Unit
+Rod of the Mind's Eye
+Fuhma Shuriken
+Fusion Weapon
+Ritual Weapon
+Fulfillment of the Contract
+Re-Fusion
+Legendary Black Belt
+#
+# Not in v6 pool: Bright Castle, Dark Magician's Tome of Black Magic

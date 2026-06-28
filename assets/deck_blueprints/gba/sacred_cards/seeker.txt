@@ -1,0 +1,19 @@
+// The Sacred Cards (GBA, 2003) — Seeker
+// Variant/section: The Sacred Cards (Duel Monsters 7: The Duelcity Legend)
+// Source: Yu-Gi-Oh! Fandom wiki — Seeker's Decks
+// 40 cards; all cards in v6 pool
+3 Ancient Jar
+1 Exodia the Forbidden One
+3 Dark-Eyes Illusionist
+1 Gear Golem the Moving Fortress
+3 Left Arm of the Forbidden One
+3 Left Leg of the Forbidden One
+2 Ooguchi
+3 Queen's Double
+3 Right Arm of the Forbidden One
+3 Right Leg of the Forbidden One
+3 Skull Servant
+3 Swordsman from a Distant Land
+3 Thousand-Eyes Idol
+3 Zone Eater
+3 Monster Eye

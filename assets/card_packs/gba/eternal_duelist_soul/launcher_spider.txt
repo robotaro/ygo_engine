@@ -1,0 +1,59 @@
+# Pack: Launcher Spider — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Launcher Spider (EDS-BP)
+# 52 distinct cards; 1 not in v6 pool
+## Rare
+Barrel Dragon
+Catapult Turtle
+D.D. Warrior
+Germ Infection
+Kuriboh
+Mirror Force
+Paralyzing Potion
+Princess of Tsurugi
+Robbin' Goblin
+Shield & Sword
+The Unhappy Maiden
+Thunder Dragon
+Tremendous Fire
+Twin-Headed Thunder Dragon
+## Common
+7 Colored Fish
+Akakieisu
+Ancient Tool
+Arlownay
+Arma Knight
+B. Dragon Jungle King
+Block Attack
+Clown Zombie
+Crazy Fish
+Cyber Saurus
+Cyber Soldier
+Dark Chimera
+Dark Elf
+Fiend Sword
+Gatekeeper
+Ghoul with an Appetite
+Giganto
+Hero of the East
+Illusionist Faceless Mage
+Labyrinth Tank
+Launcher Spider
+Lava Battleguard
+Monstrous Bird
+Mushroom Man #2
+Mystic Horseman
+Pendulum Machine
+Prevent Rat
+Rabid Horseman
+Royal Guard
+Saber Slasher
+Saggi the Dark Clown
+Swamp Battleguard
+Sword of Deep-Seated
+The Immortal of Thunder
+Togex
+Toon Alligator
+Waterdragon Fairy
+Zanki
+#
+# Not in v6 pool: Saber Slasher

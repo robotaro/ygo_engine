@@ -1,0 +1,32 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Scapegoat — Adversity Monsters
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+2 Behemoth the King of All Animals
+3 Fusilier Dragon, the Dual-Mode Beast
+3 A Cat of Ill Omen
+2 Chainsaw Insect
+1 Giant Orc
+2 Goblin Attack Force
+2 Goblin Elite Attack Force
+2 Indomitable Fighter Lei Lei
+1 Jirai Gumo
+1 Mask of Darkness
+1 Sangan
+2 A Feather of the Phoenix
+1 Bait Doll
+1 Cathedral of Nobles
+1 Giant Trunade
+2 Magical Mallet
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Scapegoat
+1 Judgment of Anubis
+1 Magic Jammer
+1 Royal Surrender
+1 Seven Tools of the Bandit
+3 Skill Drain
+2 Solemn Judgment
+1 Ultimate Offering
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Cathedral of Nobles

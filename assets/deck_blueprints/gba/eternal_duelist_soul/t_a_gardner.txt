@@ -1,0 +1,41 @@
+// The Eternal Duelist Soul (GBA, 2002) — Téa Gardner
+// Source: Yu-Gi-Oh! Fandom wiki — Téa Gardner's Decks
+// 41 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Beautiful Headhuntress
+1 Beaver Warrior
+1 Cyber-Tech Alligator
+2 Dancing Elf
+1 Dark Witch
+1 Dryad
+1 Enchanting Mermaid
+1 Fairywitch
+2 Gemini Elf
+1 Green Phantom King
+1 Happy Lover
+1 Ill Witch
+1 Key Mace #2
+1 Lady of Faith
+1 Lunar Queen Elzaim
+1 Maiden of the Moonlight
+1 Mystical Elf
+1 Oscillo Hero
+1 Wattkid
+2 Petit Angel
+2 Petit Dragon
+1 Protector of the Throne
+1 Queen of Autumn Leaves
+1 Shining Friendship
+3 Supporter in the Shadows
+1 Tenderness
+1 Water Element
+1 Water Omotics
+1 Waterdragon Fairy
+1 Weather Control
+1 Queen's Double
+1 Change of Heart
+1 Graceful Charity
+1 Monster Reborn
+1 Raigeki
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Dryad

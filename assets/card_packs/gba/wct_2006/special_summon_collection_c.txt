@@ -1,0 +1,103 @@
+# Pack: Special Summon Collection C — Ultimate Masters: World Championship Tournament 2006 (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Special Summon Collection C (WC6-BP)
+# 93 distinct cards; 7 not in v6 pool
+## Secret Rare
+Hamon, Lord of Striking Thunder
+Raviel, Lord of Phantasms
+Uria, Lord of Searing Flames
+## Ultra Rare
+Cyber Barrier Dragon
+Cyber Laser Dragon
+Dark Ruler Vandalgyon
+Sacred Phoenix of Nephthys
+## Super Rare
+Cyber Dragon
+Dandylion
+Dark Eradicator Warlock
+Guardian Exode
+Helios Duo Megiste
+Helios Tris Megiste
+Ocean Dragon Lord - Neo-Daedalus
+Power Bond
+Red-Eyes Darkness Dragon
+The Creator
+Vampire Genesis
+## Rare
+Gearfried the Swordmaster
+Goldd, Wu-Lord of Dark World
+Hand of Nephthys
+Hydrogeddon
+Kaibaman
+King Dragun
+Magician's Circle
+Miracle Fusion
+Sand Moth
+Silent Swordsman LV5
+The Blockman
+The Creator Incarnate
+UFOroid
+Water Dragon
+Winged Kuriboh LV10
+## Common
+A Rival Appears!
+Ancient Gear
+Anteatereatingant
+Attack Reflector Unit
+Battery Charger
+Beast Soul Swap
+Beiige, Vanguard of Dark World
+Bonding - H2O
+Boss Rush
+Bubble Shuffle
+Centrifugal Field
+Conscription
+Curse of Vampire
+D.D.M. - Different Dimension Master
+Damage Condenser
+Des Frog
+Doitsu
+Doom Dozer
+Dragon's Mirror
+Elemental HERO Bubbleman
+Elemental HERO Neo Bubbleman
+Familiar-Possessed - Aussa
+Familiar-Possessed - Eria
+Familiar-Possessed - Hiita
+Familiar-Possessed - Wynn
+Fox Fire
+Gateway to Dark World
+Hero Kid
+Hero Signal
+Hyena
+Inferno Reckless Summon
+King of the Skull Servants
+Level Modulation
+Magnet Circle LV2
+Master Monk
+Mokey Mokey King
+Phantasmal Martyrs
+Photon Generator Unit
+Princess Curran
+Princess Pikeru
+Protective Soul Ailin
+Release Restraint
+Rescue Cat
+Silent Magician LV4
+Silent Swordsman LV3
+Sillva, Warlord of Dark World
+Spiritual Earth Art - Kurogane
+Summon Priest
+The Dark - Hex-Sealed Fusion
+The Earth - Hex-Sealed Fusion
+The Flute of Summoning Kuriboh
+The League of Uniform Nomenclature
+The Light - Hex-Sealed Fusion
+Transcendent Wings
+Treeborn Frog
+Trial of the Princesses
+Ultimate Insect LV3
+Ultimate Insect LV5
+W-Wing Catapult
+Warrior Lady of the Wasteland
+#
+# Not in v6 pool: Curse of Vampire, Dark Ruler Vandalgyon, Guardian Exode, Helios Duo Megiste, Helios Tris Megiste, Summon Priest, The Blockman

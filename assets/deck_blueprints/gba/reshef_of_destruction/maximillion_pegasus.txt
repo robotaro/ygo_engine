@@ -1,0 +1,17 @@
+// Reshef of Destruction (GBA, 2004) — Maximillion Pegasus
+// Source: Yu-Gi-Oh! Fandom wiki — Maximillion Pegasus' Decks
+// 39 cards; all cards in v6 pool
+3 Big Shield Gardna
+3 Castle of Dark Illusions
+3 Blue-Eyes Toon Dragon
+3 Toon Summoned Skull
+3 Relinquished
+3 Change of Heart
+3 Harpie's Feather Duster
+3 Megamorph
+3 Monster Reborn
+3 Pot of Greed
+3 Swords of Revealing Light
+3 Torrential Tribute
+#EXTRA DECK
+3 Thousand-Eyes Restrict

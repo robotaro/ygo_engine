@@ -1,0 +1,25 @@
+// The Sacred Cards (GBA, 2003) — Lumis and Umbra
+// Variant/section: The Sacred Cards (Duel Monsters 7: The Duelcity Legend)
+// Source: Yu-Gi-Oh! Fandom wiki — Lumis and Umbra's Decks
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Dark Assailant
+3 Dark Rabbit
+3 Darkworld Thorns
+1 Grand Tiki Elder
+4 Lesser Dragon
+2 Machine Attacker
+3 Mask of Darkness
+1 Masked Beast Des Gardius
+3 Masked Clown
+1 Melchid the Four-Face Beast
+3 One Who Hunts Souls
+3 Patrol Robo
+3 Stuffed Animal
+3 The 13th Grave
+1 Contract of Mask
+1 Dark Hole
+1 Monster Reborn
+1 Yami
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Contract of Mask

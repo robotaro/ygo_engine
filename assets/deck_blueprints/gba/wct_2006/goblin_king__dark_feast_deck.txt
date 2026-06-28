@@ -1,0 +1,35 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Goblin King — Dark Feast Deck
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Dark Necrofear
+2 Dark Ruler Ha Des
+1 Great Maju Garzett
+3 Archfiend Soldier
+1 D.D. Warrior Lady
+1 Exiled Force
+3 Giant Germ
+3 Goblin Elite Attack Force
+1 Goblin King
+1 Mystic Tomato
+1 Sangan
+2 Slate Warrior
+1 Collapse
+1 Hammer Shot
+1 Heavy Storm
+1 Magical Mallet
+1 Mystical Space Typhoon
+1 Rush Recklessly
+1 Pot of Greed
+1 Premature Burial
+1 Scapegoat
+1 Smashing Ground
+1 Snatch Steal
+1 Yami
+3 Bark of Dark Ruler
+1 Call of the Haunted
+2 Dust Tornado
+1 Magic Drain
+1 Sakuretsu Armor
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Collapse

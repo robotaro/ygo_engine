@@ -1,0 +1,29 @@
+// Reshef of Destruction (GBA, 2004) — Yugi Muto
+// Source: Yu-Gi-Oh! Fandom wiki — Yugi Muto's Decks
+// 40 cards; all cards in v6 pool
+3 Ancient Jar
+1 Curse of Dragon
+1 Dark Magician
+1 Gaia The Fierce Knight
+1 Left Arm of the Forbidden One
+1 Left Leg of the Forbidden One
+3 Mushroom Man
+1 Right Arm of the Forbidden One
+1 Right Leg of the Forbidden One
+3 Shadow Specter
+3 Skull Servant
+1 Summoned Skull
+1 Exodia the Forbidden One
+3 Hane-Hane
+3 Kuriboh
+3 Man-Eater Bug
+1 Sangan
+1 Book of Secret Arts
+1 Horn of the Unicorn
+1 Monster Reborn
+1 Mystical Moon
+1 Eatgaboon
+1 House of Adhesive Tape
+2 Spellbinding Circle
+#EXTRA DECK
+1 Gaia the Dragon Champion

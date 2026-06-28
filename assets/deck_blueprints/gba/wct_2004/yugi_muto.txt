@@ -1,0 +1,42 @@
+// World Championship Tournament 2004 (GBA, 2004) — Yugi Muto
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Mikazukinoyaiba
+1 Cyber Soldier
+1 Morinphen
+2 Summoned Skull
+2 Gemini Elf
+1 Fire Reaper
+1 Firegrass
+1 Hourglass of Life
+1 Thunder Kid
+1 Meotoko
+1 Phantom Dewan
+1 Sectarian of Secrets
+1 Serpent Marauder
+1 Wicked Mirror
+1 Winged Cleaver
+1 Wings of Wicked Flame
+1 Magician of Faith
+1 Penguin Soldier
+1 Sangan
+1 Sinister Serpent
+1 Witch of the Black Forest
+1 Change of Heart
+1 Dark Hole
+1 Harpie's Feather Duster
+1 Monster Reborn
+1 Pot of Greed
+1 Premature Burial
+1 Raigeki
+1 Snatch Steal
+1 Swords of Revealing Light
+1 Call of the Haunted
+1 Magic Cylinder
+2 Magic Jammer
+1 Mirror Force
+1 Royal Decree
+2 Trap Hole
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Wicked Mirror

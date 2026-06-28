@@ -1,0 +1,19 @@
+// Worldwide Edition: Stairway to the Destined Duel (GBA, 2003) — Strings
+// Source: Yu-Gi-Oh! Fandom wiki — Strings' Decks
+// 21 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Humanoid Slime
+2 Summoned Skull
+3 Vorse Raider
+2 Magician of Faith
+1 Slate Warrior
+1 Dark Hole
+3 Jam Breeding Machine
+1 Monster Reborn
+1 Nightmare's Steelcage
+1 Raigeki
+1 Bell of Destruction
+1 Magic Cylinder
+1 Mirror Force
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Bell of Destruction

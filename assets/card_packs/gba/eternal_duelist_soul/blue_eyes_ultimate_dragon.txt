@@ -1,0 +1,16 @@
+# Pack: Blue-Eyes Ultimate Dragon — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Blue-Eyes Ultimate Dragon (EDS-BP)
+# 10 distinct cards; 1 not in v6 pool
+## Common
+Blue-Eyes Ultimate Dragon
+Dark Magic Ritual
+Firewing Pegasus
+Gate Guardian
+Magician of Black Chaos
+Meteor Black Dragon
+Meteor Dragon
+Sengenjin
+Serpent Night Dragon
+Tri-Horned Dragon
+#
+# Not in v6 pool: Dark Magic Ritual

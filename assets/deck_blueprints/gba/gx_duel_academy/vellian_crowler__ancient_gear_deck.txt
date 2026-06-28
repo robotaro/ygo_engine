@@ -1,0 +1,38 @@
+// GX Duel Academy (GBA, 2006) — Vellian Crowler — Ancient Gear Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Vellian Crowler (Duel Academy)
+// 51 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Insect Knight
+1 Mighty Guard
+1 Robotic Knight
+1 Ancient Gear Beast
+1 Ancient Gear Golem
+3 Ancient Gear Soldier
+1 Big Core
+3 Goblin Elite Attack Force
+1 Green Gadget
+1 Gyroid
+2 Machine King
+1 Red Gadget
+1 Steamroid
+1 Yellow Gadget
+1 Card Destruction
+1 Graceful Charity
+1 Heavy Storm
+2 Limiter Removal
+1 Mystical Space Typhoon
+1 Pot of Greed
+3 Power Bond
+1 Premature Burial
+1 Snatch Steal
+3 Bottomless Shifting Sand
+1 Call of the Haunted
+1 Fairy Box
+1 Magic Cylinder
+3 Magic Jammer
+2 Mirror Force
+3 Seven Tools of the Bandit
+3 Stronghold the Moving Fortress
+1 Torrential Tribute
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Big Core

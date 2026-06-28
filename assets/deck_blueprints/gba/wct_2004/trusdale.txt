@@ -1,0 +1,36 @@
+// World Championship Tournament 2004 (GBA, 2004) — Trusdale
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+1 Blue-Eyes White Dragon
+1 Giant Turtle Who Feeds on Flames
+1 Dark Prisoner
+1 Genin
+1 Lucky Trinket
+1 Monster Egg
+1 Petit Angel
+1 Phantom Ghost
+1 Left Arm of the Forbidden One
+1 Left Leg of the Forbidden One
+1 Right Arm of the Forbidden One
+1 Right Leg of the Forbidden One
+1 Exodia the Forbidden One
+2 Mystic Tomato
+1 Penguin Soldier
+1 Sangan
+1 Witch of the Black Forest
+1 Change of Heart
+1 Dark Hole
+1 Graceful Charity
+1 Monster Reborn
+1 Pot of Greed
+1 Premature Burial
+1 Raigeki
+1 Swords of Revealing Light
+1 Upstart Goblin
+1 Backup Soldier
+1 Call of the Haunted
+3 Jar of Greed
+1 Mirror Force
+2 Negate Attack
+2 Torrential Tribute
+3 Trap Hole

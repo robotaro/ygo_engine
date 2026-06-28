@@ -1,0 +1,60 @@
+# Pack: Effect Monsters — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Effect Monsters (GX1-BP)
+# Cards per pack: 7 | Price: 150 DP | Cards in pack: 50 | Unlocked: Read "Effect Monster" Tutorial (1-2) | Frequency: Once a week
+# 50 distinct cards; 2 not in v6 pool
+## Ultra Rare
+Magician of Faith
+Barrel Dragon
+## Super Rare
+Sangan
+Metalzoa
+Man-Eater Bug
+Witch of the Black Forest
+Cyber Jar
+## Rare
+Time Wizard
+Kuriboh
+Harpie Lady Sisters
+Mask of Darkness
+Trap Master
+Shadow Ghoul
+Harpie's Pet Dragon
+Thunder Dragon
+Sinister Serpent
+Muka Muka
+Morphing Jar
+Penguin Soldier
+Blast Sphere
+Dark Magician Girl
+## Common
+Crass Clown
+White Magical Hat
+Dream Clown
+Tainted Wisdom
+Mysterious Puppeteer
+Big Eye
+Wodan the Resident of the Forest
+Dimensional Warrior
+Dark Artist
+Mystic Lamp
+Zone Eater
+Leghul
+Swordsman from a Distant Land
+Machine King
+Mechanical Spider
+Blast Juggler
+Armed Ninja
+Insect Soldiers of the Sky
+Cockroach Knight
+Needle Ball
+Hoshiningen
+Dragon Seeker
+Star Boy
+Milus Radiant
+Needle Worm
+Little Chimera
+Bladefly
+Witch's Apprentice
+Berfomet
+#
+# Not in v6 pool: Dimensional Warrior, Mechanical Spider

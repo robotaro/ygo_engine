@@ -1,0 +1,26 @@
+// World Championship Tournament 2004 (GBA, 2004) — Yami Yugi
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 45 cards; all cards in v6 pool
+3 Dark Magician
+3 Gemini Elf
+2 Summoned Skull
+1 Cyber Jar
+3 Dark Magician Girl
+3 Slate Warrior
+3 Magician of Black Chaos
+3 Change of Heart
+3 Dark Hole
+2 Black Magic Ritual
+3 Harpie's Feather Duster
+1 Heavy Storm
+1 Mage Power
+3 Monster Reborn
+1 Premature Burial
+3 Raigeki
+1 Snatch Steal
+1 Swords of Revealing Light
+1 United We Stand
+1 Call of the Haunted
+1 Fairy Box
+1 Magic Cylinder
+1 Mirror Force

@@ -1,0 +1,26 @@
+// World Championship Tournament 2004 (GBA, 2004) — Arkana
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+3 Dark Magician
+1 Serpent Night Dragon
+1 Garoozis
+1 Giant Mech-Soldier
+1 Neck Hunter
+1 Barrel Lily
+1 Corroding Shark
+1 Holograh
+1 Lady of Faith
+1 Little D
+1 Waterdragon Fairy
+2 Cannon Soldier
+3 Change of Heart
+3 Dark Hole
+3 Monster Reborn
+3 Premature Burial
+3 Raigeki
+3 Snatch Steal
+1 Swords of Revealing Light
+1 Call of the Haunted
+1 Mirror Force
+1 Negate Attack
+3 Ring of Destruction

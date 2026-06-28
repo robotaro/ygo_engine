@@ -1,0 +1,47 @@
+// The Sacred Cards (GBA, 2003) — Yami Yugi
+// Source: Yu-Gi-Oh! Fandom wiki — Yami Yugi's Decks
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Alpha The Magnet Warrior
+1 Beta The Magnet Warrior
+1 Blackland Fire Dragon
+1 Celtic Guardian
+1 Curse of Dragon
+1 Dark Magician
+1 Gaia The Fierce Knight
+1 Gamma the Magnet Warrior
+1 Gazelle the King of Mythical Beasts
+1 Great White
+1 Koumori Dragon
+1 Left Arm of the Forbidden One
+1 Left Leg of the Forbidden One
+1 Meteor Dragon
+1 Mystical Elf
+1 Right Arm of the Forbidden One
+1 Right Leg of the Forbidden One
+1 Summoned Skull
+1 Winged Dragon, Guardian of the Fortress #1
+1 Archfiend of Gilfer
+1 Berfomet
+1 Big Shield Gardna
+1 Buster Blader
+1 Catapult Turtle
+1 Exodia the Forbidden One
+1 Dark Magician Girl
+1 Kuriboh
+1 Slifer the Sky Dragon
+1 Book of Secret Arts
+1 Brain Control
+1 Black Magic Ritual
+1 Horn of the Unicorn
+1 Monster Reborn
+1 Multiply
+1 Mystical Moon
+1 Swords of Revealing Light
+1 Spellbinding Circle
+#EXTRA DECK
+1 Chimera the Flying Mythical Beast
+1 Gaia the Dragon Champion
+1 Dragon Master Knight
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Slifer the Sky Dragon

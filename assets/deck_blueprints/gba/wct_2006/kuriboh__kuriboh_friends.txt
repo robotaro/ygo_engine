@@ -1,0 +1,33 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Kuriboh — Kuriboh & Friends
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; all cards in v6 pool
+1 Blue-Eyes White Dragon
+1 Dark Magician
+1 Red-Eyes Black Dragon
+1 Big Shield Gardna
+2 Double Coston
+2 Gearfried the Iron Knight
+2 Giant Soldier of Stone
+3 Kuriboh
+2 La Jinn the Mystical Genie of the Lamp
+2 Maha Vailo
+1 Mystical Elf
+1 Reflect Bounder
+1 Rocket Warrior
+2 Axe of Despair
+1 Black Pendant
+2 Multiply
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Premature Burial
+1 Remove Trap
+1 Snatch Steal
+1 Swords of Revealing Light
+2 The Flute of Summoning Kuriboh
+1 Tribute to the Doomed
+1 Call of the Haunted
+1 Magic Cylinder
+1 Metalmorph
+1 Negate Attack
+1 Reinforcements
+1 Trap Hole

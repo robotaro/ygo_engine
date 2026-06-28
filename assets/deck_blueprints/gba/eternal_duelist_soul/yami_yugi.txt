@@ -1,0 +1,35 @@
+// The Eternal Duelist Soul (GBA, 2002) — Yami Yugi
+// Source: Yu-Gi-Oh! Fandom wiki — Yami Yugi's Decks
+// 40 cards; all cards in v6 pool
+1 Alpha The Magnet Warrior
+1 Beta The Magnet Warrior
+2 Dark Magician
+1 Gamma the Magnet Warrior
+1 Gazelle the King of Mythical Beasts
+2 Gemini Elf
+1 Giant Soldier of Stone
+1 Mystical Elf
+2 Summoned Skull
+2 Big Shield Gardna
+1 Buster Blader
+1 Cyber Jar
+2 Dark Magician Girl
+1 Kuriboh
+1 Sinister Serpent
+1 Valkyrion the Magna Warrior
+2 Witch of the Black Forest
+1 Change of Heart
+1 Chorus of Sanctuary
+2 Graceful Charity
+1 Harpie's Feather Duster
+1 Monster Reborn
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Raigeki
+1 Snatch Steal
+1 Swords of Revealing Light
+1 Anti Raigeki
+2 Magic Jammer
+1 Mirror Force
+1 Seven Tools of the Bandit
+1 White Hole

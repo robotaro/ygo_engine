@@ -1,0 +1,51 @@
+# Pack: Basic 3-A — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Basic 3-A (GX1-BP)
+# Cards per pack: 5 | Price: 150 DP | Cards in pack: 40 | Unlocked: Last week of October | Frequency: Once a week
+# 40 distinct cards; 1 not in v6 pool
+## Secret Rare
+Byser Shock
+## Ultra Rare
+Nightmare Wheel
+Paladin of White Dragon
+Spell Canceller
+## Super Rare
+Amazoness Swords Woman
+Dark Blade
+Newdoria
+## Rare
+Autonomous Action Unit
+Big Bang Shot
+Red-Eyes Black Dragon
+Terraforming
+## Common
+Aitsu
+Amazoness Fighter
+Amazoness Paladin
+Banner of Courage
+Curse of Aging
+Dark Snake Syndrome
+Demotion
+Des Koala
+Emblem of Dragon Destroyer
+Great Angus
+Hidden Book of Spell
+Huge Revolution
+Inpachi
+Kabazauls
+Kishido Spirit
+Koitsu
+Luster Dragon
+Mass Driver
+Master Kyonshee
+Oppressed People
+People Running About
+Pitch-Dark Dragon
+Raigeki Break
+Sonic Duck
+Thunder of Ruler
+Tribe-Infecting Virus
+United Resistance
+White Dragon Ritual
+Yomi Ship
+#
+# Not in v6 pool: Hidden Book of Spell

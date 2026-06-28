@@ -1,0 +1,32 @@
+// World Championship Tournament 2004 (GBA, 2004) — Shadi
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Curse of Dragon
+3 Vorse Raider
+1 Cyber Soldier of Darkworld
+1 Lord of the Lamp
+1 Water Omotics
+3 Goblin Attack Force
+3 Needle Worm
+1 Slate Warrior
+3 Black Pendant
+1 Card Destruction
+2 Chain Energy
+1 Change of Heart
+1 Dark Hole
+1 Monster Reborn
+1 Raigeki
+1 Snatch Steal
+1 Swords of Revealing Light
+3 Attack and Receive
+1 Ceasefire
+1 Fairy Box
+1 Magic Cylinder
+1 Magic Thorn
+1 Mirror Force
+1 Negate Attack
+2 Ring of Destruction
+3 Trap Hole
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Magic Thorn

@@ -1,0 +1,63 @@
+# Pack: Special Ways — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Special Ways (GX1-BP)
+# Cards per pack: 3 | Price: 400 DP | Cards in pack: 53 | Unlocked: Duel with Sartyr once | Frequency: Once every three weeks
+# 53 distinct cards; 2 not in v6 pool
+## Ultra Rare
+Exodia Necross
+## Super Rare
+Exodia the Forbidden One
+Insect Queen
+Valkyrion the Magna Warrior
+Legendary Flame Lord
+## Rare
+Right Leg of the Forbidden One
+Left Leg of the Forbidden One
+Right Arm of the Forbidden One
+Left Arm of the Forbidden One
+Destiny Board
+Breaker the Magical Warrior
+Final Countdown
+Stronghold the Moving Fortress
+Blast Magician
+## Common
+Alpha The Magnet Warrior
+Hannibal Necromancer
+Beta The Magnet Warrior
+Gamma the Magnet Warrior
+Multiply
+Scapegoat
+Multiplication of Ants
+Infinite Cards
+Embodiment of Apophis
+Spirit Message "I"
+Spirit Message "N"
+Spirit Message "A"
+Spirit Message "L"
+Statue of the Wicked
+Cobra Jar
+Des Dendle
+Skilled White Magician
+Skilled Dark Magician
+Apprentice Magician
+Magical Marionette
+Magical Plant Mandragola
+Royal Magical Library
+Armor Exe
+Pitch-Black Power Stone
+Mega Ton Magical Cannon
+Exhausting Spell
+Miracle Restoring
+Anti-Spell
+Metal Reflect Slime
+Contract with Exodia
+Token Thanksgiving
+Ojama Trio
+Tower of Babel
+Balloon Lizard
+Stray Lambs
+Tricky's Magic 4
+Big Core
+Token Feastevil
+B.E.S. Crystal Core
+#
+# Not in v6 pool: Big Core, Tricky's Magic 4

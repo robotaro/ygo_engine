@@ -1,0 +1,17 @@
+// 7 Trials to Glory: World Championship Tournament 2005 (GBA, 2005) — Arkana — 7 Trials to Glory: World Championship 2005 Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Arkana's Decks
+// 42 cards; all cards in v6 pool
+3 Archfiend Soldier
+3 Dark Magician
+3 Gemini Elf
+3 Mad Dog of Darkness
+3 Luster Dragon
+3 Vorse Raider
+3 Card Destruction
+3 Dark Hole
+3 Graceful Charity
+3 Monster Reborn
+3 Raigeki
+3 Ring of Destruction
+3 Torrential Tribute
+3 Trap Hole

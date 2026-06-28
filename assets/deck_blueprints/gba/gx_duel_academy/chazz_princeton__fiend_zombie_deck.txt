@@ -1,0 +1,35 @@
+// GX Duel Academy (GBA, 2006) — Chazz Princeton — Fiend/Zombie Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Chazz Princeton (Duel Academy)
+// 42 cards; 2 not in v6 pool (see _MISMATCHES.md)
+3 Clown Zombie
+2 Giga Gagagigo
+3 Master Kyonshee
+1 Blood Sucker
+1 Decayed Commander
+1 Legendary Fiend
+1 Mefist the Infernal General
+1 Newdoria
+1 Shadow Ghoul
+1 Zombie Tiger
+1 Card Destruction
+2 Dark Factory of Mass Production
+1 Graceful Charity
+1 Heavy Storm
+2 Mystic Plasma Zone
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Premature Burial
+1 Snatch Steal
+1 Swords of Revealing Light
+2 Seven Tools of the Bandit
+2 Call of the Haunted
+2 Magic Jammer
+1 Magic Cylinder
+3 Robbin' Zombie
+1 Torrential Tribute
+1 Trap Hole
+2 Hidden Soldier
+1 Mirror Force
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Hidden Soldier

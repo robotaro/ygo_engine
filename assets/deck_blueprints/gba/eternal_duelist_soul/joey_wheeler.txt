@@ -1,0 +1,39 @@
+// The Eternal Duelist Soul (GBA, 2002) — Joey Wheeler
+// Source: Yu-Gi-Oh! Fandom wiki — Joey Wheeler's Decks
+// 41 cards; all cards in v6 pool
+3 Alligator's Sword
+1 Axe Raider
+2 Baby Dragon
+1 Battle Steer
+1 Battle Warrior
+1 Beaver Warrior
+1 Blackland Fire Dragon
+1 Dragon Zombie
+1 Garoozis
+1 Hero of the East
+2 Hitotsu-Me Giant
+1 Kageningen
+1 Mystic Horseman
+1 Red-Eyes Black Dragon
+1 Summoned Skull
+2 Tiger Axe
+1 The 13th Grave
+1 Torike
+1 Lava Battleguard
+1 Panther Warrior
+2 Swamp Battleguard
+1 Time Wizard
+1 Change of Heart
+1 Graceful Charity
+1 Heavy Storm
+1 Polymerization
+1 Pot of Greed
+1 Raigeki
+1 Sword of Dragon's Soul
+1 Magic Jammer
+1 Magical Arm Shield
+1 Mirror Force
+1 Skull Dice
+#EXTRA DECK
+1 Black Skull Dragon
+1 Thousand Dragon

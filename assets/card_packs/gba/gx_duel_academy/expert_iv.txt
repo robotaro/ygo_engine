@@ -1,0 +1,82 @@
+# Pack: Expert IV — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Expert IV (GX1-BP)
+# Cards per pack: 5 | Price: 200 DP | Cards in pack: 72 | Unlocked: "Excellent Duelist" Rank | Frequency: Once every four weeks
+# 72 distinct cards; 1 not in v6 pool
+## Ultra Rare
+Chaos Emperor Dragon - Envoy of the End
+Invader of Darkness
+Blowback Dragon
+Archlord Zerato
+Dark Magician of Chaos
+Spirit of the Pharaoh
+Dark Magic Attack
+## Super Rare
+Dedication through Light and Darkness
+Zaborg the Thunder Monarch
+Burst Stream of Destruction
+The First Sarcophagus
+Megarock Dragon
+## Rare
+Stray Lambs
+Compulsory Evacuation Device
+Curse of Darkness
+Robbin' Zombie
+Trap Jammer
+Needle Burrower
+Mermaid Knight
+Theban Nightmare
+Protector of the Sanctuary
+Ninja Grandmaster Sasuke
+## Common
+Gryphon's Feather Duster
+Smashing Ground
+Salvage
+Ultra Evolution Pill
+Earth Chant
+Destruction Ring
+Self-Destruct Button
+Begone, Knave!
+DNA Transplant
+Gogiga Gagagigo
+Warrior of Zera
+Sealmaster Meisei
+Mystical Shine Ball
+Metal Armored Bug
+KA-2 Des Scissors
+Atomic Firefly
+Piranha Army
+Two Thousand Needles
+Disc Fighter
+Lady Ninja Yae
+Mystik Wok
+Monster Gate
+Earthquake
+Goblin Thief
+Backfire
+Light of Judgment
+Solar Ray
+Ninjitsu Art of Transformation
+Beckoning Light
+Armor Break
+Mokey Mokey
+Gigobyte
+Kozaky
+Fiend Scorpion
+Pharaoh's Servant
+Pharaonic Protector
+Aswan Apparition
+Nubian Guard
+Desertapir
+Sand Gambler
+Absorbing Kid from the Sky
+Spirit Caller
+Man-Thro' Tro'
+Order to Charge
+The Third Sarcophagus
+The Second Sarcophagus
+Homunculus the Alchemist Being
+Castle Gate
+Lost Guardian
+Tyranno Infinity
+#
+# Not in v6 pool: Homunculus the Alchemist Being

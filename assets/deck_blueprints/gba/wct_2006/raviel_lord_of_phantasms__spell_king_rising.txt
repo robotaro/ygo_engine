@@ -1,0 +1,37 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Raviel, Lord of Phantasms — Spell King Rising
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Raviel, Lord of Phantasms
+1 Archfiend Soldier
+1 Breaker the Magical Warrior
+1 D.D. Warrior Lady
+1 Earthbound Spirit
+3 Giant Germ
+2 Goblin Elite Attack Force
+1 Magician of Faith
+1 Protector of the Sanctuary
+1 Sangan
+3 Slate Warrior
+1 Spear Cretin
+1 Tribe-Infecting Virus
+1 Book of Moon
+1 Brain Control
+1 Collapse
+1 Hammer Shot
+1 Heavy Storm
+1 Lightning Vortex
+1 Magical Mallet
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Rush Recklessly
+1 Snatch Steal
+1 United We Stand
+2 Bark of Dark Ruler
+1 Bottomless Trap Hole
+1 Call of the Haunted
+2 Dust Tornado
+1 Raigeki Break
+1 Sakuretsu Armor
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Collapse

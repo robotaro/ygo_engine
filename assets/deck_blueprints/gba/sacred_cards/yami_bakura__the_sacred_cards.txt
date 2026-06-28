@@ -1,0 +1,20 @@
+// The Sacred Cards (GBA, 2003) — Yami Bakura — The Sacred Cards
+// Source: Yu-Gi-Oh! Fandom wiki — Yami Bakura's Decks
+// 32 cards; all cards in v6 pool
+2 Archfiend Marmot of Nefariousness
+3 Bite Shoes
+1 Bone Mouse
+3 Candle of Fate
+2 Jinzo #7
+2 Mech Mole Zombie
+2 Mystery Hand
+2 Pot the Trick
+2 Shadow Specter
+3 Spear Cretin
+3 Tomozaurus
+2 Wretched Ghost of the Attic
+1 Spirit Message "A"
+1 Spirit Message "I"
+1 Spirit Message "L"
+1 Spirit Message "N"
+1 Destiny Board

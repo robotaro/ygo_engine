@@ -1,0 +1,21 @@
+// The Sacred Cards (GBA, 2003) — Mai Valentine
+// Source: Yu-Gi-Oh! Fandom wiki — Mai Valentine's Decks
+// 40 cards; all cards in v6 pool
+3 Dancing Elf
+3 Droll Bird
+3 Flame Viper
+1 Harpie Lady
+3 Kurama
+3 Petit Dragon
+3 Yamatano Dragon Scroll
+3 Hane-Hane
+1 Harpie's Pet Dragon
+3 Little Chimera
+3 Magician of Faith
+3 Queen's Double
+3 The Unhappy Maiden
+1 Cyber Shield
+1 Electro-Whip
+1 Elegant Egotist
+1 Harpie's Feather Duster
+1 Amazoness Archers

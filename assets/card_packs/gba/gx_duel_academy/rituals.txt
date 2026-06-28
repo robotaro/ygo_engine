@@ -1,0 +1,61 @@
+# Pack: Rituals — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Rituals (GX1-BP)
+# Cards per pack: 5 | Price: 100 DP | Cards in pack: 51 | Unlocked: Read "Ritual Monster" Tutorial (1-3) | Frequency: Once a week
+# 51 distinct cards; 1 not in v6 pool
+## Ultra Rare
+Reshef the Dark Being
+## Super Rare
+Black Luster Soldier
+Magician of Black Chaos
+Shinato, King of a Higher Plane
+Dark Master - Zorc
+## Rare
+Zera the Mant
+Relinquished
+The Masked Beast
+Legendary Flame Lord
+Elemental Mistress Doriado
+## Common
+Super War-Lion
+Fiend's Mirror
+Black Luster Ritual
+Zera Ritual
+War-Lion Ritual
+Beastly Mirror Ritual
+Commencement Dance
+Hamburger Recipe
+Novox's Prayer
+Turtle Oath
+Resurrection of Chakra
+Javelin Beetle Pact
+Garma Sword Oath
+Revival of Dokurorider
+Fortress Whale's Oath
+Performance of Sword
+Hungry Burger
+Skull Guardian
+Chakra
+Crab Turtle
+Garma Sword
+Javelin Beetle
+Fortress Whale
+Dokurorider
+Dark Magic Ritual
+Black Illusion Ritual
+Senju of the Thousand Hands
+Sonic Bird
+Curse of the Masked Beast
+Paladin of White Dragon
+White Dragon Ritual
+Shinato's Ark
+Incandescent Ordeal
+Contract with the Abyss
+Contract with the Dark Master
+Manju of the Ten Thousand Hands
+Earth Chant
+Ritual Weapon
+Fulfillment of the Contract
+Doriado's Blessing
+Final Ritual of the Ancients
+#
+# Not in v6 pool: Dark Magic Ritual

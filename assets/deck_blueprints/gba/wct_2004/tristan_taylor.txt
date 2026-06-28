@@ -1,0 +1,43 @@
+// World Championship Tournament 2004 (GBA, 2004) — Tristan Taylor
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+1 Hyozanryu
+1 Mikazukinoyaiba
+1 Stone Dragon
+1 30,000-Year White Turtle
+1 Bolt Escargot
+1 Leo Wizard
+1 Misairuzame
+1 Spirit of the Mountain
+1 Tatsunootoshigo
+1 Basic Insect
+1 Candle of Fate
+1 Curtain of the Dark Ones
+1 Dig Beak
+1 Droll Bird
+1 Embryonic Beast
+1 Eyearmor
+1 Fiend's Hand
+1 Flame Dancer
+1 Green Phantom King
+1 Hinotama Soul
+1 Hitodenchak
+1 Korogashi
+1 LaLa Li-oon
+1 M-Warrior #2
+1 Masked Clown
+1 Petit Dragon
+1 Swordsman of Landstar
+1 Tentacle Plant
+1 The Melting Red Shadow
+1 Weather Control
+1 Wing Egg Elf
+1 Wretched Ghost of the Attic
+1 Zarigun
+1 Goblin Attack Force
+1 Axe of Despair
+1 Black Pendant
+1 Horn of the Unicorn
+1 Mage Power
+1 Sword of Deep-Seated
+1 United We Stand

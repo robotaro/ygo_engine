@@ -1,0 +1,23 @@
+// The Sacred Cards (GBA, 2003) — Rex Raptor
+// Variant/section: The Sacred Cards (Duel Monsters 7: The Duelcity Legend)
+// Source: Yu-Gi-Oh! Fandom wiki — Rex Raptor's Decks
+// 40 cards; 3 not in v6 pool (see _MISMATCHES.md)
+3 Ancient Jar
+3 Eyearmor
+3 Haniwa
+3 Nightmare Scorpion
+3 Mechanical Spider
+3 Muka Muka
+3 Queen's Double
+1 Red-Eyes Black Dragon
+3 Steel Scorpion
+1 Sword Arm of Dragon
+3 Swordsman from a Distant Land
+3 Tomozaurus
+3 Mooyan Curry
+1 Bad Reaction to Simochi
+3 Fake Trap
+1 Goblin Fan
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Mechanical Spider

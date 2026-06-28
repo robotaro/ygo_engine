@@ -1,0 +1,46 @@
+# Pack: Multi-colored Millenium Puzzle — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Multi-colored Millenium Puzzle (EDS-BP)
+# 39 distinct cards; 5 not in v6 pool
+## Rare
+Acid Trap Hole
+Alpha The Magnet Warrior
+Anti-Spell Fragrance
+Aqua Chorus
+Bell of Destruction
+Beta The Magnet Warrior
+Crush Card Virus
+Gamma the Magnet Warrior
+Garma Sword Oath
+Insect Queen
+Magic-Arm Shield
+Mesmeric Control
+Metalmorph
+Metalzoa
+Perfectly Ultimate Great Moth
+Red-Eyes Black Metal Dragon
+Riryoku
+Seal of the Ancients
+Sebek's Blessing
+Sinister Serpent
+Slifer the Sky Dragon
+Sword of Dragon's Soul
+Valkyrion the Magna Warrior
+Windstorm of Etaqua
+Zoa
+## Common
+Alligator Sword Dragon
+Bright Castle
+Cyber Shield
+Cyber-Tech Alligator
+Dunames Dark Witch
+Garma Sword
+Goblin Fan
+Harpie's Feather Duster
+Insect Armor with Laser Cannon
+Kunai with Chain
+Salamandra
+Seiyaryu
+Vorse Raider
+Widespread Ruin
+#
+# Not in v6 pool: Alligator Sword Dragon, Bell of Destruction, Bright Castle, Magic-Arm Shield, Slifer the Sky Dragon

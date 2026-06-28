@@ -1,0 +1,47 @@
+# Pack: Master Fusions — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Master Fusions (GX1-BP)
+# Cards per pack: 3 | Price: 200 | Cards in pack: 36 | Unlocked: Get 90% Collection Rate on "Fusions" Pack | Frequency: Once a week
+# 36 distinct cards; 2 not in v6 pool
+## Secret Rare
+Magical Scientist
+## Ultra Rare
+Master of Dragon Soldier
+F.G.D.
+Power Bond
+## Super Rare
+XYZ-Dragon Cannon
+UFOroid Fighter
+Cyber End Dragon
+## Rare
+Thousand-Eyes Restrict
+Dark Paladin
+Dark Flare Knight
+Re-Fusion
+Elemental HERO Flame Wingman
+Elemental HERO Thunder Giant
+Cyber Twin Dragon
+Miracle Fusion
+Dragon's Mirror
+## Common
+Blue-Eyes Ultimate Dragon
+Meteor Black Dragon
+Chimera the Flying Mythical Beast
+The Last Warrior from Another Planet
+Alligator's Sword Dragon
+Summoner of Illusions
+Supply
+Metamorphosis
+XY-Dragon Cannon
+XZ-Tank Cannon
+YZ-Tank Dragon
+Ojama King
+Master of Oz
+Fusion Weapon
+Dark Blade the Dragon Knight
+Mokey Mokey King
+Gatling Dragon
+Mispolymerization
+Wroughtweiler
+Fusion Recovery
+#
+# Not in v6 pool: F.G.D., Master of Dragon Soldier

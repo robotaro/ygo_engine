@@ -1,0 +1,31 @@
+// World Championship Tournament 2004 (GBA, 2004) — Strings
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 35 cards; all cards in v6 pool
+1 Seiyaryu
+1 Zoa
+1 Monster Tamer
+1 Pendulum Machine
+1 Rude Kaiser
+1 Summoned Skull
+1 Sword Arm of Dragon
+1 Vorse Raider
+1 Tao the Chanter
+1 Humanoid Slime
+1 Enchanting Mermaid
+1 Flying Penguin
+1 Lesser Dragon
+1 Master & Expert
+1 Stone Ghost
+1 The 13th Grave
+1 Winged Dragon, Guardian of the Fortress #2
+2 Magician of Faith
+1 Slate Warrior
+3 Spear Dragon
+1 Card Destruction
+2 Dark Hole
+2 Monster Reborn
+2 Premature Burial
+2 Raigeki
+1 Magic Cylinder
+1 Mirror Force
+1 Ring of Destruction

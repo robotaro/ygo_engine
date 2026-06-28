@@ -1,0 +1,36 @@
+// World Championship Tournament 2004 (GBA, 2004) — Odion
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 47 cards; 1 not in v6 pool (see _MISMATCHES.md)
+2 Summoned Skull
+1 Cyber Jar
+1 Magician of Faith
+1 Mask of Darkness
+3 Man-Eater Bug
+1 Morphing Jar
+1 Slate Warrior
+3 Spear Dragon
+2 Dark Hole
+1 Monster Reborn
+1 Premature Burial
+2 Raigeki
+1 Anti Raigeki
+1 Call of the Dark
+1 Call of the Grave
+2 Enchanted Javelin
+1 Fairy Box
+1 Gryphon Wing
+1 Magic Cylinder
+2 Magic Jammer
+2 Magical Thorn
+3 Mirror Force
+1 Negate Attack
+1 Ring of Destruction
+2 Seven Tools of the Bandit
+1 Solemn Judgment
+3 Torrential Tribute
+1 Trap Hole
+1 White Hole
+3 Widespread Ruin
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Call of the Dark

@@ -1,0 +1,35 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Battery Man C — Full Charge Deck
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Ancient Gear Golem
+2 Cyber Dragon
+1 Machine King
+1 Perfect Machine King
+3 Batteryman AA
+3 Batteryman C
+1 Drillroid
+1 Gyroid
+2 Heavy Mech Support Platform
+1 Machine King Prototype
+1 Magician of Faith
+1 Mechanicalchaser
+2 The Trojan Horse
+2 Battery Charger
+1 Collapse
+1 Hammer Shot
+1 Heavy Storm
+2 Inferno Reckless Summon
+1 Limiter Removal
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Premature Burial
+1 Snatch Steal
+1 Call of the Haunted
+1 DNA Surgery
+1 Dust Tornado
+2 Rare Metalmorph
+2 Roll Out!
+1 Sakuretsu Armor
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Collapse

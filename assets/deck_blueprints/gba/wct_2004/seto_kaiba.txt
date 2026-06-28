@@ -1,0 +1,28 @@
+// World Championship Tournament 2004 (GBA, 2004) — Seto Kaiba
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 45 cards; all cards in v6 pool
+3 Blue-Eyes White Dragon
+2 Cyber-Tech Alligator
+3 Vorse Raider
+2 Barrel Dragon
+1 Cyber-Stein
+3 Goblin Attack Force
+2 Magician of Faith
+1 Slate Warrior
+3 Spear Dragon
+1 Blue-Eyes Ultimate Dragon
+1 Dark Hole
+1 Harpie's Feather Duster
+2 Heavy Storm
+1 Megamorph
+3 Monster Reborn
+2 Premature Burial
+1 Polymerization
+3 Raigeki
+1 Call of the Haunted
+1 Magic Cylinder
+2 Magic Jammer
+1 Mirror Force
+2 Negate Attack
+2 Ring of Destruction
+1 Torrential Tribute

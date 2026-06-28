@@ -1,0 +1,26 @@
+// World Championship Tournament 2004 (GBA, 2004) — Yami Bakura
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 42 cards; all cards in v6 pool
+2 Summoned Skull
+3 La Jinn the Mystical Genie of the Lamp
+2 Magician of Faith
+1 Slate Warrior
+2 The Bistro Butcher
+2 Witch of the Black Forest
+2 Axe of Despair
+2 Black Pendant
+3 Dark Hole
+1 Gravekeeper's Servant
+3 Monster Reborn
+2 Mystical Space Typhoon
+1 Premature Burial
+3 Raigeki
+1 Spirit Message "A"
+1 Spirit Message "I"
+1 Spirit Message "L"
+1 Spirit Message "N"
+3 Tribute to the Doomed
+1 Destiny Board
+2 Magic Cylinder
+1 Mirror Force
+2 Ring of Destruction

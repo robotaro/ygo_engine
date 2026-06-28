@@ -1,0 +1,28 @@
+// World Championship Tournament 2004 (GBA, 2004) — Duel Computer
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 45 cards; all cards in v6 pool
+3 Blue-Eyes White Dragon
+2 Cyber-Tech Alligator
+3 Gemini Elf
+3 Vorse Raider
+2 Cyber-Stein
+3 Goblin Attack Force
+2 Magician of Faith
+3 Slate Warrior
+3 Spear Dragon
+1 Blue-Eyes Ultimate Dragon
+1 Dark Hole
+1 Harpie's Feather Duster
+2 Heavy Storm
+1 Megamorph
+1 Monster Reborn
+1 Polymerization
+2 Premature Burial
+1 Raigeki
+1 Call of the Haunted
+1 Magic Cylinder
+2 Magic Jammer
+1 Mirror Force
+2 Negate Attack
+2 Ring of Destruction
+1 Torrential Tribute

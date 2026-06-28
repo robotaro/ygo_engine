@@ -1,0 +1,20 @@
+// The Sacred Cards (GBA, 2003) — Tristan Taylor — The Sacred Cards
+// Source: Yu-Gi-Oh! Fandom wiki — Tristan Taylor's Decks
+// 36 cards; 3 not in v6 pool (see _MISMATCHES.md)
+3 Bat
+3 Dancing Elf
+1 Dark-Eyes Illusionist
+1 Jinzo #7
+3 Kattapillar
+3 Mechanical Spider
+3 Ooguchi
+3 Sinister Serpent
+3 Skull Servant
+3 Steel Scorpion
+3 Swordsman from a Distant Land
+3 The Unhappy Maiden
+1 Thousand-Eyes Idol
+3 Zone Eater
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Mechanical Spider

@@ -1,0 +1,22 @@
+# Pack: Live Vehicles — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Live Vehicles (GX1-BP)
+# Cards per pack: 3 | Price: 400 DP | Cards in pack: 12 | Unlocked: Beat Syrus 10 times | Frequency: Once every two weeks
+# 12 distinct cards; 1 not in v6 pool
+## Secret Rare
+Power Bond
+## Ultra Rare
+UFOroid Fighter
+## Super Rare
+Shield Crash
+UFOroid
+## Common
+Polymerization
+Limiter Removal
+Cycroid
+Patroid
+Gyroid
+Steamroid
+Drillroid
+Steam Gyroid
+#
+# Not in v6 pool: Shield Crash

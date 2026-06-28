@@ -1,0 +1,28 @@
+// Worldwide Edition: Stairway to the Destined Duel (GBA, 2003) — Ishizu Ishtar
+// Source: Yu-Gi-Oh! Fandom wiki — Ishizu Ishtar's Decks
+// 42 cards; all cards in v6 pool
+1 Cosmo Queen
+3 Dunames Dark Witch
+1 Wingweaver
+2 Banisher of the Light
+3 Hysteric Fairy
+2 Magician of Faith
+3 Darklord Marie
+2 Shining Angel
+2 Soul of Purity and Light
+3 The Forgiving Maiden
+1 Dark Hole
+2 Luminous Spark
+1 Monster Reborn
+2 Polymerization
+2 Premature Burial
+1 Raigeki
+1 Swords of Revealing Light
+1 Ceasefire
+1 Magic Cylinder
+1 Mirror Force
+1 Ring of Destruction
+2 Shadow of Eyes
+2 World Suppression
+#EXTRA DECK
+2 St. Joan

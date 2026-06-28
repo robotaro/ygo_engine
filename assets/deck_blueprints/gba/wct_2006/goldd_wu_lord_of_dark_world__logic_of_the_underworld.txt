@@ -1,0 +1,35 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Goldd, Wu-Lord of Dark World — Logic of the Underworld
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Goldd, Wu-Lord of Dark World
+3 Sillva, Warlord of Dark World
+2 Beiige, Vanguard of Dark World
+1 Broww, Huntsman of Dark World
+3 Brron, Mad King of Dark World
+1 D.D. Warrior Lady
+1 Magician of Faith
+1 Morphing Jar
+1 Scarr, Scout of Dark World
+1 Tribe-Infecting Virus
+2 Zure, Knight of Dark World
+1 Card Destruction
+1 Card of Safe Return
+1 Collapse
+2 Dark World Lightning
+2 Gateway to Dark World
+1 Heavy Storm
+1 Lightning Vortex
+1 Magical Mallet
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Snatch Steal
+1 Bottomless Trap Hole
+1 Call of the Haunted
+2 Dark Deal
+1 Dust Tornado
+1 Raigeki Break
+1 Sakuretsu Armor
+1 The Forces of Darkness
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Collapse

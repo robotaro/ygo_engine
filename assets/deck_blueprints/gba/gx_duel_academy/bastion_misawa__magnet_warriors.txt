@@ -1,0 +1,34 @@
+// GX Duel Academy (GBA, 2006) — Bastion Misawa — Magnet Warriors
+// Source: Yu-Gi-Oh! Fandom wiki — Bastion Misawa (Duel Academy)
+// 47 cards; all cards in v6 pool
+3 Alpha The Magnet Warrior
+3 Beta The Magnet Warrior
+3 Gamma the Magnet Warrior
+2 Hyozanryu
+2 Luster Dragon #2
+3 Vorse Raider
+1 Hane-Hane
+1 Man-Eater Bug
+2 Needle Worm
+3 Penguin Soldier
+1 Sangan
+1 Valkyrion the Magna Warrior
+1 White Magician Pikeru
+1 Card Destruction
+1 Dark Factory of Mass Production
+1 Graceful Charity
+1 Heavy Storm
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Premature Burial
+1 Snatch Steal
+1 Swords of Revealing Light
+1 Backup Soldier
+1 Call of the Haunted
+1 Magic Cylinder
+1 Mirror Force
+2 Magic Jammer
+1 Negate Attack
+1 Ring of Destruction
+1 Torrential Tribute
+3 Trap Hole

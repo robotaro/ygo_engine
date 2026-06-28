@@ -1,0 +1,57 @@
+# Pack: Cyber Harpie — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Cyber Harpie (EDS-BP)
+# 50 distinct cards; 3 not in v6 pool
+## Rare
+Breath of Light
+Cocoon of Evolution
+Elegant Egotist
+Eradicating Aerosol
+Eternal Draught
+Harpie Lady Sisters
+Magician of Faith
+Mask of Darkness
+Right Leg of the Forbidden One
+Stain Storm
+Summoned Skull
+Warrior Elimination
+## Common
+Ancient Elf
+Ancient Lizard Warrior
+Armored Lizard
+Barrel Lily
+Bottom Dweller
+Crawling Dragon
+D. Human
+Dark Assailant
+Deepsea Shark
+Destroyer Golem
+Dokuroizo the Grim Reaper
+Doma The Angel of Silence
+Electric Lizard
+Fiend Reflection #1
+Flame Viper
+Great Bill
+Ground Attacker Bugroth
+Harpie Lady
+Hunter Spider
+Kaminari Attack
+Kattapillar
+Kojikocy
+Mega Thunderball
+Morinphen
+Nekogal #1
+Ocubeam
+Ogre of the Black Shadow
+Petit Moth
+Pragtical
+Rock Ogre Grotto #1
+Steel Scorpion
+Tao the Chanter
+Tongyo
+Trakadon
+Trent
+Water Girl
+Water Omotics
+Winged Dragon, Guardian of the Fortress #1
+#
+# Not in v6 pool: Eternal Draught, Stain Storm, Trakadon

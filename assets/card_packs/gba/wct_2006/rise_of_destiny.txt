@@ -1,0 +1,70 @@
+# Pack: Rise of Destiny — Ultimate Masters: World Championship Tournament 2006 (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Rise of Destiny (WC6-BP)
+# 60 distinct cards; 2 not in v6 pool
+## (Unsorted)
+DP
+## Ultra Rare
+Mystic Swordsman LV6
+Perfect Machine King
+Silent Swordsman LV3
+The Creator
+## Super Rare
+Big Core
+Divine Wrath
+Monster Reincarnation
+Pikeru's Circle of Enchantment
+Thestalos the Firestorm Monarch
+Tragedy
+Triangle Ecstasy Spark
+## Rare
+A-Team: Trap Disposal Unit
+Chain Burst
+Covering Fire
+Dark Blade the Dragon Knight
+Dekoichi the Battlechanted Locomotive
+Flint
+Fusilier Dragon, the Dual-Mode Beast
+Gaia Soul the Combustible Collective
+Machine Duplication
+Necklace of Command
+Rare Metalmorph
+Sasuke Samurai #4
+Serial Spell
+Ultimate Insect LV3
+## Common
+Astral Barrier
+Back to Square One
+Ballista of Rampart Smashing
+Bokoichi the Freightening Car
+Creeping Doom Manta
+Eagle Eye
+Element Magician
+Element Saurus
+Fox Fire
+Fuh-Rin-Ka-Zan
+Harpie Girl
+Harpie Lady 1
+Harpie Lady 2
+Harpie Lady 3
+Harpies' Hunting Ground
+Heavy Mech Support Platform
+Homunculus the Alchemic Being
+Invasion of Flames
+Lighten the Load
+Malice Dispersion
+Mighty Guard
+Mind Haxorz
+Mirage Dragon
+Mokey Mokey King
+Mokey Mokey Smackdown
+Nightmare Penguin
+Pitch-Black Warwolf
+Raging Flame Sprite
+Roc from the Valley of Haze
+Spell Purification
+Tactical Espionage Expert
+The Creator Incarnate
+Woodborg Inpachi
+Xing Zhen Hu
+#
+# Not in v6 pool: Big Core, DP

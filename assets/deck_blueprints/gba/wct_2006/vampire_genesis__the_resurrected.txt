@@ -1,0 +1,34 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Vampire Genesis — The Resurrected
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Curse of Vampire
+2 Ryu Kokki
+1 Vampire Genesis
+2 Vampire Lord
+1 D.D. Warrior Lady
+2 Goblin Zombie
+1 Magician of Faith
+3 Pyramid Turtle
+3 Regenerating Mummy
+1 Sangan
+1 Soul-Absorbing Bone Tower
+3 Spirit Reaper
+1 Tribe-Infecting Virus
+3 Book of Life
+2 Call of the Mummy
+1 Card of Safe Return
+1 Heavy Storm
+1 Lightning Vortex
+1 Mystical Space Typhoon
+1 Nobleman of Crossout
+1 Overpowering Eye
+1 Pot of Greed
+1 Rush Recklessly
+1 Snatch Steal
+1 Bottomless Trap Hole
+1 Call of the Haunted
+1 Dust Tornado
+1 Torrential Tribute
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Curse of Vampire

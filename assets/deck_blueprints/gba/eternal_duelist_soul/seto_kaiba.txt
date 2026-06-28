@@ -1,0 +1,30 @@
+// The Eternal Duelist Soul (GBA, 2002) — Seto Kaiba
+// Source: Yu-Gi-Oh! Fandom wiki — Seto Kaiba's Decks
+// 43 cards; all cards in v6 pool
+3 Blue-Eyes White Dragon
+1 Hyozanryu
+3 Koumori Dragon
+2 Twin-Headed Fire Dragon
+3 Vorse Raider
+1 Cyber Jar
+2 Cyber-Stein
+3 Hoshiningen
+2 Nimble Momonga
+2 Sangan
+1 Sinister Serpent
+2 Witch of the Black Forest
+1 Change of Heart
+1 Dark Hole
+2 Graceful Charity
+1 Harpie's Feather Duster
+1 Monster Reborn
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Raigeki
+2 Sebek's Blessing
+1 Snatch Steal
+1 Magic Jammer
+1 Mirror Force
+1 Solemn Judgment
+#EXTRA DECK
+3 Blue-Eyes Ultimate Dragon

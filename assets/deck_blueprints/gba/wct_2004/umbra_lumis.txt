@@ -1,0 +1,27 @@
+// World Championship Tournament 2004 (GBA, 2004) — Umbra & Lumis
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+1 Seiyaryu
+1 Mech Bass
+3 Summoned Skull
+1 Wing Eagle
+1 Dark King of the Abyss
+1 Gradius
+2 Grand Tiki Elder
+1 Kamakiriman
+3 Vorse Raider
+2 Magician of Faith
+2 Mask of Darkness
+2 Masked Sorcerer
+1 Slate Warrior
+1 The Masked Beast
+1 Curse of the Masked Beast
+2 Dark Hole
+1 Mask of Brutality
+3 Monster Reborn
+3 Premature Burial
+2 Raigeki
+1 Magic Cylinder
+2 Mask of Weakness
+1 Mirror Force
+2 Ring of Destruction

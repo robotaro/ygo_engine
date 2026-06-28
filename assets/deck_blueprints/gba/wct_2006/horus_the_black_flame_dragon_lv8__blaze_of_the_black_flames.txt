@@ -1,0 +1,34 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Horus the Black Flame Dragon LV8 — Blaze of the Black Flames
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 2 not in v6 pool (see _MISMATCHES.md)
+2 Horus the Black Flame Dragon LV6
+2 Horus the Black Flame Dragon LV8
+2 Blazing Inpachi
+1 Charcoal Inpachi
+1 Chiron the Mage
+1 D.D. Warrior Lady
+3 Horus the Black Flame Dragon LV4
+1 Magician of Faith
+1 Solar Flare Dragon
+2 Tenkabito Shien
+1 The Thing in the Crater
+1 Tribe-Infecting Virus
+2 UFO Turtle
+2 Collapse
+1 Heavy Storm
+1 Level Modulation
+2 Level Up!
+1 Lightning Vortex
+2 Molten Destruction
+1 Mystical Space Typhoon
+1 Nobleman of Crossout
+1 Pot of Greed
+1 Premature Burial
+1 Swords of Revealing Light
+1 The Graveyard in the Fourth Dimension
+1 Call of the Haunted
+1 Dust Tornado
+3 Royal Decree
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Collapse

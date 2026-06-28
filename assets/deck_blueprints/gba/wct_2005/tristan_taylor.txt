@@ -1,0 +1,35 @@
+// 7 Trials to Glory: World Championship Tournament 2005 (GBA, 2005) — Tristan Taylor
+// Source: Yu-Gi-Oh! Fandom wiki — Tristan Taylor (World Championship)
+// 54 cards; all cards in v6 pool
+3 Ancient Brain
+2 Curse of Dragon
+3 Faith Bird
+2 Gaia The Fierce Knight
+3 Red-Eyes Black Dragon
+3 Skull Red Bird
+3 Tainted Wisdom
+3 Goblin Attack Force
+1 Hane-Hane
+1 Man-Eater Bug
+1 Penguin Soldier
+2 Thunder Dragon
+1 Axe of Despair
+2 Black Pendant
+1 Change of Heart
+1 Fusion Sage
+2 Horn of the Unicorn
+3 Polymerization
+1 Pot of Greed
+1 Raigeki
+2 Sword of Deep-Seated
+1 Mirror Force
+1 Seven Tools of the Bandit
+3 Skull Dice
+1 Torrential Tribute
+1 Trap Hole
+#EXTRA DECK
+1 Gaia the Dragon Champion
+1 Meteor Black Dragon
+2 Meteor Dragon
+1 Skull Knight
+1 Twin-Headed Thunder Dragon

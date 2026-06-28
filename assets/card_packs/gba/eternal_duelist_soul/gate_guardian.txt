@@ -1,0 +1,57 @@
+# Pack: Gate Guardian — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Gate Guardian (EDS-BP)
+# 50 distinct cards; 1 not in v6 pool
+## Rare
+Anti Raigeki
+Black Skull Dragon
+Call of the Dark
+Change of Heart
+Crow Goblin
+Dungeon Worm
+Fake Trap
+Kazejin
+Rude Kaiser
+Sanga of the Thunder
+Suijin
+The Cheerful Coffin
+Tribute to the Doomed
+## Common
+Acid Crawler
+Armored Rat
+Armored Zombie
+Big Eye
+Bio Plant
+Blast Juggler
+Dark Rabbit
+Dark Shade
+Disk Magician
+Empress Judge
+Feral Imp
+Hibikime
+Hyo
+Hyosube
+Jinzo #7
+Killer Needle
+Larvae Moth
+Leghul
+Leogun
+Magical Ghost
+Masked Sorcerer
+Master & Expert
+Mystic Lamp
+Ooguchi
+Pale Beast
+Queen's Double
+Rainbow Flower
+Roaring Ocean Snake
+Rose Spectre of Dunn
+Snakeyashi
+Soul Release
+The Thing That Hides in the Mud
+Toad Master
+Unknown Warrior of Fiend
+White Magical Hat
+Wing Egg Elf
+Yaiba Robo
+#
+# Not in v6 pool: Call of the Dark

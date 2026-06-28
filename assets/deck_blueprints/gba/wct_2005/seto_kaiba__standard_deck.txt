@@ -1,0 +1,34 @@
+// 7 Trials to Glory: World Championship Tournament 2005 (GBA, 2005) — Seto Kaiba — Standard Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Seto Kaiba's Decks
+// 54 cards; all cards in v6 pool
+3 Archfiend Soldier
+3 Blue-Eyes White Dragon
+3 Cyber-Tech Alligator
+3 Luster Dragon #2
+3 Vorse Raider
+1 Black Luster Soldier - Envoy of the Beginning
+1 Chaos Emperor Dragon - Envoy of the End
+2 Cyber-Stein
+3 Goblin Attack Force
+1 Hane-Hane
+1 Man-Eater Bug
+2 Magician of Faith
+1 Penguin Soldier
+3 Soul of Purity and Light
+3 Spear Dragon
+3 Big Bang Shot
+1 Graceful Charity
+1 Monster Reborn
+1 Mage Power
+1 Change of Heart
+1 Heavy Storm
+1 United We Stand
+1 Polymerization
+1 Card Destruction
+2 Magic Jammer
+3 Negate Attack
+1 Seven Tools of the Bandit
+1 Trap Hole
+1 Call of the Haunted
+#EXTRA DECK
+2 Blue-Eyes Ultimate Dragon

@@ -1,0 +1,24 @@
+// The Sacred Cards (GBA, 2003) — Seto Kaiba
+// Source: Yu-Gi-Oh! Fandom wiki — Seto Kaiba's Decks
+// 40 cards; all cards in v6 pool
+3 Blue-Eyes White Dragon
+3 Fairy Dragon
+3 Grappler
+2 Gyakutenno Megami
+3 Hitotsu-Me Giant
+3 Lesser Dragon
+3 Mystic Horseman
+3 Ryu-Kishin
+3 Saggi the Dark Clown
+2 Tyhone #2
+3 The Wicked Worm Beast
+1 Dark Energy
+1 Dragon Treasure
+1 Monster Reborn
+1 Mountain
+1 Anti Raigeki
+1 Crush Card Virus
+1 Widespread Ruin
+#EXTRA DECK
+1 Blue-Eyes Ultimate Dragon
+1 Kaiser Dragon

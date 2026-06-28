@@ -1,0 +1,49 @@
+# Pack: Basic 4-B — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Basic 2-A (GX1-BP)
+# Cards per pack: 5 | Price: 120 DP | Cards in pack: 40 | Unlocked: Beginning | Frequency: Once a week
+# 40 distinct cards; all in v6 pool
+## Secret Rare
+Jinzo
+## Ultra Rare
+Axe of Despair
+Buster Blader
+Premature Burial
+## Super Rare
+Horn of the Unicorn
+Maha Vailo
+Senju of the Thousand Hands
+## Rare
+Eternal Rest
+Giant Trunade
+Messenger of Peace
+Nimble Momonga
+Snatch Steal
+The Shallow Grave
+Toll
+## Common
+Chorus of Sanctuary
+Commencement Dance
+Crab Turtle
+Darkfire Soldier #2
+Final Destiny
+Flying Kamakiri #1
+Giant Rat
+Gravekeeper's Servant
+Hamburger Recipe
+Sky Scout
+Horn of Light
+House of Adhesive Tape
+Hungry Burger
+Malevolent Nuzzler
+Mother Grizzly
+Mr. Volcano
+Mystic Tomato
+Numinous Healer
+Performance of Sword
+Shining Angel
+Snake Fang
+Steel Ogre Grotto #2
+The Reliable Guardian
+Turtle Oath
+UFO Turtle
+Upstart Goblin

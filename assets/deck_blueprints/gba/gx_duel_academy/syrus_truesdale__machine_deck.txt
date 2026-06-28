@@ -1,0 +1,43 @@
+// GX Duel Academy (GBA, 2006) — Syrus Truesdale — Machine Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Syrus Truesdale (Duel Academy)
+// 47 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Bokoichi the Freightening Car
+1 Cycroid
+1 Harpie Girl
+1 A-Team: Trap Disposal Unit
+1 Big Core
+3 Dekoichi the Battlechanted Locomotive
+1 Drillroid
+2 Gyroid
+1 Hane-Hane
+1 Man-Eater Bug
+1 Patroid
+1 Penguin Soldier
+2 Steamroid
+2 UFOroid
+3 Black Pendant
+1 Card Destruction
+1 Fusion Gate
+1 Fusion Sage
+1 Fusion Weapon
+1 Graceful Charity
+1 Heavy Storm
+2 Limiter Removal
+1 Mystical Space Typhoon
+1 Polymerization
+1 Pot of Greed
+1 Premature Burial
+1 Shield Crush
+1 Snatch Steal
+1 Call of the Haunted
+1 Magic Cylinder
+2 Magic Jammer
+1 Mirror Force
+1 Negate Attack
+1 Torrential Tribute
+1 Trap Hole
+#EXTRA DECK
+1 Steam Gyroid
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Big Core

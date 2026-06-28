@@ -1,0 +1,32 @@
+// World Championship Tournament 2004 (GBA, 2004) — Weevil Underwood
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+1 Crawling Dragon
+2 Empress Mantis
+1 Kageningen
+1 Kurama
+1 Mushroom Man
+1 Nemuriko
+1 Science Soldier
+1 The Furious Sea King
+1 The Shadow Who Controls the Dark
+3 4-Starred Ladybug of Doom
+2 Jirai Gumo
+3 Man-Eater Bug
+1 Man-Eating Plant
+3 Needle Worm
+1 Penguin Soldier
+1 Sangan
+1 Witch of the Black Forest
+1 Change of Heart
+1 Dark Hole
+1 Graceful Charity
+1 Monster Reborn
+1 Pot of Greed
+1 Premature Burial
+1 Raigeki
+1 Swords of Revealing Light
+1 Call of the Haunted
+1 Mirror Force
+2 Torrential Tribute
+3 Trap Hole

@@ -1,0 +1,27 @@
+# Pack: Various Fields — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Various Fields (GX1-BP)
+# Cards per pack: 3 | Price: 150 | Cards in pack: 20 | Unlocked: Read "Field Spell" Tutorial (7-7) | Frequency: Once a week
+# 20 distinct cards; all in v6 pool
+## Ultra Rare
+The Sanctuary in the Sky
+## Super Rare
+A Legendary Ocean
+Harpies' Hunting Ground
+Skyscraper
+## Common
+Chorus of Sanctuary
+Forest
+Fusion Gate
+Gaia Power
+Luminous Spark
+Maiden of the Aqua
+Molten Destruction
+Mountain
+Mystic Plasma Zone
+Rising Air Current
+Sogen
+Terraforming
+Umi
+Umiiruka
+Wasteland
+Yami

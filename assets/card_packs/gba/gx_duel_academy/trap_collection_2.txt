@@ -1,0 +1,35 @@
+# Pack: Trap Collection 2 — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Trap Collection 2 (GX1-BP)
+# Cards per pack: 5 | Price: 100 DP | Cards in pack: 28 | Unlocked: Read "Trap" Tutorial (1-6) | Frequency: Once a week
+# 28 distinct cards; all in v6 pool
+## Super Rare
+Trap Hole
+Seven Tools of the Bandit
+## Rare
+Backup Soldier
+Self-Destruct Button
+Hero Signal
+## Common
+Numinous Healer
+Gift of The Mystical Elf
+Enchanted Javelin
+Jar of Greed
+Meteorain
+Secret Barrel
+Compulsory Evacuation Device
+Armor Break
+Fruits of Kozaky's Studies
+Spell Purification
+Threatening Roar
+Phoenix Wing Wind Blast
+Good Goblin Housekeeping
+Assault on GHQ
+Minefield Eruption
+Kozaky's Self-Destruct Button
+Mispolymerization
+Spiritual Earth Art - Kurogane
+Spiritual Water Art - Aoi
+Spiritual Fire Art - Kurenai
+Spiritual Wind Art - Miyabi
+Rising Energy
+Conscription

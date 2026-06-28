@@ -1,0 +1,91 @@
+# Pack: The Machines — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — The Machines (GX1-BP)
+# Cards per pack: 5 | Price: 200 DP | Cards in pack: 81 | Unlocked: Clear "An Old Memory" Event (Be "Average Duelist" Rank + On Saturday Morning, Duel with Syrus + On Saturday Night, go to | Frequency: Once a week
+# 81 distinct cards; 2 not in v6 pool
+## Ultra Rare
+Cyber-Stein
+Jinzo
+Ancient Gear Golem
+Cyber End Dragon
+Power Bond
+## Super Rare
+Red-Eyes Black Metal Dragon
+Barrel Dragon
+XYZ-Dragon Cannon
+Cyber Twin Dragon
+## Rare
+Metalzoa
+Metalmorph
+Gear Golem the Moving Fortress
+Reflect Bounder
+Limiter Removal
+Spell Canceller
+Blowback Dragon
+Cyber Dragon
+## Common
+Ground Attacker Bugroth
+Machine Conversion Factory
+Labyrinth Tank
+Launcher Spider
+Machine King
+Metal Dragon
+Mechanical Spider
+Giga-Tech Wolf
+Mechanicalchaser
+Blast Juggler
+Jinzo #7
+Cyber Saurus
+Cannon Soldier
+Steel Ogre Grotto #1
+Acid Rain
+Steel Ogre Grotto #2
+Blast Sphere
+Satellite Cannon
+Cyber-Tech Alligator
+UFO Turtle
+Cyber Falcon
+Oni Tank T-34
+Overdrive
+Robotic Knight
+Cipher Soldier
+Shapesnatch
+Gadget Soldier
+Gradius
+Cyclon Laser
+Gradius' Option
+Toon Cannon Soldier
+X-Head Cannon
+Inpachi
+Y-Dragon Head
+XY-Dragon Cannon
+Z-Metal Tank
+Drillago
+XZ-Tank Cannon
+YZ-Tank Dragon
+Bowganian
+Battle Footballer
+Acrobat Monkey
+Amphibious Bugroth MK-3
+Emes the Infinity
+KA-2 Des Scissors
+Needle Burrower
+Dark Factory of Mass Production
+Green Gadget
+Red Gadget
+Yellow Gadget
+Woodborg Inpachi
+Mighty Guard
+Bokoichi the Freightening Car
+Big Core
+Dekoichi the Battlechanted Locomotive
+A-Team: Trap Disposal Unit
+Mecha-Dog Marron
+Gatling Dragon
+Ancient Gear Beast
+Ancient Gear Soldier
+Battery Charger
+Mechanical Hound
+B.E.S. Crystal Core
+System Down
+#
+# Not in v6 pool: Big Core, Mechanical Spider

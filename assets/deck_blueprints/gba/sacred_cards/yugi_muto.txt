@@ -1,0 +1,22 @@
+// The Sacred Cards (GBA, 2003) — Yugi Muto
+// Source: Yu-Gi-Oh! Fandom wiki — Yugi Muto's Decks
+// 40 cards; all cards in v6 pool
+1 Dark Magician
+3 Droll Bird
+3 Key Mace
+1 Left Arm of the Forbidden One
+1 Left Leg of the Forbidden One
+3 Mushroom Man
+1 Right Arm of the Forbidden One
+1 Right Leg of the Forbidden One
+3 Shadow Specter
+3 Skull Servant
+3 Weather Control
+3 Hane-Hane
+1 Kuriboh
+3 Little Chimera
+3 Magician of Faith
+2 Star Boy
+3 Time Wizard
+1 Black Magic Ritual
+1 Multiply

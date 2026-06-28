@@ -1,0 +1,27 @@
+// Reshef of Destruction (GBA, 2004) — Yami Yugi
+// Source: Yu-Gi-Oh! Fandom wiki — Yami Yugi's Decks
+// 44 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Dark Magician
+1 Jack's Knight
+3 Queen's Knight
+3 Big Shield Gardna
+3 Dark Elf
+1 Dark Magician Girl
+1 Dark Magician Knight
+3 Flash Assailant
+3 King's Knight
+1 Mirage Knight
+1 Slifer the Sky Dragon
+3 Change of Heart
+3 Harpie's Feather Duster
+3 Megamorph
+3 Monster Reborn
+3 Pot of Greed
+3 Swords of Revealing Light
+3 Torrential Tribute
+#EXTRA DECK
+1 Dark Flare Knight
+1 Dark Paladin
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Slifer the Sky Dragon

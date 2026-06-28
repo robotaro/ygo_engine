@@ -1,0 +1,55 @@
+// GX Duel Academy (GBA, 2006) — Zane Truesdale — Machine Deck
+// Source: Yu-Gi-Oh! Fandom wiki — Zane Truesdale (Duel Academy)
+// 63 cards; all cards in v6 pool
+3 Battle Footballer
+3 Mechanicalchaser
+1 Barrel Dragon
+1 Black Luster Soldier - Envoy of the Beginning
+1 Blowback Dragon
+3 Cyber Dragon
+1 Cyber Jar
+1 Cyber-Stein
+1 Gyroid
+1 Hane-Hane
+1 Jinzo
+1 Machine King
+1 Man-Eater Bug
+2 Mataza the Zapper
+1 Penguin Soldier
+1 Reflect Bounder
+1 Steamroid
+1 UFOroid
+1 Zombyra the Dark
+1 Black Luster Soldier
+1 Black Luster Ritual
+1 Card Destruction
+1 Change of Heart
+1 Dark Hole
+2 Dragon's Mirror
+1 Fusion Gate
+1 Graceful Charity
+1 Harpie's Feather Duster
+1 Heavy Storm
+2 Limiter Removal
+1 Monster Reborn
+1 Mystical Space Typhoon
+1 Polymerization
+1 Pot of Greed
+2 Power Bond
+1 Premature Burial
+1 Snatch Steal
+1 Swords of Revealing Light
+1 Call of the Haunted
+1 Fairy Box
+1 Magic Cylinder
+2 Magic Jammer
+1 Mirror Force
+1 Ring of Destruction
+2 Seven Tools of the Bandit
+1 Torrential Tribute
+1 Trap Hole
+#EXTRA DECK
+1 Cyber End Dragon
+1 Cyber Twin Dragon
+1 Gatling Dragon
+1 Steam Gyroid

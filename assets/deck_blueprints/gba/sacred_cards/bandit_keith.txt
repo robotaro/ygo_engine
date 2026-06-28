@@ -1,0 +1,26 @@
+// The Sacred Cards (GBA, 2003) — Bandit Keith
+// Source: Yu-Gi-Oh! Fandom wiki — Bandit Keith (World Championship)
+// 40 cards; 2 not in v6 pool (see _MISMATCHES.md)
+3 Dharma Cannon
+3 Giga-Tech Wolf
+3 Megirus Light
+1 Ryu-Kishin Powered
+3 Patrol Robo
+2 Pendulum Machine
+1 Slot Machine
+2 Space Megatron
+3 Yaiba Robo
+1 Zoa
+1 Barrel Dragon
+2 Blast Sphere
+3 Mask of Darkness
+1 7 Completed
+2 Machine Conversion Factory
+1 Stop Defense
+2 Yami
+1 Zera Ritual
+1 Anti Raigeki
+3 Infinite Dismissal
+1 Metalmorph
+//
+// Cards not in the v6.0 pool: Space Megatron

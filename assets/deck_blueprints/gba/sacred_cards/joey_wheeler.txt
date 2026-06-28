@@ -1,0 +1,19 @@
+// The Sacred Cards (GBA, 2003) — Joey Wheeler
+// Source: Yu-Gi-Oh! Fandom wiki — Joey Wheeler's Decks
+// 40 cards; all cards in v6 pool
+2 Ancient Jar
+3 Bat
+3 Eyearmor
+3 Jinzo #7
+3 Masked Clown
+2 Pot the Trick
+1 Red-Eyes Black Dragon
+3 Armed Ninja
+3 Cyber-Stein
+1 Gilford the Legend
+3 Karakuri Spider
+3 Queen's Double
+3 Steel Scorpion
+3 Swordsman from a Distant Land
+3 Time Wizard
+1 Metalmorph

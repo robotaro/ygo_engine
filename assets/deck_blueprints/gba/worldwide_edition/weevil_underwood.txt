@@ -1,0 +1,37 @@
+// Worldwide Edition: Stairway to the Destined Duel (GBA, 2003) — Weevil Underwood
+// Variant/section: Worldwide Edition: Stairway to the Destined Duel (Duel Monsters 6 EX 2)
+// Source: Yu-Gi-Oh! Fandom wiki — Weevil Underwood's Decks
+// 41 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Acid Crawler
+1 Alinsection
+3 Flying Kamakiri #2
+1 Ganigumo
+1 Giant Scorpion of the Tundra
+1 Gokibore
+1 Kamakiriman
+1 Killer Needle
+1 Kumootoko
+1 Petit Moth
+1 Spiked Snail
+2 Insect Queen
+3 Man-Eater Bug
+1 Mechanical Spider
+1 Morphing Jar #2
+3 Needle Worm
+3 Parasite Paracide
+1 Sinister Serpent
+3 Steel Scorpion
+1 Change of Heart
+1 Dark Hole
+1 Monster Reborn
+1 Pot of Greed
+1 Premature Burial
+1 Raigeki
+1 Snatch Steal
+1 Swords of Revealing Light
+1 Magic Jammer
+1 Mirror Force
+1 Torrential Tribute
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Mechanical Spider

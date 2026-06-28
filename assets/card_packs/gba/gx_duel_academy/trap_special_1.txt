@@ -1,0 +1,38 @@
+# Pack: Trap Special 1 — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Trap Special 1 (GX1-BP)
+# Cards per pack: 3 | Price: 150 DP | Cards in pack: 28 | Unlocked: Get 90% Collection Rate on "Trap Collection 1" Pack | Frequency: Once a week
+# 28 distinct cards; 2 not in v6 pool
+## Ultra Rare
+Mirror Force
+## Super Rare
+Ring of Destruction
+## Rare
+Attack and Receive
+Bottomless Trap Hole
+Anti-Spell
+Dark Mirror Force
+Fuh-Rin-Ka-Zan
+Spell-Stopping Statute
+## Common
+Gamble
+Mask of Weakness
+Deal of Phantom
+Burst Breath
+Reversal of Graves
+Disappear
+Fiend Comedian
+Curse of Aging
+Non Aggression Area
+Exhausting Spell
+Hidden Book of Spell
+Miracle Restoring
+A Hero Emerges
+Light of Judgment
+Solar Ray
+Beckoning Light
+Heavy Slump
+Divine Wrath
+D.D. Dynamite
+Elemental Burst
+#
+# Not in v6 pool: Hidden Book of Spell, Reversal of Graves

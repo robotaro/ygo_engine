@@ -1,0 +1,40 @@
+# Pack: Green Millenium Puzzle — The Eternal Duelist Soul (GBA, 2002)
+# Source: Yu-Gi-Oh! Fandom wiki — Green Millenium Puzzle (EDS-BP)
+# 33 distinct cards; 1 not in v6 pool
+## Rare
+Black Illusion Ritual
+Blast Sphere
+Blue-Eyes White Dragon
+Buster Blader
+Cosmo Queen
+Dark Magician
+Dark Magician Girl
+Dark-Eyes Illusionist
+Dokurorider
+Flame Swordsman
+Mikazukinoyaiba
+Millennium Shield
+Obelisk the Tormentor
+Panther Warrior
+Revival of Dokurorider
+Thousand Dragon
+Time Machine
+Time Wizard
+Yaranzo
+## Common
+Alligator's Sword
+Celtic Guardian
+Dancing Elf
+Exile of the Wicked
+Garnecia Elefantis
+Gazelle the King of Mythical Beasts
+Goddess of Whim
+Kanan the Swordmistress
+Launcher Spider
+Pendulum Machine
+Stuffed Animal
+Takriminos
+Three-Legged Zombies
+Tiger Axe
+#
+# Not in v6 pool: Obelisk the Tormentor

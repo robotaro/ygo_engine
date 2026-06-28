@@ -1,0 +1,85 @@
+# Pack: Special Gift Collection — Ultimate Masters: World Championship Tournament 2006 (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Special Gift Collection (WC6-BP)
+# 74 distinct cards; 12 not in v6 pool
+## (Unsorted)
+DP
+Survival Duel
+## Secret Rare
+Harpie's Feather Duster
+## Ultra Rare
+Blue-Eyes Ultimate Dragon
+Dark Dreadroute
+Elemental HERO Neos
+Reversal of Graves
+## Super Rare
+Blue-Eyes White Dragon
+Dandylion
+Dark Magician Girl
+Red-Eyes Black Dragon
+Sorcerer of Dark Magic
+Summoned Skull
+## Rare
+Castle Gate
+Copycat
+Crush Card
+Curse of Vampire
+Cyber Harpie Lady
+Elemental HERO Flame Wingman
+Gemini Elf
+Owner's Seal
+Panther Warrior
+Scapegoat
+Shadow Spell
+Stronghold
+Union Attack
+White Horns D.
+## Common
+Alligator's Sword
+Ancient Lamp
+Blade Knight
+Blast Sphere
+Celtic Guardian
+Dark King of the Abyss
+Earthbound Spirit's Invitation
+Fairy's Gift
+Firewing Pegasus
+Flying Penguin
+Shining Friendship
+Gaia The Fierce Knight
+Garnecia Elefantis
+Gate Guardian
+Gazelle the King of Mythical Beasts
+Gil Garth
+Hidden Soldier
+Jack's Knight
+Judgment of Pharaoh
+Kanan the Swordmistress
+King's Knight
+Kuriboh
+La Jinn the Mystical Genie of the Lamp
+Launcher Spider
+Magician of Black Chaos
+Makiu
+Makyura the Destructor
+Meteor Black Dragon
+Millennium Shield
+Relieve Monster
+Nightmare's Steelcage
+Pendulum Machine
+Queen's Knight
+Sengenjin
+Serpent Night Dragon
+Sixth Sense
+Stuffed Animal
+Takriminos
+The 13th Grave
+Thousand Dragon
+Three-Legged Zombies
+Tiger Axe
+Total Defense Shogun
+Tri-Horned Dragon
+Trial of Nightmare
+Turtle Tiger
+Yaranzo
+#
+# Not in v6 pool: Crush Card, Curse of Vampire, DP, Dark Dreadroute, Earthbound Spirit's Invitation, Hidden Soldier, Judgment of Pharaoh, Makiu, Reversal of Graves, Stronghold, Survival Duel, White Horns D.

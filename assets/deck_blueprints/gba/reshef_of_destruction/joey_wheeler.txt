@@ -1,0 +1,22 @@
+// Reshef of Destruction (GBA, 2004) — Joey Wheeler
+// Source: Yu-Gi-Oh! Fandom wiki — Joey Wheeler's Decks
+// 40 cards; all cards in v6 pool
+1 Baby Dragon
+3 Battle Warrior
+3 Dancing Elf
+3 Jinzo #7
+3 Kagemusha of the Blue Flame
+3 Mountain Warrior
+1 Red-Eyes Black Dragon
+3 Swordsman of Landstar
+3 Armed Ninja
+3 Magician of Faith
+3 Queen's Double
+3 The Unhappy Maiden
+3 Time Wizard
+1 Salamandra
+1 Eatgaboon
+1 Kunai with Chain
+#EXTRA DECK
+1 Flame Swordsman
+1 Thousand Dragon

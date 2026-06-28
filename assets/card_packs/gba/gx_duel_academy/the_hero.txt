@@ -1,0 +1,35 @@
+# Pack: The HERO — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — The HERO (GX1-BP)
+# Cards per pack: 3 | Price: 400 DP | Cards in pack: 26 | Unlocked: "New Hero Summoning!" Event (Be in Slifer Red Dorm + Beat Syrus 10 times + Beat Jaden 5 times) | Frequency: Once every two weeks
+# 26 distinct cards; all in v6 pool
+## Secret Rare
+Elemental HERO Shining Flare Wingman
+## Ultra Rare
+Elemental HERO Flame Wingman
+Elemental HERO Thunder Giant
+Winged Kuriboh LV10
+## Super Rare
+Monster Reincarnation
+Winged Kuriboh
+Skyscraper
+## Rare
+Fusion Gate
+Draining Shield
+Hero Signal
+Wroughtweiler
+Elemental HERO Bubbleman
+Transcendent Wings
+Bubble Shuffle
+Spark Blaster
+Miracle Fusion
+## Common
+Polymerization
+Fusion Sage
+The Warrior Returning Alive
+Emergency Provisions
+Kishido Spirit
+A Hero Emerges
+Elemental HERO Avian
+Elemental HERO Burstinatrix
+Elemental HERO Clayman
+Elemental HERO Sparkman

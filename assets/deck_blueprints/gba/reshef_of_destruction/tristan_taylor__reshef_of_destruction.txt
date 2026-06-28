@@ -1,0 +1,19 @@
+// Reshef of Destruction (GBA, 2004) — Tristan Taylor — Reshef of Destruction
+// Source: Yu-Gi-Oh! Fandom wiki — Tristan Taylor's Decks
+// 40 cards; all cards in v6 pool
+3 Ameba
+1 Ancient Jar
+3 Armed Ninja
+3 Bat
+1 Bone Mouse
+1 Change Slime
+3 Dancing Elf
+3 Griggle
+1 Key Mace
+3 Milus Radiant
+3 Ooguchi
+3 Queen's Double
+3 Sinister Serpent
+3 Steel Scorpion
+3 The Unhappy Maiden
+3 Zone Eater

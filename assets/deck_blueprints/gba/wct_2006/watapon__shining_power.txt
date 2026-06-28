@@ -1,0 +1,43 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Watapon — Shining Power
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Airknight Parshath
+1 Silent Swordsman LV5
+1 Soul of Purity and Light
+1 Zaborg the Thunder Monarch
+1 Asura Priest
+1 Copycat
+1 D.D. Warrior Lady
+1 Dunames Dark Witch
+1 Magician of Faith
+1 Marshmallon
+2 Ninja Grandmaster Sasuke
+1 Reflect Bounder
+1 Royal Magical Library
+1 Sangan
+2 Shining Angel
+2 Silent Swordsman LV3
+1 Watapon
+1 Hammer Shot
+1 Heavy Storm
+1 Mistobody
+1 Mystical Space Typhoon
+1 Monster Reincarnation
+1 Nobleman of Crossout
+1 Nobleman of Extermination
+1 Pot of Greed
+1 Smashing Ground
+1 Snatch Steal
+1 Swords of Revealing Light
+1 The Sanctuary in the Sky
+1 Beckoning Light
+1 Bottomless Trap Hole
+1 Call of the Haunted
+1 Raigeki Break
+1 Sakuretsu Armor
+1 Seven Tools of the Bandit
+1 Wall of Revealing Light
+1 Widespread Ruin
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Mistobody

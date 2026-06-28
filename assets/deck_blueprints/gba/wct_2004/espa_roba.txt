@@ -1,0 +1,38 @@
+// World Championship Tournament 2004 (GBA, 2004) — Espa Roba
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 40 cards; all cards in v6 pool
+1 Launcher Spider
+1 Ryu-Ran
+1 Machine Attacker
+1 Ocubeam
+1 Rainbow Marine Mermaid
+1 Spike Seadra
+1 Fire Eye
+1 Flying Fish
+1 Happy Lover
+1 Kagemusha of the Blue Flame
+1 Kageningen
+1 Kumootoko
+1 Lunar Queen Elzaim
+1 Man-Eating Plant
+1 Man Eater
+1 Mechaleon
+1 Meda Bat
+1 Midnight Fiend
+1 Obese Marmot of Nefariousness
+1 Rock Ogre Grotto #2
+1 Sleeping Lion
+1 Tenderness
+1 The Wandering Doomed
+1 Yashinoki
+1 Jinzo
+2 Sangan
+1 Witch of the Black Forest
+1 Change of Heart
+1 Dark Hole
+1 Monster Reborn
+1 Raigeki
+1 Snatch Steal
+1 Swords of Revealing Light
+3 Shadow of Eyes
+3 Light of Intervention

@@ -1,0 +1,23 @@
+// Reshef of Destruction (GBA, 2004) — Yami Marik
+// Source: Yu-Gi-Oh! Fandom wiki — Yami Marik's Decks
+// 41 cards; 1 not in v6 pool (see _MISMATCHES.md)
+3 Gil Garth
+1 Byser Shock
+3 Dark Jeroid
+3 Makyura the Destructor
+1 Helpoemer
+1 Lava Golem
+1 Legendary Fiend
+3 Newdoria
+1 The Winged Dragon of Ra (Phoenix Mode)
+3 Viser Des
+3 Change of Heart
+3 Harpie's Feather Duster
+3 Megamorph
+3 Monster Reborn
+3 Pot of Greed
+3 Swords of Revealing Light
+3 Torrential Tribute
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   The Winged Dragon of Ra (Phoenix Mode)

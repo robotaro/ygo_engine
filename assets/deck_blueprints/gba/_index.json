@@ -1,0 +1,1054 @@
+{
+ "eternal_duelist_soul": [
+  [
+   "Yugi Muto",
+   "",
+   45,
+   0,
+   "yugi_muto.txt"
+  ],
+  [
+   "Mai Valentine",
+   "",
+   40,
+   0,
+   "mai_valentine.txt"
+  ],
+  [
+   "Yami Bakura",
+   "Eternal Duelist Soul Deck",
+   40,
+   2,
+   "yami_bakura__eternal_duelist_soul_deck.txt"
+  ],
+  [
+   "Arkana",
+   "Eternal Duelist Soul Deck",
+   40,
+   0,
+   "arkana__eternal_duelist_soul_deck.txt"
+  ],
+  [
+   "Seeker",
+   "",
+   40,
+   0,
+   "seeker.txt"
+  ],
+  [
+   "Ishizu Ishtar",
+   "",
+   40,
+   0,
+   "ishizu_ishtar.txt"
+  ],
+  [
+   "Lumis and Umbra",
+   "Umbra and Lumis's Eternal Duelist Soul Deck",
+   40,
+   0,
+   "lumis_and_umbra__umbra_and_lumis_s_eternal_duelist_soul_deck.txt"
+  ],
+  [
+   "Seto Kaiba",
+   "",
+   43,
+   0,
+   "seto_kaiba.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "",
+   41,
+   0,
+   "joey_wheeler.txt"
+  ],
+  [
+   "T\u00e9a Gardner",
+   "",
+   41,
+   1,
+   "t_a_gardner.txt"
+  ],
+  [
+   "Yami Yugi",
+   "",
+   40,
+   0,
+   "yami_yugi.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "",
+   40,
+   2,
+   "weevil_underwood.txt"
+  ],
+  [
+   "Rex Raptor",
+   "",
+   40,
+   2,
+   "rex_raptor.txt"
+  ],
+  [
+   "Maximillion Pegasus",
+   "",
+   41,
+   0,
+   "maximillion_pegasus.txt"
+  ],
+  [
+   "Marik Ishtar",
+   "",
+   40,
+   0,
+   "marik_ishtar.txt"
+  ]
+ ],
+ "sacred_cards": [
+  [
+   "Yugi Muto",
+   "",
+   40,
+   0,
+   "yugi_muto.txt"
+  ],
+  [
+   "Mai Valentine",
+   "",
+   40,
+   0,
+   "mai_valentine.txt"
+  ],
+  [
+   "Yami Bakura",
+   "The Sacred Cards",
+   32,
+   0,
+   "yami_bakura__the_sacred_cards.txt"
+  ],
+  [
+   "Seeker",
+   "",
+   40,
+   0,
+   "seeker.txt"
+  ],
+  [
+   "Ishizu Ishtar",
+   "",
+   40,
+   2,
+   "ishizu_ishtar.txt"
+  ],
+  [
+   "Yami Marik",
+   "",
+   40,
+   1,
+   "yami_marik.txt"
+  ],
+  [
+   "Lumis and Umbra",
+   "",
+   40,
+   1,
+   "lumis_and_umbra.txt"
+  ],
+  [
+   "Lumis and Umbra",
+   "",
+   40,
+   1,
+   "lumis_and_umbra_2.txt"
+  ],
+  [
+   "Seto Kaiba",
+   "",
+   40,
+   0,
+   "seto_kaiba.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "",
+   40,
+   0,
+   "joey_wheeler.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "Possessed Deck",
+   40,
+   0,
+   "joey_wheeler__possessed_deck.txt"
+  ],
+  [
+   "Keith Howard",
+   "Possessed Deck",
+   40,
+   2,
+   "keith_howard__possessed_deck.txt"
+  ],
+  [
+   "Yami Yugi",
+   "",
+   40,
+   1,
+   "yami_yugi.txt"
+  ],
+  [
+   "Tristan Taylor",
+   "The Sacred Cards",
+   36,
+   3,
+   "tristan_taylor__the_sacred_cards.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "",
+   40,
+   0,
+   "weevil_underwood.txt"
+  ],
+  [
+   "Rex Raptor",
+   "",
+   40,
+   3,
+   "rex_raptor.txt"
+  ]
+ ],
+ "reshef_of_destruction": [
+  [
+   "Yugi Muto",
+   "",
+   40,
+   0,
+   "yugi_muto.txt"
+  ],
+  [
+   "Mai Valentine",
+   "First Deck",
+   40,
+   0,
+   "mai_valentine__first_deck.txt"
+  ],
+  [
+   "Mai Valentine",
+   "Second Deck",
+   40,
+   0,
+   "mai_valentine__second_deck.txt"
+  ],
+  [
+   "Mai Valentine",
+   "Third Deck",
+   40,
+   0,
+   "mai_valentine__third_deck.txt"
+  ],
+  [
+   "Mai Valentine",
+   "Fourth Deck",
+   40,
+   0,
+   "mai_valentine__fourth_deck.txt"
+  ],
+  [
+   "Strings",
+   "",
+   40,
+   5,
+   "strings.txt"
+  ],
+  [
+   "Yami Bakura",
+   "",
+   38,
+   0,
+   "yami_bakura.txt"
+  ],
+  [
+   "Arkana",
+   "",
+   40,
+   10,
+   "arkana.txt"
+  ],
+  [
+   "Seeker",
+   "First Deck",
+   40,
+   0,
+   "seeker__first_deck.txt"
+  ],
+  [
+   "Seeker",
+   "Second Deck",
+   40,
+   0,
+   "seeker__second_deck.txt"
+  ],
+  [
+   "Yami Marik",
+   "",
+   41,
+   1,
+   "yami_marik.txt"
+  ],
+  [
+   "Seto Kaiba",
+   "",
+   44,
+   1,
+   "seto_kaiba.txt"
+  ],
+  [
+   "Seto Kaiba",
+   "",
+   48,
+   1,
+   "seto_kaiba_2.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "",
+   40,
+   0,
+   "joey_wheeler.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "Possessed Deck",
+   40,
+   1,
+   "joey_wheeler__possessed_deck.txt"
+  ],
+  [
+   "Keith Howard",
+   "",
+   40,
+   5,
+   "keith_howard.txt"
+  ],
+  [
+   "Yami Yugi",
+   "",
+   44,
+   1,
+   "yami_yugi.txt"
+  ],
+  [
+   "Tristan Taylor",
+   "Reshef of Destruction",
+   40,
+   0,
+   "tristan_taylor__reshef_of_destruction.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "First Deck",
+   40,
+   2,
+   "weevil_underwood__first_deck.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "Second Deck",
+   40,
+   1,
+   "weevil_underwood__second_deck.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "Third Deck",
+   40,
+   0,
+   "weevil_underwood__third_deck.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "Fourth Deck",
+   40,
+   0,
+   "weevil_underwood__fourth_deck.txt"
+  ],
+  [
+   "Rex Raptor",
+   "First Deck",
+   40,
+   0,
+   "rex_raptor__first_deck.txt"
+  ],
+  [
+   "Rex Raptor",
+   "Second Deck",
+   40,
+   0,
+   "rex_raptor__second_deck.txt"
+  ],
+  [
+   "Rex Raptor",
+   "Third Deck",
+   34,
+   0,
+   "rex_raptor__third_deck.txt"
+  ],
+  [
+   "Rex Raptor",
+   "Fourth Deck",
+   40,
+   0,
+   "rex_raptor__fourth_deck.txt"
+  ],
+  [
+   "Maximillion Pegasus",
+   "",
+   39,
+   0,
+   "maximillion_pegasus.txt"
+  ]
+ ],
+ "wct_2005": [
+  [
+   "Yugi Muto",
+   "Standard Deck",
+   47,
+   0,
+   "yugi_muto__standard_deck.txt"
+  ],
+  [
+   "Yugi Muto",
+   "Advanced Deck",
+   52,
+   0,
+   "yugi_muto__advanced_deck.txt"
+  ],
+  [
+   "Mai Valentine",
+   "Standard Deck",
+   43,
+   0,
+   "mai_valentine__standard_deck.txt"
+  ],
+  [
+   "Mai Valentine",
+   "Advanced Deck",
+   38,
+   0,
+   "mai_valentine__advanced_deck.txt"
+  ],
+  [
+   "Yami Bakura",
+   "World Championship 2005 Deck",
+   47,
+   0,
+   "yami_bakura__world_championship_2005_deck.txt"
+  ],
+  [
+   "Arkana",
+   "7 Trials to Glory: World Championship 2005 Deck",
+   42,
+   0,
+   "arkana__7_trials_to_glory_world_championship_2005_deck.txt"
+  ],
+  [
+   "Seeker",
+   "",
+   42,
+   0,
+   "seeker.txt"
+  ],
+  [
+   "Seto Kaiba",
+   "Standard Deck",
+   54,
+   0,
+   "seto_kaiba__standard_deck.txt"
+  ],
+  [
+   "Seto Kaiba",
+   "Advanced Deck",
+   62,
+   0,
+   "seto_kaiba__advanced_deck.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "Standard Deck",
+   40,
+   0,
+   "joey_wheeler__standard_deck.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "Advanced Deck",
+   46,
+   0,
+   "joey_wheeler__advanced_deck.txt"
+  ],
+  [
+   "Yami Yugi",
+   "",
+   37,
+   0,
+   "yami_yugi.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "Insect Removal",
+   41,
+   0,
+   "weevil_underwood__insect_removal.txt"
+  ],
+  [
+   "Marik Ishtar",
+   "",
+   42,
+   0,
+   "marik_ishtar.txt"
+  ]
+ ],
+ "worldwide_edition": [
+  [
+   "Mai Valentine",
+   "",
+   39,
+   0,
+   "mai_valentine.txt"
+  ],
+  [
+   "Mako Tsunami",
+   "",
+   31,
+   0,
+   "mako_tsunami.txt"
+  ],
+  [
+   "Strings",
+   "",
+   21,
+   1,
+   "strings.txt"
+  ],
+  [
+   "Seeker",
+   "",
+   40,
+   0,
+   "seeker.txt"
+  ],
+  [
+   "Ishizu Ishtar",
+   "",
+   42,
+   0,
+   "ishizu_ishtar.txt"
+  ],
+  [
+   "Yami Marik",
+   "",
+   45,
+   0,
+   "yami_marik.txt"
+  ],
+  [
+   "Yami Marik",
+   "",
+   48,
+   0,
+   "yami_marik_2.txt"
+  ],
+  [
+   "Seto Kaiba",
+   "",
+   42,
+   0,
+   "seto_kaiba.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "",
+   44,
+   0,
+   "joey_wheeler.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "",
+   41,
+   0,
+   "joey_wheeler_2.txt"
+  ],
+  [
+   "Keith Howard",
+   "",
+   39,
+   0,
+   "keith_howard.txt"
+  ],
+  [
+   "T\u00e9a Gardner",
+   "",
+   41,
+   0,
+   "t_a_gardner.txt"
+  ],
+  [
+   "Yami Yugi",
+   "",
+   44,
+   0,
+   "yami_yugi.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "",
+   41,
+   1,
+   "weevil_underwood.txt"
+  ],
+  [
+   "Maximillion Pegasus",
+   "",
+   43,
+   0,
+   "maximillion_pegasus.txt"
+  ]
+ ],
+ "wct_2004": [
+  [
+   "Tea Gardner",
+   "",
+   41,
+   1,
+   "tea_gardner.txt"
+  ],
+  [
+   "Tristan Taylor",
+   "",
+   40,
+   0,
+   "tristan_taylor.txt"
+  ],
+  [
+   "Ryou Bakura",
+   "",
+   40,
+   0,
+   "ryou_bakura.txt"
+  ],
+  [
+   "Trusdale",
+   "",
+   40,
+   0,
+   "trusdale.txt"
+  ],
+  [
+   "Yugi Muto",
+   "",
+   40,
+   1,
+   "yugi_muto.txt"
+  ],
+  [
+   "Rex Raptor",
+   "",
+   41,
+   0,
+   "rex_raptor.txt"
+  ],
+  [
+   "Espa Roba",
+   "",
+   40,
+   0,
+   "espa_roba.txt"
+  ],
+  [
+   "Weevil Underwood",
+   "",
+   40,
+   0,
+   "weevil_underwood.txt"
+  ],
+  [
+   "Bonz",
+   "",
+   40,
+   0,
+   "bonz.txt"
+  ],
+  [
+   "Mako Tsunami",
+   "",
+   40,
+   0,
+   "mako_tsunami.txt"
+  ],
+  [
+   "Mai Valentine",
+   "",
+   40,
+   0,
+   "mai_valentine.txt"
+  ],
+  [
+   "Bandit Keith",
+   "",
+   40,
+   0,
+   "bandit_keith.txt"
+  ],
+  [
+   "Joey Wheeler",
+   "",
+   44,
+   0,
+   "joey_wheeler.txt"
+  ],
+  [
+   "Maximillion Pegasus",
+   "",
+   40,
+   0,
+   "maximillion_pegasus.txt"
+  ],
+  [
+   "Arkana",
+   "",
+   40,
+   0,
+   "arkana.txt"
+  ],
+  [
+   "Rare Hunter",
+   "",
+   45,
+   0,
+   "rare_hunter.txt"
+  ],
+  [
+   "Umbra & Lumis",
+   "",
+   40,
+   0,
+   "umbra_lumis.txt"
+  ],
+  [
+   "Strings",
+   "",
+   35,
+   0,
+   "strings.txt"
+  ],
+  [
+   "Odion",
+   "",
+   47,
+   1,
+   "odion.txt"
+  ],
+  [
+   "Ishizu Ishtar",
+   "",
+   40,
+   2,
+   "ishizu_ishtar.txt"
+  ],
+  [
+   "Marik Ishtar",
+   "",
+   44,
+   2,
+   "marik_ishtar.txt"
+  ],
+  [
+   "Seto Kaiba",
+   "",
+   45,
+   0,
+   "seto_kaiba.txt"
+  ],
+  [
+   "Shadi",
+   "",
+   40,
+   1,
+   "shadi.txt"
+  ],
+  [
+   "Simon",
+   "",
+   44,
+   0,
+   "simon.txt"
+  ],
+  [
+   "Yami Bakura",
+   "",
+   42,
+   0,
+   "yami_bakura.txt"
+  ],
+  [
+   "Yami Marik",
+   "",
+   44,
+   0,
+   "yami_marik.txt"
+  ],
+  [
+   "Duel Computer",
+   "",
+   45,
+   0,
+   "duel_computer.txt"
+  ],
+  [
+   "Yami Yugi",
+   "",
+   45,
+   0,
+   "yami_yugi.txt"
+  ]
+ ],
+ "wct_2006": [
+  [
+   "Kuriboh",
+   "Kuriboh & Friends",
+   40,
+   0,
+   "kuriboh__kuriboh_friends.txt"
+  ],
+  [
+   "Scapegoat",
+   "Adversity Monsters",
+   40,
+   1,
+   "scapegoat__adversity_monsters.txt"
+  ],
+  [
+   "Skull Servant",
+   "Skull Servant Kingdom",
+   40,
+   0,
+   "skull_servant__skull_servant_kingdom.txt"
+  ],
+  [
+   "Watapon",
+   "Shining Power",
+   40,
+   1,
+   "watapon__shining_power.txt"
+  ],
+  [
+   "White Magician Pikeru",
+   "Friends From the Magic Land",
+   40,
+   0,
+   "white_magician_pikeru__friends_from_the_magic_land.txt"
+  ],
+  [
+   "Battery Man C",
+   "Full Charge Deck",
+   40,
+   1,
+   "battery_man_c__full_charge_deck.txt"
+  ],
+  [
+   "Ojama Yellow",
+   "Preventers Deck",
+   40,
+   0,
+   "ojama_yellow__preventers_deck.txt"
+  ],
+  [
+   "Goblin King",
+   "Dark Feast Deck",
+   40,
+   1,
+   "goblin_king__dark_feast_deck.txt"
+  ],
+  [
+   "Des Frog",
+   "Frog Warning Deck",
+   41,
+   0,
+   "des_frog__frog_warning_deck.txt"
+  ],
+  [
+   "Water Dragon",
+   "Elixir Deck",
+   40,
+   0,
+   "water_dragon__elixir_deck.txt"
+  ],
+  [
+   "Red-Eyes Darkness Dragon",
+   "Pride of Dragons",
+   40,
+   0,
+   "red_eyes_darkness_dragon__pride_of_dragons.txt"
+  ],
+  [
+   "Vampire Genesis",
+   "The Resurrected",
+   40,
+   1,
+   "vampire_genesis__the_resurrected.txt"
+  ],
+  [
+   "Infernal Flame Emperor",
+   "Ring of Fire",
+   40,
+   0,
+   "infernal_flame_emperor__ring_of_fire.txt"
+  ],
+  [
+   "Ocean Dragon Lord - Neo-Daedalus",
+   "Deep Blue",
+   40,
+   0,
+   "ocean_dragon_lord_neo_daedalus__deep_blue.txt"
+  ],
+  [
+   "Helios Duo Megiste",
+   "Final Frontier",
+   40,
+   9,
+   "helios_duo_megiste__final_frontier.txt"
+  ],
+  [
+   "Gilford the Legend",
+   "Past Platoons",
+   40,
+   0,
+   "gilford_the_legend__past_platoons.txt"
+  ],
+  [
+   "Dark Eradicator Warlock",
+   "The Mage's Successor",
+   40,
+   0,
+   "dark_eradicator_warlock__the_mage_s_successor.txt"
+  ],
+  [
+   "Guardian Exode",
+   "The Driving Force",
+   40,
+   5,
+   "guardian_exode__the_driving_force.txt"
+  ],
+  [
+   "Goldd, Wu-Lord of Dark World",
+   "Logic of the Underworld",
+   40,
+   1,
+   "goldd_wu_lord_of_dark_world__logic_of_the_underworld.txt"
+  ],
+  [
+   "Elemental Hero Erikshieler",
+   "High-rise Hero",
+   49,
+   2,
+   "elemental_hero_erikshieler__high_rise_hero.txt"
+  ],
+  [
+   "Raviel, Lord of Phantasms",
+   "Spell King Rising",
+   40,
+   1,
+   "raviel_lord_of_phantasms__spell_king_rising.txt"
+  ],
+  [
+   "Horus the Black Flame Dragon LV8",
+   "Blaze of the Black Flames",
+   40,
+   2,
+   "horus_the_black_flame_dragon_lv8__blaze_of_the_black_flames.txt"
+  ],
+  [
+   "Stronghold",
+   "Deus Ex Machina",
+   40,
+   5,
+   "stronghold__deus_ex_machina.txt"
+  ],
+  [
+   "Sacred Phoenix of Nephthys",
+   "Flight of the Phoenix",
+   40,
+   3,
+   "sacred_phoenix_of_nephthys__flight_of_the_phoenix.txt"
+  ],
+  [
+   "Cyber End Dragon",
+   "Cyberdragons",
+   47,
+   1,
+   "cyber_end_dragon__cyberdragons.txt"
+  ]
+ ],
+ "gx_duel_academy": [
+  [
+   "Syrus Truesdale",
+   "Machine Deck",
+   47,
+   1,
+   "syrus_truesdale__machine_deck.txt"
+  ],
+  [
+   "Alexis Rhodes",
+   "Fairy Deck",
+   50,
+   0,
+   "alexis_rhodes__fairy_deck.txt"
+  ],
+  [
+   "Chumley Huffington",
+   "Beast Deck",
+   53,
+   0,
+   "chumley_huffington__beast_deck.txt"
+  ],
+  [
+   "Zane Truesdale",
+   "Machine Deck",
+   63,
+   0,
+   "zane_truesdale__machine_deck.txt"
+  ],
+  [
+   "Chazz Princeton",
+   "Fiend/Zombie Deck",
+   42,
+   2,
+   "chazz_princeton__fiend_zombie_deck.txt"
+  ],
+  [
+   "Vellian Crowler",
+   "Ancient Gear Deck",
+   51,
+   1,
+   "vellian_crowler__ancient_gear_deck.txt"
+  ],
+  [
+   "Jaden Yuki",
+   "Elemental HERO Deck",
+   57,
+   0,
+   "jaden_yuki__elemental_hero_deck.txt"
+  ],
+  [
+   "Bastion Misawa",
+   "Magnet Warriors",
+   47,
+   0,
+   "bastion_misawa__magnet_warriors.txt"
+  ]
+ ]
+}

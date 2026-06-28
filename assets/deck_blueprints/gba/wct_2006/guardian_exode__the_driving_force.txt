@@ -1,0 +1,36 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Guardian Exode — The Driving Force
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 40 cards; 5 not in v6 pool (see _MISMATCHES.md)
+1 Criosphinx
+1 Granmarg the Rock Monarch
+1 Guardian Exode
+1 Guardian Sphinx
+1 Hieracosphinx
+1 Megarock Dragon
+1 Cyber Jar
+1 D.D. Warrior Lady
+2 Golem Sentry
+1 Grave Ohja
+1 Lost Guardian
+2 Moai Interceptor Cannons
+1 Sand Moth
+1 Sangan
+3 Stone Statue of the Aztecs
+2 Collapse
+2 Fault Zone
+1 Heavy Storm
+1 Mystical Space Typhoon
+1 Pot of Greed
+1 Premature Burial
+1 Shield & Sword
+1 Shifting Shadows
+2 The Shallow Grave
+1 Unity
+1 Call of the Haunted
+1 Dust Tornado
+2 Fairy Box
+2 Rock Bombardment
+2 Staunch Defender
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Guardian Exode, Collapse, Fault Zone

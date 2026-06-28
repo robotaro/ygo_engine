@@ -1,0 +1,26 @@
+// World Championship Tournament 2004 (GBA, 2004) — Rare Hunter
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 45 cards; all cards in v6 pool
+3 Left Arm of the Forbidden One
+3 Left Leg of the Forbidden One
+3 Right Arm of the Forbidden One
+3 Right Leg of the Forbidden One
+1 Exodia the Forbidden One
+1 Mystic Tomato
+1 Penguin Soldier
+3 Sangan
+3 Witch of the Black Forest
+1 Change of Heart
+1 Dark Hole
+3 Graceful Charity
+1 Monster Reborn
+3 Pot of Greed
+1 Raigeki
+1 Swords of Revealing Light
+3 Upstart Goblin
+1 Backup Soldier
+3 Jar of Greed
+1 Mirror Force
+1 Negate Attack
+1 Torrential Tribute
+3 Trap Hole

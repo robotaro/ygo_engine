@@ -1,0 +1,29 @@
+// Worldwide Edition: Stairway to the Destined Duel (GBA, 2003) — Maximillion Pegasus
+// Source: Yu-Gi-Oh! Fandom wiki — Maximillion Pegasus' Decks
+// 43 cards; all cards in v6 pool
+3 Thousand-Eyes Idol
+1 Nimble Momonga
+1 Sinister Serpent
+2 Slate Warrior
+1 Blue-Eyes Toon Dragon
+3 Toon Mermaid
+3 Toon Summoned Skull
+3 Relinquished
+3 Black Illusion Ritual
+1 Change of Heart
+1 Dark Hole
+1 Monster Reborn
+1 Polymerization
+2 Premature Burial
+1 Raigeki
+1 Snatch Steal
+1 Swords of Revealing Light
+3 Toon World
+1 Ring of Destruction
+3 Enchanted Javelin
+1 Magic Cylinder
+1 Mirror Force
+1 Mirror Wall
+3 Numinous Healer
+#EXTRA DECK
+1 Thousand-Eyes Restrict

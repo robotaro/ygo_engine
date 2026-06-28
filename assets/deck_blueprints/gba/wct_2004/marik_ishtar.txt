@@ -1,0 +1,32 @@
+// World Championship Tournament 2004 (GBA, 2004) — Marik Ishtar
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
+// 44 cards; 2 not in v6 pool (see _MISMATCHES.md)
+2 Summoned Skull
+3 Vorse Raider
+3 Magician of Faith
+3 Man-Eater Bug
+1 Cyber Jar
+2 Morphing Jar
+1 Morphing Jar #2
+2 White Magical Hat
+3 The Bistro Butcher
+1 Slate Warrior
+1 Card Destruction
+2 Delinquent Duo
+1 Change of Heart
+1 Snatch Steal
+1 Dark Hole
+1 Raigeki
+2 Tribute to the Doomed
+2 Mystical Space Typhoon
+1 Monster Reborn
+2 Premature Burial
+2 Just Desserts
+1 Magic Cylinder
+2 Magic Jammer
+2 Magic Thorn
+1 Mirror Force
+1 Ring of Destruction
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Magic Thorn

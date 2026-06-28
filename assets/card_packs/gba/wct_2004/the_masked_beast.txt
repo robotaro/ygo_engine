@@ -1,0 +1,63 @@
+# Pack: The Masked Beast — World Championship Tournament 2004 (GBA, 2004)
+# Source: Yu-Gi-Oh! Fandom wiki — The Masked Beast (WC4-BP)
+# 57 distinct cards; 2 not in v6 pool
+## (Unsorted)
+The Masked Beast
+Call of the Dark
+Fairy Box
+Goblin Fan
+Jam Defender
+Jar of Greed
+Just Desserts
+Mask of Restrict
+Mask of Weakness
+Tornado Wall
+Torrential Tribute
+Card of Safe Return
+Chosen One
+Infinite Cards
+Lightning Blade
+Mage Power
+Mask of Brutality
+Mask of Dispel
+Mask of the Accursed
+Offerings to the Doomed
+Polymerization
+Return of the Doomed
+Scroll of Bewitchment
+United We Stand
+Amazon Archer
+Crimson Sentry
+Cure Mermaid
+Dancing Fairy
+Fairy Guardian
+Fire Princess
+Fire Sorcerer
+Hysteric Fairy
+Lady Assailant of Flames
+Lady Panther
+Nuvia the Wicked
+Spirit of the Breeze
+The Unfriendly Amazon
+Humanoid Worm Drake
+Meteor Black Dragon
+St. Joan
+Amphibian Beast
+Baron of the Fiend Sword
+Bio-Mage
+Cosmo Queen
+Empress Mantis
+Firewing Pegasus
+Flying Fish
+Gadget Soldier
+Grand Tiki Elder
+Melchid the Four-Face Beast
+Mikazukinoyaiba
+Neo the Magic Swordsman
+Sengenjin
+Serpent Night Dragon
+Shining Abyss
+Swordsman of Landstar
+Tri-Horned Dragon
+#
+# Not in v6 pool: Amazon Archer, Call of the Dark

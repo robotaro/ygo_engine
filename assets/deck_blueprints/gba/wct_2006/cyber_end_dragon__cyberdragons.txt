@@ -1,0 +1,34 @@
+// Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Cyber End Dragon — Cyberdragons
+// Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
+// 47 cards; 1 not in v6 pool (see _MISMATCHES.md)
+1 Cyber Barrier Dragon
+3 Cyber Dragon
+3 Mechanicalchaser
+3 X-Head Cannon
+2 Magician of Faith
+3 Proto-Cyber Dragon
+3 Shining Angel
+3 The Light - Hex-Sealed Fusion
+3 Cyber End Dragon
+3 Cyber Twin Dragon
+1 Thousand-Eyes Restrict
+1 Collapse
+1 Luminous Spark
+1 Metamorphosis
+1 Limiter Removal
+1 Monster Reincarnation
+1 Mystical Space Typhoon
+1 Nobleman of Crossout
+1 Pot of Avarice
+1 Pot of Greed
+2 Power Bond
+1 Premature Burial
+1 Attack Reflector Unit
+1 Call of the Haunted
+1 Dust Tornado
+1 Interdimensional Matter Transporter
+2 Metal Reflect Slime
+1 Sakuretsu Armor
+//
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Collapse

@@ -1,0 +1,25 @@
+// The Eternal Duelist Soul (GBA, 2002) — Ishizu Ishtar
+// Source: Yu-Gi-Oh! Fandom wiki — Ishizu Ishtar's Decks
+// 40 cards; all cards in v6 pool
+2 Blue-Eyes White Dragon
+3 Dunames Dark Witch
+3 Neo the Magic Swordsman
+2 Banisher of the Light
+3 Hoshiningen
+3 Maha Vailo
+3 Shining Angel
+3 Axe of Despair
+1 Change of Heart
+1 Dark Hole
+1 Giant Trunade
+1 Harpie's Feather Duster
+2 Luminous Spark
+1 Monster Reborn
+2 Mystical Space Typhoon
+1 Pot of Greed
+1 Raigeki
+1 Horn of Heaven
+2 Magic Jammer
+2 Metalmorph
+1 Mirror Force
+1 Solemn Judgment

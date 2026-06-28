@@ -1,0 +1,43 @@
+# Pack: Spell Collection 1 — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Spell Collection 1 (GX1-BP)
+# Cards per pack: 5 | Price: 100 DP | Cards in pack: 33 | Unlocked: Read "Spell" Tutorial (1-5) | Frequency: Once a week
+# 33 distinct cards; 1 not in v6 pool
+## Ultra Rare
+Harpie's Feather Duster
+## Super Rare
+Raigeki
+Swords of Revealing Light
+## Rare
+Scapegoat
+Card Destruction
+Upstart Goblin
+Giant Trunade
+Nobleman of Crossout
+Nobleman of Extermination
+## Common
+Stop Defense
+Mooyan Curry
+Red Medicine
+Goblin's Secret Remedy
+Soul of the Pure
+Dian Keto the Cure Master
+Sparks
+Hinotama
+Final Flame
+Ookazi
+Tremendous Fire
+Dark-Piercing Light
+Warrior Elimination
+Eternal Rest
+Acid Rain
+Eradicating Aerosol
+Breath of Light
+Eternal Drought
+Remove Trap
+Restructer Revolution
+Rush Recklessly
+The Reliable Guardian
+Smashing Ground
+Shield Crash
+#
+# Not in v6 pool: Shield Crash

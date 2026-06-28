@@ -1,0 +1,57 @@
+# Pack: The Masked Beast — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
+# Source: Yu-Gi-Oh! Fandom wiki — The Masked Beast (SDD-BP)
+# 50 distinct cards; 1 not in v6 pool
+## Rare
+Card of Safe Return
+Chosen One
+Grand Tiki Elder
+Jam Breeding Machine
+Darklord Marie
+Mask of Dispel
+Mask of Restrict
+Mask of the Accursed
+Nuvia the Wicked
+Offerings to the Doomed
+Return of the Doomed
+Revival Jam
+The Masked Beast
+Torrential Tribute
+## Common
+Amazon Archer
+Amphibian Beast
+Bio-Mage
+Crimson Sentry
+Cure Mermaid
+Curse of the Masked Beast
+Dancing Fairy
+Empress Mantis
+Fairy Box
+Fairy Guardian
+Fire Sorcerer
+Flying Fish
+Gadget Soldier
+Humanoid Slime
+Humanoid Worm Drake
+Hysteric Fairy
+Infinite Cards
+Jam Defender
+Jar of Greed
+Lady Assailant of Flames
+Lady Panther
+Lightning Blade
+Mage Power
+Mask of Brutality
+Mask of Weakness
+Melchid the Four-Face Beast
+Scroll of Bewitchment
+Shining Abyss
+Spirit of the Breeze
+St. Joan
+Swordsman of Landstar
+The Forgiving Maiden
+The Unfriendly Amazon
+Tornado Wall
+United We Stand
+Worm Drake
+#
+# Not in v6 pool: Amazon Archer

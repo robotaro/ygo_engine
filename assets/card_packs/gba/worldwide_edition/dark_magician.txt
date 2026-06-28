@@ -1,0 +1,49 @@
+# Pack: Dark Magician — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
+# Source: Yu-Gi-Oh! Fandom wiki — Dark Magician (SDD-BP)
+# 42 distinct cards; 1 not in v6 pool
+## Rare
+Beast Fangs
+Blue-Eyes White Dragon
+Book of Secret Arts
+Dark Hole
+Dark Magician
+Fissure
+Gaia The Fierce Knight
+Legendary Sword
+Power of Kaishin
+Raigeki
+Trap Hole
+Violet Crystal
+## Common
+Archfiend Marmot of Nefariousness
+Candle of Fate
+Curtain of the Dark Ones
+Dark Gray
+Eyearmor
+Fiend's Hand
+Fire Reaper
+Firegrass
+Haniwa
+Hitodenchak
+Hitotsu-Me Giant
+Hourglass of Life
+Kagemusha of the Blue Flame
+Thunder Kid
+Kurama
+LaLa Li-oon
+Mammoth Graveyard
+Meotoko
+Nemuriko
+Petit Angel
+Petit Dragon
+Red Medicine
+Sectarian of Secrets
+Silver Fang
+Sparks
+The Drdek
+The Furious Sea King
+Tomozaurus
+Wicked Mirror
+Winged Cleaver
+#
+# Not in v6 pool: Wicked Mirror

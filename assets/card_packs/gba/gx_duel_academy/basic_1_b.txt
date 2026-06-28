@@ -1,0 +1,51 @@
+# Pack: Basic 1-B — GX Duel Academy (GBA, 2006)
+# Source: Yu-Gi-Oh! Fandom wiki — Basic 1-B (GX1-BP)
+# Cards per pack: 5 | Price: 100 DP | Cards in pack: 40 | Unlocked: Beginning | Frequency: Once a week
+# 40 distinct cards; 2 not in v6 pool
+## Secret Rare
+Pot of Greed
+## Ultra Rare
+Summoned Skull
+## Super Rare
+Gaia the Dragon Champion
+Hane-Hane
+## Rare
+Acid Rain
+Breath of Light
+Eradicating Aerosol
+Eternal Draught
+Gravedigger Ghoul
+Stop Defense
+Warrior Elimination
+## Common
+Ancient Elf
+Armed Ninja
+Barox
+Darkworld Thorns
+Deepsea Shark
+Destroyer Golem
+Electro-Whip
+Fireyarou
+Flame Viper
+Flower Wolf
+Frenzied Panda
+Giant Soldier of Stone
+Ground Attacker Bugroth
+Harpie Lady
+Kaminari Attack
+Mega Thunderball
+Metal Dragon
+Millennium Golem
+Ocubeam
+Pragtical
+Rare Fish
+Skelengel
+Skull Red Bird
+Steel Ogre Grotto #1
+Takuhee
+The Wandering Doomed
+Tongyo
+Trakadon
+Winged Dragon, Guardian of the Fortress #1
+#
+# Not in v6 pool: Eternal Draught, Trakadon

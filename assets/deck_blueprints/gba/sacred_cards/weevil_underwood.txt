@@ -1,0 +1,22 @@
+// The Sacred Cards (GBA, 2003) — Weevil Underwood
+// Variant/section: The Sacred Cards (Duel Monsters 7: The Duelcity Legend)
+// Source: Yu-Gi-Oh! Fandom wiki — Weevil Underwood's Decks
+// 40 cards; all cards in v6 pool
+3 Basic Insect
+3 Bladefly
+3 Gale Dogra
+3 Kattapillar
+3 Korogashi
+3 Man-Eater Bug
+3 Ooguchi
+1 Petit Moth
+3 Rainbow Flower
+3 Tentacle Plant
+3 Winged Cleaver
+1 Insect Queen
+3 Leghul
+1 Parasite Paracide
+1 Pinch Hopper
+1 Forest
+1 Fake Trap
+1 Infinite Dismissal
