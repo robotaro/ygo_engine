@@ -369,6 +369,8 @@ class SpecialSummonFromGraveyard(Primitive):
         inst = ctx.state.inst(target)
         if inst.zone is not Zone.GRAVEYARD or not inst.card.is_monster:
             return
+        if inst.card.is_spirit:
+            return  # Spirit monsters can never be Special Summoned
         index = ctx.state.first_empty_monster_zone(ctx.controller)
         if index is None:
             return

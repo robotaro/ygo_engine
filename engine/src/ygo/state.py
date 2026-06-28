@@ -200,12 +200,8 @@ class GameState:
         inst.attacked_this_turn = False
         inst.position_changed_this_turn = False
 
-    def send_to_graveyard(self, iid: int) -> None:
-        """Move a card to its *owner's* Graveyard, clearing field flags."""
-        inst = self.cards[iid]
-        from_field = inst.zone in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD)
-        self._remove_from_current_location(iid)
-        inst.zone = Zone.GRAVEYARD
+    def _clear_field_flags(self, inst: "CardInstance") -> None:
+        """Reset the per-instance bookkeeping a card carries while on the field."""
         inst.controller = inst.owner
         inst.position = None
         inst.summoned_this_turn = False
@@ -217,10 +213,27 @@ class GameState:
         inst.control_reverts_to = None
         inst.control_until_end_of_turn = None
         inst.control_equip_iid = None
+
+    def send_to_graveyard(self, iid: int) -> None:
+        """Move a card to its *owner's* Graveyard, clearing field flags."""
+        inst = self.cards[iid]
+        from_field = inst.zone in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD)
+        self._remove_from_current_location(iid)
+        inst.zone = Zone.GRAVEYARD
+        self._clear_field_flags(inst)
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine.
         if from_field and inst.card.is_monster:
             self.gy_from_field.append(iid)
+
+    def return_to_hand(self, iid: int) -> None:
+        """Bounce a card to its *owner's* hand (Spirit monsters at the End Phase,
+        and future bounce effects), clearing its field bookkeeping."""
+        inst = self.cards[iid]
+        self._remove_from_current_location(iid)
+        inst.zone = Zone.HAND
+        self._clear_field_flags(inst)
+        self.players[inst.owner].hand.append(iid)
 
     # ----- derived stats (the "layers": printed value + active modifiers) -----
     def _equip_mods_on(self, monster_iid: int):

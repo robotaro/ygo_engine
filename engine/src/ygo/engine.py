@@ -627,10 +627,30 @@ class Engine:
             self._changed()
             self._check_field_to_gy_triggers()
 
+    def _return_spirits(self, tp: int) -> None:
+        """Spirit monsters return to their owner's hand during the End Phase of the
+        turn they were Normal/Flip Summoned or flipped face-up. A face-up Spirit
+        never persists past an End Phase, so bouncing every face-up Spirit on the
+        field here is exactly the rule (both sides, in case one was flipped in
+        battle on the opponent's turn)."""
+        s = self.state
+        bounced = False
+        for pl in (s.turn_player, s.opponent_of(s.turn_player)):
+            for iid in list(s.players[pl].monster_zones):
+                inst = s.cards.get(iid) if iid is not None else None
+                if inst is not None and inst.is_face_up and inst.card.is_spirit:
+                    self.log(f"  {inst.name} returns to {s.players[inst.owner].name}'s hand (Spirit)")
+                    s.return_to_hand(iid)
+                    bounced = True
+        if bounced:
+            self._changed()
+            self._check_field_to_gy_triggers()  # orphaned Equips on the bounced Spirit
+
     def _end_phase(self, tp: int) -> None:
         self._revert_end_of_turn_control(tp)
         if self.result is not None:
             return
+        self._return_spirits(tp)
         s = self.state
         for _ in range(_MAX_ACTIONS_PER_PHASE):
             menu = legal_actions(s, tp)  # discards only, no Pass while over the limit

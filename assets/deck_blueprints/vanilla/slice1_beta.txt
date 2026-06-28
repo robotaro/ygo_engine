@@ -54,3 +54,5 @@
 1 Black Luster Soldier
 1 Hamburger Recipe
 1 Hungry Burger
+// Slice 14 — Spirit monster (returns to hand at the End Phase; no Special Summon)
+1 Susa Soldier

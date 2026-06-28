@@ -320,12 +320,14 @@ def can_ritual_summon(state: GameState, controller: int, monster_name: str) -> b
 
 
 def _graveyard_monsters(state: GameState, players: tuple[int, ...]) -> list[int]:
-    """Monster iids sitting in the given players' Graveyards (a target pool)."""
+    """Monster iids sitting in the given players' Graveyards that may be Special
+    Summoned (a revival target pool). Spirit monsters can never be Special Summoned,
+    so they're excluded (Monster Reborn / Call of the Haunted can't bring them back)."""
     return [
         i
         for pl in players
         for i in state.players[pl].graveyard
-        if state.inst(i).card.is_monster
+        if state.inst(i).card.is_monster and not state.inst(i).card.is_spirit
     ]
 
 
