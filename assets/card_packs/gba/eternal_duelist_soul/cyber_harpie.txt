@@ -1,12 +1,12 @@
 # Pack: Cyber Harpie — The Eternal Duelist Soul (GBA, 2002)
 # Source: Yu-Gi-Oh! Fandom wiki — Cyber Harpie (EDS-BP)
-# 50 distinct cards; 3 not in v6 pool
+# 50 distinct cards; 1 not in v6 pool
 ## Rare
 Breath of Light
 Cocoon of Evolution
 Elegant Egotist
 Eradicating Aerosol
-Eternal Draught
+Eternal Drought
 Harpie Lady Sisters
 Magician of Faith
 Mask of Darkness
@@ -48,10 +48,10 @@ Rock Ogre Grotto #1
 Steel Scorpion
 Tao the Chanter
 Tongyo
-Trakadon
+Trakodon
 Trent
 Water Girl
 Water Omotics
 Winged Dragon, Guardian of the Fortress #1
 #
-# Not in v6 pool: Eternal Draught, Stain Storm, Trakadon
+# Not in v6 pool: Stain Storm

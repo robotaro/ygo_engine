@@ -1,7 +1,7 @@
 # Pack: Fusions — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Fusions (GX1-BP)
 # Cards per pack: 5 | Price: 100 DP | Cards in pack: 61 | Unlocked: Read "Fusion Monster" Tutorial (1-4) | Frequency: Once a week
-# 61 distinct cards; all in v6 pool
+# 61 distinct cards; all cards in v6 pool
 ## Secret Rare
 Cyber-Stein
 ## Ultra Rare

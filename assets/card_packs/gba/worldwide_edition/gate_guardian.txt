@@ -1,6 +1,6 @@
 # Pack: Gate Guardian — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Gate Guardian (SDD-BP)
-# 44 distinct cards; all in v6 pool
+# 44 distinct cards; all cards in v6 pool
 ## Rare
 Anti Raigeki
 Black Skull Dragon

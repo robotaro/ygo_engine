@@ -33,4 +33,6 @@
 2 Staunch Defender
 //
 // Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Guardian Exode, Collapse, Fault Zone
+//   Guardian Exode
+//   Collapse
+//   Fault Zone

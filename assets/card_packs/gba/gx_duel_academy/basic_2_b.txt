@@ -1,7 +1,7 @@
 # Pack: Basic 2-B — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Basic 2-B (GX1-BP)
 # Cards per pack: 5 | Price: 120 DP | Cards in pack: 40 | Unlocked: Beginning | Frequency: Once a week
-# 40 distinct cards; all in v6 pool
+# 40 distinct cards; all cards in v6 pool
 ## Ultra Rare
 Blue-Eyes White Dragon
 The Fiend Megacyber

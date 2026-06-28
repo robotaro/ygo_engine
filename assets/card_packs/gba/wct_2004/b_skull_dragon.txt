@@ -1,6 +1,6 @@
 # Pack: B. Skull Dragon — World Championship Tournament 2004 (GBA, 2004)
 # Source: Yu-Gi-Oh! Fandom wiki — B. Skull Dragon (WC4-BP)
-# 61 distinct cards; all in v6 pool
+# 61 distinct cards; all cards in v6 pool
 ## (Unsorted)
 Ancient Elf
 Ancient Lizard Warrior

@@ -1,6 +1,6 @@
 # Pack: Mystical Elf — The Eternal Duelist Soul (GBA, 2002)
 # Source: Yu-Gi-Oh! Fandom wiki — Mystical Elf (EDS-BP)
-# 40 distinct cards; all in v6 pool
+# 40 distinct cards; all cards in v6 pool
 ## Rare
 Curse of Dragon
 Dark Energy

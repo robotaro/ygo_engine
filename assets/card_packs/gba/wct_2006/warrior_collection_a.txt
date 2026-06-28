@@ -1,6 +1,6 @@
 # Pack: Warrior Collection A — Ultimate Masters: World Championship Tournament 2006 (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Warrior Collection A (WC6-BP)
-# 87 distinct cards; 7 not in v6 pool
+# 87 distinct cards; 5 not in v6 pool
 ## (Unsorted)
 Cover card
 Ultra Rare
@@ -20,7 +20,7 @@ The Fiend Megacyber
 The Legendary Fisherman
 Total Defense Shogun
 ## Rare
-Amazon Archer
+Amazoness Archer
 Armed Ninja
 Big Shield Gardna
 Command Knight
@@ -85,7 +85,7 @@ Supporter in the Shadows
 Sword Hunter
 Swordsman of Landstar
 Swordstalker
-The Judgment Hand
+The Judgement Hand
 The Little Swordsman of Aile
 Trap Master
 Unknown Warrior of Fiend
@@ -94,4 +94,4 @@ Wall Shadow
 Warrior of Tradition
 Wood Clown
 #
-# Not in v6 pool: Amazon Archer, Common, Cover card, Rare, Super Rare, The Judgment Hand, Ultra Rare
+# Not in v6 pool: Cover card, Ultra Rare, Super Rare, Rare, Common

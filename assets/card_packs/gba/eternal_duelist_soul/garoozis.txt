@@ -1,6 +1,6 @@
 # Pack: Garoozis — The Eternal Duelist Soul (GBA, 2002)
 # Source: Yu-Gi-Oh! Fandom wiki — Garoozis (EDS-BP)
-# 47 distinct cards; 2 not in v6 pool
+# 47 distinct cards; 1 not in v6 pool
 ## Common
 Amphibious Bugroth
 Beastking of the Swamps
@@ -28,7 +28,7 @@ Krokodilus
 Last Day of Witch
 Lord of the Lamp
 Machine King
-Magic Thorn
+Magical Thorn
 Marine Beast
 Monster Eye
 Morphing Jar
@@ -50,4 +50,4 @@ Ushi Oni
 Versago the Destroyer
 Water Magician
 #
-# Not in v6 pool: Guardian of the Sea, Magic Thorn
+# Not in v6 pool: Guardian of the Sea

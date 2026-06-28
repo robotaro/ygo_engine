@@ -1,7 +1,7 @@
 # Pack: Be Quick — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Be Quick (GX1-BP)
 # Cards per pack: 3 | Price: 700 DP | Cards in pack: 19 | Unlocked: Read "Combos" Tutorial (11-1~4) | Frequency: Once every four weeks
-# 19 distinct cards; all in v6 pool
+# 19 distinct cards; all cards in v6 pool
 ## Ultra Rare
 Cyber-Stein
 Harpie's Feather Duster

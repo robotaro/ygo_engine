@@ -1,6 +1,6 @@
 # Pack: The Masked Beast — World Championship Tournament 2004 (GBA, 2004)
 # Source: Yu-Gi-Oh! Fandom wiki — The Masked Beast (WC4-BP)
-# 57 distinct cards; 2 not in v6 pool
+# 57 distinct cards; 1 not in v6 pool
 ## (Unsorted)
 The Masked Beast
 Call of the Dark
@@ -26,7 +26,7 @@ Polymerization
 Return of the Doomed
 Scroll of Bewitchment
 United We Stand
-Amazon Archer
+Amazoness Archer
 Crimson Sentry
 Cure Mermaid
 Dancing Fairy
@@ -60,4 +60,4 @@ Shining Abyss
 Swordsman of Landstar
 Tri-Horned Dragon
 #
-# Not in v6 pool: Amazon Archer, Call of the Dark
+# Not in v6 pool: Call of the Dark

@@ -35,4 +35,4 @@ Divine Wrath
 D.D. Dynamite
 Elemental Burst
 #
-# Not in v6 pool: Hidden Book of Spell, Reversal of Graves
+# Not in v6 pool: Reversal of Graves, Hidden Book of Spell

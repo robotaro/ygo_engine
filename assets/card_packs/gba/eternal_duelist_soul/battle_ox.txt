@@ -1,6 +1,6 @@
 # Pack: Battle Ox — The Eternal Duelist Soul (GBA, 2002)
 # Source: Yu-Gi-Oh! Fandom wiki — Battle Ox (EDS-BP)
-# 43 distinct cards; all in v6 pool
+# 43 distinct cards; all cards in v6 pool
 ## Common
 Ancient Brain
 Ancient Telescope

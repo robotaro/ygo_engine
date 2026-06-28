@@ -1,6 +1,6 @@
 // Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Elemental Hero Erikshieler — High-rise Hero
 // Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
-// 49 cards; 2 not in v6 pool (see _MISMATCHES.md)
+// 49 cards; 1 not in v6 pool (see _MISMATCHES.md)
 2 Elemental HERO Bladedge
 2 Elemental HERO Avian
 2 Elemental HERO Bubbleman
@@ -12,7 +12,7 @@
 2 Wroughtweiler
 1 Elemental Hero Erikshieler
 1 Elemental HERO Flame Wingman
-1 Elemental Hero Madballman
+1 Elemental HERO Mudballman
 1 Elemental HERO Rampart Blaster
 1 Elemental HERO Shining Flare Wingman
 1 Elemental HERO Steam Healer
@@ -36,4 +36,4 @@
 1 Royal Decree
 //
 // Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Elemental Hero Erikshieler, Elemental Hero Madballman
+//   Elemental Hero Erikshieler

@@ -1,6 +1,6 @@
 # Pack: Dark Magician — The Eternal Duelist Soul (GBA, 2002)
 # Source: Yu-Gi-Oh! Fandom wiki — Dark Magician (EDS-BP)
-# 40 distinct cards; 3 not in v6 pool
+# 40 distinct cards; 2 not in v6 pool
 ## Rare
 Beast Fangs
 Book of Secret Arts
@@ -13,7 +13,7 @@ Power of Kaishin
 Trap Hole
 Violet Crystal
 ## Common
-Air Marmot of Nefariousness
+Archfiend Marmot of Nefariousness
 Candle of Fate
 Curtain of the Dark Ones
 Dark Gray
@@ -44,4 +44,4 @@ Tomozaurus
 Wicked Mirror
 Winged Cleaver
 #
-# Not in v6 pool: Air Marmot of Nefariousness, Kaminarikozou, Wicked Mirror
+# Not in v6 pool: Kaminarikozou, Wicked Mirror

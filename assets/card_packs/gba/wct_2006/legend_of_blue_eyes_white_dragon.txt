@@ -1,6 +1,6 @@
 # Pack: Legend of Blue Eyes White Dragon — Ultimate Masters: World Championship Tournament 2006 (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Legend of Blue Eyes White Dragon (WC6-BP)
-# 105 distinct cards; all in v6 pool
+# 105 distinct cards; all cards in v6 pool
 ## Secret Rare
 Blue-Eyes White Dragon
 Raigeki

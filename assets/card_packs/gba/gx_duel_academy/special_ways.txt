@@ -60,4 +60,4 @@ Big Core
 Token Feastevil
 B.E.S. Crystal Core
 #
-# Not in v6 pool: Big Core, Tricky's Magic 4
+# Not in v6 pool: Tricky's Magic 4, Big Core

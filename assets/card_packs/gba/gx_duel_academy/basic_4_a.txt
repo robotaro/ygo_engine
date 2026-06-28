@@ -1,7 +1,7 @@
 # Pack: Basic 4-A — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Basic 4-A (GX1-BP)
 # Cards per pack: 5 | Price: 150 DP | Cards in pack: 40 | Unlocked: Last week of January | Frequency: Once a week
-# 40 distinct cards; all in v6 pool
+# 40 distinct cards; all cards in v6 pool
 ## Secret Rare
 Monster Reincarnation
 ## Ultra Rare

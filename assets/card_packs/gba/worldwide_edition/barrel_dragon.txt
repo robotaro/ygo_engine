@@ -1,6 +1,6 @@
 # Pack: Barrel Dragon — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Barrel Dragon (SDD-BP)
-# 57 distinct cards; all in v6 pool
+# 57 distinct cards; all cards in v6 pool
 ## Rare
 Barrel Dragon
 Catapult Turtle

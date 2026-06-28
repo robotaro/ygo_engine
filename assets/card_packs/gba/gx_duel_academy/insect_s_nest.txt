@@ -1,7 +1,7 @@
 # Pack: Insect's Nest — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Insect's Nest (GX1-BP)
 # Cards per pack: 5 | Price: 200 DP | Cards in pack: 38 | Unlocked: Clear "Draw! Draw! Draw!" Event (In order to do this, you have to be at the "Talented Duelist" Rank + Beat Damon 5 times | Frequency: Once a Week
-# 38 distinct cards; 1 not in v6 pool
+# 38 distinct cards; all cards in v6 pool
 ## Ultra Rare
 Insect Queen
 ## Rare
@@ -19,7 +19,7 @@ Forest
 Leghul
 Insect Soldiers of the Sky
 Cockroach Knight
-Kuwagata Alpha
+Kuwagata α
 Gale Dogra
 Kwagar Hercules
 Needle Worm
@@ -43,5 +43,3 @@ Atomic Firefly
 Fiend Scorpion
 Howling Insect
 Insect Knight
-#
-# Not in v6 pool: Kuwagata Alpha

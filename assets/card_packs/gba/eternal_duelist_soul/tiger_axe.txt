@@ -1,6 +1,6 @@
 # Pack: Tiger Axe — The Eternal Duelist Soul (GBA, 2002)
 # Source: Yu-Gi-Oh! Fandom wiki — Tiger Axe (EDS-BP)
-# 31 distinct cards; 2 not in v6 pool
+# 31 distinct cards; 1 not in v6 pool
 ## Rare
 Burning Spear
 Dark-Piercing Light
@@ -19,7 +19,7 @@ Dryad
 Giant Flea
 Hercules Beetle
 Key Mace #2
-Kuwagata a
+Kuwagata α
 Kwagar Hercules
 Little D
 Minomushi Warrior
@@ -35,4 +35,4 @@ Warrior of Tradition
 Wodan the Resident of the Forest
 Wow Warrior
 #
-# Not in v6 pool: Dryad, Kuwagata a
+# Not in v6 pool: Dryad

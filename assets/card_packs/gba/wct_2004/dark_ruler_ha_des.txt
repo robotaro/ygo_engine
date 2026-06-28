@@ -1,6 +1,6 @@
 # Pack: Dark Ruler Ha Des — World Championship Tournament 2004 (GBA, 2004)
 # Source: Yu-Gi-Oh! Fandom wiki — Dark Ruler Ha Des (WC4-BP)
-# 144 distinct cards; 6 not in v6 pool
+# 144 distinct cards; 4 not in v6 pool
 ## (Unsorted)
 Dark Ruler Ha Des
 Aqua Chorus
@@ -39,7 +39,7 @@ Kwagar Hercules
 Man-Eating Black Shark
 Mystical Sand
 Pragtical
-Trakadon
+Trakodon
 Skelgon
 Skullbird
 Soul Hunter
@@ -114,7 +114,7 @@ Kanikabuto
 Kappa Avenger
 Kattapillar
 Korogashi
-Kuwagata Alpha
+Kuwagata α
 Laughing Flower
 Little D
 Lizard Soldier
@@ -147,4 +147,4 @@ Yaiba Robo
 Yormungarde
 Zarigun
 #
-# Not in v6 pool: Frog the Jam, Guardian of the Sea, Kuwagata Alpha, Saber Slasher, Stone D., Trakadon
+# Not in v6 pool: Stone D., Saber Slasher, Frog the Jam, Guardian of the Sea

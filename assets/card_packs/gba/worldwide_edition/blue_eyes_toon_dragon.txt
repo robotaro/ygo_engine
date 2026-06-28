@@ -1,6 +1,6 @@
 # Pack: Blue-Eyes Toon Dragon — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Blue-Eyes Toon Dragon (SDD-BP)
-# 51 distinct cards; all in v6 pool
+# 51 distinct cards; all cards in v6 pool
 ## Rare
 Banisher of the Light
 Blue-Eyes Toon Dragon

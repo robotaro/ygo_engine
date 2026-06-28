@@ -1,6 +1,6 @@
 # Pack: The Masked Beast — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — The Masked Beast (SDD-BP)
-# 50 distinct cards; 1 not in v6 pool
+# 50 distinct cards; all cards in v6 pool
 ## Rare
 Card of Safe Return
 Chosen One
@@ -17,7 +17,7 @@ Revival Jam
 The Masked Beast
 Torrential Tribute
 ## Common
-Amazon Archer
+Amazoness Archer
 Amphibian Beast
 Bio-Mage
 Crimson Sentry
@@ -53,5 +53,3 @@ The Unfriendly Amazon
 Tornado Wall
 United We Stand
 Worm Drake
-#
-# Not in v6 pool: Amazon Archer

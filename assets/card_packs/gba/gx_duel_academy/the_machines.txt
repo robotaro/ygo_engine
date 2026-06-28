@@ -88,4 +88,4 @@ Mechanical Hound
 B.E.S. Crystal Core
 System Down
 #
-# Not in v6 pool: Big Core, Mechanical Spider
+# Not in v6 pool: Mechanical Spider, Big Core

@@ -1,6 +1,6 @@
 # Pack: Blue Millennium Puzzle — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Blue Millennium Puzzle (SDD-BP)
-# 74 distinct cards; 2 not in v6 pool
+# 74 distinct cards; 1 not in v6 pool
 ## Rare
 Blue-Eyes Ultimate Dragon
 Blue-Eyes White Dragon
@@ -21,7 +21,7 @@ Tiger Axe
 Total Defense Shogun
 ## Common
 Akakieisu
-Alligator Sword
+Alligator's Sword
 Ancient Elf
 Armed Ninja
 Axe of Despair
@@ -78,4 +78,4 @@ Torrential Tribute
 Twin-Headed Fire Dragon
 Type Zero Magic Crusher
 #
-# Not in v6 pool: Alligator Sword, Crush Card
+# Not in v6 pool: Crush Card

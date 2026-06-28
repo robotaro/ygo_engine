@@ -1,7 +1,7 @@
 # Pack: Expert I — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Expert I (GX1-BP)
 # Cards per pack: 5 | Price: 200 DP | Cards in pack: 72 | Unlocked: "Excellent Duelist" Rank | Frequency: Once every four weeks
-# 72 distinct cards; all in v6 pool
+# 72 distinct cards; all cards in v6 pool
 ## Ultra Rare
 Nightmare Wheel
 Byser Shock

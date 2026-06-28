@@ -40,4 +40,4 @@ Mind Wipe
 Tricky's Magic 4
 Malice Dispersion
 #
-# Not in v6 pool: Enchanted Arrow, Makiu, Tricky's Magic 4
+# Not in v6 pool: Makiu, Enchanted Arrow, Tricky's Magic 4

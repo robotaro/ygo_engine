@@ -1,6 +1,6 @@
 # Pack: Graceful Charity — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Graceful Charity (SDD-BP)
-# 80 distinct cards; all in v6 pool
+# 80 distinct cards; all cards in v6 pool
 ## Rare
 Axe Raider
 Beastking of the Swamps

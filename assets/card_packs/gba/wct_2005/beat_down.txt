@@ -1,7 +1,7 @@
 # Pack: Beat Down — 7 Trials to Glory: World Championship Tournament 2005 (GBA, 2005)
 # Source: Yu-Gi-Oh! Fandom wiki — Beat Down (WC5-SD)
 # Cards per pack: 41 | Price: 3000 DP | Cards in pack: 38 | Unlocked: Success the KC tourney
-# 38 distinct cards; all in v6 pool
+# 38 distinct cards; all cards in v6 pool
 ## (Unsorted)
 La Jinn the Mystical Genie of the Lamp
 7 Colored Fish

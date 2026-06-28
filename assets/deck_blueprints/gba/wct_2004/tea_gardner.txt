@@ -1,9 +1,9 @@
 // World Championship Tournament 2004 (GBA, 2004) — Tea Gardner
 // Source: Yu-Gi-Oh! Fandom wiki — WCT2004 Opponents
-// 41 cards; 1 not in v6 pool (see _MISMATCHES.md)
+// 41 cards; all cards in v6 pool
 1 Stone Dragon
 1 Illusionist Faceless Mage
-1 Air Marmot of Nefariousness
+1 Archfiend Marmot of Nefariousness
 1 Flame Viper
 1 Haniwa
 1 Mech Mole Zombie
@@ -34,6 +34,3 @@
 1 Solemn Wishes
 #EXTRA DECK
 1 St. Joan
-//
-// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Air Marmot of Nefariousness

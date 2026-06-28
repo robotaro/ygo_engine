@@ -1,7 +1,7 @@
 # Pack: Beasts in Fight — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Beasts in Fight (GX1-BP)
 # Cards per pack: 5 | Price: 200 DP | Cards in pack: 74 | Unlocked: Indoor Duel" Event (Be in Slifer Red Dorm + Stay in your room for 3 weeks) | Frequency: Once a week
-# 74 distinct cards; all in v6 pool
+# 74 distinct cards; all cards in v6 pool
 ## Super Rare
 Andro Sphinx
 Sphinx Teleia

@@ -1,6 +1,7 @@
 // The Sacred Cards (GBA, 2003) — Yami Yugi
 // Source: Yu-Gi-Oh! Fandom wiki — Yami Yugi's Decks
 // 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+// ⚠ Egyptian God boss deck: Slifer the Sky Dragon — anime/illegal cards with no standard v6.0 ruling; engine needs special handling.
 1 Alpha The Magnet Warrior
 1 Beta The Magnet Warrior
 1 Blackland Fire Dragon

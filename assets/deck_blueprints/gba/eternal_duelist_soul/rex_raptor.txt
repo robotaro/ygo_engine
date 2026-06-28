@@ -1,7 +1,7 @@
 // The Eternal Duelist Soul (GBA, 2002) — Rex Raptor
 // Variant/section: Eternal Duelist Soul (Duel Monsters 5 Expert 3)
 // Source: Yu-Gi-Oh! Fandom wiki — Rex Raptor's Decks
-// 40 cards; 2 not in v6 pool (see _MISMATCHES.md)
+// 40 cards; all cards in v6 pool
 3 Blackland Fire Dragon
 2 Crawling Dragon #2
 1 Dragon Zombie
@@ -10,7 +10,7 @@
 1 Megazowler
 1 Summoned Skull
 1 Sword Arm of Dragon
-2 Trakadon
+2 Trakodon
 2 Twin-Headed Fire Dragon
 3 Two-Headed King Rex
 2 Uraby
@@ -29,6 +29,3 @@
 1 Wasteland
 1 Magic Jammer
 1 Mirror Force
-//
-// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Trakadon

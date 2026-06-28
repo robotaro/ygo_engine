@@ -1,7 +1,7 @@
 # Pack: Invitation to the Dark — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Invitation to the Dark (GX1-BP)
 # Cards per pack: 5 | Price: 200 DP | Cards in pack: 177 | Unlocked: Clear "Shadow Demon Deck" Event | Frequency: Once a week
-# 177 distinct cards; 3 not in v6 pool
+# 177 distinct cards; 2 not in v6 pool
 ## Super Rare
 Black Skull Dragon
 Magician of Black Chaos
@@ -137,7 +137,7 @@ Swarm of Locusts
 Legendary Fiend
 Toon Masked Sorcerer
 Toon Cannon Soldier
-Hidden Soldier
+Hidden Soldiers
 Gil Garth
 Drillago
 Giant Orc
@@ -183,4 +183,4 @@ King of the Skull Servants
 Giant Kozaky
 Ebon Magician Curran
 #
-# Not in v6 pool: Big Core, Dark Magic Ritual, Hidden Soldier
+# Not in v6 pool: Dark Magic Ritual, Big Core

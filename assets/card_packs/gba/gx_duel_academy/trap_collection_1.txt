@@ -1,7 +1,7 @@
 # Pack: Trap Collection 1 — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Trap Collection 1 (GX1-BP)
 # Cards per pack: 5 | Price: 100 DP | Cards in pack: 28 | Unlocked: Read "Trap" Tutorial (1-6) | Frequency: Once a week
-# 28 distinct cards; 1 not in v6 pool
+# 28 distinct cards; all cards in v6 pool
 ## Super Rare
 Negate Attack
 Magic Jammer
@@ -31,7 +31,5 @@ Frozen Soul
 Destruction Ring
 Trap Jammer
 Desert Sunlight
-Cemetery Bomb
+Cemetary Bomb
 Magical Explosion
-#
-# Not in v6 pool: Cemetery Bomb

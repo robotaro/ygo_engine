@@ -23,4 +23,5 @@
 3 Infinite Dismissal
 1 Metalmorph
 //
-// Cards not in the v6.0 pool: Space Megatron
+// Cards not in the v6.0 pool (engine loads the rest; these show as missing):
+//   Space Megatron

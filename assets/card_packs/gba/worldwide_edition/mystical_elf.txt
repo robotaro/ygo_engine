@@ -1,6 +1,6 @@
 # Pack: Mystical Elf — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Mystical Elf (SDD-BP)
-# 40 distinct cards; all in v6 pool
+# 40 distinct cards; all cards in v6 pool
 ## Rare
 Curse of Dragon
 Dark Energy

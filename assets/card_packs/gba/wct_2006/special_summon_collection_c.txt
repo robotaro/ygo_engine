@@ -1,6 +1,6 @@
 # Pack: Special Summon Collection C — Ultimate Masters: World Championship Tournament 2006 (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Special Summon Collection C (WC6-BP)
-# 93 distinct cards; 7 not in v6 pool
+# 93 distinct cards; 5 not in v6 pool
 ## Secret Rare
 Hamon, Lord of Striking Thunder
 Raviel, Lord of Phantasms
@@ -15,7 +15,7 @@ Cyber Dragon
 Dandylion
 Dark Eradicator Warlock
 Guardian Exode
-Helios Duo Megiste
+Helios Duo Megistus
 Helios Tris Megiste
 Ocean Dragon Lord - Neo-Daedalus
 Power Bond
@@ -33,7 +33,7 @@ Magician's Circle
 Miracle Fusion
 Sand Moth
 Silent Swordsman LV5
-The Blockman
+Blockman
 The Creator Incarnate
 UFOroid
 Water Dragon
@@ -100,4 +100,4 @@ Ultimate Insect LV5
 W-Wing Catapult
 Warrior Lady of the Wasteland
 #
-# Not in v6 pool: Curse of Vampire, Dark Ruler Vandalgyon, Guardian Exode, Helios Duo Megiste, Helios Tris Megiste, Summon Priest, The Blockman
+# Not in v6 pool: Dark Ruler Vandalgyon, Guardian Exode, Helios Tris Megiste, Curse of Vampire, Summon Priest

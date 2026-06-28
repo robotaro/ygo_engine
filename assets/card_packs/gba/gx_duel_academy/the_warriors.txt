@@ -1,7 +1,7 @@
 # Pack: The Warriors — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — The Warriors (GX1-BP)
 # Cards per pack: 5 | Price: 200 DP | Cards in pack: 112 | Unlocked: Duel with Gerard once | Frequency: Once a week
-# 112 distinct cards; 3 not in v6 pool
+# 112 distinct cards; 2 not in v6 pool
 ## Ultra Rare
 United We Stand
 Black Luster Soldier - Envoy of the Beginning
@@ -74,7 +74,7 @@ Skull Mariner
 Goblin Attack Force
 Science Soldier
 The Unfriendly Amazon
-Amazon Archer
+Amazoness Archer
 Swift Gaia the Fierce Knight
 Obnoxious Celtic Guard
 Zombyra the Dark
@@ -119,4 +119,4 @@ Kaibaman
 White Ninja
 Warrior Lady of the Wasteland
 #
-# Not in v6 pool: Amazon Archer, Dimensional Warrior, Holy Knight Ishzark
+# Not in v6 pool: Holy Knight Ishzark, Dimensional Warrior

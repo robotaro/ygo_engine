@@ -17,4 +17,5 @@
 2 Invisible Wire
 //
 // Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Frog the Jam, Invisible Wire
+//   Frog the Jam
+//   Invisible Wire

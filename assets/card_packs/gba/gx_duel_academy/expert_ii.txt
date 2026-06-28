@@ -1,14 +1,14 @@
 # Pack: Expert II — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Expert II (GX1-BP)
 # Cards per pack: 5 | Price: 200 DP | Cards in pack: 72 | Unlocked: "Excellent Duelist" Rank | Frequency: Once every four weeks
-# 72 distinct cards; 4 not in v6 pool
+# 72 distinct cards; 2 not in v6 pool
 ## Ultra Rare
 Dark Paladin
 Breaker the Magical Warrior
 Magical Scientist
 Exodia Necross
 ## Super Rare
-Mystical Beast Serket
+Mystical Beast of Serket
 Dark Flare Knight
 Shinato, King of a Higher Plane
 Mirage Knight
@@ -60,7 +60,7 @@ Thousand Needles
 Shinato's Ark
 Contract with Exodia
 Precious Cards from Beyond
-Rod of Mind's Eye
+Rod of the Mind's Eye
 Token Thanksgiving
 Ojama Trio
 Really Eternal Rest
@@ -79,4 +79,4 @@ Ojama Black
 Ojama Delta Hurricane!!
 Neo Bug
 #
-# Not in v6 pool: Cathedral of Nobles, Hidden Book of Spell, Mystical Beast Serket, Rod of Mind's Eye
+# Not in v6 pool: Cathedral of Nobles, Hidden Book of Spell

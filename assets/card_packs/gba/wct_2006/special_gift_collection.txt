@@ -1,6 +1,6 @@
 # Pack: Special Gift Collection — Ultimate Masters: World Championship Tournament 2006 (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Special Gift Collection (WC6-BP)
-# 74 distinct cards; 12 not in v6 pool
+# 74 distinct cards; 10 not in v6 pool
 ## (Unsorted)
 DP
 Survival Duel
@@ -50,9 +50,9 @@ Garnecia Elefantis
 Gate Guardian
 Gazelle the King of Mythical Beasts
 Gil Garth
-Hidden Soldier
+Hidden Soldiers
 Jack's Knight
-Judgment of Pharaoh
+Judgment of the Pharaoh
 Kanan the Swordmistress
 King's Knight
 Kuriboh
@@ -82,4 +82,4 @@ Trial of Nightmare
 Turtle Tiger
 Yaranzo
 #
-# Not in v6 pool: Crush Card, Curse of Vampire, DP, Dark Dreadroute, Earthbound Spirit's Invitation, Hidden Soldier, Judgment of Pharaoh, Makiu, Reversal of Graves, Stronghold, Survival Duel, White Horns D.
+# Not in v6 pool: DP, Survival Duel, Dark Dreadroute, Reversal of Graves, Crush Card, Curse of Vampire, Stronghold, White Horns D., Earthbound Spirit's Invitation, Makiu

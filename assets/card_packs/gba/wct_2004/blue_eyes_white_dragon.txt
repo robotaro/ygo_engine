@@ -1,6 +1,6 @@
 # Pack: Blue-Eyes White Dragon — World Championship Tournament 2004 (GBA, 2004)
 # Source: Yu-Gi-Oh! Fandom wiki — Blue-Eyes White Dragon (WC4-BP)
-# 62 distinct cards; all in v6 pool
+# 62 distinct cards; all cards in v6 pool
 ## (Unsorted)
 Blue-Eyes White Dragon
 Aqua Madoor

@@ -67,4 +67,4 @@ The Creator Incarnate
 Woodborg Inpachi
 Xing Zhen Hu
 #
-# Not in v6 pool: Big Core, DP
+# Not in v6 pool: DP, Big Core

@@ -1,7 +1,7 @@
 # Pack: Spell Special 1 — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Spell Special 1 (GX1-BP)
 # Cards per pack: 3 | Price: 150 DP | Cards in pack: 33 | Unlocked: Get 90% Collection Rate on "Spell Collection 1" Pack | Frequency: Once a week
-# 33 distinct cards; all in v6 pool
+# 33 distinct cards; all cards in v6 pool
 ## Ultra Rare
 Graceful Charity
 Monster Reincarnation

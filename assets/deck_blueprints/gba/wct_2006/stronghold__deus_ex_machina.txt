@@ -1,6 +1,6 @@
 // Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Stronghold — Deus Ex Machina
 // Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
-// 40 cards; 5 not in v6 pool (see _MISMATCHES.md)
+// 40 cards; 4 not in v6 pool (see _MISMATCHES.md)
 1 Breaker the Magical Warrior
 1 Chiron the Mage
 3 Green Gadget
@@ -19,7 +19,7 @@
 1 Premature Burial
 1 Reload
 2 Rush Recklessly
-1 Shield Crash
+1 Shield Crush
 2 Smashing Ground
 2 Bottomless Trap Hole
 1 Call of the Haunted
@@ -30,4 +30,5 @@
 1 Widespread Ruin
 //
 // Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Collapse, Shield Crash, Stronghold
+//   Collapse
+//   Stronghold

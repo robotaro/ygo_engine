@@ -1,6 +1,6 @@
 # Pack: Yamata Dragon — World Championship Tournament 2004 (GBA, 2004)
 # Source: Yu-Gi-Oh! Fandom wiki — Yamata Dragon (WC4-BP)
-# 145 distinct cards; 5 not in v6 pool
+# 145 distinct cards; 4 not in v6 pool
 ## (Unsorted)
 Yamata Dragon
 Fushi No Tori
@@ -40,7 +40,7 @@ Mabarrel
 Megasonic Eye
 Millennium Shield
 Yamadron
-Air Marmot of Nefariousness
+Archfiend Marmot of Nefariousness
 Akakieisu
 Ancient Jar
 Ancient Sorcerer
@@ -148,4 +148,4 @@ Wood Remains
 Yaranzo
 Yashinoki
 #
-# Not in v6 pool: Air Marmot of Nefariousness, Beast of Gilfer, Dryad, Kaminarikozou, Wicked Mirror
+# Not in v6 pool: Beast of Gilfer, Dryad, Kaminarikozou, Wicked Mirror

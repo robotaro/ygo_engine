@@ -1,7 +1,7 @@
 # Pack: Trap Collection 2 — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Trap Collection 2 (GX1-BP)
 # Cards per pack: 5 | Price: 100 DP | Cards in pack: 28 | Unlocked: Read "Trap" Tutorial (1-6) | Frequency: Once a week
-# 28 distinct cards; all in v6 pool
+# 28 distinct cards; all cards in v6 pool
 ## Super Rare
 Trap Hole
 Seven Tools of the Bandit

@@ -1,7 +1,7 @@
 # Pack: Pyrogen — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Pyrogen (GX1-BP)
 # Cards per pack: 5 | Price: 200 DP | Cards in pack: 77 | Unlocked: Duel at the Volcano once | Frequency: Once a week
-# 77 distinct cards; all in v6 pool
+# 77 distinct cards; all cards in v6 pool
 ## Ultra Rare
 Lava Golem
 ## Super Rare

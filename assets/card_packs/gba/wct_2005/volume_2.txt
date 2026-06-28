@@ -1,7 +1,7 @@
 # Pack: Volume 2 — 7 Trials to Glory: World Championship Tournament 2005 (GBA, 2005)
 # Source: Yu-Gi-Oh! Fandom wiki — Volume 2 (WC5-BP)
 # Cards per pack: 5 | Price: 150 DP | Cards in pack: ??? | Unlocked: Available at start.
-# 2 distinct cards; all in v6 pool
+# 2 distinct cards; all cards in v6 pool
 ## Secret Rare
 Machine King
 Cyber-Stein

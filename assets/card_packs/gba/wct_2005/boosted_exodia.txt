@@ -1,7 +1,7 @@
 # Pack: Boosted Exodia — 7 Trials to Glory: World Championship Tournament 2005 (GBA, 2005)
 # Source: Yu-Gi-Oh! Fandom wiki — Boosted Exodia (WC5-SD)
 # Cards per pack: 40 | Price: 30000 DP | Cards in pack: 13 | Unlocked: Success the national championship
-# 14 distinct cards; all in v6 pool
+# 14 distinct cards; all cards in v6 pool
 ## (Unsorted)
 Right Leg of the Forbidden One
 Left Leg of the Forbidden One

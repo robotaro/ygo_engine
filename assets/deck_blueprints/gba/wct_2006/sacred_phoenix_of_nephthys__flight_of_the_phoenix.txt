@@ -1,6 +1,6 @@
 // Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Sacred Phoenix of Nephthys — Flight of the Phoenix
 // Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
-// 40 cards; 3 not in v6 pool (see _MISMATCHES.md)
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
 1 Curse of Vampire
 1 Ryu Kokki
 1 Sacred Phoenix of Nephthys
@@ -20,7 +20,7 @@
 1 Heavy Storm
 1 Lightning Vortex
 1 Magical Mallet
-2 Mistobody
+2 Mist Body
 1 Mystical Space Typhoon
 1 Pot of Greed
 1 Scapegoat
@@ -34,4 +34,4 @@
 1 Waboku
 //
 // Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Curse of Vampire, Mistobody
+//   Curse of Vampire

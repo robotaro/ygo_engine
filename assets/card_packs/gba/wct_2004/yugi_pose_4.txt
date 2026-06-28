@@ -1,6 +1,6 @@
 # Pack: "Yugi Pose" 4 — World Championship Tournament 2004 (GBA, 2004)
 # Source: Yu-Gi-Oh! Fandom wiki — "Yugi Pose" 4
-# 59 distinct cards; 1 not in v6 pool
+# 59 distinct cards; all cards in v6 pool
 ## (Unsorted)
 Graceful Charity
 Banner of Courage
@@ -20,7 +20,7 @@ Blue Medicine
 Soul of the Pure
 Call of the Grave
 Curse of Aging
-Magic Thorn
+Magical Thorn
 Narrow Pass
 Royal Decree
 Dragon Seeker
@@ -61,5 +61,3 @@ Takuhee
 The Statue of Easter Island
 Tiger Axe
 Two-Headed King Rex
-#
-# Not in v6 pool: Magic Thorn

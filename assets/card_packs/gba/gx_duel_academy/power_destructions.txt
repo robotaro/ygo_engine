@@ -1,7 +1,7 @@
 # Pack: Power Destructions — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Power Destructions (GX1-BP)
 # Cards per pack: 3 | Price: 250 DP | Cards in pack: 53 | Unlocked: Change dorms at least once | Frequency: Once each two weeks
-# 53 distinct cards; all in v6 pool
+# 53 distinct cards; all cards in v6 pool
 ## Secret Rare
 Jinzo
 Spirit of the Pharaoh

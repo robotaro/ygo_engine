@@ -1,6 +1,6 @@
 # Pack: Challenge Cup Tournament Pack — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Challenge Cup Tournament Pack (SDD-BP)
-# 60 distinct cards; all in v6 pool
+# 60 distinct cards; all cards in v6 pool
 ## Rare
 Chimera the Flying Mythical Beast
 Gale Dogra

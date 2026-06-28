@@ -1,6 +1,6 @@
 # Pack: Zombyra the Dark — World Championship Tournament 2004 (GBA, 2004)
 # Source: Yu-Gi-Oh! Fandom wiki — Zombyra the Dark (WC4-BP)
-# 93 distinct cards; 3 not in v6 pool
+# 93 distinct cards; 2 not in v6 pool
 ## (Unsorted)
 Zombyra the Dark
 Destiny Board
@@ -19,7 +19,7 @@ The Emperor's Holiday
 Windstorm of Etaqua
 Breath of Light
 Eradicating Aerosol
-Eternal Draught
+Eternal Drought
 Stain Storm
 Warrior Elimination
 Ekibyo Drakmord
@@ -96,4 +96,4 @@ The Portrait's Secret
 The Thing That Hides in the Mud
 Violent Rain
 #
-# Not in v6 pool: Bright Castle, Eternal Draught, Stain Storm
+# Not in v6 pool: Stain Storm, Bright Castle

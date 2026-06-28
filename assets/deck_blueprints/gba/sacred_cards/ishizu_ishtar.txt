@@ -1,6 +1,7 @@
 // The Sacred Cards (GBA, 2003) — Ishizu Ishtar
 // Source: Yu-Gi-Oh! Fandom wiki — Ishizu Ishtar's Decks
-// 40 cards; 2 not in v6 pool (see _MISMATCHES.md)
+// 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+// ⚠ Egyptian God boss deck: Obelisk the Tormentor — anime/illegal cards with no standard v6.0 ruling; engine needs special handling.
 2 Dark Witch
 3 Dream Clown
 2 Fairy Dragon
@@ -18,10 +19,10 @@
 2 Lady of Faith
 1 Obelisk the Tormentor
 2 Senju of the Thousand Hands
-1 Amazon Archers
+1 Amazoness Archers
 1 Bad Reaction to Simochi
 1 Goblin Fan
 1 Reverse Trap
 //
 // Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Obelisk the Tormentor, Amazon Archers
+//   Obelisk the Tormentor

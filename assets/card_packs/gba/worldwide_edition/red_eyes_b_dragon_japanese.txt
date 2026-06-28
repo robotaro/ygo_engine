@@ -1,6 +1,6 @@
 # Pack: Red-Eyes B. Dragon (Japanese) — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Red-Eyes B. Dragon (Japanese) (SDD-BP)
-# 9 distinct cards; all in v6 pool
+# 9 distinct cards; all cards in v6 pool
 ## Common
 Acid Trap Hole
 Crush Card Virus

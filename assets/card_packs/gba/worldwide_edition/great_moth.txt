@@ -1,6 +1,6 @@
 # Pack: Great Moth — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Great Moth (SDD-BP)
-# 50 distinct cards; all in v6 pool
+# 50 distinct cards; all cards in v6 pool
 ## Rare
 Baby Dragon
 Bladefly

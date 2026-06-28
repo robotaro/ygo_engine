@@ -1,7 +1,7 @@
 # Pack: Spell Collection 1 — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Spell Collection 1 (GX1-BP)
 # Cards per pack: 5 | Price: 100 DP | Cards in pack: 33 | Unlocked: Read "Spell" Tutorial (1-5) | Frequency: Once a week
-# 33 distinct cards; 1 not in v6 pool
+# 33 distinct cards; all cards in v6 pool
 ## Ultra Rare
 Harpie's Feather Duster
 ## Super Rare
@@ -38,6 +38,4 @@ Restructer Revolution
 Rush Recklessly
 The Reliable Guardian
 Smashing Ground
-Shield Crash
-#
-# Not in v6 pool: Shield Crash
+Shield Crush

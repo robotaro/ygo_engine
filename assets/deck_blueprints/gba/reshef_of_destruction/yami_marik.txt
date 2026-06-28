@@ -1,6 +1,7 @@
 // Reshef of Destruction (GBA, 2004) — Yami Marik
 // Source: Yu-Gi-Oh! Fandom wiki — Yami Marik's Decks
 // 41 cards; 1 not in v6 pool (see _MISMATCHES.md)
+// ⚠ Egyptian God boss deck: The Winged Dragon of Ra (Phoenix Mode) — anime/illegal cards with no standard v6.0 ruling; engine needs special handling.
 3 Gil Garth
 1 Byser Shock
 3 Dark Jeroid

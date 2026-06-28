@@ -1,7 +1,7 @@
 # Pack: Basic 1-B — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Basic 1-B (GX1-BP)
 # Cards per pack: 5 | Price: 100 DP | Cards in pack: 40 | Unlocked: Beginning | Frequency: Once a week
-# 40 distinct cards; 2 not in v6 pool
+# 40 distinct cards; all cards in v6 pool
 ## Secret Rare
 Pot of Greed
 ## Ultra Rare
@@ -13,7 +13,7 @@ Hane-Hane
 Acid Rain
 Breath of Light
 Eradicating Aerosol
-Eternal Draught
+Eternal Drought
 Gravedigger Ghoul
 Stop Defense
 Warrior Elimination
@@ -45,7 +45,5 @@ Steel Ogre Grotto #1
 Takuhee
 The Wandering Doomed
 Tongyo
-Trakadon
+Trakodon
 Winged Dragon, Guardian of the Fortress #1
-#
-# Not in v6 pool: Eternal Draught, Trakadon

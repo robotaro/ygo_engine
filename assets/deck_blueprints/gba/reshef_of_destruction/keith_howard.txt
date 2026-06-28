@@ -1,6 +1,7 @@
 // Reshef of Destruction (GBA, 2004) — Keith Howard
 // Source: Yu-Gi-Oh! Fandom wiki — Keith Howard's Decks
 // 40 cards; 5 not in v6 pool (see _MISMATCHES.md)
+// ⚠ Egyptian God boss deck: The Winged Dragon of Ra (Sphere Mode) — anime/illegal cards with no standard v6.0 ruling; engine needs special handling.
 3 Blast Sphere
 1 Launcher Spider
 1 Mechanicalchaser
@@ -28,4 +29,6 @@
 3 Invisible Wire
 //
 // Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Space Megatron, The Winged Dragon of Ra (Sphere Mode), Invisible Wire
+//   Space Megatron
+//   The Winged Dragon of Ra (Sphere Mode)
+//   Invisible Wire

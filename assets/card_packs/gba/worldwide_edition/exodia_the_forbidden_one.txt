@@ -1,6 +1,6 @@
 # Pack: Exodia the Forbidden One — Worldwide Edition: Stairway to the Destined Duel (GBA, 2003)
 # Source: Yu-Gi-Oh! Fandom wiki — Exodia the Forbidden One (SDD-BP)
-# 62 distinct cards; all in v6 pool
+# 62 distinct cards; all cards in v6 pool
 ## Rare
 Curse of Dragon
 Dark Energy

@@ -44,4 +44,4 @@ Mispolymerization
 Wroughtweiler
 Fusion Recovery
 #
-# Not in v6 pool: F.G.D., Master of Dragon Soldier
+# Not in v6 pool: Master of Dragon Soldier, F.G.D.

@@ -103,4 +103,4 @@ Wolf
 Yormungarde
 Zarigun
 #
-# Not in v6 pool: Frog the Jam, Makiu
+# Not in v6 pool: Makiu, Frog the Jam

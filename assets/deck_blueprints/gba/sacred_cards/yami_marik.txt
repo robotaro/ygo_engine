@@ -1,6 +1,7 @@
 // The Sacred Cards (GBA, 2003) — Yami Marik
 // Source: Yu-Gi-Oh! Fandom wiki — Yami Marik's Decks
 // 40 cards; 1 not in v6 pool (see _MISMATCHES.md)
+// ⚠ Egyptian God boss deck: Winged Dragon of Ra — anime/illegal cards with no standard v6.0 ruling; engine needs special handling.
 2 Beast of Talwar
 2 Garnecia Elefantis
 3 Ryu-Kishin Powered

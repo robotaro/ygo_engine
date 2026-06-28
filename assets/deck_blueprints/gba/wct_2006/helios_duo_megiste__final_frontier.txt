@@ -1,7 +1,7 @@
 // Ultimate Masters: World Championship Tournament 2006 (GBA, 2006) — Helios Duo Megiste — Final Frontier
 // Source: Yu-Gi-Oh! Fandom wiki — WCT2006 Free Duel Opponents
-// 40 cards; 9 not in v6 pool (see _MISMATCHES.md)
-2 Helios Duo Megiste
+// 40 cards; 7 not in v6 pool (see _MISMATCHES.md)
+2 Helios Duo Megistus
 1 Helios Tris Megiste
 2 Homunculus Gold
 3 Banisher of the Light
@@ -30,4 +30,8 @@
 1 Sakuretsu Armor
 //
 // Cards not in the v6.0 pool (engine loads the rest; these show as missing):
-//   Helios Duo Megiste, Helios Tris Megiste, Homunculus Gold, Dimensional Warrior, The Ancient Sun Helios, Collapse
+//   Helios Tris Megiste
+//   Homunculus Gold
+//   Dimensional Warrior
+//   The Ancient Sun Helios
+//   Collapse

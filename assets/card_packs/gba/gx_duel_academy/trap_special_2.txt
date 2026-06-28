@@ -1,7 +1,7 @@
 # Pack: Trap Special 2 — GX Duel Academy (GBA, 2006)
 # Source: Yu-Gi-Oh! Fandom wiki — Trap Special 2 (GX1-BP)
 # Cards per pack: 3 | Price: 150 DP | Cards in pack: 28 | Unlocked: Get 90% Collection Rate on "Trap Collection 2" Pack | Frequency: Once a week
-# 28 distinct cards; 3 not in v6 pool
+# 28 distinct cards; 2 not in v6 pool
 ## Ultra Rare
 Magic Cylinder
 ## Super Rare
@@ -20,7 +20,7 @@ Dust Tornado
 Solomon's Lawbook
 Shadow of Eyes
 Reckless Greed
-Hidden Soldier
+Hidden Soldiers
 Calamity of the Wicked
 Huge Revolution
 Disarmament
@@ -35,4 +35,4 @@ Fire Darts
 A Rival Appears!
 D.D. Trap Hole
 #
-# Not in v6 pool: Calamity of the Wicked, Corpse of Yata-Garasu, Hidden Soldier
+# Not in v6 pool: Corpse of Yata-Garasu, Calamity of the Wicked
