@@ -254,10 +254,19 @@
     else if (pendingTarget) chooseTarget(iid)
   }
 
-  // Activate a Set Continuous Trap already on your field (e.g. Call of the Haunted).
+  // A Spell/Trap card may be a target (e.g. Mystical Space Typhoon hits either
+  // player's), or — for your own Set Continuous Trap — something to activate.
   function onClickOwnSpellTrap(iid, zoneIndex) {
     if (!yourTurn) return
+    if ($targetRequest) return chooseEngineTarget(iid)
+    if (pendingTarget) return chooseTarget(iid)
     if (canActivate(iid)) beginActivate(iid, zoneIndex)
+  }
+
+  function onClickOppSpellTrap(iid) {
+    if (!yourTurn) return
+    if ($targetRequest) chooseEngineTarget(iid)
+    else if (pendingTarget) chooseTarget(iid)
   }
 
   function onHandClick(iid) {
@@ -305,7 +314,13 @@
 
       <div class="zonerow">
         {#each opp.spellTrapZones as slot}
-          <div class="slot st"><CardTile card={slot} faceDown={slot?.faceDown} small /></div>
+          <div
+            class="slot st"
+            class:targetable={slot && targetCandidates.includes(slot.iid)}
+            onclick={() => slot && onClickOppSpellTrap(slot.iid)}
+          >
+            <CardTile card={slot} faceDown={slot?.faceDown} small />
+          </div>
         {/each}
       </div>
       <div class="zonerow">
@@ -392,6 +407,7 @@
             <div
               class="slot st"
               class:actionable={yourTurn && canActivate(slot.iid)}
+              class:targetable={targetCandidates.includes(slot.iid)}
               onclick={() => onClickOwnSpellTrap(slot.iid, i)}
             >
               <CardTile card={slot} small />

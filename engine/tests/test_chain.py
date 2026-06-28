@@ -15,7 +15,7 @@ from ygo.moves import (
     legal_actions,
     response_options,
 )
-from ygo.serialize import match_intent
+from ygo.serialize import legal_to_dict, match_intent
 from ygo.paths import DECKS_DIR
 from ygo.setup import new_duel
 from ygo.state import GameState
@@ -181,3 +181,28 @@ def test_bot_duel_with_traps_completes():
     )
     result = Engine(duel.state, [GreedyAgent(), GreedyAgent()], max_turns=300).run()
     assert result.winner in (0, 1, None)
+
+
+def test_mst_can_target_either_players_spell_trap():
+    # Web-contract regression: Mystical Space Typhoon must offer BOTH players'
+    # Spell/Trap cards as targets (the board UI once only wired your own row).
+    s = GameState.new(("You", "CPU"), seed=0)
+    s.phase, s.turn_count, s.turn_player = Phase.MAIN_1, 2, 0
+    mst = s.create_instance(reg.get("Mystical Space Typhoon"), owner=0, zone=Zone.HAND)
+    s.players[0].hand.append(mst.iid)
+    mine = s.create_instance(reg.get("Mirror Force"), owner=0, zone=Zone.DECK)
+    s.players[0].deck.append(mine.iid)
+    s.place_spell_trap(mine.iid, 0, 0, Position.FACE_DOWN)
+    mine.set_on_turn = 1
+    foe = s.create_instance(reg.get("Trap Hole"), owner=1, zone=Zone.DECK)
+    s.players[1].deck.append(foe.iid)
+    s.place_spell_trap(foe.iid, 1, 0, Position.FACE_DOWN)
+    foe.set_on_turn = 1
+
+    tsets = legal_to_dict(s, 0, with_pass=True)["activatable"].get(str(mst.iid), [])
+    assert [mine.iid] in tsets  # your own Set card
+    assert [foe.iid] in tsets  # AND the opponent's
+    action = match_intent(
+        {"kind": "activate", "iid": mst.iid, "targets": [foe.iid]}, legal_actions(s, 0), s
+    )
+    assert action is not None and action.targets == (foe.iid,)
