@@ -18,6 +18,7 @@ from .effects import (
     BounceTargetsToHand,
     DamageEqualToAttackerAtk,
     DestroyAllFieldSpells,
+    DestroyAllSpellTraps,
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
     DestroyHighestAtkMonster,
@@ -303,6 +304,17 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="flip",
             target=TargetSpec(count=3, where="any_monster", up_to=True),
             resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    # --- Effects Batch 12: mass Spell/Trap destruction + Defense-position removal ---
+    "Heavy Storm": (Effect(resolve=(DestroyAllSpellTraps(),)),),  # all S/T on the field
+    "Harpie's Feather Duster": (  # all S/T the opponent controls
+        Effect(resolve=(DestroyAllSpellTraps(side=OPPONENT),)),
+    ),
+    "Shield Crush": (  # destroy 1 Defense Position monster on the field
+        Effect(
+            target=TargetSpec(count=1, where="any_monster", defense_position=True),
+            resolve=(DestroyTargets(),),
         ),
     ),
     # Bounce to the top of the Deck (these compose Batch 8's discard cost).

@@ -205,6 +205,7 @@ class TargetSpec:
     races: frozenset = frozenset()
     attributes: frozenset = frozenset()
     face_up: bool = False  # restrict to face-up monsters (e.g. Soul Taker)
+    defense_position: bool = False  # restrict to Defense Position monsters (Shield Crush)
     up_to: bool = False  # ``count`` is a maximum — choose 1..count (Penguin Soldier)
 
 
@@ -332,6 +333,25 @@ class DestroyAllFieldSpells(Primitive):
             fz = player.field_zone
             if fz is not None:
                 ctx.state.send_to_graveyard(fz)
+
+
+@dataclass(frozen=True)
+class DestroyAllSpellTraps(Primitive):
+    """Heavy Storm (``side=None``) / Harpie's Feather Duster (``side=OPPONENT``):
+    destroy every Spell/Trap on the field — the Spell & Trap zones plus the Field
+    Spell zone — for both players or only one side."""
+
+    side: str | None = None  # None = both, else SELF / OPPONENT
+
+    def execute(self, ctx: EffectContext) -> None:
+        players = (0, 1) if self.side is None else (ctx.side(self.side),)
+        victims: list[int] = []
+        for pl in players:
+            victims += [i for i in ctx.state.players[pl].spell_trap_zones if i is not None]
+            if ctx.state.players[pl].field_zone is not None:
+                victims.append(ctx.state.players[pl].field_zone)
+        for iid in victims:
+            ctx.state.send_to_graveyard(iid)
 
 
 @dataclass(frozen=True)
