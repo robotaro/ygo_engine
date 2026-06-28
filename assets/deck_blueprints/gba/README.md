@@ -26,7 +26,7 @@ Plus **62 opponent portraits** (one per unique opponent).
 ```
 deck_blueprints/gba/
   <game>/*.txt        enemy decks — "<count> Card Name", loadable by ygo.decks.load_decklist
-  _portraits/*.webp   opponent portraits (filename = opponent slug)
+  _portraits/*.png    opponent portraits (filename = opponent slug)
   INDEX.md            per-game deck listing
   _MISMATCHES.md      deck cards not in the v6.0 pool
 card_packs/gba/
@@ -43,7 +43,7 @@ card_packs/gba/
 - **Packs**: `# metadata` header (cards/pack, price, unlock), card names grouped by
   `## Rarity`. **Filter/random packs** ("All Effect Monsters", "Dorothy's Gift") have
   no fixed list — the file records the rule instead.
-- **Images**: WebP. Filenames are the opponent/pack slug, so they pair with the `.txt`.
+- **Images**: PNG. Filenames are the opponent/pack slug, so they pair with the `.txt`.
 
 ## Coverage & caveats (read me)
 - **Card resolution**: ~98% of all card names resolve to the v6.0 pool. The rest are
