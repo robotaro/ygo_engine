@@ -16,6 +16,7 @@ from .effects import (
     BanishTargets,
     BounceTargetsToDeck,
     BounceTargetsToHand,
+    CountTimes,
     DamageEqualToAttackerAtk,
     DestroyAllFieldSpells,
     DestroyAllSpellTraps,
@@ -45,6 +46,7 @@ from .effects import (
     StandbyUpkeep,
     SwitchTargetsToAttack,
     TakeControl,
+    TargetAttack,
     TargetSpec,
     Trigger,
     UnionMod,
@@ -332,6 +334,68 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             discard_cost=1,
             target=TargetSpec(count=1, where="opponent_card_field"),
             resolve=(BounceTargetsToDeck(to_top=True),),
+        ),
+    ),
+    # --- Effects Batch 13: dynamic values (amount derived from the board) ---
+    # Count-based burn/heal ("... for each ..."): the amount is computed at
+    # resolution time from a card count via CountTimes(per, pool). The Normal
+    # Traps use the same "activate a Set card at will" route as Call of the
+    # Haunted (speed-2 ignition) — see the activation note in moves.py.
+    "Restructer Revolution": (  # Normal Spell: 200 damage per card in the opponent's hand
+        Effect(resolve=(InflictDamage(OPPONENT, value=CountTimes(200, "opponent_hand")),)),
+    ),
+    "Just Desserts": (  # Normal Trap: 500 damage per monster the opponent controls
+        Effect(
+            speed=2,
+            timing="ignition",
+            resolve=(InflictDamage(OPPONENT, value=CountTimes(500, "opponent_monsters")),),
+        ),
+    ),
+    "Secret Barrel": (  # Normal Trap: 200 per card in the opponent's hand and on their field
+        Effect(
+            speed=2,
+            timing="ignition",
+            resolve=(InflictDamage(OPPONENT, value=CountTimes(200, "opponent_hand_and_field")),),
+        ),
+    ),
+    "Cemetary Bomb": (  # Normal Trap: 100 per card in the opponent's Graveyard
+        Effect(
+            speed=2,
+            timing="ignition",
+            resolve=(InflictDamage(OPPONENT, value=CountTimes(100, "opponent_graveyard")),),
+        ),
+    ),
+    "D.D. Dynamite": (  # Normal Trap: 300 per card the opponent has banished
+        Effect(
+            speed=2,
+            timing="ignition",
+            resolve=(InflictDamage(OPPONENT, value=CountTimes(300, "opponent_banished")),),
+        ),
+    ),
+    "Gift of The Mystical Elf": (  # Normal Trap: gain 300 LP per monster on the field
+        Effect(
+            speed=2,
+            timing="ignition",
+            resolve=(GainLifePoints(SELF, value=CountTimes(300, "all_monsters")),),
+        ),
+    ),
+    # Stat-based: the value is the attacking monster's ATK. These are reactive
+    # Traps whose trigger auto-targets the attacker (subject="attacker"), so
+    # TargetAttack() reads ctx.targets[0].
+    "Enchanted Javelin": (  # Normal Trap: gain LP equal to the attacking monster's ATK
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            resolve=(GainLifePoints(SELF, value=TargetAttack()),),
+        ),
+    ),
+    "Draining Shield": (  # Normal Trap: negate the attack, gain LP equal to that monster's ATK
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            resolve=(NegateAttack(), GainLifePoints(SELF, value=TargetAttack())),
         ),
     ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---

@@ -225,6 +225,82 @@ class Trigger:
 
 
 # --------------------------------------------------------------------------- #
+#  Dynamic values — an effect amount computed from the board at resolution time
+# --------------------------------------------------------------------------- #
+class ValueSource:
+    """A number computed when an effect resolves, instead of a fixed constant.
+
+    ``InflictDamage`` / ``GainLifePoints`` read either their flat ``amount`` or, if
+    one is given, a ``value`` source — the "equal to its ATK" and "for each ..."
+    cards. Each subclass returns one int from the ``EffectContext``.
+    """
+
+    def value(self, ctx: EffectContext) -> int:  # pragma: no cover - interface
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class TargetAttack(ValueSource):
+    """The (effective) ATK of a targeted monster; ``index`` picks which target (0 =
+    the first/only one). For "equal to its ATK" effects whose value is the monster
+    the effect points at — including Traps that auto-target the attacking monster
+    (Draining Shield, Enchanted Javelin). 0 if that target has already left play."""
+
+    index: int = 0
+
+    def value(self, ctx: EffectContext) -> int:
+        if self.index >= len(ctx.targets):
+            return 0
+        iid = ctx.targets[self.index]
+        if iid not in ctx.state.cards:
+            return 0
+        return ctx.state.effective_attack(iid)
+
+
+@dataclass(frozen=True)
+class CountTimes(ValueSource):
+    """``per`` × the number of cards in a named pool — the "for each ..." burn/heal
+    cards (Just Desserts, Secret Barrel, Cemetary Bomb, D.D. Dynamite, Gift of The
+    Mystical Elf). Pools are resolved relative to the effect's controller."""
+
+    per: int = 0
+    pool: str = "opponent_monsters"
+
+    def value(self, ctx: EffectContext) -> int:
+        return self.per * _count_pool(ctx, self.pool)
+
+
+def _field_card_count(state: "GameState", player: int) -> int:
+    """Cards ``player`` controls on the field: their Monster + Spell/Trap zones,
+    plus a Field Spell if any."""
+    p = state.players[player]
+    n = sum(1 for i in p.monster_zones if i is not None)
+    n += sum(1 for i in p.spell_trap_zones if i is not None)
+    if p.field_zone is not None:
+        n += 1
+    return n
+
+
+def _count_pool(ctx: EffectContext, pool: str) -> int:
+    """Resolve a CountTimes pool name to a card count, relative to the controller."""
+    s = ctx.state
+    opp = s.opponent_of(ctx.controller)
+    if pool == "opponent_monsters":
+        return sum(1 for i in s.players[opp].monster_zones if i is not None)
+    if pool == "all_monsters":
+        return sum(1 for pl in (0, 1) for i in s.players[pl].monster_zones if i is not None)
+    if pool == "opponent_hand":
+        return len(s.players[opp].hand)
+    if pool == "opponent_hand_and_field":
+        return len(s.players[opp].hand) + _field_card_count(s, opp)
+    if pool == "opponent_graveyard":
+        return len(s.players[opp].graveyard)
+    if pool == "opponent_banished":
+        return len(s.players[opp].banished)
+    return 0
+
+
+# --------------------------------------------------------------------------- #
 #  Primitives — the fixed verb library
 # --------------------------------------------------------------------------- #
 class Primitive:
@@ -430,24 +506,30 @@ class SwitchTargetsToAttack(Primitive):
 
 @dataclass(frozen=True)
 class InflictDamage(Primitive):
-    """Reduce a player's Life Points by a fixed amount (burn)."""
+    """Reduce a player's Life Points (burn). The amount is the flat ``amount``, or
+    — when given — a dynamic ``value`` computed at resolution time."""
 
     player: str = OPPONENT
     amount: int = 0
+    value: ValueSource | None = None
 
     def execute(self, ctx: EffectContext) -> None:
-        ctx.state.players[ctx.side(self.player)].life_points -= self.amount
+        amount = self.value.value(ctx) if self.value is not None else self.amount
+        ctx.state.players[ctx.side(self.player)].life_points -= amount
 
 
 @dataclass(frozen=True)
 class GainLifePoints(Primitive):
-    """Increase a player's Life Points by a fixed amount (the healing spells)."""
+    """Increase a player's Life Points (the healing cards). The amount is the flat
+    ``amount``, or — when given — a dynamic ``value`` computed at resolution time."""
 
     player: str = SELF
     amount: int = 0
+    value: ValueSource | None = None
 
     def execute(self, ctx: EffectContext) -> None:
-        ctx.state.players[ctx.side(self.player)].life_points += self.amount
+        amount = self.value.value(ctx) if self.value is not None else self.amount
+        ctx.state.players[ctx.side(self.player)].life_points += amount
 
 
 # --- Slice 3: reactive primitives (read the triggering event) ---
