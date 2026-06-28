@@ -181,7 +181,7 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         card = state.inst(iid).card
         if card.is_spell:
             effect = next(
-                (e for e in card.effects if e.timing in ("ignition", "quick")), None
+                (e for e in card.effects if e.timing in ("ignition", "quick", "fusion")), None
             )
             if effect is not None and (
                 effect.condition is None or effect.condition(state, player)
@@ -236,6 +236,49 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
     if spec.count == 1:
         return [(c,) for c in candidates]
     return [tuple(combo) for combo in combinations(candidates, spec.count)]
+
+
+def makeable_fusions(state: GameState, controller: int) -> list[tuple[int, list[int]]]:
+    """List ``(fusion_iid, material_iids)`` the controller can Fusion Summon now.
+
+    A Fusion Monster in their Extra Deck qualifies when its named materials (from
+    the FUSIONS recipe book) are all present among the monsters in their hand and
+    Monster Zones, and they have a free Monster Zone to summon it into.
+    """
+    from .card_effects import FUSIONS
+
+    p = state.players[controller]
+    free = sum(1 for i in p.monster_zones if i is None)
+    field = [i for i in p.monster_zones if i is not None]
+    pool = [i for i in p.hand if state.inst(i).card.is_monster] + field
+    out: list[tuple[int, list[int]]] = []
+    for fid in p.extra_deck:
+        recipe = FUSIONS.get(state.inst(fid).card.name)
+        if not recipe:
+            continue
+        materials = _match_materials(state, recipe, pool)
+        if materials is None:
+            continue
+        # A zone will be open after the field materials leave (so a full field of
+        # exactly the materials is still a legal Fusion).
+        on_field = sum(1 for m in materials if m in field)
+        if free + on_field >= 1:
+            out.append((fid, materials))
+    return out
+
+
+def _match_materials(state: GameState, recipe: tuple[str, ...], pool: list[int]) -> list[int] | None:
+    """Assign each required material name to a distinct pool card (no reuse), or
+    None if the pool can't satisfy the recipe."""
+    remaining = list(pool)
+    chosen: list[int] = []
+    for name in recipe:
+        match = next((i for i in remaining if state.inst(i).card.name == name), None)
+        if match is None:
+            return None
+        remaining.remove(match)
+        chosen.append(match)
+    return chosen
 
 
 def _graveyard_monsters(state: GameState, players: tuple[int, ...]) -> list[int]:

@@ -6,6 +6,7 @@
     legal,
     responsePrompt,
     targetRequest,
+    choosePrompt,
     awaiting,
     logs,
     result,
@@ -142,6 +143,11 @@
   }
   function respondPass() {
     sendIntent({ kind: 'pass' })
+  }
+
+  // engine-driven single-card chooser (e.g. which Fusion Monster to summon)
+  function chooseCard(iid) {
+    sendIntent({ kind: 'choose', iid })
   }
 
   // engine-driven target prompt (forced effects, e.g. Man-Eater Bug)
@@ -592,6 +598,22 @@
     </aside>
   {/if}
 
+  {#if $choosePrompt && $awaiting}
+    <div class="overlay">
+      <div class="resultcard choose">
+        <h2>{$choosePrompt.prompt}</h2>
+        <div class="choose-options">
+          {#each $choosePrompt.options as opt}
+            <button class="choosecard" onclick={() => chooseCard(opt.iid)}>
+              <CardTile card={opt} small />
+              <span class="cn">{opt.name}</span>
+            </button>
+          {/each}
+        </div>
+      </div>
+    </div>
+  {/if}
+
   {#if $responsePrompt && $awaiting}
     <div class="overlay">
       <div class="resultcard respond">
@@ -876,6 +898,33 @@
   }
   .respond {
     border-color: #c9b3ff;
+  }
+  .choose {
+    border-color: #6cff9e;
+  }
+  .choose-options {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .choosecard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    padding: 6px;
+    border-radius: 8px;
+  }
+  .choosecard:hover {
+    background: rgba(108, 255, 158, 0.12);
+  }
+  .choosecard .cn {
+    font-size: 11px;
+    color: #eee;
+    max-width: 80px;
   }
   .respond-options {
     display: flex;

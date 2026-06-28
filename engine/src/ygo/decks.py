@@ -55,7 +55,9 @@ def parse_blueprint(path: Path | str) -> list[tuple[str, int, str]]:
         if not line:
             continue
         if line.startswith("//") or line.startswith("#"):
-            if "EXTRA" in line.upper():
+            # Only a real header (e.g. "#EXTRA DECK") switches section — a comment
+            # that merely mentions "extra deck" must not.
+            if line.lstrip("/#! ").upper().startswith("EXTRA"):
                 section = "extra"
             continue  # comment / section header
         match = _LINE_RE.match(line)

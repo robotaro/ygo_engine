@@ -41,3 +41,11 @@
 1 Snatch Steal
 // Slice 10 — draw-trigger Continuous Trap
 1 Solemn Wishes
+// Slice 11 — Fusion: Polymerization, its materials, and the Fusion monsters
+1 Polymerization
+1 Gaia The Fierce Knight
+1 Curse of Dragon
+1 Flame Manipulator
+1 Masaki the Legendary Swordsman
+1 Gaia the Dragon Champion
+1 Flame Swordsman

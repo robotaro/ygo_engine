@@ -59,6 +59,13 @@ def _has_free_monster_zone(state, controller) -> bool:
     return state.first_empty_monster_zone(controller) is not None
 
 
+def _can_fusion_summon(state, controller) -> bool:
+    """Gate Polymerization: at least one Extra Deck Fusion is makeable right now."""
+    from .moves import makeable_fusions  # lazy import avoids a card_effects<->moves cycle
+
+    return bool(makeable_fusions(state, controller))
+
+
 EFFECTS: dict[str, tuple[Effect, ...]] = {
     # --- Slice 1: Ignition Normal Spells, no cost, no targets ---
     "Pot of Greed": (Effect(resolve=(Draw(count=2),)),),
@@ -200,6 +207,20 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # Solemn Wishes — Continuous Trap: no resolution of its own. Set it, then
     # activate it (flip face-up) on a later turn; its CONTINUOUS draw layer pays out.
     "Solemn Wishes": (Effect(speed=2, timing="ignition"),),
+    # --- Slice 11: Fusion Summoning ---
+    # Polymerization — the "fusion" timing routes to the engine's Fusion flow:
+    # pick a makeable Extra Deck monster, send its materials from hand/field to the
+    # GY, and Special Summon it. Only activatable when something is makeable.
+    "Polymerization": (Effect(timing="fusion", condition=_can_fusion_summon),),
+}
+
+
+# Fusion recipes (Slice 11): Fusion monster name -> the exact material card names
+# it needs (multiplicity matters). Materials come from the controller's hand/field.
+FUSIONS: dict[str, tuple[str, ...]] = {
+    "Gaia the Dragon Champion": ("Gaia The Fierce Knight", "Curse of Dragon"),
+    "Flame Swordsman": ("Flame Manipulator", "Masaki the Legendary Swordsman"),
+    "B. Skull Dragon": ("Summoned Skull", "Red-Eyes B. Dragon"),
 }
 
 

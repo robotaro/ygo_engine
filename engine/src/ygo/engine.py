@@ -26,6 +26,7 @@ from .moves import (
     SetSpellTrap,
     apply,
     legal_actions,
+    makeable_fusions,
     response_options,
     resolve_effect,
     reveal_for_activation,
@@ -343,10 +344,42 @@ class Engine:
         """Turn player activates a Spell: it becomes Chain Link 1, then build/resolve."""
         s = self.state
         card = s.inst(action.iid).card
+        if any(e.timing == "fusion" for e in card.effects):
+            self._fusion_summon(action.iid, controller)
+            return
         effect = next((e for e in card.effects if e.timing in ("ignition", "quick")), card.effects[0])
         reveal_for_activation(s, action.iid, action.zone_index)
         self.log(f"  {s.players[controller].name} activates {card.name}")
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
+
+    def _fusion_summon(self, poly_iid: int, controller: int) -> None:
+        """Polymerization: pick a makeable Fusion, send its materials from hand/field
+        to the GY, and Special Summon it from the Extra Deck."""
+        s = self.state
+        options = makeable_fusions(s, controller)
+        if not options:
+            return  # nothing to make (shouldn't happen — gated at activation)
+        reveal_for_activation(s, poly_iid)  # Polymerization shows in a Spell/Trap zone
+        self.log(f"  {s.players[controller].name} activates Polymerization")
+        self._changed()
+
+        fusion_iids = [fid for fid, _ in options]
+        chosen = self.agents[controller].choose_card(s, "Fusion Summon which monster?", fusion_iids)
+        if chosen not in fusion_iids:
+            chosen = fusion_iids[0]
+        materials = next(mats for fid, mats in options if fid == chosen)
+
+        names = " + ".join(s.inst(m).name for m in materials)
+        for m in materials:
+            s.send_to_graveyard(m)
+        index = s.first_empty_monster_zone(controller)
+        s.place_monster(chosen, controller, index, Position.FACE_UP_ATTACK)
+        s.inst(chosen).summoned_this_turn = True
+        self.log(f"  Fusion Summon: {s.inst(chosen).name} ({names})")
+        s.send_to_graveyard(poly_iid)  # Polymerization is spent (Normal Spell)
+        self._check_life_points()
+        self._changed()
+        self._check_field_to_gy_triggers()  # materials leaving the field may trigger (Sangan)
 
     def _response_window(self, event: dict) -> None:
         """Give the opponent of the acting player a chance to start a chain."""

@@ -45,6 +45,10 @@ class Agent:
         )
         return tuple(ranked[: spec.count])
 
+    def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
+        """Pick one card iid from a list (e.g. which Fusion Monster to summon)."""
+        return option_iids[0] if option_iids else None
+
 
 class RandomAgent(Agent):
     """Picks uniformly at random. Useful for fuzzing every rules path."""
@@ -60,6 +64,9 @@ class RandomAgent(Agent):
 
     def choose_targets(self, state: GameState, source_iid: int, spec, candidates: list[int]):
         return tuple(self.rng.sample(candidates, spec.count))
+
+    def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
+        return self.rng.choice(option_iids) if option_iids else None
 
 
 class GreedyAgent(Agent):
@@ -118,6 +125,16 @@ class GreedyAgent(Agent):
         ]
         if revivals:
             return max(revivals, key=lambda a: state.inst(a.targets[0]).card.attack or 0)
+        # Fusion Summon whenever Polymerization can make something (it's a free big body).
+        fusions = [
+            a
+            for a in legal
+            if isinstance(a, ActivateSpell)
+            and not a.targets
+            and state.inst(a.iid).card.name == "Polymerization"
+        ]
+        if fusions:
+            return fusions[0]
         summons = [a for a in legal if isinstance(a, NormalSummon)]
         if summons:
             # biggest ATK, fewest tributes
@@ -175,3 +192,9 @@ class GreedyAgent(Agent):
             if state.inst(a.iid).card.is_trap:
                 return a
         return None
+
+    def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
+        # Summon the strongest Fusion Monster on offer.
+        if not option_iids:
+            return None
+        return max(option_iids, key=lambda i: state.inst(i).card.attack or 0)

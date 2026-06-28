@@ -134,6 +134,37 @@ class HumanAgent(Agent):
                 return tuple(chosen)
             self.session.send({"type": "illegal", "intent": intent})
 
+    def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
+        """Pick one card from a list (e.g. which Fusion Monster to summon)."""
+        self.session.send(
+            {
+                "type": "decision",
+                "context": "choose",
+                "player": self.player,
+                "state": state_to_dict(state, self.player),
+                "prompt": prompt,
+                "options": [
+                    {
+                        "iid": i,
+                        "name": state.inst(i).card.name,
+                        "attack": state.inst(i).card.attack,
+                        "defense": state.inst(i).card.defense,
+                        "level": state.inst(i).card.level,
+                        "imageId": state.inst(i).card.image_id,
+                    }
+                    for i in option_iids
+                ],
+            }
+        )
+        while True:
+            intent = self.session.wait_for_intent()
+            if intent is None:
+                raise EngineAborted()
+            iid = intent.get("iid")
+            if intent.get("kind") == "choose" and iid in option_iids:
+                return iid
+            self.session.send({"type": "illegal", "intent": intent})
+
 
 class GameSession:
     def __init__(self, *, deck_a: Path, deck_b: Path, seed: int = 0, human_player: int = 0):
