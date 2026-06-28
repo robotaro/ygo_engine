@@ -36,3 +36,6 @@
 1 Messenger of Peace
 1 Burning Land
 1 Cure Mermaid
+// Slice 9 — take-control
+1 Change of Heart
+1 Snatch Steal

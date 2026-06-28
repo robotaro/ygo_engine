@@ -108,18 +108,20 @@ class StandbyUpkeep:
         (Messenger of Peace's cost, Cure Mermaid's recovery).
       * "turn_player" — every Standby Phase, always hitting the active player
         (Burning Land's 500 to whoever's turn it is).
+      * "opponent"    — only the controller's *opponent's* Standby Phase, and the
+        opponent is the beneficiary (Snatch Steal's 1000 LP to its victim).
 
     Exactly one knob is set per instance:
-      * ``pay_life``  — the controller must pay this to keep the card; if they
+      * ``pay_life``  — the beneficiary must pay this to keep the card; if they
         cannot (it would leave them at 0 LP or below), the card is destroyed.
-      * ``gain_life`` — the controller gains this much LP.
+      * ``gain_life`` — the beneficiary gains this much LP.
       * ``burn_life`` — the active (turn) player loses this much LP.
     """
 
     pay_life: int = 0
     gain_life: int = 0
     burn_life: int = 0
-    whose: str = "controller"  # "controller" | "turn_player"
+    whose: str = "controller"  # "controller" | "turn_player" | "opponent"
 
 
 @dataclass(frozen=True)
@@ -363,6 +365,42 @@ class SpecialSummonFromGraveyard(Primitive):
         if self.link:
             ctx.state.inst(ctx.source_iid).linked_to = target
             inst.linked_to = ctx.source_iid
+
+
+# --- Slice 9: take-control ---
+@dataclass(frozen=True)
+class TakeControl(Primitive):
+    """Move the targeted monster to the controller's side of the field.
+
+    ``until_end_of_turn`` (Change of Heart): control returns to the original
+    controller during this turn's End Phase. ``equip`` (Snatch Steal): the source
+    Equip card stays attached and control reverts when that Equip leaves the
+    field. Keeps the monster's battle position ("regardless of position"). Fails
+    quietly (the Equip going to the Graveyard) if the taker has no free Monster
+    Zone or the target is gone.
+    """
+
+    until_end_of_turn: bool = False
+    equip: bool = False
+
+    def execute(self, ctx: EffectContext) -> None:
+        target = ctx.targets[0] if ctx.targets else None
+        monster = ctx.state.cards.get(target) if target is not None else None
+        taker = ctx.controller
+        ok = monster is not None and monster.zone is Zone.MONSTER and monster.controller != taker
+        index = ctx.state.first_empty_monster_zone(taker) if ok else None
+        if not ok or index is None:
+            if self.equip:
+                ctx.state.send_to_graveyard(ctx.source_iid)  # nothing to take -> to the GY
+            return
+        original = monster.controller
+        ctx.state.move_control(target, taker, index)
+        monster.control_reverts_to = original
+        if self.until_end_of_turn:
+            monster.control_until_end_of_turn = ctx.state.turn_count
+        if self.equip:
+            ctx.state.inst(ctx.source_iid).equipped_to = target
+            monster.control_equip_iid = ctx.source_iid
 
 
 # --------------------------------------------------------------------------- #

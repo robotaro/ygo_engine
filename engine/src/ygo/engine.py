@@ -192,9 +192,14 @@ class Engine:
         controller = inst.controller
         if mod.whose == "controller" and controller != tp:
             return False  # only fires during the controller's own Standby Phase
+        if mod.whose == "opponent" and controller == tp:
+            return False  # only fires during the controller's opponent's Standby Phase
+        # The beneficiary (who gains/pays) is the controller, except "opponent"
+        # upkeeps (Snatch Steal), which benefit the controller's opponent.
+        beneficiary = s.opponent_of(controller) if mod.whose == "opponent" else controller
         name = inst.name
         if mod.pay_life:
-            player = s.players[controller]
+            player = s.players[beneficiary]
             if player.life_points > mod.pay_life:
                 player.life_points -= mod.pay_life
                 self.log(f"  {player.name} pays {mod.pay_life} LP to maintain {name}")
@@ -203,7 +208,7 @@ class Engine:
                 s.send_to_graveyard(inst.iid)
             return True
         if mod.gain_life:
-            player = s.players[controller]
+            player = s.players[beneficiary]
             player.life_points += mod.gain_life
             self.log(f"  {player.name} gains {mod.gain_life} LP from {name}")
             return True
@@ -440,11 +445,43 @@ class Engine:
             if partner is None or partner.zone not in (Zone.MONSTER, Zone.SPELL_TRAP):
                 s.send_to_graveyard(inst.iid)
 
+    def _cleanup_control(self) -> None:
+        """Snatch Steal: when the control-granting Equip leaves the field (or is no
+        longer attached), control of the monster returns to its owner."""
+        s = self.state
+        for inst in list(s.cards.values()):
+            eid = inst.control_equip_iid
+            if eid is None or inst.zone is not Zone.MONSTER:
+                continue
+            equip = s.cards.get(eid)
+            if equip is None or equip.zone is not Zone.SPELL_TRAP or equip.equipped_to != inst.iid:
+                self._return_control(inst)
+
+    def _return_control(self, monster) -> None:
+        """Hand a monster back to its original controller; if their field is full it
+        can't return and is sent to the Graveyard."""
+        s = self.state
+        original = monster.control_reverts_to
+        monster.control_reverts_to = None
+        monster.control_until_end_of_turn = None
+        monster.control_equip_iid = None
+        if original is None:
+            return
+        index = s.first_empty_monster_zone(original)
+        if index is None:
+            self.log(f"  {monster.name} can't return to {s.players[original].name} — to the Graveyard")
+            s.send_to_graveyard(monster.iid)
+        else:
+            s.move_control(monster.iid, original, index)
+            self.log(f"  {monster.name} returns to {s.players[original].name}")
+
     def _check_field_to_gy_triggers(self) -> None:
         """Reconcile the board after cards leave the field: destroy orphaned Equips
-        and broken bonds, then fire "sent from field to GY" effects (Sangan)."""
+        and broken bonds, return loaned monsters, then fire "sent from field to GY"
+        effects (Sangan)."""
         self._cleanup_equips()
         self._cleanup_linked()
+        self._cleanup_control()
         if self._processing_gy:
             return  # a nested resolution; the outer loop will drain the queue
         self._processing_gy = True
@@ -470,10 +507,26 @@ class Engine:
                 # That resolution may have broken more bonds / orphaned more Equips.
                 self._cleanup_equips()
                 self._cleanup_linked()
+                self._cleanup_control()
         finally:
             self._processing_gy = False
 
+    def _revert_end_of_turn_control(self, tp: int) -> None:
+        """Change of Heart: temporary control loans taken this turn end now."""
+        s = self.state
+        reverted = False
+        for inst in list(s.cards.values()):
+            if inst.control_until_end_of_turn == s.turn_count and inst.zone is Zone.MONSTER:
+                self._return_control(inst)
+                reverted = True
+        if reverted:
+            self._changed()
+            self._check_field_to_gy_triggers()
+
     def _end_phase(self, tp: int) -> None:
+        self._revert_end_of_turn_control(tp)
+        if self.result is not None:
+            return
         s = self.state
         for _ in range(_MAX_ACTIONS_PER_PHASE):
             menu = legal_actions(s, tp)  # discards only, no Pass while over the limit

@@ -31,6 +31,7 @@ from .effects import (
     SpecialSummonFromGraveyard,
     StandbyUpkeep,
     SwitchTargetsToAttack,
+    TakeControl,
     TargetSpec,
     Trigger,
 )
@@ -173,6 +174,27 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
     # Cure Mermaid is an Effect Monster with no activated ability — only the
     # continuous Standby recovery below — so it needs no EFFECTS entry.
+    # --- Slice 9: take-control ---
+    # Change of Heart — Normal Spell: borrow an opponent's monster (any position)
+    # until your End Phase. Needs a free Monster Zone to receive it.
+    "Change of Heart": (
+        Effect(
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(TakeControl(until_end_of_turn=True),),
+        ),
+    ),
+    # Snatch Steal — Equip Spell: take control while equipped; control reverts when
+    # the Equip leaves the field (its Standby LP gift lives in CONTINUOUS below).
+    "Snatch Steal": (
+        Effect(
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(TakeControl(equip=True),),
+        ),
+    ),
 }
 
 
@@ -205,4 +227,7 @@ CONTINUOUS: dict[str, tuple] = {
     # Cure Mermaid (Effect Monster): recover 800 each of your Standby Phases — the
     # same hook, on a monster, proving it isn't tied to Spells/Traps.
     "Cure Mermaid": (StandbyUpkeep(gain_life=800, whose="controller"),),
+    # --- Slice 9: take-control ---
+    # Snatch Steal gifts its victim 1000 LP at each of *their* Standby Phases.
+    "Snatch Steal": (StandbyUpkeep(gain_life=1000, whose="opponent"),),
 }

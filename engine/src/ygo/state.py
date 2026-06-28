@@ -16,7 +16,7 @@ import random
 from dataclasses import dataclass, field
 
 from .cards import CardDef
-from .effects import FieldMod
+from .effects import EquipMod, FieldMod
 from .enums import Phase, Position, Zone
 
 STARTING_LIFE_POINTS = 8000
@@ -47,6 +47,14 @@ class CardInstance:
     # A two-way bond (Call of the Haunted): if either partner leaves the field,
     # the other is destroyed. Set on both the card and the monster it summoned.
     linked_to: int | None = None
+    # Take-control bookkeeping (Slice 9). While a monster is on loan,
+    # ``control_reverts_to`` is the player it returns to. ``control_until_end_of_turn``
+    # (Change of Heart) is the turn whose End Phase ends the loan;
+    # ``control_equip_iid`` (Snatch Steal) is the Equip granting control — control
+    # reverts when that Equip leaves the field.
+    control_reverts_to: int | None = None
+    control_until_end_of_turn: int | None = None
+    control_equip_iid: int | None = None
 
     @property
     def name(self) -> str:
@@ -175,6 +183,20 @@ class GameState:
         inst.zone_index = index
         inst.position = position
 
+    def move_control(self, iid: int, new_controller: int, index: int) -> None:
+        """Move a monster already on the field to ``new_controller``'s Monster Zone
+        ``index`` — changing control, not ownership — keeping its battle position.
+        Resets per-turn flags so it can act normally under its new controller."""
+        inst = self.cards[iid]
+        self._remove_from_current_location(iid)
+        self.players[new_controller].monster_zones[index] = iid
+        inst.controller = new_controller
+        inst.zone = Zone.MONSTER
+        inst.zone_index = index
+        inst.summoned_this_turn = False
+        inst.attacked_this_turn = False
+        inst.position_changed_this_turn = False
+
     def send_to_graveyard(self, iid: int) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags."""
         inst = self.cards[iid]
@@ -189,6 +211,9 @@ class GameState:
         inst.set_on_turn = None
         inst.equipped_to = None
         inst.linked_to = None
+        inst.control_reverts_to = None
+        inst.control_until_end_of_turn = None
+        inst.control_equip_iid = None
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine.
         if from_field and inst.card.is_monster:
@@ -204,7 +229,8 @@ class GameState:
                 equip = self.cards[sid]
                 if equip.equipped_to == monster_iid and equip.is_face_up:
                     for mod in equip.card.continuous:
-                        yield mod, equip.controller
+                        if isinstance(mod, EquipMod):  # an Equip may also carry non-stat passives
+                            yield mod, equip.controller
 
     def _mod_delta(self, mod, controller: int, which: str) -> int:
         flat = mod.atk if which == "atk" else mod.defn
