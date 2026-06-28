@@ -20,6 +20,7 @@
   let pendingTarget = null // {iid, zoneIndex, candidates[], needed, chosen[]}
   let targetChosen = [] // accumulating clicks for an engine-driven target prompt
   let seedInput = ''
+  let openGy = null // which Graveyard's contents are expanded ('you' | 'opp')
 
   onMount(() => newGame())
 
@@ -49,6 +50,9 @@
   $: pendingTargetName = pendingTarget
     ? (you?.hand.find((c) => c.iid === pendingTarget.iid)?.name ?? 'spell')
     : ''
+  // A Graveyard is "live" (auto-expanded) when one of its cards is a valid target.
+  $: youGyTargetable = !!you?.graveyard?.some((g) => targetCandidates.includes(g.iid))
+  $: oppGyTargetable = !!opp?.graveyard?.some((g) => targetCandidates.includes(g.iid))
 
   const PHASE_LABEL = {
     draw_phase: 'Draw',
@@ -255,6 +259,10 @@
     else if (pendingTarget) chooseTarget(iid)
   }
 
+  function toggleGy(side) {
+    openGy = openGy === side ? null : side
+  }
+
   // A Spell/Trap card may be a target (e.g. Mystical Space Typhoon hits either
   // player's), or — for your own Set Continuous Trap — something to activate.
   function onClickOwnSpellTrap(iid, zoneIndex) {
@@ -328,24 +336,20 @@
       >
         <div class="who">{opp.name}</div>
         <div class="lp">LP {opp.lifePoints}</div>
-        <div class="piles">hand {opp.handCount} · deck {opp.deckCount} · GY {opp.graveyard.length}</div>
+        <div class="piles">hand {opp.handCount}</div>
         <div class="ohand">
           {#each Array(opp.handCount) as _}<div class="minicard back"></div>{/each}
         </div>
       </div>
 
-      <div class="fieldrow">
-        <span class="fieldlabel">Field</span>
-        <div
-          class="slot field"
-          class:targetable={opp.fieldZone && targetCandidates.includes(opp.fieldZone.iid)}
-          onclick={() => onClickFieldZone(opp.fieldZone)}
-        >
-          <CardTile card={opp.fieldZone} small />
+      <!-- Opponent's half — their mat rotated 180° (Spell/Trap line on top). -->
+      <div class="mat opp">
+        <!-- back line: Deck · Spell & Trap · Extra Deck -->
+        <div class="slot pile deck">
+          {#if opp.deckCount}<div class="pileback"></div>
+            <span class="count">{opp.deckCount}</span>{/if}
+          <span class="zlabel">Deck</span>
         </div>
-      </div>
-
-      <div class="zonerow">
         {#each opp.spellTrapZones as slot}
           <div
             class="slot st"
@@ -355,8 +359,36 @@
             <CardTile card={slot} faceDown={slot?.faceDown} small />
           </div>
         {/each}
-      </div>
-      <div class="zonerow">
+        <div class="slot pile extra">
+          {#if opp.extraCount}<div class="pileback"></div>
+            <span class="count">{opp.extraCount}</span>{/if}
+          <span class="zlabel">Extra</span>
+        </div>
+        <!-- front line: Graveyard · Monsters · Field -->
+        <div class="slot pile gy" class:targetable={oppGyTargetable} onclick={() => toggleGy('opp')}>
+          {#if opp.graveyard.length}
+            <CardTile card={opp.graveyard[opp.graveyard.length - 1]} small />
+            <span class="count">{opp.graveyard.length}</span>
+          {:else}
+            <span class="zlabel">GY</span>
+          {/if}
+          {#if openGy === 'opp' || oppGyTargetable}
+            <div class="gyflyout down">
+              {#each opp.graveyard as gy}
+                <div
+                  class="gycard"
+                  class:targetable={targetCandidates.includes(gy.iid)}
+                  onclick={(e) => {
+                    e.stopPropagation()
+                    onClickGraveyard(gy.iid)
+                  }}
+                >
+                  <CardTile card={gy} small />
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
         {#each opp.monsterZones as slot}
           <div
             class="slot mon"
@@ -368,22 +400,14 @@
             <CardTile card={slot} faceDown={slot?.faceDown} defense={isDefense(slot)} small />
           </div>
         {/each}
-      </div>
-
-      {#if opp.graveyard.length}
-        <div class="gyrow opp">
-          <span class="gylabel">Graveyard</span>
-          {#each opp.graveyard as gy}
-            <div
-              class="gycard"
-              class:targetable={targetCandidates.includes(gy.iid)}
-              onclick={() => onClickGraveyard(gy.iid)}
-            >
-              <CardTile card={gy} small />
-            </div>
-          {/each}
+        <div
+          class="slot field"
+          class:targetable={opp.fieldZone && targetCandidates.includes(opp.fieldZone.iid)}
+          onclick={() => onClickFieldZone(opp.fieldZone)}
+        >
+          <CardTile card={opp.fieldZone} small />
         </div>
-      {/if}
+      </div>
 
       <!-- Center status -->
       <div class="status">
@@ -402,8 +426,20 @@
         </div>
       {/if}
 
-      <!-- You -->
-      <div class="zonerow">
+      <!-- Your half — your mat (Monster line on top, nearest the centre). -->
+      <div class="mat you">
+        <!-- front line: Field · Monsters · Graveyard -->
+        <div
+          class="slot field"
+          class:drop={!you.fieldZone}
+          class:armed={draggingFieldSpell}
+          class:targetable={you.fieldZone && targetCandidates.includes(you.fieldZone.iid)}
+          ondragover={(e) => e.preventDefault()}
+          ondrop={onDropField}
+          onclick={() => onClickFieldZone(you.fieldZone)}
+        >
+          <CardTile card={you.fieldZone} small />
+        </div>
         {#each you.monsterZones as slot, i}
           {#if slot}
             <div
@@ -433,8 +469,36 @@
             </div>
           {/if}
         {/each}
-      </div>
-      <div class="zonerow">
+        <div class="slot pile gy" class:targetable={youGyTargetable} onclick={() => toggleGy('you')}>
+          {#if you.graveyard.length}
+            <CardTile card={you.graveyard[you.graveyard.length - 1]} small />
+            <span class="count">{you.graveyard.length}</span>
+          {:else}
+            <span class="zlabel">GY</span>
+          {/if}
+          {#if openGy === 'you' || youGyTargetable}
+            <div class="gyflyout">
+              {#each you.graveyard as gy}
+                <div
+                  class="gycard"
+                  class:targetable={targetCandidates.includes(gy.iid)}
+                  onclick={(e) => {
+                    e.stopPropagation()
+                    onClickGraveyard(gy.iid)
+                  }}
+                >
+                  <CardTile card={gy} small />
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+        <!-- back line: Extra Deck · Spell & Trap · Deck -->
+        <div class="slot pile extra">
+          {#if you.extraCount}<div class="pileback"></div>
+            <span class="count">{you.extraCount}</span>{/if}
+          <span class="zlabel">Extra</span>
+        </div>
         {#each you.spellTrapZones as slot, i}
           {#if slot}
             <div
@@ -456,42 +520,16 @@
             </div>
           {/if}
         {/each}
-      </div>
-
-      <div class="fieldrow">
-        <span class="fieldlabel">Field</span>
-        <div
-          class="slot field"
-          class:drop={!you.fieldZone}
-          class:armed={draggingFieldSpell}
-          class:targetable={you.fieldZone && targetCandidates.includes(you.fieldZone.iid)}
-          ondragover={(e) => e.preventDefault()}
-          ondrop={onDropField}
-          onclick={() => onClickFieldZone(you.fieldZone)}
-        >
-          <CardTile card={you.fieldZone} small />
+        <div class="slot pile deck">
+          {#if you.deckCount}<div class="pileback"></div>
+            <span class="count">{you.deckCount}</span>{/if}
+          <span class="zlabel">Deck</span>
         </div>
       </div>
-
-      {#if you.graveyard.length}
-        <div class="gyrow you">
-          <span class="gylabel">Graveyard</span>
-          {#each you.graveyard as gy}
-            <div
-              class="gycard"
-              class:targetable={targetCandidates.includes(gy.iid)}
-              onclick={() => onClickGraveyard(gy.iid)}
-            >
-              <CardTile card={gy} small />
-            </div>
-          {/each}
-        </div>
-      {/if}
 
       <div class="playerbar you">
         <div class="who">{you.name}</div>
         <div class="lp">LP {you.lifePoints}</div>
-        <div class="piles">deck {you.deckCount} · GY {you.graveyard.length}</div>
       </div>
 
       <!-- Hand -->
@@ -687,8 +725,11 @@
     border-radius: 3px;
     background: repeating-linear-gradient(45deg, #4a3a14, #4a3a14 3px, #5a4a1e 3px, #5a4a1e 6px);
   }
-  .zonerow {
-    display: flex;
+  /* Each player's half is the canonical 7-column mat:
+     [Field | Monster x5 | Graveyard] over [Extra | Spell/Trap x5 | Deck]. */
+  .mat {
+    display: grid;
+    grid-template-columns: repeat(7, 64px);
     gap: 8px;
     justify-content: center;
   }
@@ -726,18 +767,6 @@
   .slot.st.actionable:hover {
     outline: 2px solid #c9b3ff;
   }
-  .fieldrow {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
-  }
-  .fieldlabel {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #8a7fb0;
-  }
   .slot.field {
     border: 1px solid #4a3f6a;
   }
@@ -745,26 +774,68 @@
     outline: 2px dashed #c9b3ff;
     background: rgba(201, 179, 255, 0.08);
   }
-  .gyrow {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    justify-content: center;
-    flex-wrap: wrap;
-    padding: 2px 6px;
-    opacity: 0.85;
+  /* Corner piles: Deck, Extra Deck, Graveyard. */
+  .slot.pile {
+    position: relative;
+    border: 1px solid #2f2f38;
+    background: rgba(0, 0, 0, 0.18);
   }
-  .gylabel {
+  .slot.pile.gy {
+    cursor: pointer;
+  }
+  .pileback {
+    width: 64px;
+    height: 90px;
+    box-sizing: border-box;
+    border-radius: 7px;
+    border: 2px solid #7a5c1e;
+    background: repeating-linear-gradient(45deg, #4a3a14, #4a3a14 6px, #5a4a1e 6px, #5a4a1e 12px);
+  }
+  .slot.pile .count {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffe08a;
     font-size: 10px;
+    font-weight: 800;
+    border-radius: 3px;
+    padding: 0 4px;
+  }
+  .zlabel {
+    position: absolute;
+    bottom: 3px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #8a8a8a;
-    margin-right: 4px;
+    color: #b9b9b9;
+    text-shadow: 0 1px 2px #000;
+    pointer-events: none;
   }
-  /* Graveyard cards are shown shrunk; they only matter as revive targets. */
-  .gycard {
-    transform: scale(0.6);
-    margin: -18px -12px;
+  /* The Graveyard pile expands its contents as a flyout (for revive targets). */
+  .gyflyout {
+    position: absolute;
+    bottom: 96px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 360px;
+    padding: 6px;
+    background: #0f0f0c;
+    border: 1px solid #3a3a30;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  }
+  .gyflyout.down {
+    bottom: auto;
+    top: 96px;
   }
   .gycard.targetable :global(.tile) {
     outline: 3px solid #ff6b6b;
