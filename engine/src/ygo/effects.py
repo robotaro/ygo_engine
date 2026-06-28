@@ -271,6 +271,23 @@ class DestroyLowestAtkOpponentMonster(Primitive):
 
 
 @dataclass(frozen=True)
+class ModifyStatsTemporary(Primitive):
+    """Add a temporary ATK/DEF change to each targeted monster until the end of this
+    turn (combat tricks like Rush Recklessly). The deltas accumulate on the monster
+    and the engine clears them in the End Phase."""
+
+    atk: int = 0
+    defn: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        for iid in ctx.targets:
+            inst = ctx.state.cards.get(iid)
+            if inst is not None and inst.zone is Zone.MONSTER:
+                inst.temp_atk += self.atk
+                inst.temp_def += self.defn
+
+
+@dataclass(frozen=True)
 class SwitchTargetsToAttack(Primitive):
     """Stop Defense: flip the target face-up into Attack Position."""
 

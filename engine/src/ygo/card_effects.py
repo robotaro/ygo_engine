@@ -27,6 +27,7 @@ from .effects import (
     FieldMod,
     GainLifePoints,
     InflictDamage,
+    ModifyStatsTemporary,
     NegateAttack,
     ReturnSpellFromGraveyardToHand,
     SearchMonsterToHand,
@@ -170,6 +171,33 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="quick",
             target=TargetSpec(count=1, where="spell_trap_field"),
             resolve=(DestroyTargets(),),
+        ),
+    ),
+    # --- Effects Batch 5: temporary (until-end-of-turn) ATK/DEF combat tricks ---
+    # Quick-Play / Normal Traps that pump a targeted monster for the turn. The
+    # deltas wear off in the End Phase (engine._clear_temp_stats).
+    "Rush Recklessly": (  # Quick-Play Spell
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="any_monster"),
+            resolve=(ModifyStatsTemporary(atk=700),),
+        ),
+    ),
+    "Reinforcements": (  # Normal Trap
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="any_monster"),
+            resolve=(ModifyStatsTemporary(atk=500),),
+        ),
+    ),
+    "Shield Spear": (  # Normal Trap
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="any_monster"),
+            resolve=(ModifyStatsTemporary(atk=400, defn=400),),
         ),
     ),
     # --- Slice 4: monster effects (Flip + Trigger) ---

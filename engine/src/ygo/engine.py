@@ -663,19 +663,28 @@ class Engine:
             self._changed()
             self._check_field_to_gy_triggers()  # orphaned Equips on the bounced Spirit
 
+    def _clear_temp_stats(self) -> None:
+        """Wipe every monster's 'until the end of this turn' ATK/DEF deltas."""
+        s = self.state
+        for inst in s.cards.values():
+            if inst.temp_atk or inst.temp_def:
+                inst.temp_atk = 0
+                inst.temp_def = 0
+
     def _end_phase(self, tp: int) -> None:
         self._revert_end_of_turn_control(tp)
-        if self.result is not None:
-            return
-        self._return_spirits(tp)
-        s = self.state
-        for _ in range(_MAX_ACTIONS_PER_PHASE):
-            menu = legal_actions(s, tp)  # discards only, no Pass while over the limit
-            if not menu:
-                return
-            choice = self.agents[tp].decide(s, menu)
-            self.log(f"  {s.players[tp].name} {apply(s, choice)} (hand-size limit)")
-            self._changed()
+        if self.result is None:
+            self._return_spirits(tp)
+        if self.result is None:
+            s = self.state
+            for _ in range(_MAX_ACTIONS_PER_PHASE):
+                menu = legal_actions(s, tp)  # discards only, no Pass while over the limit
+                if not menu:
+                    break
+                choice = self.agents[tp].decide(s, menu)
+                self.log(f"  {s.players[tp].name} {apply(s, choice)} (hand-size limit)")
+                self._changed()
+        self._clear_temp_stats()  # combat tricks wear off at the turn's end
 
     # ------------------------------------------------------------------ #
     def _check_life_points(self) -> None:

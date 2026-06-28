@@ -61,6 +61,10 @@ class CardInstance:
     # Union monster: the turn it last equipped/unequipped itself (its once-per-turn
     # gate). Turn-stamped, so it expires on its own; reset when it leaves the field.
     union_acted_on_turn: int | None = None
+    # Temporary ATK/DEF deltas (combat tricks "until the end of this turn"). They
+    # accumulate here and the engine clears them in the End Phase.
+    temp_atk: int = 0
+    temp_def: int = 0
 
     @property
     def name(self) -> str:
@@ -227,6 +231,8 @@ class GameState:
         inst.control_equip_iid = None
         inst.gemini_unlocked = False  # a Gemini re-locks once it leaves the field
         inst.union_acted_on_turn = None
+        inst.temp_atk = 0
+        inst.temp_def = 0
 
     def send_to_graveyard(self, iid: int) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags."""
@@ -338,6 +344,7 @@ class GameState:
         )
         total += self._field_delta(iid, "atk")
         total += self._self_stat_delta(iid, "atk")
+        total += inst.temp_atk
         return max(0, total)
 
     def effective_defense(self, iid: int) -> int:
@@ -349,6 +356,7 @@ class GameState:
         )
         total += self._field_delta(iid, "def")
         total += self._self_stat_delta(iid, "def")
+        total += inst.temp_def
         return max(0, total)
 
     def spawn_on_field(
