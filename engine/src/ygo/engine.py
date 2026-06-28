@@ -539,7 +539,8 @@ class Engine:
         targets: tuple[int, ...] = ()
         if effect.target is not None:
             candidates = target_candidates(s, controller, effect.target)
-            if len(candidates) < effect.target.count:
+            required = 1 if effect.target.up_to else effect.target.count
+            if len(candidates) < required:
                 return
             targets = tuple(
                 self.agents[controller].choose_targets(s, source_iid, effect.target, candidates)

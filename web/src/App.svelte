@@ -210,6 +210,15 @@
     }
   }
 
+  // "up to N" target prompts: submit the current selection early (>= the minimum).
+  function doneTargets() {
+    const tr = $targetRequest
+    if (!tr || !tr.upTo) return
+    if (targetChosen.length < (tr.minCount ?? 1)) return
+    sendIntent({ kind: 'target', targets: targetChosen })
+    targetChosen = []
+  }
+
   function beginActivate(iid, zoneIndex) {
     const opts = activateOptions(iid)
     if (!opts) return
@@ -612,6 +621,14 @@
         <div class="banner">
           <strong>{$targetRequest.source}</strong> — {$targetRequest.prompt}
           (click a highlighted monster · {targetChosen.length}/{$targetRequest.count})
+          {#if $targetRequest.upTo}
+            <button
+              disabled={targetChosen.length < ($targetRequest.minCount ?? 1)}
+              onclick={doneTargets}
+            >
+              Done ✓
+            </button>
+          {/if}
         </div>
       {:else if pendingTarget}
         <div class="banner">

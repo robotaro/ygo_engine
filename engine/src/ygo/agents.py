@@ -94,7 +94,9 @@ class RandomAgent(Agent):
         return self.rng.choice([*options, None])
 
     def choose_targets(self, state: GameState, source_iid: int, spec, candidates: list[int]):
-        return tuple(self.rng.sample(candidates, spec.count))
+        hi = min(spec.count, len(candidates))
+        n = self.rng.randint(1, hi) if spec.up_to and hi >= 1 else hi
+        return tuple(self.rng.sample(candidates, n))
 
     def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
         return self.rng.choice(option_iids) if option_iids else None

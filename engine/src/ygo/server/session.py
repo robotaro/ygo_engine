@@ -107,8 +107,12 @@ class HumanAgent(Agent):
             self.session.send({"type": "illegal", "intent": intent})
 
     def choose_targets(self, state: GameState, source_iid: int, spec, candidates: list[int]):
-        """Forced-effect target prompt: the player clicks highlighted monster(s)."""
+        """Forced-effect target prompt: the player clicks highlighted monster(s).
+        With ``up_to`` the player may submit between 1 and ``count`` targets (a 'Done'
+        button on the client confirms early)."""
         source = state.inst(source_iid).name
+        hi = min(spec.count, len(candidates))
+        lo = 1 if spec.up_to else hi
         self.session.send(
             {
                 "type": "decision",
@@ -116,9 +120,15 @@ class HumanAgent(Agent):
                 "player": self.player,
                 "state": state_to_dict(state, self.player),
                 "source": source,
-                "prompt": f"Choose {spec.count} target(s) for {source}",
+                "prompt": (
+                    f"Choose up to {spec.count} target(s) for {source}"
+                    if spec.up_to
+                    else f"Choose {spec.count} target(s) for {source}"
+                ),
                 "candidates": list(candidates),
                 "count": spec.count,
+                "minCount": lo,
+                "upTo": spec.up_to,
             }
         )
         while True:
@@ -128,8 +138,8 @@ class HumanAgent(Agent):
             chosen = intent.get("targets", [])
             if (
                 intent.get("kind") == "target"
-                and len(chosen) == spec.count
-                and len(set(chosen)) == spec.count
+                and lo <= len(chosen) <= hi
+                and len(set(chosen)) == len(chosen)
                 and all(c in candidates for c in chosen)
             ):
                 return tuple(chosen)

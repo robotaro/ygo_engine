@@ -389,6 +389,12 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
     else:
         candidates = []
     candidates = _filter_monster_traits(state, candidates, spec)
+    if spec.up_to:
+        # "up to N": every non-empty subset of size 1..min(N, available).
+        sets: list[tuple[int, ...]] = []
+        for n in range(1, min(spec.count, len(candidates)) + 1):
+            sets += [tuple(combo) for combo in combinations(candidates, n)]
+        return sets
     if spec.count == 1:
         return [(c,) for c in candidates]
     return [tuple(combo) for combo in combinations(candidates, spec.count)]

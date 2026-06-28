@@ -205,6 +205,7 @@ class TargetSpec:
     races: frozenset = frozenset()
     attributes: frozenset = frozenset()
     face_up: bool = False  # restrict to face-up monsters (e.g. Soul Taker)
+    up_to: bool = False  # ``count`` is a maximum — choose 1..count (Penguin Soldier)
 
 
 @dataclass(frozen=True)

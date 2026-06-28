@@ -286,6 +286,25 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     ),
     # Giant Trunade — return every Spell/Trap on the field to hand.
     "Giant Trunade": (Effect(resolve=(ReturnAllSpellTrapsToHand(),)),),
+    # --- Effects Batch 11: "up to N" targeting (variable count) ---
+    # FLIP effects that return up to N monsters to the hand (the player chooses how
+    # many, 1..N). Reuses the bounce primitive with TargetSpec(up_to=True).
+    "Penguin Soldier": (
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=2, where="any_monster", up_to=True),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    "Hade-Hane": (
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=3, where="any_monster", up_to=True),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
     # Bounce to the top of the Deck (these compose Batch 8's discard cost).
     "Back to Square One": (  # discard 1; put 1 monster on top of its owner's Deck
         Effect(
