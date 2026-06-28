@@ -184,6 +184,17 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Magician of Faith": (
         Effect(speed=1, timing="flip", resolve=(ReturnSpellFromGraveyardToHand(),)),
     ),
+    # --- Effects Batch 4: more clean Flip effects (reuse the flip timing) ---
+    "Poison Mummy": (Effect(speed=1, timing="flip", resolve=(InflictDamage(OPPONENT, 500),)),),
+    "Skelengel": (Effect(speed=1, timing="flip", resolve=(Draw(count=1),)),),
+    "Nobleman-Eater Bug": (
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=2, where="any_monster"),  # you select 2 to destroy
+            resolve=(DestroyTargets(),),
+        ),
+    ),
     "Sangan": (
         Effect(
             speed=1,
