@@ -180,6 +180,7 @@ class TargetSpec:
     where: str = "opponent_monsters"
     races: frozenset = frozenset()
     attributes: frozenset = frozenset()
+    face_up: bool = False  # restrict to face-up monsters (e.g. Soul Taker)
 
 
 @dataclass(frozen=True)
@@ -285,6 +286,37 @@ class ModifyStatsTemporary(Primitive):
             if inst is not None and inst.zone is Zone.MONSTER:
                 inst.temp_atk += self.atk
                 inst.temp_def += self.defn
+
+
+@dataclass(frozen=True)
+class DestroyHighestDefOpponentMonster(Primitive):
+    """Smashing Ground: destroy the opponent's face-up monster with the highest DEF."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        opp = ctx.state.opponent_of(ctx.controller)
+        faceup = [
+            iid
+            for iid in ctx.state.players[opp].monster_zones
+            if iid is not None and ctx.state.inst(iid).is_face_up
+        ]
+        if faceup:
+            ctx.state.send_to_graveyard(max(faceup, key=ctx.state.effective_defense))
+
+
+@dataclass(frozen=True)
+class DestroyHighestAtkMonster(Primitive):
+    """Hammer Shot: destroy the face-up Attack-Position monster (either side) with
+    the highest ATK."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        cands = [
+            iid
+            for pl in (0, 1)
+            for iid in ctx.state.players[pl].monster_zones
+            if iid is not None and ctx.state.inst(iid).position is Position.FACE_UP_ATTACK
+        ]
+        if cands:
+            ctx.state.send_to_graveyard(max(cands, key=ctx.state.effective_attack))
 
 
 @dataclass(frozen=True)

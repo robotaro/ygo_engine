@@ -292,14 +292,17 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
 def _filter_monster_traits(state: GameState, iids: list[int], spec) -> list[int]:
     """Narrow a monster pool to ``spec``'s race/attribute restriction (e.g. an
     Equip that may only attach to a Spellcaster). No restriction -> unchanged."""
-    if spec is None or (not spec.races and not spec.attributes):
+    if spec is None or (not spec.races and not spec.attributes and not spec.face_up):
         return iids
     out: list[int] = []
     for i in iids:
-        card = state.inst(i).card
+        inst = state.inst(i)
+        card = inst.card
         if spec.races and card.race not in spec.races:
             continue
         if spec.attributes and card.attribute not in spec.attributes:
+            continue
+        if spec.face_up and not inst.is_face_up:
             continue
         out.append(i)
     return out

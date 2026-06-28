@@ -17,6 +17,8 @@ from .effects import (
     DestroyAllFieldSpells,
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
+    DestroyHighestAtkMonster,
+    DestroyHighestDefOpponentMonster,
     DestroyLowestAtkOpponentMonster,
     DestroyTargets,
     Draw,
@@ -129,6 +131,15 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     ),
     "Tremendous Fire": (
         Effect(resolve=(InflictDamage(OPPONENT, 1000), InflictDamage(SELF, 500))),
+    ),
+    # --- Effects Batch 6: targeted / "highest stat" monster removal Spells ---
+    "Smashing Ground": (Effect(resolve=(DestroyHighestDefOpponentMonster(),)),),
+    "Hammer Shot": (Effect(resolve=(DestroyHighestAtkMonster(),)),),
+    "Soul Taker": (
+        Effect(
+            target=TargetSpec(count=1, where="opponent_monsters", face_up=True),
+            resolve=(DestroyTargets(), GainLifePoints(OPPONENT, 1000)),
+        ),
     ),
     "Hinotama": (Effect(resolve=(InflictDamage(OPPONENT, 500),)),),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---
