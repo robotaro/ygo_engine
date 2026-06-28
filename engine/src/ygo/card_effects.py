@@ -16,6 +16,7 @@ from .effects import (
     BanishTargets,
     BounceTargetsToDeck,
     BounceTargetsToHand,
+    CardFilter,
     CountTimes,
     DamageEqualToAttackerAtk,
     DestroyAllFieldSpells,
@@ -41,6 +42,7 @@ from .effects import (
     Piercing,
     ReturnAllSpellTrapsToHand,
     ReturnSpellFromGraveyardToHand,
+    SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
     SpecialSummonFromGraveyard,
@@ -139,6 +141,30 @@ def _lp_above(amount: int):
         return state.players[controller].life_points > amount
 
     return cond
+
+
+def _can_search(card_filter: CardFilter):
+    """Activation gate for a Deck-search Spell: a matching card must be in the
+    controller's Deck (you can't activate Reinforcement of the Army with no Warrior
+    to fetch)."""
+
+    def cond(state, controller) -> bool:
+        return any(
+            card_filter.matches(state.inst(iid).card)
+            for iid in state.players[controller].deck
+        )
+
+    return cond
+
+
+def _search_effect(card_filter: CardFilter):
+    """A Deck-search Normal Spell: activatable only when a matching card is in the
+    Deck; on resolution fetch one (highest-ATK match) and shuffle."""
+    return Effect(
+        timing="ignition",
+        condition=_can_search(card_filter),
+        resolve=(SearchFromDeck(filter=card_filter),),
+    )
 
 
 def _can_fusion_summon(state, controller) -> bool:
@@ -432,6 +458,38 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             tribute_races=frozenset({"Dragon"}),
             resolve=(DestroyFaceUpMonstersWithDefAtMost(threshold=TributedAttack()),),
         ),
+    ),
+    # --- Effects Batch 15: generalised Deck search ("add 1 [X] from Deck to hand") ---
+    # Normal Spells that fetch one matching card from the Deck, then shuffle. The
+    # CardFilter both gates activation (a match must exist) and selects the fetch.
+    # The pick is deterministic (highest-ATK match) — interactive player choice is
+    # a deferred enhancement (same gap Fusion had).
+    "Reinforcement of the Army": (  # 1 Level 4 or lower Warrior monster
+        _search_effect(CardFilter(card_kind="monster", races=frozenset({"Warrior"}), max_level=4)),
+    ),
+    "Summoner's Art": (  # 1 Level 5 or higher Normal Monster
+        _search_effect(CardFilter(card_kind="normal_monster", min_level=5)),
+    ),
+    "Terraforming": (  # 1 Field Spell
+        _search_effect(CardFilter(card_kind="field_spell")),
+    ),
+    "Fusion Sage": (  # 1 Polymerization
+        _search_effect(CardFilter(names=frozenset({"Polymerization"}))),
+    ),
+    "E - Emergency Call": (  # 1 Elemental HERO monster
+        _search_effect(CardFilter(card_kind="monster", name_contains=frozenset({"Elemental HERO"}))),
+    ),
+    "Gladiator Proving Ground": (  # 1 Level 4 or lower Gladiator Beast monster
+        _search_effect(
+            CardFilter(
+                card_kind="monster",
+                name_contains=frozenset({"Gladiator Beast"}),
+                max_level=4,
+            )
+        ),
+    ),
+    "Toon Table of Contents": (  # 1 "Toon" card (any card with Toon in its name)
+        _search_effect(CardFilter(name_contains=frozenset({"Toon"}))),
     ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---
     "Sparks": (Effect(resolve=(InflictDamage(OPPONENT, 200),)),),

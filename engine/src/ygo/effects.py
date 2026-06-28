@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Callable
 
-from .enums import Attribute, Position, Zone
+from .enums import Attribute, Position, SpellTrapProperty, Zone
 
 if TYPE_CHECKING:
     from .state import GameState
@@ -207,6 +207,53 @@ class TargetSpec:
     face_up: bool = False  # restrict to face-up monsters (e.g. Soul Taker)
     defense_position: bool = False  # restrict to Defense Position monsters (Shield Crush)
     up_to: bool = False  # ``count`` is a maximum — choose 1..count (Penguin Soldier)
+
+
+@dataclass(frozen=True)
+class CardFilter:
+    """A predicate over a *printed* card, for fetching from the Deck (Reinforcement
+    of the Army, Terraforming, Fusion Sage). Every set criterion must hold (AND);
+    an unset criterion is ignored.
+
+    ``card_kind``: None | "monster" | "spell" | "trap" | "field_spell" |
+    "normal_monster". ``names`` matches the exact card name (any of); ``name_contains``
+    matches an archetype substring (any of); ``races`` / ``attributes`` narrow a
+    monster; ``min_level`` / ``max_level`` bound a monster's Level.
+    """
+
+    names: frozenset = frozenset()
+    name_contains: frozenset = frozenset()
+    races: frozenset = frozenset()
+    attributes: frozenset = frozenset()
+    card_kind: str | None = None
+    min_level: int | None = None
+    max_level: int | None = None
+
+    def matches(self, card) -> bool:
+        if self.names and card.name not in self.names:
+            return False
+        if self.name_contains and not any(s in card.name for s in self.name_contains):
+            return False
+        if self.races and card.race not in self.races:
+            return False
+        if self.attributes and card.attribute not in self.attributes:
+            return False
+        if self.min_level is not None and (card.level or 0) < self.min_level:
+            return False
+        if self.max_level is not None and (card.level or 0) > self.max_level:
+            return False
+        kind = self.card_kind
+        if kind == "monster" and not card.is_monster:
+            return False
+        if kind == "spell" and not card.is_spell:
+            return False
+        if kind == "trap" and not card.is_trap:
+            return False
+        if kind == "field_spell" and not (card.is_spell and card.subtype is SpellTrapProperty.FIELD):
+            return False
+        if kind == "normal_monster" and not card.is_vanilla:
+            return False
+        return True
 
 
 @dataclass(frozen=True)
@@ -651,6 +698,29 @@ class SearchMonsterToHand(Primitive):
             player.deck.remove(best)
             player.hand.append(best)
             ctx.state.inst(best).zone = Zone.HAND
+        ctx.state.rng.shuffle(player.deck)
+
+
+@dataclass(frozen=True)
+class SearchFromDeck(Primitive):
+    """Add 1 card matching ``filter`` from the controller's Deck to their hand, then
+    shuffle (Reinforcement of the Army, Terraforming, Fusion Sage). The pick is
+    deterministic — the highest-ATK match (so a monster fetch grabs the strongest
+    eligible body; non-monsters tie at 0 and the first in Deck order is taken),
+    mirroring ``SearchMonsterToHand`` since primitives have no agent to ask.
+    Activation is gated by a condition so there is always a match when it resolves;
+    with none it does nothing."""
+
+    filter: CardFilter = CardFilter()
+
+    def execute(self, ctx: EffectContext) -> None:
+        player = ctx.state.players[ctx.controller]
+        eligible = [i for i in player.deck if self.filter.matches(ctx.state.inst(i).card)]
+        if eligible:
+            pick = max(eligible, key=lambda i: ctx.state.inst(i).card.attack or 0)
+            player.deck.remove(pick)
+            player.hand.append(pick)
+            ctx.state.inst(pick).zone = Zone.HAND
         ctx.state.rng.shuffle(player.deck)
 
 
