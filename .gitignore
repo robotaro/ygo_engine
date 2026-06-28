@@ -18,5 +18,9 @@ dist/
 # Downloaded card art (136MB; regenerate with engine/scripts/download_card_images.py)
 assets/card_images/cards/
 
+# Regenerable source blob for the OCG card pool (4.6MB; rebuild the CSV with
+# `engine/scripts/build_card_db.py --download`). The curated CSV is committed.
+assets/card_databases/card_db_ocg_pre_synchro_v6.json
+
 # OS
 .DS_Store
