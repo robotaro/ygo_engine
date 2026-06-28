@@ -29,6 +29,7 @@ from .moves import (
     controls_toon_world,
     legal_actions,
     makeable_fusions,
+    pay_discard_cost,
     response_options,
     resolve_effect,
     reveal_for_activation,
@@ -359,7 +360,25 @@ class Engine:
         effect = next((e for e in card.effects if e.timing in ("ignition", "quick")), card.effects[0])
         reveal_for_activation(s, action.iid, action.zone_index)
         self.log(f"  {s.players[controller].name} activates {card.name}")
+        self._pay_activation_cost(action.iid, controller, effect)
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
+
+    def _pay_activation_cost(self, source_iid: int, controller: int, effect) -> None:
+        """Pay an effect's activation cost (currently the discard cost) — the player
+        chooses the fodder (bot via heuristic, human via a prompt), then it's sent to
+        the Graveyard before the effect resolves."""
+        need = getattr(effect, "discard_cost", 0)
+        if not need:
+            return
+        s = self.state
+        fodder = [i for i in s.players[controller].hand if i != source_iid]
+        chosen = self.agents[controller].choose_discards(s, controller, fodder, need)
+        if len(set(chosen)) != need or any(c not in fodder for c in chosen):
+            chosen = Agent().choose_discards(s, controller, fodder, need)  # safe default
+        discarded = pay_discard_cost(s, controller, source_iid, need, chosen)
+        names = ", ".join(s.inst(i).name for i in discarded)
+        self.log(f"  {s.players[controller].name} discards {names} (cost)")
+        self._changed()
 
     def _fusion_summon(self, poly_iid: int, controller: int) -> None:
         """Polymerization: pick a makeable Fusion, send its materials from hand/field
@@ -472,9 +491,11 @@ class Engine:
         if chosen is None:
             return None
         card = s.inst(chosen.iid).card
+        effect = card.effects[0]
         reveal_for_activation(s, chosen.iid, chosen.zone_index)
         self.log(f"  {s.players[player].name} activates {card.name}")
-        return ChainLink(chosen.iid, card.effects[0], player, tuple(chosen.targets), event)
+        self._pay_activation_cost(chosen.iid, player, effect)
+        return ChainLink(chosen.iid, effect, player, tuple(chosen.targets), event)
 
     def _resolve_chain(self) -> None:
         s = self.state

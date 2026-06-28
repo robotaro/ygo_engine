@@ -182,6 +182,41 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         ),
     ),
     "Hinotama": (Effect(resolve=(InflictDamage(OPPONENT, 500),)),),
+    # --- Effects Batch 8: discard-cost activations (discard N to activate) ---
+    # Normal Spells: pay the discard cost, then the payload resolves.
+    "Tribute to the Doomed": (  # discard 1; destroy 1 monster on the field
+        Effect(
+            discard_cost=1,
+            target=TargetSpec(count=1, where="any_monster"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Lightning Vortex": (  # discard 1; destroy all face-up monsters the opponent controls
+        Effect(
+            discard_cost=1,
+            condition=_opponent_has_faceup_monster,
+            resolve=(DestroyAllMonsters(side=OPPONENT, face_up_only=True),),
+        ),
+    ),
+    # Normal Traps (speed 2): set first, then activate from the field (paying the cost).
+    "Raigeki Break": (  # discard 1; destroy 1 card on the field
+        Effect(
+            speed=2,
+            timing="quick",
+            discard_cost=1,
+            target=TargetSpec(count=1, where="any_card_field"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Rising Energy": (  # discard 1; a face-up monster gains 1500 ATK until the End Phase
+        Effect(
+            speed=2,
+            timing="quick",
+            discard_cost=1,
+            target=TargetSpec(count=1, where="any_monster", face_up=True),
+            resolve=(ModifyStatsTemporary(atk=1500),),
+        ),
+    ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---
     "Sparks": (Effect(resolve=(InflictDamage(OPPONENT, 200),)),),
     "Final Flame": (Effect(resolve=(InflictDamage(OPPONENT, 600),)),),

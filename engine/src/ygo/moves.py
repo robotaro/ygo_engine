@@ -171,6 +171,37 @@ def tributes_required(level: int | None) -> int:
 
 
 # --------------------------------------------------------------------------- #
+#  Activation costs (paid from the hand at activation)
+# --------------------------------------------------------------------------- #
+def discard_fodder(state: GameState, controller: int, source_iid: int) -> list[int]:
+    """Hand cards the controller may discard to pay a cost — every card except the
+    one being activated (a Spell from hand can't discard itself as its own cost)."""
+    return [i for i in state.players[controller].hand if i != source_iid]
+
+
+def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) -> bool:
+    """Whether ``controller`` can pay ``effect``'s activation cost right now (used to
+    gate legal enumeration). Currently only the discard cost."""
+    need = getattr(effect, "discard_cost", 0)
+    if need and len(discard_fodder(state, controller, source_iid)) < need:
+        return False
+    return True
+
+
+def pay_discard_cost(
+    state: GameState, controller: int, source_iid: int, count: int, chosen=None
+) -> list[int]:
+    """Discard ``count`` cards from ``controller``'s hand as a cost. ``chosen`` names
+    the cards (player's pick); without it, the first eligible cards are taken (the
+    deterministic headless default). Returns the discarded iids."""
+    fodder = discard_fodder(state, controller, source_iid)
+    picks = [i for i in (chosen or []) if i in fodder][:count] or fodder[:count]
+    for iid in picks:
+        state.send_to_graveyard(iid)
+    return picks
+
+
+# --------------------------------------------------------------------------- #
 #  Legal-move enumeration
 # --------------------------------------------------------------------------- #
 def legal_actions(state: GameState, player: int) -> list[Action]:
@@ -280,8 +311,10 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
                 (e for e in card.effects if e.timing in ("ignition", "quick", "fusion", "ritual")),
                 None,
             )
-            if effect is not None and (
-                effect.condition is None or effect.condition(state, player)
+            if (
+                effect is not None
+                and (effect.condition is None or effect.condition(state, player))
+                and can_pay_costs(state, player, iid, effect)
             ):
                 is_field = card.subtype is SpellTrapProperty.FIELD
                 if is_field or has_st_zone:
@@ -304,6 +337,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             continue  # can't activate the turn it was Set
         effect = next((e for e in inst.card.effects if e.timing == "ignition"), None)
         if effect is None or (effect.condition is not None and not effect.condition(state, player)):
+            continue
+        if not can_pay_costs(state, player, iid, effect):
             continue
         for target_set in _enumerate_targets(state, player, effect.target):
             actions.append(ActivateSpell(iid, targets=target_set))
@@ -343,6 +378,8 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
         ]
     elif spec.where == "spell_trap_field":
         candidates = _spell_trap_field(state)
+    elif spec.where == "any_card_field":
+        candidates = _all_field_cards(state)
     elif spec.where == "any_graveyard_monster":
         candidates = _graveyard_monsters(state, (0, 1))
     elif spec.where == "own_graveyard_monster":
@@ -502,6 +539,8 @@ def target_candidates(state: GameState, controller: int, spec) -> list[int]:
         candidates = [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
     elif spec.where == "spell_trap_field":
         candidates = _spell_trap_field(state)
+    elif spec.where == "any_card_field":
+        candidates = _all_field_cards(state)
     elif spec.where == "any_graveyard_monster":
         candidates = _graveyard_monsters(state, (0, 1))
     elif spec.where == "own_graveyard_monster":
@@ -520,6 +559,15 @@ def _spell_trap_field(state: GameState) -> list[int]:
         if state.players[pl].field_zone is not None:
             out.append(state.players[pl].field_zone)
     return out
+
+
+def _all_field_cards(state: GameState) -> list[int]:
+    """Every card on the field, both players' — monsters and Spells/Traps/Field
+    alike (Raigeki Break / Phoenix Wing Wind Blast target 'any card on the field')."""
+    out: list[int] = []
+    for pl in (0, 1):
+        out += [i for i in state.players[pl].monster_zones if i is not None]
+    return out + _spell_trap_field(state)
 
 
 # --------------------------------------------------------------------------- #
@@ -566,6 +614,8 @@ def _activations_for_effect(state, player, iid, effect, event):
         return [ActivateSpell(iid, targets=_trigger_targets(effect.trigger, event))]
     if effect.timing == "quick":
         if effect.condition is not None and not effect.condition(state, player):
+            return []
+        if not can_pay_costs(state, player, iid, effect):
             return []
         return [ActivateSpell(iid, targets=t) for t in _enumerate_targets(state, player, effect.target)]
     return []
@@ -781,6 +831,13 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
     """
     card = state.inst(action.iid).card
     reveal_for_activation(state, action.iid, action.zone_index)  # routes Field Spells too
+    # Pay any activation cost (discard) before resolving — the headless path picks
+    # the discard fodder deterministically (the interactive engine asks the player).
+    controller = state.inst(action.iid).controller
+    for effect in card.effects:
+        if getattr(effect, "discard_cost", 0):
+            pay_discard_cost(state, controller, action.iid, effect.discard_cost)
+            break
     resolve_card_effects(state, action.iid, action.targets)
     # A Normal Spell heads to the Graveyard; a permanent one (Equip/Continuous/Field) stays.
     inst = state.inst(action.iid)

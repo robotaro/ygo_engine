@@ -51,6 +51,15 @@ class Agent:
         """Pick one card iid from a list (e.g. which Fusion Monster to summon)."""
         return option_iids[0] if option_iids else None
 
+    def choose_discards(self, state: GameState, controller: int, candidates: list[int], count: int):
+        """Pick ``count`` cards from the hand to discard as a cost. Default: the
+        weakest fodder (lowest ATK, then lowest Level) — keep the good cards."""
+        ranked = sorted(
+            candidates,
+            key=lambda i: (state.inst(i).card.attack or 0, state.inst(i).card.level or 0),
+        )
+        return tuple(ranked[:count])
+
     def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):
         """Pick monsters to Tribute whose Levels total >= ``required`` (Ritual
         Summon). Default: when the field is full, Tribute field monsters first to
@@ -89,6 +98,9 @@ class RandomAgent(Agent):
 
     def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
         return self.rng.choice(option_iids) if option_iids else None
+
+    def choose_discards(self, state: GameState, controller: int, candidates: list[int], count: int):
+        return tuple(self.rng.sample(candidates, count)) if len(candidates) >= count else tuple(candidates)
 
     def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):
         pool = list(candidates)

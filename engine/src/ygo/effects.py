@@ -241,9 +241,11 @@ class Draw(Primitive):
 
 @dataclass(frozen=True)
 class DestroyAllMonsters(Primitive):
-    """Destroy every monster, or only one side's."""
+    """Destroy every monster, or only one side's. ``face_up_only`` restricts it to
+    face-up monsters (Lightning Vortex destroys only face-up monsters)."""
 
     side: str | None = None  # None = both players, else SELF / OPPONENT
+    face_up_only: bool = False
 
     def execute(self, ctx: EffectContext) -> None:
         players = (0, 1) if self.side is None else (ctx.side(self.side),)
@@ -251,7 +253,7 @@ class DestroyAllMonsters(Primitive):
             iid
             for pl in players
             for iid in ctx.state.players[pl].monster_zones
-            if iid is not None
+            if iid is not None and (not self.face_up_only or ctx.state.inst(iid).is_face_up)
         ]
         for iid in victims:
             ctx.state.send_to_graveyard(iid)
@@ -546,4 +548,8 @@ class Effect:
     target: TargetSpec | None = None
     # Optional activation gate: (state, controller) -> bool.
     condition: Callable[["GameState", int], bool] | None = None
+    # Activation cost: discard this many cards from the hand (paid at activation,
+    # before resolution). Gated into legal enumeration — the action is only offered
+    # when the controller has enough discard fodder (other than the card itself).
+    discard_cost: int = 0
     resolve: tuple[Primitive, ...] = ()
