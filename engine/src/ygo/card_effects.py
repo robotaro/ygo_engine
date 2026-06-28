@@ -20,6 +20,7 @@ from .effects import (
     DestroyLowestAtkOpponentMonster,
     DestroyTargets,
     Draw,
+    DrawTrigger,
     Effect,
     EquipMod,
     EquipToTarget,
@@ -195,6 +196,10 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(TakeControl(equip=True),),
         ),
     ),
+    # --- Slice 10: draw-trigger hook ---
+    # Solemn Wishes — Continuous Trap: no resolution of its own. Set it, then
+    # activate it (flip face-up) on a later turn; its CONTINUOUS draw layer pays out.
+    "Solemn Wishes": (Effect(speed=2, timing="ignition"),),
 }
 
 
@@ -230,4 +235,7 @@ CONTINUOUS: dict[str, tuple] = {
     # --- Slice 9: take-control ---
     # Snatch Steal gifts its victim 1000 LP at each of *their* Standby Phases.
     "Snatch Steal": (StandbyUpkeep(gain_life=1000, whose="opponent"),),
+    # --- Slice 10: draw-trigger hook ---
+    # Solemn Wishes: gain 500 LP each time its controller draws a card(s).
+    "Solemn Wishes": (DrawTrigger(gain_life=500),),
 }

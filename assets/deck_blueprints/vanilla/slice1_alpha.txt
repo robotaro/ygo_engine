@@ -39,3 +39,5 @@
 // Slice 9 — take-control
 1 Change of Heart
 1 Snatch Steal
+// Slice 10 — draw-trigger Continuous Trap
+1 Solemn Wishes

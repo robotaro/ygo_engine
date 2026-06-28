@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .agents import Agent
-from .effects import StandbyUpkeep
+from .effects import DrawTrigger, StandbyUpkeep
 from .enums import Phase, Position, TURN_PHASES, Zone
 from .moves import (
     ActivateSpell,
@@ -81,6 +81,7 @@ class Engine:
 
     # ------------------------------------------------------------------ #
     def run(self) -> DuelResult:
+        self.state.pending_draws.clear()  # ignore the opening-hand draws (pre-game)
         while self.result is None and self.state.turn_count <= self.max_turns:
             self._run_turn()
         if self.result is None:
@@ -146,7 +147,31 @@ class Engine:
             self.result = DuelResult(s.opponent_of(tp), f"{s.players[tp].name} decked out")
             return
         self.log(f"{s.players[tp].name} draws {s.inst(drawn[0]).name}")
+        self._process_draw_triggers()
         self._changed()
+
+    def _faceup_cards(self, player: int) -> list[int]:
+        """A player's own face-up cards (Field + Spell/Trap + Monster zones),
+        snapshotted so destroying one mid-iteration is safe."""
+        s = self.state
+        p = s.players[player]
+        return [
+            iid
+            for iid in [p.field_zone, *p.spell_trap_zones, *p.monster_zones]
+            if iid is not None and s.cards[iid].is_face_up
+        ]
+
+    def _process_draw_triggers(self) -> None:
+        """Solemn Wishes: pay each queued draw out to its drawer's face-up cards."""
+        s = self.state
+        while s.pending_draws:
+            player = s.pending_draws.pop(0)
+            for iid in self._faceup_cards(player):
+                inst = s.cards.get(iid)
+                for mod in inst.card.continuous if inst else ():
+                    if isinstance(mod, DrawTrigger) and mod.gain_life:
+                        s.players[player].life_points += mod.gain_life
+                        self.log(f"  {s.players[player].name} gains {mod.gain_life} LP from {inst.name}")
 
     # ------------------------------------------------------------------ #
     def _standby_phase(self, tp: int) -> None:
@@ -179,10 +204,7 @@ class Engine:
         s = self.state
         order: list[int] = []
         for pl in (s.turn_player, s.opponent_of(s.turn_player)):
-            p = s.players[pl]
-            for iid in [p.field_zone, *p.spell_trap_zones, *p.monster_zones]:
-                if iid is not None and s.cards[iid].is_face_up:
-                    order.append(iid)
+            order.extend(self._faceup_cards(pl))
         return order
 
     def _apply_standby_upkeep(self, inst, mod: StandbyUpkeep, tp: int) -> bool:
@@ -385,6 +407,7 @@ class Engine:
         s.chain = []
         self._changed()
         self._check_field_to_gy_triggers()  # resolution may have sent trigger monsters to GY
+        self._process_draw_triggers()  # resolution may have drawn cards (Pot of Greed)
 
     # ------------------------------------------------------------------ #
     #  Monster-effect triggers

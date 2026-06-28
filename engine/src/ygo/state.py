@@ -102,6 +102,7 @@ class GameState:
     chain: list = field(default_factory=list)  # ChainLink stack, last-in-first-out
     attack_negated: bool = False  # transient flag set while resolving an attack response
     gy_from_field: list = field(default_factory=list)  # monsters just sent field->GY (trigger queue)
+    pending_draws: list = field(default_factory=list)  # players who just drew (draw-trigger queue)
     seed: int = 0
     rng: random.Random = field(default_factory=random.Random)
     _next_iid: int = 0
@@ -149,6 +150,8 @@ class GameState:
             self.cards[iid].zone = Zone.HAND
             self.cards[iid].position = None
             drawn.append(iid)
+        if drawn:  # "when you draw a card(s)" fires once per draw, for the engine to process
+            self.pending_draws.append(player)
         return drawn
 
     # ----- card movement (used by the move/effect layer) -----

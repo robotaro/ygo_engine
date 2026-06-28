@@ -125,6 +125,18 @@ class StandbyUpkeep:
 
 
 @dataclass(frozen=True)
+class DrawTrigger:
+    """A face-up card's reaction to its controller drawing (Slice 10).
+
+    The controller gains ``gain_life`` LP each time they draw a card(s) — once per
+    draw, regardless of how many cards (Solemn Wishes). Read by the engine after
+    every draw; never stored on the card.
+    """
+
+    gain_life: int = 0
+
+
+@dataclass(frozen=True)
 class TargetSpec:
     """What an effect targets, chosen by the controller at activation.
 
