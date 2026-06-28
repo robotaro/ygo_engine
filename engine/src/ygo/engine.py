@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .agents import Agent
+from .effects import StandbyUpkeep
 from .enums import Phase, Position, TURN_PHASES, Zone
 from .moves import (
     ActivateSpell,
@@ -126,7 +127,7 @@ class Engine:
         if phase is Phase.DRAW:
             self._draw_phase(tp)
         elif phase is Phase.STANDBY:
-            pass  # nothing happens for vanilla play
+            self._standby_phase(tp)
         elif phase in (Phase.MAIN_1, Phase.MAIN_2):
             self._interactive_phase(tp)
         elif phase is Phase.BATTLE:
@@ -146,6 +147,72 @@ class Engine:
             return
         self.log(f"{s.players[tp].name} draws {s.inst(drawn[0]).name}")
         self._changed()
+
+    # ------------------------------------------------------------------ #
+    def _standby_phase(self, tp: int) -> None:
+        """Resolve each face-up card's per-Standby upkeep (Slice 8).
+
+        Any face-up card on either side may carry a ``StandbyUpkeep`` — a
+        maintenance cost (Messenger of Peace), a recovery (Cure Mermaid), or a
+        burn (Burning Land). The hook is card-type-agnostic: monsters, Continuous
+        Spells/Traps and Field Spells are all scanned the same way.
+        """
+        s = self.state
+        fired = False
+        for iid in self._standby_upkeep_order():
+            if self.result is not None:
+                break
+            inst = s.cards.get(iid)
+            if inst is None or not inst.is_face_up:
+                continue  # left the field via an earlier upkeep this phase
+            for mod in inst.card.continuous:
+                if isinstance(mod, StandbyUpkeep) and self._apply_standby_upkeep(inst, mod, tp):
+                    fired = True
+        if fired:
+            self._check_life_points()
+            self._check_field_to_gy_triggers()
+            self._changed()
+
+    def _standby_upkeep_order(self) -> list[int]:
+        """Face-up cards that might carry a Standby upkeep, in a stable order
+        (turn player first), snapshotted so destroying one mid-phase is safe."""
+        s = self.state
+        order: list[int] = []
+        for pl in (s.turn_player, s.opponent_of(s.turn_player)):
+            p = s.players[pl]
+            for iid in [p.field_zone, *p.spell_trap_zones, *p.monster_zones]:
+                if iid is not None and s.cards[iid].is_face_up:
+                    order.append(iid)
+        return order
+
+    def _apply_standby_upkeep(self, inst, mod: StandbyUpkeep, tp: int) -> bool:
+        """Resolve one StandbyUpkeep during ``tp``'s Standby Phase. Returns True if
+        it did anything (so the caller knows to re-check Life Points / the field)."""
+        s = self.state
+        controller = inst.controller
+        if mod.whose == "controller" and controller != tp:
+            return False  # only fires during the controller's own Standby Phase
+        name = inst.name
+        if mod.pay_life:
+            player = s.players[controller]
+            if player.life_points > mod.pay_life:
+                player.life_points -= mod.pay_life
+                self.log(f"  {player.name} pays {mod.pay_life} LP to maintain {name}")
+            else:
+                self.log(f"  {player.name} cannot pay {mod.pay_life} LP — {name} is destroyed")
+                s.send_to_graveyard(inst.iid)
+            return True
+        if mod.gain_life:
+            player = s.players[controller]
+            player.life_points += mod.gain_life
+            self.log(f"  {player.name} gains {mod.gain_life} LP from {name}")
+            return True
+        if mod.burn_life:
+            victim = s.players[tp]  # the active player takes the damage
+            victim.life_points -= mod.burn_life
+            self.log(f"  {victim.name} takes {mod.burn_life} damage from {name}")
+            return True
+        return False
 
     def _interactive_phase(self, tp: int) -> None:
         """Main Phase 1 / 2: the turn player takes moves until they Pass."""

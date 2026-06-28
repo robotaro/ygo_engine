@@ -14,6 +14,7 @@ from .effects import (
     SELF,
     AttackRestriction,
     DamageEqualToAttackerAtk,
+    DestroyAllFieldSpells,
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
     DestroyLowestAtkOpponentMonster,
@@ -28,6 +29,7 @@ from .effects import (
     ReturnSpellFromGraveyardToHand,
     SearchMonsterToHand,
     SpecialSummonFromGraveyard,
+    StandbyUpkeep,
     SwitchTargetsToAttack,
     TargetSpec,
     Trigger,
@@ -162,6 +164,15 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Yami": _ACTIVATE_ONTO_FIELD,
     "Gaia Power": _ACTIVATE_ONTO_FIELD,
     "The Dark Door": _ACTIVATE_ONTO_FIELD,
+    # --- Slice 8: Standby-Phase upkeep (maintenance cost / per-Standby burn) ---
+    # Messenger of Peace — Continuous Spell with no activation effect; its
+    # pay-or-destroy upkeep and ATK>=1500 attack lock live in CONTINUOUS below.
+    "Messenger of Peace": _ACTIVATE_ONTO_FIELD,
+    # Burning Land — Continuous Spell: activating it wipes every Field Spell, then
+    # it burns the active player 500 each Standby (the burn lives in CONTINUOUS).
+    "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
+    # Cure Mermaid is an Effect Monster with no activated ability — only the
+    # continuous Standby recovery below — so it needs no EFFECTS entry.
 }
 
 
@@ -182,4 +193,16 @@ CONTINUOUS: dict[str, tuple] = {
     "Gaia Power": (FieldMod(atk=500, defn=-400, attributes=frozenset({Attribute.EARTH})),),
     # Continuous Spell — a rules restriction, not a stat layer.
     "The Dark Door": (AttackRestriction(one_per_battle_phase=True),),
+    # --- Slice 8: Standby-Phase upkeep ---
+    # Messenger of Peace: pay 100 each of your Standby Phases or it's destroyed,
+    # and no monster with ATK >= 1500 can attack (both players).
+    "Messenger of Peace": (
+        StandbyUpkeep(pay_life=100, whose="controller"),
+        AttackRestriction(min_atk_cannot_attack=1500),
+    ),
+    # Burning Land: the active player takes 500 during each of their Standbys.
+    "Burning Land": (StandbyUpkeep(burn_life=500, whose="turn_player"),),
+    # Cure Mermaid (Effect Monster): recover 800 each of your Standby Phases — the
+    # same hook, on a monster, proving it isn't tied to Spells/Traps.
+    "Cure Mermaid": (StandbyUpkeep(gain_life=800, whose="controller"),),
 }

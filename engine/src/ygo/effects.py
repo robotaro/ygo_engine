@@ -86,10 +86,40 @@ class AttackRestriction:
     """A continuous limit on declaring attacks, radiated by a face-up card.
 
     ``one_per_battle_phase`` (The Dark Door): each player may declare at most one
-    attack per Battle Phase. Modelled as data so the kernel stays card-agnostic.
+    attack per Battle Phase. ``min_atk_cannot_attack`` (Messenger of Peace): no
+    monster whose *effective* ATK is at or above this value may declare an attack
+    (both players). Modelled as data so the kernel stays card-agnostic.
     """
 
     one_per_battle_phase: bool = False
+    min_atk_cannot_attack: int | None = None
+
+
+@dataclass(frozen=True)
+class StandbyUpkeep:
+    """Something a face-up card does at the start of a Standby Phase (Slice 8).
+
+    The engine's Standby hook reads these off *every* face-up card — monster,
+    Continuous Spell/Trap, or Field Spell alike — so the behaviour isn't tied to
+    a card type (the engine stays card-agnostic). ``whose`` selects which Standby
+    Phases it fires on:
+
+      * "controller"  — only the card controller's own Standby Phase
+        (Messenger of Peace's cost, Cure Mermaid's recovery).
+      * "turn_player" — every Standby Phase, always hitting the active player
+        (Burning Land's 500 to whoever's turn it is).
+
+    Exactly one knob is set per instance:
+      * ``pay_life``  — the controller must pay this to keep the card; if they
+        cannot (it would leave them at 0 LP or below), the card is destroyed.
+      * ``gain_life`` — the controller gains this much LP.
+      * ``burn_life`` — the active (turn) player loses this much LP.
+    """
+
+    pay_life: int = 0
+    gain_life: int = 0
+    burn_life: int = 0
+    whose: str = "controller"  # "controller" | "turn_player"
 
 
 @dataclass(frozen=True)
@@ -163,6 +193,17 @@ class DestroyTargets(Primitive):
         for iid in list(ctx.targets):
             if iid in ctx.state.cards:
                 ctx.state.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
+class DestroyAllFieldSpells(Primitive):
+    """Burning Land: destroy every Field Spell on the field (both players')."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        for player in ctx.state.players:
+            fz = player.field_zone
+            if fz is not None:
+                ctx.state.send_to_graveyard(fz)
 
 
 @dataclass(frozen=True)

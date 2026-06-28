@@ -32,3 +32,7 @@
 1 Gaia Power
 1 Yami
 1 The Dark Door
+// Slice 8 — Standby/maintenance upkeep
+1 Messenger of Peace
+1 Burning Land
+1 Cure Mermaid

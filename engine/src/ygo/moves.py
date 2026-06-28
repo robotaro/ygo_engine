@@ -362,9 +362,22 @@ def _attacks_locked_out(state: GameState, player: int) -> bool:
     )
 
 
+def _atk_attack_floor(state: GameState) -> int | None:
+    """Messenger of Peace: the (effective) ATK at or above which a monster cannot
+    declare an attack — the lowest such threshold among face-up restrictions, or
+    None if no such lock is active."""
+    floors = [
+        mod.min_atk_cannot_attack
+        for mod, _ in state.active_passives()
+        if isinstance(mod, AttackRestriction) and mod.min_atk_cannot_attack is not None
+    ]
+    return min(floors) if floors else None
+
+
 def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
     if _attacks_locked_out(state, player):
         return []
+    atk_floor = _atk_attack_floor(state)
     opp = state.opponent_of(player)
     opp_monsters = [m for m in state.players[opp].monster_zones if m is not None]
     actions: list[Action] = []
@@ -374,6 +387,8 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
         inst = state.inst(iid)
         if inst.position is not Position.FACE_UP_ATTACK or inst.attacked_this_turn:
             continue
+        if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
+            continue  # Messenger of Peace: too strong to declare an attack
         if opp_monsters:
             actions.extend(DeclareAttack(iid, t) for t in opp_monsters)
         else:
