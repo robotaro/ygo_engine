@@ -58,6 +58,9 @@ class CardInstance:
     # Gemini (Dual) monster: it's a Normal Monster (no effect) until a 2nd Normal
     # Summon ("Gemini Summon") flips this True. Reset when it leaves the field.
     gemini_unlocked: bool = False
+    # Union monster: the turn it last equipped/unequipped itself (its once-per-turn
+    # gate). Turn-stamped, so it expires on its own; reset when it leaves the field.
+    union_acted_on_turn: int | None = None
 
     @property
     def name(self) -> str:
@@ -223,6 +226,7 @@ class GameState:
         inst.control_until_end_of_turn = None
         inst.control_equip_iid = None
         inst.gemini_unlocked = False  # a Gemini re-locks once it leaves the field
+        inst.union_acted_on_turn = None
 
     def send_to_graveyard(self, iid: int) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags."""

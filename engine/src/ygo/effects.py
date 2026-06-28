@@ -63,6 +63,20 @@ class EquipMod:
 
 
 @dataclass(frozen=True)
+class UnionMod:
+    """Marks a Union monster and which monsters it may equip *itself* to. A Union
+    can, once per turn, equip to a valid host you control (becoming an Equip Card)
+    or unequip and Special Summon itself back. ``host_names`` restricts valid hosts
+    to those card names (empty = any face-up monster you control); ``host_races``
+    restricts by race. The ATK/DEF boost it grants while equipped is a separate
+    ``EquipMod`` in the same ``continuous`` list, read through the normal Equip
+    layer once the Union sits (attached) in a Spell/Trap zone."""
+
+    host_names: frozenset[str] = frozenset()
+    host_races: frozenset[str] = frozenset()
+
+
+@dataclass(frozen=True)
 class SelfStatMod:
     """A continuous ATK/DEF modifier a face-up monster applies to *itself* (the
     monster's own "layer"). Used for effects like Goggle Golem ("the original ATK

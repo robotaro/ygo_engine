@@ -36,6 +36,7 @@ from .effects import (
     TakeControl,
     TargetSpec,
     Trigger,
+    UnionMod,
 )
 from .enums import Attribute
 
@@ -294,4 +295,13 @@ CONTINUOUS: dict[str, tuple] = {
     # original ATK of this card becomes 2100" — a +600 self-layer that the engine
     # only applies once `gemini_unlocked` is set (effects_active).
     "Goggle Golem": (SelfStatMod(atk=600),),
+    # --- Slice 16: Union monster ---
+    # Y-Dragon Head: equips only to "X-Head Cannon" you control; the host gains
+    # 400 ATK/DEF (the EquipMod flows through the normal Equip layer once attached).
+    # (Simplification: the "destroy this card instead of the host" protection is
+    # not modelled — when the host leaves, the Union follows it to the GY.)
+    "Y-Dragon Head": (
+        UnionMod(host_names=frozenset({"X-Head Cannon"})),
+        EquipMod(atk=400, defn=400),
+    ),
 }

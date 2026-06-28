@@ -58,3 +58,6 @@
 1 Susa Soldier
 // Slice 15 — Gemini monster (Gemini Summon unlocks its effect: ATK 1500 -> 2100)
 1 Goggle Golem
+// Slice 16 — Union monster + its host (Y-Dragon Head equips to X-Head Cannon, +400)
+1 X-Head Cannon
+1 Y-Dragon Head

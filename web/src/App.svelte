@@ -24,6 +24,7 @@
   let seedInput = ''
   let openGy = null // which Graveyard's contents are expanded ('you' | 'opp')
   let ritualChosen = [] // iids picked for a Ritual Tribute
+  let unionSource = null // a Union monster picked, awaiting a host to equip to
 
   onMount(() => newGame())
 
@@ -37,6 +38,9 @@
   $: draggingSpellTrap = draggedIid != null && (canActivate(draggedIid) || canSet(draggedIid))
   $: draggingFieldSpell = draggedIid != null && isFieldSpell(draggedIid) && canActivate(draggedIid)
   $: if (phase !== 'battle_phase') selectedAttacker = null
+  // Union: hosts the picked Union may equip to (highlighted while choosing).
+  $: unionHosts = unionSource != null && $legal ? ($legal.unionEquippable?.[unionSource] ?? []) : []
+  $: if (!$legal) unionSource = null
   $: validTargets =
     selectedAttacker != null && $legal ? attackTargets(selectedAttacker) || [] : []
   $: mustDiscard = !!$legal?.discards?.length
@@ -97,6 +101,12 @@
   }
   function canGeminiSummon(iid) {
     return $legal?.geminiSummonable?.includes(iid)
+  }
+  function canUnionEquip(iid) {
+    return !!$legal?.unionEquippable?.[iid]?.length
+  }
+  function canUnionUnequip(iid) {
+    return $legal?.unionUnequippable?.includes(iid)
   }
   function canChangePos(iid) {
     return $legal?.positionChanges?.includes(iid)
@@ -255,11 +265,21 @@
       toggleTribute(iid)
       return
     }
+    // Union: a Union is picked, awaiting a host — click a highlighted host to equip.
+    if (unionSource != null) {
+      if (iid === unionSource) unionSource = null // click the Union again to cancel
+      else if (unionHosts.includes(iid)) {
+        sendIntent({ kind: 'unionEquip', union: unionSource, host: iid })
+        unionSource = null
+      }
+      return
+    }
     if (phase === 'battle_phase') {
       if (attackTargets(iid)) selectedAttacker = selectedAttacker === iid ? null : iid
       return
     }
-    if (canGeminiSummon(iid)) sendIntent({ kind: 'geminiSummon', iid })
+    if (canUnionEquip(iid)) unionSource = iid // enter host-pick mode
+    else if (canGeminiSummon(iid)) sendIntent({ kind: 'geminiSummon', iid })
     else if (canFlip(iid)) sendIntent({ kind: 'flip', iid })
     else if (canChangePos(iid)) sendIntent({ kind: 'changePosition', iid })
   }
@@ -307,6 +327,7 @@
     if (!yourTurn) return
     if ($targetRequest) return chooseEngineTarget(iid)
     if (pendingTarget) return chooseTarget(iid)
+    if (canUnionUnequip(iid)) return sendIntent({ kind: 'unionUnequip', union: iid })
     if (canActivate(iid)) beginActivate(iid, zoneIndex)
   }
 
@@ -482,18 +503,24 @@
           {#if slot}
             <div
               class="slot mon own"
-              class:selected={selectedAttacker === slot.iid}
+              class:selected={selectedAttacker === slot.iid || unionSource === slot.iid}
               class:tribute={pendingTribute?.chosen.includes(slot.iid)}
-              class:targetable={targetCandidates.includes(slot.iid)}
+              class:targetable={targetCandidates.includes(slot.iid) || unionHosts.includes(slot.iid)}
               class:actionable={yourTurn &&
                 (attackTargets(slot.iid) ||
                   canFlip(slot.iid) ||
                   canGeminiSummon(slot.iid) ||
+                  canUnionEquip(slot.iid) ||
+                  unionHosts.includes(slot.iid) ||
                   canChangePos(slot.iid) ||
                   pendingTribute ||
                   pendingTarget ||
                   $targetRequest)}
-              title={canGeminiSummon(slot.iid) ? 'Gemini Summon — unlock this monster’s effect' : null}
+              title={canGeminiSummon(slot.iid)
+                ? 'Gemini Summon — unlock this monster’s effect'
+                : canUnionEquip(slot.iid)
+                  ? 'Union — click, then click a host to equip'
+                  : null}
               onclick={() => onClickOwnMonster(slot.iid)}
             >
               <CardTile card={slot} defense={isDefense(slot)} small />
@@ -544,8 +571,9 @@
           {#if slot}
             <div
               class="slot st"
-              class:actionable={yourTurn && canActivate(slot.iid)}
+              class:actionable={yourTurn && (canActivate(slot.iid) || canUnionUnequip(slot.iid))}
               class:targetable={targetCandidates.includes(slot.iid)}
+              title={canUnionUnequip(slot.iid) ? 'Unequip this Union (Special Summon it back)' : null}
               onclick={() => onClickOwnSpellTrap(slot.iid, i)}
             >
               <CardTile card={slot} small />

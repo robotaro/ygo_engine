@@ -70,6 +70,23 @@ class GeminiSummon(Action):
 
 
 @dataclass(frozen=True)
+class UnionEquip(Action):
+    """Equip a face-up Union monster you control to a valid host (once per turn).
+    The Union leaves the Monster Zone and attaches to the host as an Equip Card."""
+
+    union_iid: int
+    host_iid: int
+
+
+@dataclass(frozen=True)
+class UnionUnequip(Action):
+    """Unequip a Union monster and Special Summon it back in face-up Attack
+    Position (once per turn)."""
+
+    union_iid: int
+
+
+@dataclass(frozen=True)
 class FlipSummon(Action):
     """Flip a face-down Defense monster up into Attack Position."""
 
@@ -192,6 +209,31 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             actions.append(FlipSummon(iid))
         elif inst.position in (Position.FACE_UP_ATTACK, Position.FACE_UP_DEFENSE):
             actions.append(ChangePosition(iid))
+
+    # Union: once per turn, a face-up Union you control may equip itself to a valid
+    # host (needs a free Spell/Trap zone — our simplification: an equipped Union
+    # occupies one), and an equipped Union may unequip back (needs a free Monster
+    # Zone). Each is gated by the Union's own once-per-turn stamp.
+    union_st_free = state.first_empty_spell_trap_zone(player) is not None
+    union_mon_free = state.first_empty_monster_zone(player) is not None
+    for iid in p.monster_zones:
+        if iid is None:
+            continue
+        inst = state.inst(iid)
+        if not inst.card.is_union or not inst.is_face_up:
+            continue
+        if inst.union_acted_on_turn == state.turn_count or not union_st_free:
+            continue
+        actions.extend(UnionEquip(iid, host) for host in union_hosts(state, player, iid))
+    for iid in p.spell_trap_zones:
+        if iid is None:
+            continue
+        inst = state.inst(iid)
+        if not (inst.card.is_union and inst.equipped_to is not None):
+            continue
+        if inst.union_acted_on_turn == state.turn_count or not union_mon_free:
+            continue
+        actions.append(UnionUnequip(iid))
 
     # Spell activations (Ignition/Quick from the hand) + Set Spell/Trap.
     # A Field Spell goes to the Field Zone, so it doesn't need an open S/T zone.
@@ -336,6 +378,50 @@ def can_ritual_summon(state: GameState, controller: int, monster_name: str) -> b
     free = sum(1 for i in state.players[controller].monster_zones if i is None)
     on_field = sum(1 for m in pool if state.inst(m).zone is Zone.MONSTER)
     return free + on_field >= 1  # a field Tribute (or an existing gap) opens the slot
+
+
+def _union_descriptor(state: GameState, union_iid: int):
+    """The Union monster's UnionMod (host restriction), or None if it isn't one."""
+    from .effects import UnionMod
+
+    return next(
+        (m for m in state.inst(union_iid).card.continuous if isinstance(m, UnionMod)),
+        None,
+    )
+
+
+def _host_carries_union(state: GameState, controller: int, host_iid: int) -> bool:
+    """True if the host already has a Union monster equipped (max one at a time)."""
+    return any(
+        sid is not None
+        and state.inst(sid).card.is_union
+        and state.inst(sid).equipped_to == host_iid
+        for sid in state.players[controller].spell_trap_zones
+    )
+
+
+def union_hosts(state: GameState, controller: int, union_iid: int) -> list[int]:
+    """Valid hosts a face-up Union you control may equip itself to: another face-up
+    monster you control matching the Union's name/race restriction, not already
+    carrying a Union."""
+    mod = _union_descriptor(state, union_iid)
+    if mod is None:
+        return []
+    hosts: list[int] = []
+    for hid in state.players[controller].monster_zones:
+        if hid is None or hid == union_iid:
+            continue
+        host = state.inst(hid)
+        if not host.is_face_up:
+            continue
+        if mod.host_names and host.card.name not in mod.host_names:
+            continue
+        if mod.host_races and host.card.race not in mod.host_races:
+            continue
+        if _host_carries_union(state, controller, hid):
+            continue
+        hosts.append(hid)
+    return hosts
 
 
 def _graveyard_monsters(state: GameState, players: tuple[int, ...]) -> list[int]:
@@ -519,6 +605,10 @@ def apply(state: GameState, action: Action) -> str:
         inst.gemini_unlocked = True
         state.normal_summon_used = True
         return f"Gemini Summons {inst.name} (effect unlocked)"
+    if isinstance(action, UnionEquip):
+        return _union_equip(state, action)
+    if isinstance(action, UnionUnequip):
+        return _union_unequip(state, action)
     if isinstance(action, FlipSummon):
         inst = state.inst(action.iid)
         inst.position = Position.FACE_UP_ATTACK
@@ -624,6 +714,31 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
     if inst.zone is Zone.SPELL_TRAP and not card.is_permanent:
         state.send_to_graveyard(action.iid)
     return f"activates {card.name}"
+
+
+def _union_equip(state: GameState, action: UnionEquip) -> str:
+    """Equip a Union monster to its host: it leaves the Monster Zone and attaches
+    as an Equip Card (occupying a Spell/Trap zone, our simplification). Its EquipMod
+    boost then flows through the normal Equip layer."""
+    union = state.inst(action.union_iid)
+    player = union.controller
+    index = state.first_empty_spell_trap_zone(player)
+    state.place_spell_trap(action.union_iid, player, index, Position.FACE_UP_ATTACK)
+    union.equipped_to = action.host_iid
+    union.union_acted_on_turn = state.turn_count
+    return f"equips {union.name} to {state.inst(action.host_iid).name} (Union)"
+
+
+def _union_unequip(state: GameState, action: UnionUnequip) -> str:
+    """Unequip a Union monster and Special Summon it back in face-up Attack Position."""
+    union = state.inst(action.union_iid)
+    player = union.controller
+    index = state.first_empty_monster_zone(player)
+    state.place_monster(action.union_iid, player, index, Position.FACE_UP_ATTACK)
+    union.equipped_to = None
+    union.union_acted_on_turn = state.turn_count
+    union.summoned_this_turn = True  # Special Summoned this turn
+    return f"unequips {union.name} (Special Summon)"
 
 
 def _summon(

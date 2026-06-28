@@ -25,6 +25,8 @@ from .moves import (
     Pass,
     SetMonster,
     SetSpellTrap,
+    UnionEquip,
+    UnionUnequip,
     legal_actions,
 )
 from .state import CardInstance, GameState
@@ -131,6 +133,8 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
     activatable: dict[int, list[list[int]]] = {}
     settable: list[int] = []
     gemini_summonable: list[int] = []
+    union_equippable: dict[int, list[int]] = {}
+    union_unequippable: list[int] = []
 
     for a in legal:
         if isinstance(a, NormalSummon):
@@ -141,6 +145,10 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
             entry["set"].append(list(a.tributes))
         elif isinstance(a, GeminiSummon):
             gemini_summonable.append(a.iid)
+        elif isinstance(a, UnionEquip):
+            union_equippable.setdefault(a.union_iid, []).append(a.host_iid)
+        elif isinstance(a, UnionUnequip):
+            union_unequippable.append(a.union_iid)
         elif isinstance(a, FlipSummon):
             flips.append(a.iid)
         elif isinstance(a, ChangePosition):
@@ -161,6 +169,9 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         "attackers": {str(k): v for k, v in attackers.items()},
         "flips": flips,
         "geminiSummonable": gemini_summonable,
+        # union iid -> [valid host iids]; equipped-Union iids that may unequip
+        "unionEquippable": {str(k): v for k, v in union_equippable.items()},
+        "unionUnequippable": union_unequippable,
         "positionChanges": position_changes,
         # iid -> [[target iids]...]; [[]] means "activatable, no target"
         "activatable": {str(k): v for k, v in activatable.items()},
@@ -203,6 +214,24 @@ def match_intent(intent: dict, legal: list[Action], state: GameState) -> Action 
     if kind == "geminiSummon":
         iid = intent.get("iid")
         return next((a for a in legal if isinstance(a, GeminiSummon) and a.iid == iid), None)
+
+    if kind == "unionEquip":
+        union = intent.get("union")
+        host = intent.get("host")
+        return next(
+            (
+                a
+                for a in legal
+                if isinstance(a, UnionEquip) and a.union_iid == union and a.host_iid == host
+            ),
+            None,
+        )
+
+    if kind == "unionUnequip":
+        union = intent.get("union")
+        return next(
+            (a for a in legal if isinstance(a, UnionUnequip) and a.union_iid == union), None
+        )
 
     if kind == "changePosition":
         iid = intent.get("iid")
