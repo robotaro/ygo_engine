@@ -29,6 +29,7 @@ from .effects import (
     NegateAttack,
     ReturnSpellFromGraveyardToHand,
     SearchMonsterToHand,
+    SelfStatMod,
     SpecialSummonFromGraveyard,
     StandbyUpkeep,
     SwitchTargetsToAttack,
@@ -288,4 +289,9 @@ CONTINUOUS: dict[str, tuple] = {
     # --- Slice 10: draw-trigger hook ---
     # Solemn Wishes: gain 500 LP each time its controller draws a card(s).
     "Solemn Wishes": (DrawTrigger(gain_life=500),),
+    # --- Slice 15: Gemini monster ---
+    # Goggle Golem: a Normal Monster (1500 ATK) until Gemini Summoned, then "the
+    # original ATK of this card becomes 2100" — a +600 self-layer that the engine
+    # only applies once `gemini_unlocked` is set (effects_active).
+    "Goggle Golem": (SelfStatMod(atk=600),),
 }

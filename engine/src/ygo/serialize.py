@@ -20,6 +20,7 @@ from .moves import (
     DeclareAttack,
     DiscardCard,
     FlipSummon,
+    GeminiSummon,
     NormalSummon,
     Pass,
     SetMonster,
@@ -69,6 +70,8 @@ def _monster_slot(state: GameState, iid: int | None, *, hide_face_down: bool) ->
         if inst.card.is_monster:  # current (post-modifier) stats for the board
             cell["effAtk"] = state.effective_attack(iid)
             cell["effDef"] = state.effective_defense(iid)
+        if inst.card.is_gemini:  # Gemini: show whether the effect is unlocked
+            cell["geminiUnlocked"] = inst.gemini_unlocked
         if inst.equipped_to is not None:
             cell["equippedTo"] = inst.equipped_to
     return cell
@@ -127,6 +130,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
     discards: list[int] = []
     activatable: dict[int, list[list[int]]] = {}
     settable: list[int] = []
+    gemini_summonable: list[int] = []
 
     for a in legal:
         if isinstance(a, NormalSummon):
@@ -135,6 +139,8 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         elif isinstance(a, SetMonster):
             entry = summonable.setdefault(a.iid, {"summon": [], "set": []})
             entry["set"].append(list(a.tributes))
+        elif isinstance(a, GeminiSummon):
+            gemini_summonable.append(a.iid)
         elif isinstance(a, FlipSummon):
             flips.append(a.iid)
         elif isinstance(a, ChangePosition):
@@ -154,6 +160,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         # attacker iid -> [target iids... or null for direct]
         "attackers": {str(k): v for k, v in attackers.items()},
         "flips": flips,
+        "geminiSummonable": gemini_summonable,
         "positionChanges": position_changes,
         # iid -> [[target iids]...]; [[]] means "activatable, no target"
         "activatable": {str(k): v for k, v in activatable.items()},
@@ -192,6 +199,10 @@ def match_intent(intent: dict, legal: list[Action], state: GameState) -> Action 
     if kind == "flip":
         iid = intent.get("iid")
         return next((a for a in legal if isinstance(a, FlipSummon) and a.iid == iid), None)
+
+    if kind == "geminiSummon":
+        iid = intent.get("iid")
+        return next((a for a in legal if isinstance(a, GeminiSummon) and a.iid == iid), None)
 
     if kind == "changePosition":
         iid = intent.get("iid")

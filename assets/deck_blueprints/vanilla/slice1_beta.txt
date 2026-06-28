@@ -56,3 +56,5 @@
 1 Hungry Burger
 // Slice 14 — Spirit monster (returns to hand at the End Phase; no Special Summon)
 1 Susa Soldier
+// Slice 15 — Gemini monster (Gemini Summon unlocks its effect: ATK 1500 -> 2100)
+1 Goggle Golem

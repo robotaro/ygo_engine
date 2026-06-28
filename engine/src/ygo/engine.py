@@ -172,7 +172,9 @@ class Engine:
             player = s.pending_draws.pop(0)
             for iid in self._faceup_cards(player):
                 inst = s.cards.get(iid)
-                for mod in inst.card.continuous if inst else ():
+                if inst is None or not inst.effects_active:
+                    continue  # a Gemini not yet Gemini Summoned has no live effect
+                for mod in inst.card.continuous:
                     if isinstance(mod, DrawTrigger) and mod.gain_life:
                         s.players[player].life_points += mod.gain_life
                         self.log(f"  {s.players[player].name} gains {mod.gain_life} LP from {inst.name}")
@@ -192,8 +194,8 @@ class Engine:
             if self.result is not None:
                 break
             inst = s.cards.get(iid)
-            if inst is None or not inst.is_face_up:
-                continue  # left the field via an earlier upkeep this phase
+            if inst is None or not inst.is_face_up or not inst.effects_active:
+                continue  # left the field, or a Gemini not yet Gemini Summoned
             for mod in inst.card.continuous:
                 if isinstance(mod, StandbyUpkeep) and self._apply_standby_upkeep(inst, mod, tp):
                     fired = True

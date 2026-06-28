@@ -16,7 +16,7 @@ import random
 from dataclasses import dataclass, field
 
 from .cards import CardDef
-from .effects import EquipMod, FieldMod
+from .effects import EquipMod, FieldMod, SelfStatMod
 from .enums import Phase, Position, Zone
 
 STARTING_LIFE_POINTS = 8000
@@ -55,6 +55,9 @@ class CardInstance:
     control_reverts_to: int | None = None
     control_until_end_of_turn: int | None = None
     control_equip_iid: int | None = None
+    # Gemini (Dual) monster: it's a Normal Monster (no effect) until a 2nd Normal
+    # Summon ("Gemini Summon") flips this True. Reset when it leaves the field.
+    gemini_unlocked: bool = False
 
     @property
     def name(self) -> str:
@@ -63,6 +66,12 @@ class CardInstance:
     @property
     def is_face_up(self) -> bool:
         return self.position is not None and self.position.is_face_up
+
+    @property
+    def effects_active(self) -> bool:
+        """Whether this card's effects currently function. A Gemini monster is a
+        Normal Monster until Gemini Summoned; every other card is always live."""
+        return not (self.card.is_gemini and not self.gemini_unlocked)
 
 
 @dataclass
@@ -213,6 +222,7 @@ class GameState:
         inst.control_reverts_to = None
         inst.control_until_end_of_turn = None
         inst.control_equip_iid = None
+        inst.gemini_unlocked = False  # a Gemini re-locks once it leaves the field
 
     def send_to_graveyard(self, iid: int) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags."""
@@ -302,6 +312,19 @@ class GameState:
                 total += mod.atk if which == "atk" else mod.defn
         return total
 
+    def _self_stat_delta(self, monster_iid: int, which: str) -> int:
+        """A monster's own continuous self-boost (SelfStatMod), e.g. Goggle Golem's
+        unlocked ATK. Suppressed while the monster's effect is inactive (a Gemini
+        not yet Gemini Summoned)."""
+        inst = self.cards[monster_iid]
+        if not inst.effects_active:
+            return 0
+        return sum(
+            (mod.atk if which == "atk" else mod.defn)
+            for mod in inst.card.continuous
+            if isinstance(mod, SelfStatMod)
+        )
+
     def effective_attack(self, iid: int) -> int:
         inst = self.cards[iid]
         if not inst.card.is_monster:
@@ -310,6 +333,7 @@ class GameState:
             self._mod_delta(mod, ctrl, "atk") for mod, ctrl in self._equip_mods_on(iid)
         )
         total += self._field_delta(iid, "atk")
+        total += self._self_stat_delta(iid, "atk")
         return max(0, total)
 
     def effective_defense(self, iid: int) -> int:
@@ -320,6 +344,7 @@ class GameState:
             self._mod_delta(mod, ctrl, "def") for mod, ctrl in self._equip_mods_on(iid)
         )
         total += self._field_delta(iid, "def")
+        total += self._self_stat_delta(iid, "def")
         return max(0, total)
 
     def spawn_on_field(

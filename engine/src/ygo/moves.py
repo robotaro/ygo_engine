@@ -61,6 +61,15 @@ class SetMonster(Action):
 
 
 @dataclass(frozen=True)
+class GeminiSummon(Action):
+    """A 2nd Normal Summon on a face-up Gemini monster you already control, to
+    treat it as an Effect Monster (it stays in its zone/position). Uses up your
+    one Normal Summon for the turn."""
+
+    iid: int
+
+
+@dataclass(frozen=True)
 class FlipSummon(Action):
     """Flip a face-down Defense monster up into Attack Position."""
 
@@ -161,6 +170,16 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
                 for combo in combinations(controlled, need):
                     actions.append(NormalSummon(iid, tributes=combo))
                     actions.append(SetMonster(iid, tributes=combo))
+
+        # Gemini Summon: spend your Normal Summon to unlock a face-up Gemini you
+        # already control (it doesn't move). Treated as a Normal Summon, so it's
+        # also gated by the once-per-turn limit above.
+        for iid in p.monster_zones:
+            if iid is None:
+                continue
+            inst = state.inst(iid)
+            if inst.card.is_gemini and inst.is_face_up and not inst.gemini_unlocked:
+                actions.append(GeminiSummon(iid))
 
     # battle-position changes (not on the turn a monster was summoned/already changed)
     for iid in p.monster_zones:
@@ -495,6 +514,11 @@ def apply(state: GameState, action: Action) -> str:
         return _summon(state, action.iid, action.tributes, action.zone_index, face_up=True)
     if isinstance(action, SetMonster):
         return _summon(state, action.iid, action.tributes, action.zone_index, face_up=False)
+    if isinstance(action, GeminiSummon):
+        inst = state.inst(action.iid)
+        inst.gemini_unlocked = True
+        state.normal_summon_used = True
+        return f"Gemini Summons {inst.name} (effect unlocked)"
     if isinstance(action, FlipSummon):
         inst = state.inst(action.iid)
         inst.position = Position.FACE_UP_ATTACK

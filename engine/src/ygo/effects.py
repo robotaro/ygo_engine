@@ -63,6 +63,19 @@ class EquipMod:
 
 
 @dataclass(frozen=True)
+class SelfStatMod:
+    """A continuous ATK/DEF modifier a face-up monster applies to *itself* (the
+    monster's own "layer"). Used for effects like Goggle Golem ("the original ATK
+    of this card becomes 2100" — a flat self-boost). Read by
+    ``GameState.effective_attack/defense`` straight off the monster's own
+    ``continuous`` list, and suppressed while the monster's effect is inactive
+    (a Gemini that hasn't been Gemini Summoned yet)."""
+
+    atk: int = 0
+    defn: int = 0
+
+
+@dataclass(frozen=True)
 class FieldMod:
     """A continuous flat ATK/DEF modifier a face-up Field/Continuous Spell radiates
     over every monster on the field that matches its filter (the "field layer").

@@ -17,6 +17,7 @@ from .moves import (
     ActivateSpell,
     DeclareAttack,
     DiscardCard,
+    GeminiSummon,
     NormalSummon,
     Pass,
     SetSpellTrap,
@@ -180,6 +181,10 @@ class GreedyAgent(Agent):
         if summons:
             # biggest ATK, fewest tributes
             return max(summons, key=lambda a: (self._atk(state, a.iid), -len(a.tributes)))
+        # No fresh body to deploy — unlock a face-up Gemini instead (Gemini Summon).
+        geminis = [a for a in legal if isinstance(a, GeminiSummon)]
+        if geminis:
+            return geminis[0]
         # Equip a Spell onto our own strongest monster, if we drew one.
         equips = [
             a

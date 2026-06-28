@@ -95,6 +95,9 @@
   function canFlip(iid) {
     return $legal?.flips?.includes(iid)
   }
+  function canGeminiSummon(iid) {
+    return $legal?.geminiSummonable?.includes(iid)
+  }
   function canChangePos(iid) {
     return $legal?.positionChanges?.includes(iid)
   }
@@ -256,7 +259,8 @@
       if (attackTargets(iid)) selectedAttacker = selectedAttacker === iid ? null : iid
       return
     }
-    if (canFlip(iid)) sendIntent({ kind: 'flip', iid })
+    if (canGeminiSummon(iid)) sendIntent({ kind: 'geminiSummon', iid })
+    else if (canFlip(iid)) sendIntent({ kind: 'flip', iid })
     else if (canChangePos(iid)) sendIntent({ kind: 'changePosition', iid })
   }
 
@@ -484,13 +488,16 @@
               class:actionable={yourTurn &&
                 (attackTargets(slot.iid) ||
                   canFlip(slot.iid) ||
+                  canGeminiSummon(slot.iid) ||
                   canChangePos(slot.iid) ||
                   pendingTribute ||
                   pendingTarget ||
                   $targetRequest)}
+              title={canGeminiSummon(slot.iid) ? 'Gemini Summon — unlock this monster’s effect' : null}
               onclick={() => onClickOwnMonster(slot.iid)}
             >
               <CardTile card={slot} defense={isDefense(slot)} small />
+              {#if slot.geminiUnlocked}<span class="badge gemini">★</span>{/if}
             </div>
           {:else}
             <div
@@ -826,6 +833,19 @@
   }
   .slot.mon.own.actionable:hover {
     outline: 2px solid #d9bf7a;
+  }
+  .slot.mon {
+    position: relative;
+  }
+  .badge.gemini {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 12px;
+    line-height: 1;
+    color: #ffd76a;
+    text-shadow: 0 0 3px #000, 0 0 3px #000;
+    pointer-events: none;
   }
   .slot.selected {
     outline: 2px solid #6cff9e;
