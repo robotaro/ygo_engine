@@ -39,6 +39,7 @@ def _card_public(inst: CardInstance) -> dict:
         "iid": inst.iid,
         "name": c.name,
         "cardType": c.card_type.value,
+        "subtype": c.subtype.value if c.subtype else None,  # Field / Equip / Continuous / ...
         "attack": c.attack,
         "defense": c.defense,
         "level": c.level,

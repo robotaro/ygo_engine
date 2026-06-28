@@ -12,6 +12,7 @@ from __future__ import annotations
 from .effects import (
     OPPONENT,
     SELF,
+    AttackRestriction,
     DamageEqualToAttackerAtk,
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
@@ -21,6 +22,7 @@ from .effects import (
     Effect,
     EquipMod,
     EquipToTarget,
+    FieldMod,
     InflictDamage,
     NegateAttack,
     ReturnSpellFromGraveyardToHand,
@@ -30,6 +32,11 @@ from .effects import (
     TargetSpec,
     Trigger,
 )
+from .enums import Attribute
+
+# A bare "activate it onto the field" effect: Field/Continuous Spells have no
+# resolution of their own — placing them face-up is what turns on their layer.
+_ACTIVATE_ONTO_FIELD = (Effect(timing="ignition"),)
 
 # Equip-target spec shared by the Equip Spells below.
 _EQUIP_TARGET = TargetSpec(count=1, where="any_monster")
@@ -148,12 +155,31 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(SpecialSummonFromGraveyard(link=True),),
         ),
     ),
+    # --- Slice 7: Field Spells (stat layers) + one Continuous attack restriction ---
+    # These have no resolution effect; activating them just places them face-up,
+    # and their `continuous` layer (below) does the rest.
+    "Sogen": _ACTIVATE_ONTO_FIELD,
+    "Yami": _ACTIVATE_ONTO_FIELD,
+    "Gaia Power": _ACTIVATE_ONTO_FIELD,
+    "The Dark Door": _ACTIVATE_ONTO_FIELD,
 }
 
 
 # Passive modifiers applied while a card is face-up on the field (the "layers").
+# A card may radiate EquipMods (attached Equips), FieldMods (field-wide stat
+# layers), or AttackRestrictions (continuous rules limits) — consumers filter by
+# type, so a card can mix them.
 CONTINUOUS: dict[str, tuple] = {
     "Axe of Despair": (EquipMod(atk=1000),),
     "United We Stand": (EquipMod(scaling="face_up_monsters", scale_atk=800, scale_defn=800),),
     "Mage Power": (EquipMod(scaling="spell_trap", scale_atk=500, scale_defn=500),),
+    # Field Spells — flat ATK/DEF to every matching monster on the field, both sides.
+    "Sogen": (FieldMod(atk=200, defn=200, races=frozenset({"Warrior", "Beast-Warrior"})),),
+    "Yami": (
+        FieldMod(atk=200, defn=200, races=frozenset({"Fiend", "Spellcaster"})),
+        FieldMod(atk=-200, defn=-200, races=frozenset({"Fairy"})),
+    ),
+    "Gaia Power": (FieldMod(atk=500, defn=-400, attributes=frozenset({Attribute.EARTH})),),
+    # Continuous Spell — a rules restriction, not a stat layer.
+    "The Dark Door": (AttackRestriction(one_per_battle_phase=True),),
 }

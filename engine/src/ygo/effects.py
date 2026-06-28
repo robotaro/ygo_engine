@@ -11,6 +11,8 @@ Scope:
     Trap Hole, Magic Cylinder, Mystical Space Typhoon).
   * Slice 6 — Special Summon from the Graveyard (Monster Reborn, Call of the
     Haunted), graveyard target pools, and the Call-of-the-Haunted bond.
+  * Slice 7 — Field Spells as field-wide stat layers (Sogen/Yami/Gaia Power) and
+    a continuous attack restriction (The Dark Door).
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Callable
 
-from .enums import Position, Zone
+from .enums import Attribute, Position, Zone
 
 if TYPE_CHECKING:
     from .state import GameState
@@ -58,6 +60,36 @@ class EquipMod:
     scaling: str | None = None  # None | "face_up_monsters" | "spell_trap"
     scale_atk: int = 0
     scale_defn: int = 0
+
+
+@dataclass(frozen=True)
+class FieldMod:
+    """A continuous flat ATK/DEF modifier a face-up Field/Continuous Spell radiates
+    over every monster on the field that matches its filter (the "field layer").
+
+    A monster qualifies when its race is in ``races`` (empty = any race) *and* its
+    attribute is in ``attributes`` (empty = any attribute). ``side``: None = both
+    players' monsters (classic Field Spells like Sogen), "self" = only the spell
+    controller's monsters, "opponent" = only theirs. Read by
+    ``GameState.effective_attack/defense`` — never stored on the monster.
+    """
+
+    atk: int = 0
+    defn: int = 0
+    races: frozenset[str] = frozenset()
+    attributes: frozenset[Attribute] = frozenset()
+    side: str | None = None  # None | "self" | "opponent"
+
+
+@dataclass(frozen=True)
+class AttackRestriction:
+    """A continuous limit on declaring attacks, radiated by a face-up card.
+
+    ``one_per_battle_phase`` (The Dark Door): each player may declare at most one
+    attack per Battle Phase. Modelled as data so the kernel stays card-agnostic.
+    """
+
+    one_per_battle_phase: bool = False
 
 
 @dataclass(frozen=True)

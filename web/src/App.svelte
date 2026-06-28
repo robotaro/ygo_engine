@@ -31,6 +31,7 @@
   $: dragging = draggedIid != null
   $: draggingMonster = draggedIid != null && !!summonOptions(draggedIid)
   $: draggingSpellTrap = draggedIid != null && (canActivate(draggedIid) || canSet(draggedIid))
+  $: draggingFieldSpell = draggedIid != null && isFieldSpell(draggedIid) && canActivate(draggedIid)
   $: if (phase !== 'battle_phase') selectedAttacker = null
   $: validTargets =
     selectedAttacker != null && $legal ? attackTargets(selectedAttacker) || [] : []
@@ -269,6 +270,27 @@
     else if (pendingTarget) chooseTarget(iid)
   }
 
+  function isFieldSpell(iid) {
+    const c = you?.hand.find((x) => x.iid === iid)
+    return c?.subtype === 'Field'
+  }
+
+  // The Field Zone holds a Field Spell; it can also be a target (Mystical Space
+  // Typhoon hits Field Spells too).
+  function onClickFieldZone(slot) {
+    if (!yourTurn || !slot) return
+    if ($targetRequest) chooseEngineTarget(slot.iid)
+    else if (pendingTarget) chooseTarget(slot.iid)
+  }
+
+  function onDropField(e) {
+    e.preventDefault()
+    if (!yourTurn || draggedIid == null) return
+    const iid = draggedIid
+    draggedIid = null
+    if (isFieldSpell(iid) && canActivate(iid)) beginActivate(iid, null) // engine routes it to the Field Zone
+  }
+
   function onHandClick(iid) {
     if (mustDiscard) sendIntent({ kind: 'discard', iid })
   }
@@ -309,6 +331,17 @@
         <div class="piles">hand {opp.handCount} · deck {opp.deckCount} · GY {opp.graveyard.length}</div>
         <div class="ohand">
           {#each Array(opp.handCount) as _}<div class="minicard back"></div>{/each}
+        </div>
+      </div>
+
+      <div class="fieldrow">
+        <span class="fieldlabel">Field</span>
+        <div
+          class="slot field"
+          class:targetable={opp.fieldZone && targetCandidates.includes(opp.fieldZone.iid)}
+          onclick={() => onClickFieldZone(opp.fieldZone)}
+        >
+          <CardTile card={opp.fieldZone} small />
         </div>
       </div>
 
@@ -423,6 +456,21 @@
             </div>
           {/if}
         {/each}
+      </div>
+
+      <div class="fieldrow">
+        <span class="fieldlabel">Field</span>
+        <div
+          class="slot field"
+          class:drop={!you.fieldZone}
+          class:armed={draggingFieldSpell}
+          class:targetable={you.fieldZone && targetCandidates.includes(you.fieldZone.iid)}
+          ondragover={(e) => e.preventDefault()}
+          ondrop={onDropField}
+          onclick={() => onClickFieldZone(you.fieldZone)}
+        >
+          <CardTile card={you.fieldZone} small />
+        </div>
       </div>
 
       {#if you.graveyard.length}
@@ -677,6 +725,25 @@
   }
   .slot.st.actionable:hover {
     outline: 2px solid #c9b3ff;
+  }
+  .fieldrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+  .fieldlabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8a7fb0;
+  }
+  .slot.field {
+    border: 1px solid #4a3f6a;
+  }
+  .slot.field.armed {
+    outline: 2px dashed #c9b3ff;
+    background: rgba(201, 179, 255, 0.08);
   }
   .gyrow {
     display: flex;

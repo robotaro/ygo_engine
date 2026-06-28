@@ -16,6 +16,7 @@ import random
 from dataclasses import dataclass, field
 
 from .cards import CardDef
+from .effects import FieldMod
 from .enums import Phase, Position, Zone
 
 STARTING_LIFE_POINTS = 8000
@@ -220,6 +221,45 @@ class GameState:
             return flat + per * count
         return flat
 
+    # ----- field/continuous layers (face-up Field & Continuous Spells) -----
+    def _active_continuous_sources(self):
+        """Yield (card_instance, controller) for every face-up Field/Continuous/Equip
+        card on the field — the sources that radiate passive modifiers."""
+        for idx, player in enumerate(self.players):
+            fz = player.field_zone
+            if fz is not None and self.cards[fz].is_face_up:
+                yield self.cards[fz], idx
+            for sid in player.spell_trap_zones:
+                if sid is not None and self.cards[sid].is_face_up:
+                    yield self.cards[sid], idx
+
+    def active_passives(self):
+        """Yield (modifier, controller) for every passive on a face-up field card —
+        FieldMods, AttackRestrictions, EquipMods alike. Consumers filter by type."""
+        for src, ctrl in self._active_continuous_sources():
+            for mod in src.card.continuous:
+                yield mod, ctrl
+
+    def _field_mod_applies(self, mod: FieldMod, monster: "CardInstance", controller: int) -> bool:
+        card = monster.card
+        if mod.races and card.race not in mod.races:
+            return False
+        if mod.attributes and card.attribute not in mod.attributes:
+            return False
+        if mod.side == "self" and monster.controller != controller:
+            return False
+        if mod.side == "opponent" and monster.controller == controller:
+            return False
+        return True
+
+    def _field_delta(self, monster_iid: int, which: str) -> int:
+        monster = self.cards[monster_iid]
+        total = 0
+        for mod, ctrl in self.active_passives():
+            if isinstance(mod, FieldMod) and self._field_mod_applies(mod, monster, ctrl):
+                total += mod.atk if which == "atk" else mod.defn
+        return total
+
     def effective_attack(self, iid: int) -> int:
         inst = self.cards[iid]
         if not inst.card.is_monster:
@@ -227,6 +267,7 @@ class GameState:
         total = (inst.card.attack or 0) + sum(
             self._mod_delta(mod, ctrl, "atk") for mod, ctrl in self._equip_mods_on(iid)
         )
+        total += self._field_delta(iid, "atk")
         return max(0, total)
 
     def effective_defense(self, iid: int) -> int:
@@ -236,6 +277,7 @@ class GameState:
         total = (inst.card.defense or 0) + sum(
             self._mod_delta(mod, ctrl, "def") for mod, ctrl in self._equip_mods_on(iid)
         )
+        total += self._field_delta(iid, "def")
         return max(0, total)
 
     def spawn_on_field(
@@ -261,6 +303,19 @@ class GameState:
         inst.zone = Zone.SPELL_TRAP
         inst.controller = player
         inst.zone_index = index
+        inst.position = position
+
+    def place_field_spell(self, iid: int, player: int, position: Position) -> None:
+        """Put a Field Spell into the Field Zone, destroying the one already there
+        (only one Field Spell per player can be face-up at a time)."""
+        existing = self.players[player].field_zone
+        if existing is not None and existing != iid:
+            self.send_to_graveyard(existing)
+        self._remove_from_current_location(iid)
+        inst = self.cards[iid]
+        self.players[player].field_zone = iid
+        inst.zone = Zone.FIELD
+        inst.controller = player
         inst.position = position
 
     def first_empty_monster_zone(self, player: int) -> int | None:

@@ -16,8 +16,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import combinations
 
-from .effects import OPPONENT, EffectContext
-from .enums import Phase, Position, Zone
+from .effects import OPPONENT, AttackRestriction, EffectContext
+from .enums import Phase, Position, SpellTrapProperty, Zone
 from .state import GameState
 
 HAND_SIZE_LIMIT = 6
@@ -174,21 +174,24 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         elif inst.position in (Position.FACE_UP_ATTACK, Position.FACE_UP_DEFENSE):
             actions.append(ChangePosition(iid))
 
-    # Spell activations (Ignition/Quick from the hand) + Set Spell/Trap
-    if state.first_empty_spell_trap_zone(player) is not None:
-        for iid in p.hand:
-            card = state.inst(iid).card
-            if card.is_spell:
-                effect = next(
-                    (e for e in card.effects if e.timing in ("ignition", "quick")), None
-                )
-                if effect is not None and (
-                    effect.condition is None or effect.condition(state, player)
-                ):
+    # Spell activations (Ignition/Quick from the hand) + Set Spell/Trap.
+    # A Field Spell goes to the Field Zone, so it doesn't need an open S/T zone.
+    has_st_zone = state.first_empty_spell_trap_zone(player) is not None
+    for iid in p.hand:
+        card = state.inst(iid).card
+        if card.is_spell:
+            effect = next(
+                (e for e in card.effects if e.timing in ("ignition", "quick")), None
+            )
+            if effect is not None and (
+                effect.condition is None or effect.condition(state, player)
+            ):
+                is_field = card.subtype is SpellTrapProperty.FIELD
+                if is_field or has_st_zone:
                     for target_set in _enumerate_targets(state, player, effect.target):
                         actions.append(ActivateSpell(iid, targets=target_set))
-            if card.is_spell or card.is_trap:
-                actions.append(SetSpellTrap(iid))
+        if (card.is_spell or card.is_trap) and has_st_zone:
+            actions.append(SetSpellTrap(iid))
 
     # Activate a Set card already on the field whose effect you may start at will
     # on your own turn (e.g. the Continuous Trap Call of the Haunted). Purely
@@ -223,9 +226,7 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
             i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None
         ]
     elif spec.where == "spell_trap_field":
-        candidates = [
-            i for pl in (0, 1) for i in state.players[pl].spell_trap_zones if i is not None
-        ]
+        candidates = _spell_trap_field(state)
     elif spec.where == "any_graveyard_monster":
         candidates = _graveyard_monsters(state, (0, 1))
     elif spec.where == "own_graveyard_monster":
@@ -257,12 +258,23 @@ def target_candidates(state: GameState, controller: int, spec) -> list[int]:
     if spec.where == "any_monster":
         return [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
     if spec.where == "spell_trap_field":
-        return [i for pl in (0, 1) for i in state.players[pl].spell_trap_zones if i is not None]
+        return _spell_trap_field(state)
     if spec.where == "any_graveyard_monster":
         return _graveyard_monsters(state, (0, 1))
     if spec.where == "own_graveyard_monster":
         return _graveyard_monsters(state, (controller,))
     return []
+
+
+def _spell_trap_field(state: GameState) -> list[int]:
+    """Every Spell/Trap on the field, both players' — including Field Spells
+    (so Mystical Space Typhoon can destroy a Field Spell too)."""
+    out: list[int] = []
+    for pl in (0, 1):
+        out += [i for i in state.players[pl].spell_trap_zones if i is not None]
+        if state.players[pl].field_zone is not None:
+            out.append(state.players[pl].field_zone)
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -334,7 +346,25 @@ def _trigger_targets(trigger, event) -> tuple[int, ...]:
     return ()
 
 
+def _attacks_locked_out(state: GameState, player: int) -> bool:
+    """The Dark Door: with a one-attack-per-Battle-Phase restriction face-up, a
+    player who has already declared an attack this turn can't declare another."""
+    locked = any(
+        isinstance(mod, AttackRestriction) and mod.one_per_battle_phase
+        for mod, _ in state.active_passives()
+    )
+    if not locked:
+        return False
+    return any(
+        state.inst(i).attacked_this_turn
+        for i in state.players[player].monster_zones
+        if i is not None
+    )
+
+
 def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
+    if _attacks_locked_out(state, player):
+        return []
     opp = state.opponent_of(player)
     opp_monsters = [m for m in state.players[opp].monster_zones if m is not None]
     actions: list[Action] = []
@@ -405,11 +435,17 @@ def place_activated_spell(state: GameState, iid: int, zone_index: int | None = N
 
 
 def reveal_for_activation(state: GameState, iid: int, zone_index: int | None = None) -> None:
-    """Make a card visible as it activates: place a hand card, or flip a Set card up."""
+    """Make a card visible as it activates: place a hand card, or flip a Set card up.
+
+    A Field Spell from the hand goes to the Field Zone (replacing the one there).
+    """
     inst = state.inst(iid)
     if inst.zone is Zone.HAND:
-        place_activated_spell(state, iid, zone_index)
-    else:  # already Set in the Spell/Trap zone
+        if inst.card.subtype is SpellTrapProperty.FIELD:
+            state.place_field_spell(iid, inst.owner, Position.FACE_UP_ATTACK)
+        else:
+            place_activated_spell(state, iid, zone_index)
+    else:  # already on the field (Set in the Spell/Trap or Field zone) -> flip up
         inst.position = Position.FACE_UP_ATTACK
 
 
@@ -459,7 +495,7 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
     pauses in between so the activation is watchable; both share the helpers above.
     """
     card = state.inst(action.iid).card
-    place_activated_spell(state, action.iid, action.zone_index)
+    reveal_for_activation(state, action.iid, action.zone_index)  # routes Field Spells too
     resolve_card_effects(state, action.iid, action.targets)
     # A Normal Spell heads to the Graveyard; a permanent one (Equip/Continuous/Field) stays.
     inst = state.inst(action.iid)
