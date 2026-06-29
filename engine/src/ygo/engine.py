@@ -265,12 +265,10 @@ class Engine:
             elif isinstance(choice, NormalSummon):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._changed()
-                self._check_field_to_gy_triggers()  # a Tribute may send a trigger monster
-                # The opponent may respond to the Summon (e.g. Trap Hole).
-                self._response_window(
-                    {"kind": "summon", "player": tp, "monster": choice.iid, "summon_kind": "normal"}
-                )
-                self._trigger_summon_effect(choice.iid, "normal")  # e.g. Breaker
+                s.summon_events.append((choice.iid, tp, "normal"))
+                # One drain handles both: a Tribute's "sent to GY" triggers, then the
+                # Summon's response window (Trap Hole) + the monster's trigger (Breaker).
+                self._check_field_to_gy_triggers()
                 self._check_life_points()
             elif isinstance(choice, SpecialSummonFromHand):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
@@ -283,8 +281,10 @@ class Engine:
             elif isinstance(choice, FlipSummon):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._changed()
-                self._trigger_flip_effect(choice.iid)  # e.g. Man-Eater Bug
-                self._trigger_summon_effect(choice.iid, "flip")
+                s.summon_events.append((choice.iid, tp, "flip"))
+                # Drain: the opponent may respond to the Flip Summon (Torrential), then
+                # the Flip Effect (Man-Eater Bug) + any "when Summoned" trigger resolve.
+                self._check_field_to_gy_triggers()
                 self._check_life_points()
             else:
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
@@ -800,18 +800,21 @@ class Engine:
         finally:
             self._processing_gy = False
 
-    def _fire_summon_event(self, iid: int, summoner: int) -> None:
-        """For a monster just Special Summoned via the chokepoint: let the opponent
-        respond (Bottomless Trap Hole, Black Horn of Heaven), then fire the monster's own
-        "when Special Summoned" Trigger — but only while it is still face-up on the field
-        (a negated/removed summon does neither)."""
+    def _fire_summon_event(self, iid: int, summoner: int, kind: str = "special") -> None:
+        """For a monster just Summoned (any kind): let the opponent respond — Torrential
+        Tribute to any Summon, Bottomless Trap Hole / Black Horn of Heaven to a Special
+        Summon, Trap Hole to a Normal/Flip Summon — then fire the monster's own "when
+        Summoned" Trigger; a Flip Summon also resolves its Flip Effect. Each step is
+        guarded on the monster still being face-up (a negated/removed Summon does none)."""
         inst = self.state.cards.get(iid)
         if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
             return
         self._response_window(
-            {"kind": "summon", "player": summoner, "monster": iid, "summon_kind": "special"}
+            {"kind": "summon", "player": summoner, "monster": iid, "summon_kind": kind}
         )
-        self._trigger_summon_effect(iid, "special")
+        if kind == "flip":
+            self._trigger_flip_effect(iid)  # e.g. Man-Eater Bug
+        self._trigger_summon_effect(iid, kind)
 
     @staticmethod
     def _find_gy_trigger(inst):

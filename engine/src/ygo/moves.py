@@ -1071,6 +1071,7 @@ def apply(state: GameState, action: Action) -> str:
         inst = state.inst(action.iid)
         inst.position = Position.FACE_UP_ATTACK
         inst.position_changed_this_turn = True
+        inst.summoned_this_turn = True  # a Flip Summon is a Summon (Toon attack lock, etc.)
         return f"Flip Summons {inst.name}"
     if isinstance(action, ChangePosition):
         inst = state.inst(action.iid)

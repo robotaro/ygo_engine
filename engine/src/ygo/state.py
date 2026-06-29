@@ -167,9 +167,10 @@ class GameState:
     attack_negated: bool = False  # transient flag set while resolving an attack response
     gy_from_field: list = field(default_factory=list)  # monsters just sent field->GY (trigger queue)
     pending_draws: list = field(default_factory=list)  # players who just drew (draw-trigger queue)
-    # Monsters just Special Summoned via the special_summon chokepoint — (iid, summoner)
-    # pairs the engine drains to open the opponent's response window + fire the monster's
-    # own "when Special Summoned" trigger. Tokens (spawn_on_field) are not queued.
+    # Monsters just Summoned — (iid, summoner, kind) the engine drains to open the
+    # opponent's response window + fire the monster's own "when Summoned" trigger (and,
+    # for "flip", its Flip Effect). Special Summons are queued by the special_summon
+    # chokepoint; Normal/Flip Summons by the engine. Tokens (spawn_on_field) are not.
     summon_events: list = field(default_factory=list)
     # Transient record of the attacker that just dealt battle damage to its opponent —
     # (dealer_iid, amount) — for the engine's "inflicts battle damage" Trigger. Set in
@@ -284,7 +285,7 @@ class GameState:
         # Queue the summon so the engine can open the opponent's response window
         # (Bottomless Trap Hole, Black Horn of Heaven) and fire the monster's own
         # "when Special Summoned" Trigger — uniformly, from whatever route summoned it.
-        self.summon_events.append((iid, player))
+        self.summon_events.append((iid, player, "special"))
         return True
 
     def move_control(self, iid: int, new_controller: int, index: int) -> None:

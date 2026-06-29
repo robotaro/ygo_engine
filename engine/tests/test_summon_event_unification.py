@@ -14,7 +14,7 @@ from ygo.agents import Agent
 from ygo.cards import CardRegistry
 from ygo.engine import Engine
 from ygo.enums import Phase, Position, Zone
-from ygo.moves import ActivateSpell, DeclareAttack, Pass
+from ygo.moves import ActivateSpell, DeclareAttack, FlipSummon, Pass
 from ygo.state import GameState
 
 reg = CardRegistry.load_csv()
@@ -117,6 +117,45 @@ def test_recruiter_summon_can_be_negated_by_black_horn():
     # Black Horn negates the recruiter's Special Summon and destroys the monster.
     assert s.inst(recruit.iid).zone is Zone.GRAVEYARD
     assert s.inst(horn.iid).zone is Zone.GRAVEYARD
+
+
+class FlipThenPass(Agent):
+    """Player 0: Flip Summon the first eligible face-down monster once, then pass."""
+
+    def __init__(self):
+        self.done = False
+
+    def decide(self, state, legal):
+        if not self.done:
+            for a in legal:
+                if isinstance(a, FlipSummon):
+                    self.done = True
+                    return a
+        return next(a for a in legal if isinstance(a, Pass))
+
+    def respond(self, state, options, event):
+        return None
+
+
+# --- Flip Summons now flow through the same unified hook ---------------------------
+def test_flip_summon_now_opens_a_response_window():
+    s = _fresh()
+    mon = s.spawn_on_field(reg.get("Summoned Skull"), 0, 0, Position.FACE_DOWN_DEFENSE)  # 2500
+    trap = _set_card(s, "Trap Hole", 1, 1)
+    eng = Engine(s, [FlipThenPass(), ActivateByName("Trap Hole")])
+    eng._interactive_phase(0)
+    # Before the unification a Flip Summon opened no window; now Trap Hole catches it.
+    assert s.inst(mon.iid).zone is Zone.GRAVEYARD
+    assert s.inst(trap.iid).zone is Zone.GRAVEYARD
+
+
+def test_flip_summon_stamps_summoned_this_turn():
+    s = _fresh()
+    mon = s.spawn_on_field(reg.get("Mystical Elf"), 0, 0, Position.FACE_DOWN_DEFENSE)
+    eng = Engine(s, [FlipThenPass(), Agent()])
+    eng._interactive_phase(0)
+    assert s.inst(mon.iid).position is Position.FACE_UP_ATTACK  # flipped up
+    assert s.inst(mon.iid).summoned_this_turn  # now stamped (Toon attack-lock, etc.)
 
 
 # --- regression: an unanswered effect summon still just works ----------------------
