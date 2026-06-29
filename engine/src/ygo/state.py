@@ -96,6 +96,13 @@ class CardInstance:
     def is_face_up(self) -> bool:
         return self.position is not None and self.position.is_face_up
 
+    def reset_turn_flags(self) -> None:
+        """Clear the once-per-turn summon/battle bookkeeping — at the start of a turn,
+        on a control change, and when the card leaves the field."""
+        self.summoned_this_turn = False
+        self.attacked_this_turn = False
+        self.position_changed_this_turn = False
+
     @property
     def effects_active(self) -> bool:
         """Whether this card's effects currently function. A Gemini monster is a
@@ -223,6 +230,7 @@ class GameState:
         inst.controller = player
         inst.zone_index = index
         inst.position = position
+        inst.died_by_battle = False  # a revived monster carries no stale battle-death flag
 
     def move_control(self, iid: int, new_controller: int, index: int) -> None:
         """Move a monster already on the field to ``new_controller``'s Monster Zone
@@ -234,17 +242,13 @@ class GameState:
         inst.controller = new_controller
         inst.zone = Zone.MONSTER
         inst.zone_index = index
-        inst.summoned_this_turn = False
-        inst.attacked_this_turn = False
-        inst.position_changed_this_turn = False
+        inst.reset_turn_flags()
 
     def _clear_field_flags(self, inst: "CardInstance") -> None:
         """Reset the per-instance bookkeeping a card carries while on the field."""
         inst.controller = inst.owner
         inst.position = None
-        inst.summoned_this_turn = False
-        inst.attacked_this_turn = False
-        inst.position_changed_this_turn = False
+        inst.reset_turn_flags()
         inst.set_on_turn = None
         inst.equipped_to = None
         inst.linked_to = None
@@ -256,6 +260,8 @@ class GameState:
         inst.counters = {}  # counters fall off when the card leaves the field
         inst.temp_atk = 0
         inst.temp_def = 0
+        inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
+        inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
 
     def send_to_graveyard(self, iid: int, by_battle: bool = False) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``
@@ -424,31 +430,27 @@ class GameState:
             isinstance(mod, Piercing) for mod in inst.card.continuous
         )
 
-    def effective_attack(self, iid: int) -> int:
+    def _effective_stat(self, iid: int, which: str) -> int:
+        """A monster's effective ATK or DEF (``which`` is "atk"/"def"): printed base
+        plus every layer — Equip mods, Field mods, the monster's own SelfStatMod,
+        Spell-Counter scaling, and the until-end-of-turn temp delta. Floored at 0."""
         inst = self.cards[iid]
         if not inst.card.is_monster:
             return 0
-        total = (inst.card.attack or 0) + sum(
-            self._mod_delta(mod, ctrl, "atk") for mod, ctrl in self._equip_mods_on(iid)
-        )
-        total += self._field_delta(iid, "atk")
-        total += self._self_stat_delta(iid, "atk")
-        total += self._spell_counter_delta(iid, "atk")
-        total += inst.temp_atk
+        base = (inst.card.attack if which == "atk" else inst.card.defense) or 0
+        temp = inst.temp_atk if which == "atk" else inst.temp_def
+        total = base + temp
+        total += sum(self._mod_delta(mod, ctrl, which) for mod, ctrl in self._equip_mods_on(iid))
+        total += self._field_delta(iid, which)
+        total += self._self_stat_delta(iid, which)
+        total += self._spell_counter_delta(iid, which)
         return max(0, total)
 
+    def effective_attack(self, iid: int) -> int:
+        return self._effective_stat(iid, "atk")
+
     def effective_defense(self, iid: int) -> int:
-        inst = self.cards[iid]
-        if not inst.card.is_monster:
-            return 0
-        total = (inst.card.defense or 0) + sum(
-            self._mod_delta(mod, ctrl, "def") for mod, ctrl in self._equip_mods_on(iid)
-        )
-        total += self._field_delta(iid, "def")
-        total += self._self_stat_delta(iid, "def")
-        total += self._spell_counter_delta(iid, "def")
-        total += inst.temp_def
-        return max(0, total)
+        return self._effective_stat(iid, "def")
 
     def spawn_on_field(
         self, card: CardDef, player: int, index: int, position: Position, owner: int | None = None

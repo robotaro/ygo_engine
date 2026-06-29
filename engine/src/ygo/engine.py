@@ -125,12 +125,8 @@ class Engine:
         s = self.state
         s.normal_summon_used = False
         for iid in s.players[tp].monster_zones:
-            if iid is None:
-                continue
-            inst = s.inst(iid)
-            inst.summoned_this_turn = False
-            inst.attacked_this_turn = False
-            inst.position_changed_this_turn = False
+            if iid is not None:
+                s.inst(iid).reset_turn_flags()
 
     def _run_phase(self, phase: Phase, tp: int) -> None:
         if phase is Phase.DRAW:
@@ -719,14 +715,18 @@ class Engine:
                 inst.counters["spell"] = 0
                 self._changed()
 
-    def _check_field_to_gy_triggers(self) -> None:
-        """Reconcile the board after cards leave the field: destroy orphaned Equips
-        and broken bonds, return loaned monsters, then fire "sent from field to GY"
-        effects (Sangan)."""
+    def _reconcile_field(self) -> None:
+        """Destroy orphaned Equips and broken Call-of-the-Haunted bonds, return loaned
+        monsters, and clear Toons with no Toon World — run after any card leaves play."""
         self._cleanup_equips()
         self._cleanup_linked()
         self._cleanup_control()
         self._cleanup_toons()
+
+    def _check_field_to_gy_triggers(self) -> None:
+        """Reconcile the board after cards leave the field, then fire "sent from field
+        to GY" / "destroyed by battle" effects (Sangan, Mystic Tomato)."""
+        self._reconcile_field()
         if self._processing_gy:
             return  # a nested resolution; the outer loop will drain the queue
         self._processing_gy = True
@@ -737,28 +737,31 @@ class Engine:
                 inst = s.cards.get(iid)
                 if inst is None:
                     continue
-                effect = next(
-                    (
-                        e
-                        for e in inst.card.effects
-                        if e.timing == "trigger"
-                        and e.trigger is not None
-                        and (
-                            e.trigger.kind == "sent_to_gy_from_field"
-                            or (e.trigger.kind == "destroyed_by_battle" and inst.died_by_battle)
-                        )
-                    ),
-                    None,
-                )
+                effect = self._find_gy_trigger(inst)
                 if effect is not None:
                     self._trigger_effect(iid, effect, inst.controller)
                 # That resolution may have broken more bonds / orphaned more Equips.
-                self._cleanup_equips()
-                self._cleanup_linked()
-                self._cleanup_control()
-                self._cleanup_toons()
+                self._reconcile_field()
         finally:
             self._processing_gy = False
+
+    @staticmethod
+    def _find_gy_trigger(inst):
+        """The card's "sent from field to GY" trigger effect (a battle-only one fires
+        only on a battle death), or None."""
+        return next(
+            (
+                e
+                for e in inst.card.effects
+                if e.timing == "trigger"
+                and e.trigger is not None
+                and (
+                    e.trigger.kind == "sent_to_gy_from_field"
+                    or (e.trigger.kind == "destroyed_by_battle" and inst.died_by_battle)
+                )
+            ),
+            None,
+        )
 
     def _revert_end_of_turn_control(self, tp: int) -> None:
         """Change of Heart: temporary control loans taken this turn end now."""
