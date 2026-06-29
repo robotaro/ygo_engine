@@ -1336,7 +1336,9 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     attacker.attacks_made_this_turn += 1
     me = attacker.controller
     opp = state.opponent_of(me)
-    atk = state.effective_attack(action.attacker)
+    atk = state.effective_attack(action.attacker) + state.damage_step_bonus(
+        action.attacker, action.target, is_attacker=True, which="atk"
+    )
     state.battle_damage_dealt = None  # reset; set below when the attacker damages opp
 
     def _hit_defender(amount: int) -> None:
@@ -1359,7 +1361,9 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         prefix = f"(flips up {target.name}) "
 
     if target.position is Position.FACE_UP_ATTACK:
-        other = state.effective_attack(action.target)
+        other = state.effective_attack(action.target) + state.damage_step_bonus(
+            action.target, action.attacker, is_attacker=False, which="atk"
+        )
         if atk > other:
             _battle_destroy(state, target.iid)
             _hit_defender(atk - other)
@@ -1374,7 +1378,9 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
 
     # defending monster: ATK vs DEF. No battle damage on a clean break — unless the
     # attacker has a piercing rider (Dark Driceratops), which deals the excess.
-    dfn = state.effective_defense(action.target)
+    dfn = state.effective_defense(action.target) + state.damage_step_bonus(
+        action.target, action.attacker, is_attacker=False, which="defn"
+    )
     if atk > dfn:
         _battle_destroy(state, target.iid)
         if state.has_piercing(action.attacker):

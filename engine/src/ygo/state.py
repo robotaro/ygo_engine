@@ -23,6 +23,7 @@ from .effects import (
     CardEffectNegation,
     EquipMod,
     FieldMod,
+    DamageStepBonus,
     MultiAttacker,
     Piercing,
     SelfStatMod,
@@ -580,6 +581,35 @@ class GameState:
     def has_piercing(self, iid: int) -> bool:
         """Whether the monster deals piercing battle damage to a defender it breaks."""
         return self._self_rider(iid, Piercing) is not None
+
+    def damage_step_bonus(self, iid: int, opposing_iid: int | None, *, is_attacker: bool, which: str) -> int:
+        """The Damage-Step-only ATK/DEF swing ``iid`` gets in a battle against
+        ``opposing_iid`` (None = a direct attack). ``is_attacker`` says which side of the
+        battle ``iid`` is on; ``which`` is "atk"/"defn". Combat-only — never part of the
+        monster's continuous stats. Suppressed while the effect is inactive or negated."""
+        inst = self.cards.get(iid)
+        if inst is None or not inst.effects_active or self.monster_effects_negated(iid):
+            return 0
+        total = 0
+        for mod in inst.card.continuous:
+            if not isinstance(mod, DamageStepBonus):
+                continue
+            allowed = ("attacking", "either") if is_attacker else ("attacked", "either")
+            if mod.when not in allowed:
+                continue
+            if mod.vs_direct:
+                if opposing_iid is not None:
+                    continue
+            else:
+                if opposing_iid is None:
+                    continue
+                other = self.cards[opposing_iid].card
+                if mod.vs_race is not None and other.race != mod.vs_race:
+                    continue
+                if mod.vs_attribute is not None and other.attribute != mod.vs_attribute:
+                    continue
+            total += mod.atk if which == "atk" else mod.defn
+        return total
 
     def can_attack_directly(self, iid: int) -> bool:
         """Whether the monster may declare a direct attack despite the opponent having

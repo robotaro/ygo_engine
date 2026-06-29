@@ -28,6 +28,7 @@ from .effects import (
     CountTimes,
     CreateToken,
     DamageEqualToAttackerAtk,
+    DamageStepBonus,
     DestroyAllFieldSpells,
     DestroyAllOtherCards,
     DestroyAllSpecialSummoned,
@@ -2267,6 +2268,31 @@ CONTINUOUS: dict[str, tuple] = {
     # Theban Nightmare: +1500 ATK while you have no cards in hand nor in your S/T Zones.
     "Theban Nightmare": (
         SelfStatMod(atk=1500, active_if_hand_at_most=0, active_if_empty_spell_trap=True),
+    ),
+    # --- Batch 58: Damage-Step combat pumps (DamageStepBonus rider) ---
+    # Cipher Soldier: +2000 ATK/DEF while it battles a Warrior-Type monster.
+    "Cipher Soldier": (
+        DamageStepBonus(atk=2000, defn=2000, when="either", vs_race="Warrior"),
+    ),
+    # Etoile Cyber: +500 ATK when it attacks directly.
+    "Etoile Cyber": (DamageStepBonus(atk=500, when="attacking", vs_direct=True),),
+    # Insect Soldiers of the Sky: +1000 ATK when it attacks a WIND monster.
+    "Insect Soldiers of the Sky": (
+        DamageStepBonus(atk=1000, when="attacking", vs_attribute=Attribute.WIND),
+    ),
+    # Penumbral Soldier Lady: +1000 ATK while it battles a LIGHT monster.
+    "Penumbral Soldier Lady": (
+        DamageStepBonus(atk=1000, when="either", vs_attribute=Attribute.LIGHT),
+    ),
+    # Steamroid: +500 ATK attacking a monster, -500 ATK when attacked.
+    "Steamroid": (
+        DamageStepBonus(atk=500, when="attacking"),
+        DamageStepBonus(atk=-500, when="attacked"),
+    ),
+    # Black Veloci: +400 ATK attacking a monster, -400 ATK when attacked.
+    "Black Veloci": (
+        DamageStepBonus(atk=400, when="attacking"),
+        DamageStepBonus(atk=-400, when="attacked"),
     ),
     # --- Effects Batch 24: name-restricted Equip Spell boosts ---
     "Cyber Shield": (EquipMod(atk=500),),

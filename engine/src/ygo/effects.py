@@ -196,6 +196,28 @@ class MultiAttacker:
 
 
 @dataclass(frozen=True)
+class DamageStepBonus:
+    """A face-up monster's rider: a temporary ATK/DEF swing that applies ONLY during the
+    Damage Step of a qualifying battle (Cipher Soldier +2000 vs a Warrior, Etoile Cyber
+    +500 on a direct attack, Steamroid +500 attacking / -500 when attacked). It never
+    touches the monster's displayed/continuous stats — ``moves._resolve_attack`` folds it
+    into the combat math for that one battle. Suppressed while the effect is inactive/negated.
+
+      * ``when`` — "attacking" (this card is the attacker), "attacked" (this card is the
+        monster being attacked), or "either" (it battles, on offence or defence).
+      * ``vs_direct`` — only on a direct attack (no defending monster); otherwise a
+        defending monster must be present, optionally narrowed by ``vs_race`` /
+        ``vs_attribute`` (the OTHER monster in the battle)."""
+
+    atk: int = 0
+    defn: int = 0
+    when: str = "attacking"  # "attacking" | "attacked" | "either"
+    vs_direct: bool = False
+    vs_race: str | None = None
+    vs_attribute: "Attribute | None" = None
+
+
+@dataclass(frozen=True)
 class AttackTargetProtection:
     """A face-up card's continuous rider: certain monsters on its controller's side
     cannot be *selected* as an attack target by the opponent (they stay on the field —

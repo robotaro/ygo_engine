@@ -148,6 +148,13 @@ DECK = (
     + ["Green Gadget"] * 2
     + ["Cybernetic Cyclopean"] * 2
     + ["Theban Nightmare"] * 2
+    # Damage-Step combat pumps
+    + ["Cipher Soldier"] * 2
+    + ["Etoile Cyber"] * 2
+    + ["Insect Soldiers of the Sky"] * 2
+    + ["Penumbral Soldier Lady"] * 2
+    + ["Steamroid"] * 2
+    + ["Black Veloci"] * 2
 )
 
 
