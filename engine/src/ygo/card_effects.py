@@ -12,6 +12,7 @@ from __future__ import annotations
 from .effects import (
     OPPONENT,
     SELF,
+    ApplyActionLock,
     AttackRestriction,
     AttackTargetProtection,
     BanishAttackingDefensePositionMonsters,
@@ -1008,6 +1009,24 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "The Immortal of Thunder": (  # gain 3000 LP; when sent from field to GY, lose 5000 LP
         _flip(resolve=(GainLifePoints(SELF, 3000),)),
         _on_sent_to_gy((InflictDamage(SELF, 5000),)),
+    ),
+    # --- Batch 63: turn-scoped lockout Flip effects (ApplyActionLock) ---
+    "Guard Dog": (  # opponent cannot Special Summon for the rest of this turn
+        _flip(resolve=(ApplyActionLock(kind="special_summon", who=OPPONENT),)),
+    ),
+    "Sonic Jammer": (  # opponent cannot activate Spells until the end of next turn
+        _flip(resolve=(ApplyActionLock(kind="spell", who=OPPONENT, extra_turns=1),)),
+    ),
+    "Whirlwind Weasel": (  # opponent cannot activate Spells or Traps for the rest of this turn
+        _flip(
+            resolve=(
+                ApplyActionLock(kind="spell", who=OPPONENT),
+                ApplyActionLock(kind="trap", who=OPPONENT),
+            )
+        ),
+    ),
+    "Searchlightman": (  # opponent cannot Set any cards for the rest of this turn
+        _flip(resolve=(ApplyActionLock(kind="set", who=OPPONENT),)),
     ),
     "Des Koala": (  # 400 damage to the opponent for each card in their hand
         _flip(resolve=(InflictDamage(OPPONENT, value=CountTimes(400, "opponent_hand")),)),

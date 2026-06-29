@@ -471,16 +471,19 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
                 continue
             if card.is_toon and not controls_toon_world(state, player):
                 continue  # a Toon monster needs your Toon World face-up to be Summoned
+            can_set = not state.action_locked("set", player)  # Searchlightman bars Setting
             need = tributes_required(card.level)
             if need == 0:
                 if has_empty:
                     actions.append(NormalSummon(iid))
-                    actions.append(SetMonster(iid))
+                    if can_set:
+                        actions.append(SetMonster(iid))
             elif len(controlled) >= need:
                 # tributing frees the zone(s), so no pre-existing empty slot needed
                 for combo in combinations(controlled, need):
                     actions.append(NormalSummon(iid, tributes=combo))
-                    actions.append(SetMonster(iid, tributes=combo))
+                    if can_set:
+                        actions.append(SetMonster(iid, tributes=combo))
 
         # Gemini Summon: spend your Normal Summon to unlock a face-up Gemini you
         # already control (it doesn't move). Treated as a Normal Summon, so it's
@@ -567,8 +570,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
                 if is_field or has_st_zone:
                     for target_set in _enumerate_targets(state, player, effect.target):
                         actions.append(ActivateSpell(iid, targets=target_set))
-        if (card.is_spell or card.is_trap) and has_st_zone:
-            actions.append(SetSpellTrap(iid))
+        if (card.is_spell or card.is_trap) and has_st_zone and not state.action_locked("set", player):
+            actions.append(SetSpellTrap(iid))  # Searchlightman bars Setting
 
     # Activate a Set card already on the field whose effect you may start at will
     # on your own turn (e.g. the Continuous Trap Call of the Haunted). Purely

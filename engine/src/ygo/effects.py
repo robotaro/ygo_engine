@@ -1168,6 +1168,23 @@ class ReflectBattleDamage(Primitive):
 
 
 @dataclass(frozen=True)
+class ApplyActionLock(Primitive):
+    """Set a turn-scoped lock barring a player from an action class for a duration:
+    ``kind`` ∈ "special_summon"/"spell"/"trap"/"set"; ``who`` = "opponent" (default) or
+    "self"; ``extra_turns`` = 0 for the rest of this turn (Guard Dog, Whirlwind Weasel,
+    Searchlightman), 1 to also cover the next turn (Sonic Jammer). Read by
+    state.action_locked through the SS / activation / Set gates."""
+
+    kind: str = "spell"
+    who: str = OPPONENT
+    extra_turns: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        player = ctx.side(self.who)
+        ctx.state.action_locks[f"{self.kind}:{player}"] = ctx.state.turn_count + self.extra_turns
+
+
+@dataclass(frozen=True)
 class ForceAttackTarget(Primitive):
     """Staunch Defender: for the rest of this turn the opponent may only declare attacks
     against this effect's first target (a face-up monster the controller picks). Sets

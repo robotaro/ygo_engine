@@ -180,6 +180,10 @@ class GameState:
     attack_redirect: int | None = None  # a response set a new attack target (Call of the Earthbound)
     reflect_battle_damage: bool = False  # Dimension Wall: my battle damage hits the attacker
     forced_attack_target: int | None = None  # Staunch Defender: attacks this turn must hit only this monster
+    # Turn-scoped action locks: "kind:player" -> the last turn_count the lock is active
+    # (inclusive). kinds: "special_summon"/"spell"/"trap"/"set" (Guard Dog, Sonic Jammer,
+    # Whirlwind Weasel, Searchlightman). Auto-expires by turn; pruned in engine._begin_turn.
+    action_locks: dict = field(default_factory=dict)
     gy_from_field: list = field(default_factory=list)  # monsters just sent field->GY (trigger queue)
     pending_draws: list = field(default_factory=list)  # players who just drew (draw-trigger queue)
     # Monsters just Summoned — (iid, summoner, kind) the engine drains to open the
@@ -707,10 +711,24 @@ class GameState:
             return True
         return False
 
+    def action_locked(self, kind: str, player: int) -> bool:
+        """Whether a turn-scoped lock currently forbids ``player`` from ``kind``
+        ("special_summon"/"spell"/"trap"/"set"). Set by ApplyActionLock (Guard Dog &
+        co); expires once the stamped turn passes."""
+        until = self.action_locks.get(f"{kind}:{player}")
+        return until is not None and self.turn_count <= until
+
     def cannot_activate_card(self, iid: int) -> bool:
-        """Whether the Spell/Trap ``iid`` cannot be *activated* right now because a
-        face-up negator forbids activating its class (Jinzo bars Traps, Spell Canceller
-        bars Spells). Gated into every Spell/Trap activation enumeration."""
+        """Whether the Spell/Trap ``iid`` cannot be *activated* right now — a face-up
+        negator forbids activating its class (Jinzo bars Traps, Spell Canceller bars
+        Spells), or a turn-scoped lock bars it (Sonic Jammer / Whirlwind Weasel). Gated
+        into every Spell/Trap activation enumeration."""
+        inst = self.cards.get(iid)
+        if inst is not None:
+            if inst.card.is_spell and self.action_locked("spell", inst.controller):
+                return True
+            if inst.card.is_trap and self.action_locked("trap", inst.controller):
+                return True
         return self._class_negator(iid, prevent_activation_only=True)
 
     def effect_negated(self, iid: int) -> bool:
@@ -813,8 +831,11 @@ class GameState:
 
     def special_summon_locked(self, player: int, card: "CardDef") -> bool:
         """Whether ``player`` is currently prevented from Special Summoning ``card`` by a
-        face-up Special-Summon lock (Vanity's Fiend/Ruler, the Barrier Statues). Read by
-        every Special Summon route — a locked summon simply does not happen."""
+        face-up Special-Summon lock (Vanity's Fiend/Ruler, the Barrier Statues) or a
+        turn-scoped lock (Guard Dog). Read by every Special Summon route — a locked summon
+        simply does not happen."""
+        if self.action_locked("special_summon", player):
+            return True
         for src, mod in self.active_markers(SpecialSummonLock):
             if mod.whose == "opponent" and player == src.controller:
                 continue  # only the source controller's opponent is locked

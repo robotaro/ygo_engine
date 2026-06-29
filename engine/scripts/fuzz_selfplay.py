@@ -180,6 +180,11 @@ DECK = (
     + ["Des Feral Imp"] * 2
     + ["Princess of Tsurugi"] * 2
     + ["The Immortal of Thunder"] * 2
+    # turn-scoped lockout flips
+    + ["Guard Dog"] * 2
+    + ["Sonic Jammer"] * 2
+    + ["Whirlwind Weasel"] * 2
+    + ["Searchlightman"] * 2
 )
 
 

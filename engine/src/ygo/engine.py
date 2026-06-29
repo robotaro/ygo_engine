@@ -126,6 +126,7 @@ class Engine:
         s = self.state
         s.normal_summon_used = False
         s.forced_attack_target = None  # Staunch Defender's lock lasts only its turn
+        s.action_locks = {k: v for k, v in s.action_locks.items() if v >= s.turn_count}
         for iid in s.players[tp].monster_zones:
             if iid is not None:
                 s.inst(iid).reset_turn_flags()
