@@ -30,6 +30,7 @@ from .effects import (
     DestroyHighestDefOpponentMonster,
     DestroyLowestAtkOpponentMonster,
     DestroyTargets,
+    DiscardFromHand,
     DiscardHandThenBurn,
     Draw,
     DrawTrigger,
@@ -50,6 +51,7 @@ from .effects import (
     ReturnAllSpellTrapsToHand,
     ReturnFromGraveyardToDeck,
     ReturnFromGraveyardToHand,
+    ReturnFromHandToDeck,
     ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
     SearchFromDeck,
@@ -146,6 +148,22 @@ def _gy_has_match(card_filter):
 def _no_cards_in_hand(state, controller) -> bool:
     """Magical Explosion's gate: the controller holds no cards."""
     return not state.players[controller].hand
+
+
+def _opponent_has_hand_cards(state, controller) -> bool:
+    """Hand-disruption gate: the opponent is holding at least one card."""
+    return bool(state.players[state.opponent_of(controller)].hand)
+
+
+def _opponent_hand_at_least_with_monster(n: int):
+    """Trap Dustshoot's gate: the opponent holds ``n``+ cards, one of them a Monster."""
+
+    def cond(state, controller) -> bool:
+        opp = state.opponent_of(controller)
+        hand = state.players[opp].hand
+        return len(hand) >= n and any(state.inst(i).card.is_monster for i in hand)
+
+    return cond
 
 
 def _control_no_monsters(state, controller) -> bool:
@@ -1165,6 +1183,46 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # Full Salvo — Normal Trap: send your whole hand to the GY, 200 damage per card sent.
     "Full Salvo": (
         Effect(speed=2, timing="ignition", resolve=(DiscardHandThenBurn(per=200),)),
+    ),
+    # --- Batch 35: hand disruption (look at the opponent's hand, then strip it) ---
+    # Confiscation — pay 1000 LP; look at the opponent's hand and discard 1 (you pick).
+    "Confiscation": (
+        Effect(
+            timing="ignition",
+            life_cost=1000,
+            condition=_opponent_has_hand_cards,
+            resolve=(DiscardFromHand(OPPONENT, count=1),),
+        ),
+    ),
+    # Delinquent Duo — pay 1000 LP; opponent discards 1 random, then 1 more (if any left).
+    "Delinquent Duo": (
+        Effect(
+            timing="ignition",
+            life_cost=1000,
+            condition=_opponent_has_hand_cards,
+            resolve=(
+                DiscardFromHand(OPPONENT, count=1, random=True),
+                DiscardFromHand(OPPONENT, count=1),
+            ),
+        ),
+    ),
+    # The Forceful Sentry — look at the opponent's hand; return 1 card to their Deck.
+    "The Forceful Sentry": (
+        Effect(
+            timing="ignition",
+            condition=_opponent_has_hand_cards,
+            resolve=(ReturnFromHandToDeck(OPPONENT, count=1),),
+        ),
+    ),
+    # Trap Dustshoot — Normal Trap: only if the opponent holds 4+ cards; return 1
+    # Monster from their hand to the Deck.
+    "Trap Dustshoot": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_opponent_hand_at_least_with_monster(4),
+            resolve=(ReturnFromHandToDeck(OPPONENT, count=1, monsters_only=True),),
+        ),
     ),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
     "Axe of Despair": _equip_effect(),

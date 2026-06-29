@@ -974,6 +974,52 @@ class MillFromDeck(Primitive):
 
 
 @dataclass(frozen=True)
+class DiscardFromHand(Primitive):
+    """Make a player discard ``count`` cards from their hand to the Graveyard.
+    ``player`` is OPPONENT (Confiscation, Delinquent Duo) or SELF. ``random`` picks
+    them at random (a "random card" discard); otherwise the effect's controller picks
+    after looking at the hand — deterministic first-eligible for the headless path, as
+    interactive choice is a deferred enhancement. Fewer cards than ``count`` -> discard
+    as many as there are."""
+
+    player: str = OPPONENT
+    count: int = 1
+    random: bool = False
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        hand = list(s.players[ctx.side(self.player)].hand)
+        n = min(self.count, len(hand))
+        if n == 0:
+            return
+        picks = list(s.rng.sample(hand, n)) if self.random else hand[:n]
+        for iid in picks:
+            s.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
+class ReturnFromHandToDeck(Primitive):
+    """Return ``count`` cards from a player's hand to their Deck, then shuffle (The
+    Forceful Sentry, Trap Dustshoot). ``monsters_only`` restricts the pick to Monster
+    Cards (Trap Dustshoot returns a Monster). The effect's controller picks after
+    looking at the hand — deterministic first-eligible here. ``player`` = OPPONENT/SELF."""
+
+    player: str = OPPONENT
+    count: int = 1
+    monsters_only: bool = False
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        pool = [
+            i
+            for i in s.players[ctx.side(self.player)].hand
+            if not self.monsters_only or s.inst(i).card.is_monster
+        ]
+        for iid in pool[: self.count]:
+            s.return_to_deck(iid, to_top=False)
+
+
+@dataclass(frozen=True)
 class ReturnSpellFromGraveyardToHand(Primitive):
     """Magician of Faith (auto): return the most recently used Spell from your GY to hand."""
 
