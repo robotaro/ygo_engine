@@ -558,6 +558,7 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
                 effect is not None
                 and (effect.condition is None or effect.condition(state, player))
                 and can_pay_costs(state, player, iid, effect)
+                and not state.cannot_activate_card(iid)  # Spell Canceller bars Spells
             ):
                 is_field = card.subtype is SpellTrapProperty.FIELD
                 if is_field or has_st_zone:
@@ -584,6 +585,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         if effect is None or (effect.condition is not None and not effect.condition(state, player)):
             continue
         if not can_pay_costs(state, player, iid, effect) or not _off_cooldown(inst, effect, state.turn_count):
+            continue
+        if state.cannot_activate_card(iid):  # Jinzo bars Traps, Spell Canceller bars Spells
             continue
         for target_set in _enumerate_targets(state, player, effect.target):
             actions.append(ActivateSpell(iid, targets=target_set))
@@ -898,6 +901,8 @@ def response_options(
         effect = inst.card.effects[0] if inst.card.effects else None
         if effect is None or effect.speed < last_speed:
             continue
+        if state.cannot_activate_card(iid):  # Jinzo bars Traps from a response window too
+            continue
         options += _activations_for_effect(state, player, iid, effect, event)
 
     # Quick-Play spells straight from the hand (only on your own turn).
@@ -908,6 +913,8 @@ def response_options(
             if not card.is_spell or effect is None or effect.timing != "quick":
                 continue
             if effect.speed < last_speed:
+                continue
+            if state.cannot_activate_card(iid):  # Spell Canceller bars Quick-Play Spells
                 continue
             options += _activations_for_effect(state, player, iid, effect, event)
 

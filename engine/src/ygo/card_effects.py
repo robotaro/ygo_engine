@@ -19,6 +19,7 @@ from .effects import (
     BounceTargetsToDeck,
     BounceTargetsToHand,
     CanAttackDirectly,
+    CardEffectNegation,
     CardFilter,
     CountTimes,
     CreateToken,
@@ -1514,6 +1515,11 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # Marshmallon Glasses — Continuous Spell: while "Marshmallon" is in your Monster
     # Zone, the opponent can only attack your Marshmallon (the protection is in CONTINUOUS).
     "Marshmallon Glasses": _ACTIVATE_ONTO_FIELD,
+    # --- Batch 42: class-negating Continuous Traps (the negation lives in CONTINUOUS) ---
+    # Royal Decree negates all other Trap effects; Imperial Order negates all Spell
+    # effects (+ a Standby pay-700-or-die upkeep). Both just need to reach the field.
+    "Royal Decree": _ACTIVATE_ONTO_FIELD,
+    "Imperial Order": _ACTIVATE_ONTO_FIELD,
     # Burning Land — Continuous Spell: activating it wipes every Field Spell, then
     # it burns the active player 500 each Standby (the burn lives in CONTINUOUS).
     "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
@@ -1697,6 +1703,29 @@ CONTINUOUS: dict[str, tuple] = {
     ),
     "Barrier Statue of the Torrent": (
         SpecialSummonLock(whose="both", except_attribute=Attribute.WATER),
+    ),
+    # --- Batch 42: negate-while-face-up locks (whole Spell/Trap class negators) ---
+    # Jinzo (monster): Traps "cannot be activated", and all Trap effects on the field
+    # are negated — both sides. (Amplifier's "doesn't negate its controller's Traps"
+    # rider is not modelled.)
+    "Jinzo": (CardEffectNegation(negates="trap", prevent_activation=True, whose="both"),),
+    # Spell Canceller (monster): the Spell-side mirror — Spells cannot be activated and
+    # all Spell effects on the field are negated, both sides.
+    "Spell Canceller": (
+        CardEffectNegation(negates="spell", prevent_activation=True, whose="both"),
+    ),
+    # Royal Decree (Continuous Trap): negate all OTHER Trap effects on the field — Traps
+    # can still be activated, but their effects do nothing (exclude_self keeps Decree live).
+    "Royal Decree": (
+        CardEffectNegation(negates="trap", prevent_activation=False, whose="both"),
+    ),
+    # Imperial Order (Continuous Trap): negate all Spell effects on the field (Spells still
+    # activate, then do nothing). Standby cost: pay 700 LP or it is destroyed — modelled
+    # by StandbyUpkeep (the engine auto-pays when able; the "you may let it die" choice is
+    # not offered).
+    "Imperial Order": (
+        CardEffectNegation(negates="spell", prevent_activation=False, whose="both"),
+        StandbyUpkeep(pay_life=700, whose="controller"),
     ),
     # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
     # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).

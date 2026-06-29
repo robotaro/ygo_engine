@@ -538,7 +538,11 @@ class Engine:
     def _resolve_chain(self) -> None:
         s = self.state
         for link in reversed(s.chain):
-            if link.negated:
+            # A link is negated either explicitly (a Counter Trap marked it) or because
+            # a face-up class negator (Royal Decree negates Traps, Imperial Order negates
+            # Spells) shuts off the resolving Spell/Trap's effect — evaluated now, at
+            # resolution, so the negator only has to be live at that moment.
+            if link.negated or s.effect_negated(link.source_iid):
                 name = s.inst(link.source_iid).name if link.source_iid in s.cards else "effect"
                 self.log(f"  {name} is negated")
                 self._changed()

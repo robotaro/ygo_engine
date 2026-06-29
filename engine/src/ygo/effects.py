@@ -226,6 +226,38 @@ class SpecialSummonLock:
 
 
 @dataclass(frozen=True)
+class CardEffectNegation:
+    """A face-up card that shuts off a whole CLASS of card effects on the field
+    (Jinzo, Spell Canceller, Royal Decree, Imperial Order). Read by
+    ``GameState.cannot_activate_card`` (enumeration), ``GameState.effect_negated``
+    (chain resolution), and ``GameState.active_markers`` (a negated Continuous
+    Spell/Trap's own riders go inert).
+
+      * ``negates`` — which class is negated: "spell" or "trap". (Negating *monster*
+        effects — Skill Drain — is a separate, wider mechanism: it would also have to
+        suppress monster-sourced SelfStatMod/Piercing/recruiter triggers, so it is not
+        modelled by this marker.)
+      * ``prevent_activation`` — True for "… cannot be activated" cards (Jinzo,
+        Spell Canceller): a Set/hand card of that class is not even offered for
+        activation. False for "negate all … effects" cards (Royal Decree, Imperial
+        Order): the card still activates and goes to the GY, but its effect does
+        nothing.
+      * ``whose`` — which side's cards are affected: "both" (all four here),
+        "opponent" (only the source controller's opponent), "self".
+      * ``exclude_self`` — the negator never negates its own card (Royal Decree negates
+        "all *other* Trap effects"; a Continuous negator isn't shut off by itself).
+
+    KNOWN LIMITATION: a negator negating *another* negator of the same class (Royal
+    Decree vs. Imperial Order) is not modelled — the negator scan does not recurse.
+    """
+
+    negates: str = "trap"  # "spell" | "trap"
+    prevent_activation: bool = False
+    whose: str = "both"  # "both" | "opponent" | "self"
+    exclude_self: bool = True
+
+
+@dataclass(frozen=True)
 class FieldMod:
     """A continuous flat ATK/DEF modifier a face-up Field/Continuous Spell radiates
     over every monster on the field that matches its filter (the "field layer").

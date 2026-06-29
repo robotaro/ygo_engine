@@ -20,6 +20,7 @@ from .effects import (
     AttackTargetProtection,
     BattleIndestructible,
     CanAttackDirectly,
+    CardEffectNegation,
     EquipMod,
     FieldMod,
     MultiAttacker,
@@ -407,13 +408,16 @@ class GameState:
     # ----- field/continuous layers (face-up Field & Continuous Spells) -----
     def _active_continuous_sources(self):
         """Yield (card_instance, controller) for every face-up Field/Continuous/Equip
-        card on the field — the sources that radiate passive modifiers."""
+        card on the field — the sources that radiate passive modifiers (FieldMod,
+        EquipMod, AttackRestriction). A card whose effects are negated by a face-up
+        class negator (Imperial Order negates Spell effects → a Field/Equip Spell's
+        boost vanishes; Royal Decree negates a Continuous Trap's rider) is skipped."""
         for idx, player in enumerate(self.players):
             fz = player.field_zone
-            if fz is not None and self.cards[fz].is_face_up:
+            if fz is not None and self.cards[fz].is_face_up and not self.effect_negated(fz):
                 yield self.cards[fz], idx
             for sid in player.spell_trap_zones:
-                if sid is not None and self.cards[sid].is_face_up:
+                if sid is not None and self.cards[sid].is_face_up and not self.effect_negated(sid):
                     yield self.cards[sid], idx
 
     def active_passives(self):
@@ -554,20 +558,68 @@ class GameState:
             out = [i for i in out if not self.cards[i].is_face_up]
         return out
 
-    def active_markers(self, marker_type, players=(0, 1)):
+    def active_markers(self, marker_type, players=(0, 1), *, respect_negation=True):
         """Yield (card_instance, marker) for every face-up card on the given side(s)
         whose effect is live (a Gemini not yet Gemini Summoned is skipped) and which
         carries a continuous rider of ``marker_type``. The one place that owns the
         "scan the field for a live continuous marker" pattern — so the effects_active
-        guard can never be forgotten by a caller (it was, twice, before this)."""
+        guard can never be forgotten by a caller (it was, twice, before this).
+
+        ``respect_negation`` (default True) also skips a Spell/Trap whose effects are
+        shut off by a face-up class negator (Imperial Order negates a Field Spell's
+        FieldMod; Jinzo negates a Continuous Trap's rider). The negator scan itself
+        passes False to avoid recursing on its own predicate."""
         for pl in players:
             for iid in self.field_cards(pl, face_up_only=True):
                 inst = self.cards[iid]
                 if not inst.effects_active:
                     continue
+                if respect_negation and self.effect_negated(iid):
+                    continue
                 for mod in inst.card.continuous:
                     if isinstance(mod, marker_type):
                         yield inst, mod
+
+    def _class_negator(self, iid: int, *, prevent_activation_only: bool) -> bool:
+        """Whether a face-up ``CardEffectNegation`` shuts off the Spell/Trap ``iid``.
+        ``prevent_activation_only`` restricts the scan to negators that forbid
+        *activating* the class (Jinzo/Spell Canceller), vs. any negator of the class
+        (also Royal Decree/Imperial Order, which only negate the resolved effect)."""
+        inst = self.cards.get(iid)
+        if inst is None:
+            return False
+        if inst.card.is_spell:
+            kind = "spell"
+        elif inst.card.is_trap:
+            kind = "trap"
+        else:
+            return False  # monster effects are negated by Skill Drain, a separate mechanism
+        for src, mod in self.active_markers(CardEffectNegation, respect_negation=False):
+            if mod.negates != kind:
+                continue
+            if prevent_activation_only and not mod.prevent_activation:
+                continue
+            if mod.exclude_self and src.iid == iid:
+                continue
+            if mod.whose == "opponent" and inst.controller == src.controller:
+                continue
+            if mod.whose == "self" and inst.controller != src.controller:
+                continue
+            return True
+        return False
+
+    def cannot_activate_card(self, iid: int) -> bool:
+        """Whether the Spell/Trap ``iid`` cannot be *activated* right now because a
+        face-up negator forbids activating its class (Jinzo bars Traps, Spell Canceller
+        bars Spells). Gated into every Spell/Trap activation enumeration."""
+        return self._class_negator(iid, prevent_activation_only=True)
+
+    def effect_negated(self, iid: int) -> bool:
+        """Whether the *effects* of the face-up Spell/Trap ``iid`` are negated by a
+        class negator (Jinzo/Royal Decree negate Traps; Spell Canceller/Imperial Order
+        negate Spells) — its chain link does not resolve and its continuous riders go
+        inert. Monsters are never negated here (returns False)."""
+        return self._class_negator(iid, prevent_activation_only=False)
 
     def is_protected_attack_target(self, iid: int) -> bool:
         """Whether the monster ``iid`` cannot be selected as an attack target by the
