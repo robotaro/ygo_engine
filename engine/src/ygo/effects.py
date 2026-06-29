@@ -419,13 +419,16 @@ class TributedAttack(ValueSource):
 class CountTimes(ValueSource):
     """``per`` × the number of cards in a named pool — the "for each ..." burn/heal
     cards (Just Desserts, Secret Barrel, Cemetary Bomb, D.D. Dynamite, Gift of The
-    Mystical Elf). Pools are resolved relative to the effect's controller."""
+    Mystical Elf). Pools are resolved relative to the effect's controller. For the
+    ``own_graveyard`` pool an optional ``card_filter`` narrows the count (Magical
+    Explosion counts Spell Cards in your GY; Volcanic Hammerer "Volcanic" monsters)."""
 
     per: int = 0
     pool: str = "opponent_monsters"
+    card_filter: "CardFilter | None" = None
 
     def value(self, ctx: EffectContext) -> int:
-        return self.per * _count_pool(ctx, self.pool)
+        return self.per * _count_pool(ctx, self.pool, self.card_filter)
 
 
 def _field_card_count(state: "GameState", player: int) -> int:
@@ -439,7 +442,7 @@ def _field_card_count(state: "GameState", player: int) -> int:
     return n
 
 
-def _count_pool(ctx: EffectContext, pool: str) -> int:
+def _count_pool(ctx: EffectContext, pool: str, card_filter=None) -> int:
     """Resolve a CountTimes pool name to a card count, relative to the controller."""
     s = ctx.state
     opp = s.opponent_of(ctx.controller)
@@ -455,6 +458,11 @@ def _count_pool(ctx: EffectContext, pool: str) -> int:
         return len(s.players[opp].graveyard)
     if pool == "opponent_banished":
         return len(s.players[opp].banished)
+    if pool == "own_graveyard":
+        gy = s.players[ctx.controller].graveyard
+        if card_filter is None:
+            return len(gy)
+        return sum(1 for i in gy if card_filter.matches(s.inst(i).card))
     return 0
 
 
@@ -978,6 +986,23 @@ class ReturnSpellFromGraveyardToHand(Primitive):
         player.graveyard.remove(iid)
         player.hand.append(iid)
         ctx.state.inst(iid).zone = Zone.HAND
+
+
+@dataclass(frozen=True)
+class DiscardHandThenBurn(Primitive):
+    """Send the controller's *entire* hand to the Graveyard, then inflict ``per`` ×
+    (cards sent) damage to the opponent (Full Salvo). The count is read before the
+    discard, so it reflects exactly what was sent."""
+
+    per: int = 200
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        hand = list(s.players[ctx.controller].hand)
+        for iid in hand:
+            s.send_to_graveyard(iid)
+        opp = s.opponent_of(ctx.controller)
+        s.players[opp].life_points -= self.per * len(hand)
 
 
 @dataclass(frozen=True)

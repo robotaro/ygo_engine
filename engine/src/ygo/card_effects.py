@@ -30,6 +30,7 @@ from .effects import (
     DestroyHighestDefOpponentMonster,
     DestroyLowestAtkOpponentMonster,
     DestroyTargets,
+    DiscardHandThenBurn,
     Draw,
     DrawTrigger,
     Effect,
@@ -140,6 +141,11 @@ def _gy_has_match(card_filter):
         )
 
     return cond
+
+
+def _no_cards_in_hand(state, controller) -> bool:
+    """Magical Explosion's gate: the controller holds no cards."""
+    return not state.players[controller].hand
 
 
 def _control_no_monsters(state, controller) -> bool:
@@ -1113,6 +1119,52 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
                 ),
             ),
         ),
+    ),
+    # --- Batch 34: burn/gain scaling with a Graveyard count ---
+    # Magical Explosion — Normal Trap: with an empty hand, 200 damage per Spell in your GY.
+    "Magical Explosion": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_no_cards_in_hand,
+            resolve=(
+                InflictDamage(
+                    OPPONENT,
+                    value=CountTimes(200, "own_graveyard", card_filter=CardFilter(card_kind="spell")),
+                ),
+            ),
+        ),
+    ),
+    # Volcanic Hammerer — monster Ignition: 200 damage per "Volcanic" monster in your GY,
+    # then it cannot attack this turn (once per turn).
+    "Volcanic Hammerer": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            disables_attack_this_turn=True,
+            resolve=(
+                InflictDamage(
+                    OPPONENT,
+                    value=CountTimes(
+                        200,
+                        "own_graveyard",
+                        card_filter=CardFilter(card_kind="monster", name_contains=frozenset({"Volcanic"})),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    # Cemetary Bomb — Normal Trap: 100 damage per card in the OPPONENT's GY (existing pool).
+    "Cemetary Bomb": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            resolve=(InflictDamage(OPPONENT, value=CountTimes(100, "opponent_graveyard")),),
+        ),
+    ),
+    # Full Salvo — Normal Trap: send your whole hand to the GY, 200 damage per card sent.
+    "Full Salvo": (
+        Effect(speed=2, timing="ignition", resolve=(DiscardHandThenBurn(per=200),)),
     ),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
     "Axe of Despair": _equip_effect(),
