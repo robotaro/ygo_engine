@@ -62,7 +62,7 @@ from .effects import (
     TributedAttack,
     UnionMod,
 )
-from .enums import Attribute
+from .enums import Attribute, Position
 
 # A bare "activate it onto the field" effect: Field/Continuous Spells have no
 # resolution of their own — placing them face-up is what turns on their layer.
@@ -775,6 +775,99 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
             resolve=(GainLifePoints(SELF, 1000),),
+        ),
+    ),
+    # --- Effects Batch 25: Flip Effects sweep (composed from existing primitives) ---
+    # timing="flip" fires via engine._trigger_flip_effect when the monster is turned
+    # face-up (Flip Summon, or being attacked). These reuse targeted/typed
+    # destruction, bounce, burn-per-card, the Batch 23 SS-from-Deck and Batch 15 search.
+    "Old Vindictive Magician": (  # destroy 1 monster the opponent controls
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "White Ninja": (  # destroy 1 Defense Position monster on the field
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="any_monster", defense_position=True),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Armed Ninja": (  # destroy 1 Spell on the field
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="spell_trap_field", card_kind="spell"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Crimson Ninja": (  # destroy 1 Trap on the field
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="spell_trap_field", card_kind="trap"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Trap Master": (  # select 1 Trap on the field and destroy it
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="spell_trap_field", card_kind="trap"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Tornado Bird": (  # return 2 Spell/Trap Cards on the field to their owners' hands
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=2, where="spell_trap_field"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    "Des Koala": (  # 400 damage to the opponent for each card in their hand
+        Effect(
+            speed=1,
+            timing="flip",
+            resolve=(InflictDamage(OPPONENT, value=CountTimes(400, "opponent_hand")),),
+        ),
+    ),
+    "Gravekeeper's Spy": (  # SS 1 "Gravekeeper's" monster with 1500 or less ATK from Deck
+        Effect(
+            speed=1,
+            timing="flip",
+            resolve=(
+                SpecialSummonFromDeck(
+                    filt=CardFilter(
+                        card_kind="monster",
+                        name_contains=frozenset({"Gravekeeper's"}),
+                        max_atk=1500,
+                    )
+                ),
+            ),
+        ),
+    ),
+    "Bubonic Vermin": (  # SS 1 "Bubonic Vermin" from the Deck in face-down Defense
+        Effect(
+            speed=1,
+            timing="flip",
+            resolve=(
+                SpecialSummonFromDeck(
+                    filt=CardFilter(names=frozenset({"Bubonic Vermin"})),
+                    position=Position.FACE_DOWN_DEFENSE,
+                ),
+            ),
+        ),
+    ),
+    "Machina Defender": (  # add 1 "Commander Covington" from the Deck to the hand
+        Effect(
+            speed=1,
+            timing="flip",
+            resolve=(SearchFromDeck(filter=CardFilter(names=frozenset({"Commander Covington"}))),),
         ),
     ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
