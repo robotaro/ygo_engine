@@ -93,6 +93,7 @@ from .effects import (
     Trigger,
     TributedAttack,
     UnionMod,
+    SpellTrapProperty,
 )
 from .enums import Attribute, Position
 
@@ -2631,3 +2632,410 @@ CONTINUOUS: dict[str, tuple] = {
     "Dark Driceratops": (Piercing(),),
     "Mad Sword Beast": (Piercing(),),
 }
+
+
+# ===== Effects Batch 67: author-only sweep (chunks 0-2) (author-sweep) =====
+EFFECTS.update({
+    '7 Completed': _equip_effect(races=("Machine",)),
+    'A Wingbeat of Giant Dragon': (
+        Effect(
+            timing="ignition",
+            target=TargetSpec(
+                count=1, where="own_monsters", races=frozenset({"Dragon"}), min_level=5
+            ),
+            resolve=(BounceTargetsToHand(), DestroyAllSpellTraps()),
+        ),
+    ),
+    'Abaki': (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(InflictDamage(SELF, 500), InflictDamage(OPPONENT, 500)),
+        ),
+    ),
+    'Acid Rain': (
+        Effect(resolve=(DestroyAllMonsters(races=frozenset({"Machine"}), face_up_only=True),)),
+    ),
+    'Aegis of Gaia': (
+        Effect(speed=2, timing="ignition", resolve=(GainLifePoints(SELF, 3000),)),
+        _on_sent_to_gy((InflictDamage(SELF, 3000),)),
+    ),
+    'Altar for Tribute': (
+        Effect(
+            speed=2,
+            timing="ignition",
+            tribute_cost=1,
+            resolve=(GainLifePoints(SELF, value=TributedAttack()),),
+        ),
+    ),
+    'Amazoness Archer': (
+        Effect(timing="ignition", tribute_cost=2, resolve=(InflictDamage(OPPONENT, 1200),)),
+    ),
+    'Ancient Gear Cannon': (
+        Effect(
+            timing="ignition",
+            send_to_gy_cost=1,
+            send_to_gy_filter=CardFilter(names=frozenset({"Ancient Gear Cannon"})),
+            send_to_gy_face_up=True,
+            resolve=(
+                InflictDamage(OPPONENT, 500),
+                # The opponent cannot activate Spells OR Traps (rest-of-turn approximates
+                # "until the end of the Damage Step"). Self is NOT locked.
+                ApplyActionLock(kind="spell", who=OPPONENT),
+                ApplyActionLock(kind="trap", who=OPPONENT),
+            ),
+        ),
+    ),
+    'Ancient Gear Workshop': (
+        Effect(
+            timing="ignition",
+            condition=_gy_has_match(
+                CardFilter(card_kind="monster", name_contains=frozenset({"Ancient Gear"}))
+            ),
+            resolve=(
+                ReturnFromGraveyardToHand(
+                    card_filter=CardFilter(
+                        card_kind="monster", name_contains=frozenset({"Ancient Gear"})
+                    ),
+                    count=1,
+                ),
+            ),
+        ),
+    ),
+    'Ancient Rules': (
+        Effect(
+            timing="ignition",
+            condition=lambda s, c: s.first_empty_monster_zone(c) is not None
+            and any(
+                s.inst(i).card.is_vanilla and (s.inst(i).card.level or 0) >= 5
+                for i in s.players[c].hand
+            ),
+            resolve=(SpecialSummonFromHand(card_filter=CardFilter(card_kind="normal_monster", min_level=5)),),
+        ),
+    ),
+    'Anti-Aircraft Flower': (
+        Effect(
+            timing="ignition",
+            tribute_cost=1,
+            tribute_races=frozenset({"Insect"}),
+            resolve=(InflictDamage(OPPONENT, 800),),
+        ),
+    ),
+    'Aquarian Alessa': (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(DiscardFromHand(OPPONENT, count=1, random=True),),
+        ),
+    ),
+    'Arcane Archer of the Forest': (
+        Effect(
+            timing="ignition",
+            tribute_cost=1,
+            tribute_races=frozenset({"Plant"}),
+            target=TargetSpec(count=1, where="spell_trap_field"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    'Assault on GHQ': (
+        Effect(
+            speed=2,
+            timing="ignition",
+            target=TargetSpec(count=1, where="own_monsters"),
+            resolve=(DestroyTargets(), MillFromDeck(OPPONENT, 2)),
+        ),
+    ),
+    'Atomic Firefly': (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(InflictDamage(OPPONENT, 1000),),
+        ),
+    ),
+    'Battery Charger': (
+        Effect(
+            timing="ignition",
+            life_cost=500,
+            target=TargetSpec(
+                count=1,
+                where="own_graveyard_monster",
+                name_contains=frozenset({"Batteryman"}),
+            ),
+            resolve=(SpecialSummonFromGraveyard(),),
+        ),
+    ),
+    'Batteryman Micro-Cell': (
+        _flip(
+            resolve=(
+                SpecialSummonFromDeck(
+                    card_filter=CardFilter(
+                        card_kind="monster",
+                        name_contains=frozenset({"Batteryman"}),
+                        max_level=4,
+                    )
+                ),
+            ),
+        ),
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(Draw(count=1),),
+        ),
+    ),
+    'Berfomet': (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(
+                kind="summon", by=SELF, summon_kinds=frozenset({"normal", "flip"})
+            ),
+            resolve=(
+                SearchFromDeck(
+                    card_filter=CardFilter(
+                        names=frozenset({"Gazelle the King of Mythical Beasts"})
+                    )
+                ),
+            ),
+        ),
+    ),
+    'Birdface': (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(
+                SearchFromDeck(card_filter=CardFilter(names=frozenset({"Harpie Lady"}))),
+            ),
+        ),
+    ),
+    "Black Dragon's Chick": (
+        Effect(
+            timing="ignition",
+            condition=lambda s, c: any(
+                s.inst(i).card.name == "Red-Eyes Black Dragon"
+                for i in s.players[c].hand
+            ),
+            send_to_gy_cost=1,
+            send_to_gy_filter=CardFilter(names=frozenset({"Black Dragon's Chick"})),
+            send_to_gy_face_up=True,
+            resolve=(
+                SpecialSummonFromHand(
+                    card_filter=CardFilter(names=frozenset({"Red-Eyes Black Dragon"}))
+                ),
+            ),
+        ),
+    ),
+    'Brain Control': (
+        Effect(
+            timing="ignition",
+            life_cost=800,
+            target=TargetSpec(count=1, where="opponent_monsters", face_up=True),
+            resolve=(TakeControl(until_end_of_turn=True),),
+        ),
+    ),
+    'Breath of Light': (
+        Effect(
+            resolve=(
+                DestroyAllMonsters(face_up_only=True, races=frozenset({"Rock"})),
+            )
+        ),
+    ),
+    'Broken Bamboo Sword': _equip_effect(),
+    'Burning Algae': (_on_sent_to_gy((GainLifePoints(OPPONENT, 1000),)),),
+    'Cannon Soldier': (
+        Effect(timing="ignition", tribute_cost=1, resolve=(InflictDamage(OPPONENT, 500),)),
+    ),
+    'Cannon Soldier MK-2': (
+        Effect(timing="ignition", tribute_cost=2, resolve=(InflictDamage(OPPONENT, 1500),)),
+    ),
+    'Card Trader': _ACTIVATE_ONTO_FIELD,
+    'Castle Walls': (
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="any_monster", face_up=True),
+            resolve=(ModifyStatsTemporary(defn=500),),
+        ),
+    ),
+    'Chaos Sorcerer': (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            disables_attack_this_turn=True,
+            target=TargetSpec(count=1, where="any_monster", face_up=True),
+            resolve=(BanishTargets(),),
+        ),
+    ),
+    'Chorus of Sanctuary': _ACTIVATE_ONTO_FIELD,
+    'Cloudian - Sheep Cloud': (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(
+                CreateToken(
+                    token_name="Cloudian Token",
+                    count=2,
+                    position=Position.FACE_UP_DEFENSE,
+                    race="Fairy",
+                    attribute=Attribute.WATER,
+                    level=1,
+                ),
+            ),
+        ),
+    ),
+    'Cockroach Knight': (_on_sent_to_gy((ReturnSelfToDeck(to_top=True),)),),
+    'Cold Wave': (
+        Effect(
+            timing="ignition",
+            resolve=(
+                ApplyActionLock(kind="spell", who="self", extra_turns=1),
+                ApplyActionLock(kind="spell", who=OPPONENT, extra_turns=1),
+                ApplyActionLock(kind="trap", who="self", extra_turns=1),
+                ApplyActionLock(kind="trap", who=OPPONENT, extra_turns=1),
+                ApplyActionLock(kind="set", who="self", extra_turns=1),
+                ApplyActionLock(kind="set", who=OPPONENT, extra_turns=1),
+            ),
+        ),
+    ),
+    'Counter Counter': (
+        Effect(
+            speed=3,
+            timing="quick",
+            condition=lambda s, c: (card := _chain_top_card(s)) is not None
+            and card.is_trap
+            and card.subtype is SpellTrapProperty.COUNTER,
+            resolve=(NegatePreviousLink(),),
+        ),
+    ),
+    'Cross Porter': (
+        Effect(
+            timing="ignition",
+            send_to_gy_cost=1,
+            send_to_gy_filter=CardFilter(card_kind="monster"),
+            condition=lambda s, c: any(
+                "Neo-Spacian" in s.inst(i).card.name for i in s.players[c].hand
+            ),
+            resolve=(
+                SpecialSummonFromHand(
+                    card_filter=CardFilter(
+                        card_kind="monster", name_contains=frozenset({"Neo-Spacian"})
+                    )
+                ),
+            ),
+        ),
+        _on_sent_to_gy(
+            (
+                SearchFromDeck(
+                    card_filter=CardFilter(
+                        card_kind="monster", name_contains=frozenset({"Neo-Spacian"})
+                    )
+                ),
+            )
+        ),
+    ),
+    'Cunning of the Six Samurai': (
+        Effect(
+            timing="ignition",
+            send_to_gy_cost=1,
+            send_to_gy_face_up=True,
+            send_to_gy_filter=CardFilter(
+                card_kind="monster", name_contains=frozenset({"Six Samurai"})
+            ),
+            target=TargetSpec(
+                count=1,
+                where="any_graveyard_monster",
+                name_contains=frozenset({"Six Samurai"}),
+            ),
+            resolve=(SpecialSummonFromGraveyard(),),
+        ),
+    ),
+    'Curse of Aging': (
+        Effect(
+            speed=2,
+            timing="quick",
+            discard_cost=1,
+            resolve=(ModifyAllStatsTemporary(side=OPPONENT, atk=-500, defn=-500),),
+        ),
+    ),
+    'Cybernetic Hidden Technology': (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            send_to_gy_cost=1,
+            send_to_gy_filter=CardFilter(
+                names=frozenset(
+                    {
+                        "Cyber Dragon",
+                        "Cyber End Dragon",
+                        "Cyber Twin Dragon",
+                        "Chimeratech Overdragon",
+                        "Chimeratech Fortress Dragon",
+                    }
+                )
+            ),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    'D - Counter': (
+        Effect(
+            speed=3,
+            timing="trigger",
+            trigger=Trigger(
+                kind="attack_declared",
+                by=OPPONENT,
+                subject="attacker",
+                target_self_control=True,
+                target_name_contains=frozenset({"Destiny HERO"}),
+            ),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    'D - Spirit': (
+        Effect(
+            timing="ignition",
+            condition=_all_conditions(
+                _has_free_monster_zone,
+                lambda s, c: not any(
+                    i is not None
+                    and s.inst(i).is_face_up
+                    and "Destiny HERO" in s.inst(i).card.name
+                    for i in s.players[c].monster_zones
+                ),
+            ),
+            resolve=(
+                SpecialSummonFromHand(
+                    card_filter=CardFilter(
+                        card_kind="monster",
+                        name_contains=frozenset({"Destiny HERO"}),
+                        max_level=4,
+                    )
+                ),
+            ),
+        ),
+    ),
+    'D.D. Crazy Beast': (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(BanishEventMonster(),),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    'Barrier Statue of the Abyss': (
+        SpecialSummonLock(whose="both", except_attribute=Attribute.DARK),
+    ),
+    'Barrier Statue of the Drought': (
+        SpecialSummonLock(whose="both", except_attribute=Attribute.EARTH),
+    ),
+    'Barrier Statue of the Heavens': (
+        SpecialSummonLock(whose="both", except_attribute=Attribute.LIGHT),
+    ),
+    'Barrier Statue of the Stormwinds': (
+        SpecialSummonLock(whose="both", except_attribute=Attribute.WIND),
+    ),
+    'Batteryman D': (AttackTargetProtection(race="Thunder", exclude_self=True),),
+    'Bitelon': (Piercing(),),
+    'Chthonian Emperor Dragon': (MultiAttacker(),),
+    'Cyber End Dragon': (Piercing(),),
+    'Cyber Twin Dragon': (MultiAttacker(),),
+})
