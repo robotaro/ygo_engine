@@ -478,6 +478,24 @@ class GameState:
                         total += mod.atk if which == "atk" else mod.defn
         return total
 
+    def _self_mod_active(self, mod, controller: int) -> bool:
+        """Whether a SelfStatMod's optional activation gates all hold for ``controller``
+        (a gate left unset is ignored). Controls a named monster / hand size cap / empty
+        Spell & Trap Zones — Boot-Up Soldier, Cybernetic Cyclopean, Theban Nightmare."""
+        p = self.players[controller]
+        if mod.active_if_control_name_contains is not None and not any(
+            i is not None
+            and self.cards[i].is_face_up
+            and mod.active_if_control_name_contains in self.cards[i].card.name
+            for i in p.monster_zones
+        ):
+            return False
+        if mod.active_if_hand_at_most is not None and len(p.hand) > mod.active_if_hand_at_most:
+            return False
+        if mod.active_if_empty_spell_trap and any(z is not None for z in p.spell_trap_zones):
+            return False
+        return True
+
     def _self_stat_delta(self, monster_iid: int, which: str) -> int:
         """A monster's own continuous self-boost (SelfStatMod), e.g. Goggle Golem's
         unlocked ATK. Suppressed while the monster's effect is inactive (a Gemini
@@ -489,6 +507,8 @@ class GameState:
         for mod in inst.card.continuous:
             if not isinstance(mod, SelfStatMod):
                 continue
+            if not self._self_mod_active(mod, inst.controller):
+                continue  # a gated boost (Boot-Up Soldier, Theban Nightmare) is dormant
             flat = mod.atk if which == "atk" else mod.defn
             if mod.scaling == "face_up_attr_monsters":
                 per = mod.scale_atk if which == "atk" else mod.scale_defn

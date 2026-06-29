@@ -2257,6 +2257,17 @@ CONTINUOUS: dict[str, tuple] = {
         FieldMod(atk=500, attributes=frozenset({Attribute.DARK})),
         FieldMod(atk=-400, attributes=frozenset({Attribute.LIGHT})),
     ),
+    # --- Batch 57: conditional flat self-ATK (gated SelfStatMod) ---
+    # Boot-Up Soldier - Dread Dynamo: +2000 ATK while you control a "Gadget" monster.
+    "Boot-Up Soldier - Dread Dynamo": (
+        SelfStatMod(atk=2000, active_if_control_name_contains="Gadget"),
+    ),
+    # Cybernetic Cyclopean: +1000 ATK while you have no cards in your hand.
+    "Cybernetic Cyclopean": (SelfStatMod(atk=1000, active_if_hand_at_most=0),),
+    # Theban Nightmare: +1500 ATK while you have no cards in hand nor in your S/T Zones.
+    "Theban Nightmare": (
+        SelfStatMod(atk=1500, active_if_hand_at_most=0, active_if_empty_spell_trap=True),
+    ),
     # --- Effects Batch 24: name-restricted Equip Spell boosts ---
     "Cyber Shield": (EquipMod(atk=500),),
     "Ancient Gear Tank": (EquipMod(atk=600),),

@@ -110,6 +110,13 @@ class SelfStatMod:
     count_race: str | None = None
     count_name_contains: str | None = None
     count_exclude_self: bool = False
+    # Optional activation gates — the whole modifier contributes 0 unless ALL set gates
+    # hold for the controller: control a face-up monster named like this (Boot-Up Soldier
+    # → "Gadget"), hold at most N cards in hand (Cybernetic Cyclopean → 0), and/or control
+    # no Spell/Trap cards (Theban Nightmare).
+    active_if_control_name_contains: str | None = None
+    active_if_hand_at_most: int | None = None
+    active_if_empty_spell_trap: bool = False
 
 
 @dataclass(frozen=True)
