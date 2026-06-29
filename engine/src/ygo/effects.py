@@ -323,6 +323,9 @@ class FieldMod:
     races: frozenset[str] = frozenset()
     attributes: frozenset[Attribute] = frozenset()
     side: str | None = None  # None | "self" | "opponent"
+    # For a MONSTER-borne anthem only: dormant unless the source monster is itself in
+    # face-up Defense Position (Fairy King Truesdale). Ignored for Spell/Field sources.
+    source_in_defense: bool = False
 
 
 @dataclass(frozen=True)

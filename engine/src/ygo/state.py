@@ -475,8 +475,11 @@ class GameState:
                 if not src.is_face_up or not src.effects_active or self.monster_effects_negated(sid):
                     continue
                 for mod in src.card.continuous:
-                    if isinstance(mod, FieldMod) and self._field_mod_applies(mod, monster, ctrl):
-                        total += mod.atk if which == "atk" else mod.defn
+                    if not isinstance(mod, FieldMod) or not self._field_mod_applies(mod, monster, ctrl):
+                        continue
+                    if mod.source_in_defense and src.position is not Position.FACE_UP_DEFENSE:
+                        continue  # Fairy King Truesdale only radiates while it's in Defense
+                    total += mod.atk if which == "atk" else mod.defn
         return total
 
     def _self_mod_active(self, mod, controller: int) -> bool:

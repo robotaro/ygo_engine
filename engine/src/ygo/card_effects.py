@@ -2325,6 +2325,23 @@ CONTINUOUS: dict[str, tuple] = {
     "Nightmare Penguin": (
         FieldMod(atk=200, attributes=frozenset({Attribute.WATER}), side="self"),
     ),
+    # --- Batch 60: more attribute anthems (both sides) + a position-gated anthem ---
+    # Harpie Lady 1: all WIND monsters (both sides) +300 ATK.
+    "Harpie Lady 1": (FieldMod(atk=300, attributes=frozenset({Attribute.WIND})),),
+    # Hoshiningen: all LIGHT monsters +500 ATK, all DARK monsters -400 ATK (both sides).
+    "Hoshiningen": (
+        FieldMod(atk=500, attributes=frozenset({Attribute.LIGHT})),
+        FieldMod(atk=-400, attributes=frozenset({Attribute.DARK})),
+    ),
+    # Little Chimera: all FIRE monsters +500 ATK, all WATER monsters -400 ATK (both sides).
+    "Little Chimera": (
+        FieldMod(atk=500, attributes=frozenset({Attribute.FIRE})),
+        FieldMod(atk=-400, attributes=frozenset({Attribute.WATER})),
+    ),
+    # Fairy King Truesdale: while it's in Defense Position, your Plant monsters +500 ATK/DEF.
+    "Fairy King Truesdale": (
+        FieldMod(atk=500, defn=500, races=frozenset({"Plant"}), side="self", source_in_defense=True),
+    ),
     # --- Effects Batch 24: name-restricted Equip Spell boosts ---
     "Cyber Shield": (EquipMod(atk=500),),
     "Ancient Gear Tank": (EquipMod(atk=600),),

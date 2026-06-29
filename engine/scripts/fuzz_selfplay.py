@@ -162,6 +162,11 @@ DECK = (
     + ["Hunter Owl"] * 2
     + ["Nightmare Penguin"] * 2
     + ["Mother Grizzly"] * 2
+    # more attribute anthems + a position-gated anthem
+    + ["Harpie Lady 1"] * 2
+    + ["Hoshiningen"] * 2
+    + ["Little Chimera"] * 2
+    + ["Fairy King Truesdale"] * 2
 )
 
 
