@@ -1048,6 +1048,17 @@ class NegateAttack(Primitive):
 
 
 @dataclass(frozen=True)
+class RedirectAttackToTarget(Primitive):
+    """Redirect the current attack to this effect's first target — a monster the
+    defender controls (Call of the Earthbound: you choose the new target; Jam Defender:
+    your Revival Jam). Read by engine._declare_attack after the response window."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        if ctx.targets:
+            ctx.state.attack_redirect = ctx.targets[0]
+
+
+@dataclass(frozen=True)
 class NegatePreviousLink(Primitive):
     """Counter-Trap negation (Magic Jammer, Dark Bribe, Divine Wrath, Goblin Out of
     the Frying Pan): negate the activation of the card this was chained to — the

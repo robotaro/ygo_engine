@@ -398,9 +398,12 @@ def pay_costs(
         if not n:
             continue
         fodder = fodder_fn(state, controller, source_iid, effect)
+        # Snapshot names before paying: a Tributed/sent Token is removed from the game
+        # (deleted from state.cards), so its name can't be looked up afterwards.
+        names = {i: state.inst(i).name for i in fodder}
         chosen = picker(kind, fodder, n) if picker else None
         paid = pay_fn(state, controller, source_iid, n, chosen, effect)
-        lines.append(verb.format(names=", ".join(state.inst(i).name for i in paid)))
+        lines.append(verb.format(names=", ".join(names.get(i, "a card") for i in paid)))
     if effect.counter_cost:
         pay_counter_cost(state, source_iid, effect.counter_cost, effect.counter_type)
         lines.append(f"removes {effect.counter_cost} {effect.counter_type} counter(s)")
@@ -681,6 +684,8 @@ def _target_pool(state: GameState, controller: int, spec) -> list[int]:
     opp = state.opponent_of(controller)
     if spec.where == "opponent_monsters":
         candidates = [i for i in state.players[opp].monster_zones if i is not None]
+    elif spec.where == "own_monsters":
+        candidates = [i for i in state.players[controller].monster_zones if i is not None]
     elif spec.where == "any_monster":
         candidates = [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
     elif spec.where == "spell_trap_field":
@@ -929,6 +934,13 @@ def _activations_for_effect(state, player, iid, effect, event):
             return []  # e.g. Radiant Mirror Force needs the attacker to control 3+ monsters
         if not can_pay_costs(state, player, iid, effect):
             return []  # e.g. Horn of Heaven needs a monster to Tribute
+        if effect.target is not None:
+            # The controller picks the effect's target (Call of the Earthbound chooses the
+            # redirected monster), rather than it coming from the trigger's subject.
+            return [
+                ActivateSpell(iid, targets=t)
+                for t in _enumerate_targets(state, player, effect.target)
+            ]
         return [ActivateSpell(iid, targets=_trigger_targets(effect.trigger, event))]
     if effect.timing == "quick":
         if effect.condition is not None and not effect.condition(state, player):

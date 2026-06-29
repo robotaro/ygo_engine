@@ -304,6 +304,7 @@ class Engine:
         s = self.state
         attacker, target = action.attacker, action.target
         s.attack_negated = False
+        s.attack_redirect = None
         # Mark at declaration (not only in _resolve_attack) so a *negated* attack — which
         # returns before resolving — still counts as this monster having attacked.
         s.inst(attacker).attacked_this_turn = True
@@ -330,6 +331,11 @@ class Engine:
             self.log("  the attacker is no longer able to attack")
             self._changed()
             return
+        # A response may have redirected the attack to a different monster the defender
+        # controls (Call of the Earthbound, Jam Defender).
+        if s.attack_redirect is not None and s.attack_redirect in s.cards:
+            target = s.attack_redirect
+            self.log(f"  the attack is redirected to {s.inst(target).name}")
         if target is not None and target not in s.cards:
             self._changed()  # the target left the field; the attack fizzles
             return

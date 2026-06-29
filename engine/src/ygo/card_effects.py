@@ -62,6 +62,7 @@ from .effects import (
     ReturnAllSpellTrapsToHand,
     ReturnFromGraveyardToDeck,
     ReturnFromGraveyardToHand,
+    RedirectAttackToTarget,
     ReturnFromHandToDeck,
     ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
@@ -1143,6 +1144,39 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
             resolve=(ChangeTargetPosition(to="defense"),),
+        ),
+    ),
+    # --- Batch 48: attack redirect / cost-bearing attack Trap ---
+    # Call of the Earthbound — redirect the attack to a monster you choose to control.
+    "Call of the Earthbound": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            target=TargetSpec(count=1, where="own_monsters"),
+            resolve=(RedirectAttackToTarget(),),
+        ),
+    ),
+    # Jam Defender — redirect the attack to your "Revival Jam".
+    "Jam Defender": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            target=TargetSpec(
+                count=1, where="own_monsters", name_contains=frozenset({"Revival Jam"})
+            ),
+            resolve=(RedirectAttackToTarget(),),
+        ),
+    ),
+    # Chaos Burst — Tribute 1 monster; destroy the attacker, then 1000 damage.
+    "Chaos Burst": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            tribute_cost=1,
+            resolve=(DestroyTargets(), InflictDamage(OPPONENT, 1000)),
         ),
     ),
     # --- Batch 47: coin-flip (CoinFlip RNG primitive; calling is 50/50 -> heads) ---

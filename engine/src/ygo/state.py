@@ -171,6 +171,7 @@ class GameState:
     normal_summon_used: bool = False  # one Normal Summon/Set per turn; reset each turn
     chain: list = field(default_factory=list)  # ChainLink stack, last-in-first-out
     attack_negated: bool = False  # transient flag set while resolving an attack response
+    attack_redirect: int | None = None  # a response set a new attack target (Call of the Earthbound)
     gy_from_field: list = field(default_factory=list)  # monsters just sent field->GY (trigger queue)
     pending_draws: list = field(default_factory=list)  # players who just drew (draw-trigger queue)
     # Monsters just Summoned — (iid, summoner, kind) the engine drains to open the
