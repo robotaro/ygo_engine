@@ -24,6 +24,7 @@ from .moves import (
     NormalSummon,
     Pass,
     SetSpellTrap,
+    SpecialSummonFromHand,
     apply,
     can_ritual_summon,
     controls_toon_world,
@@ -268,7 +269,18 @@ class Engine:
                 self._changed()
                 self._check_field_to_gy_triggers()  # a Tribute may send a trigger monster
                 # The opponent may respond to the Summon (e.g. Trap Hole).
-                self._response_window({"kind": "summon", "player": tp, "monster": choice.iid})
+                self._response_window(
+                    {"kind": "summon", "player": tp, "monster": choice.iid, "summon_kind": "normal"}
+                )
+                self._check_life_points()
+            elif isinstance(choice, SpecialSummonFromHand):
+                self.log(f"  {s.players[tp].name} {apply(s, choice)}")
+                self._changed()
+                # The opponent may respond to the Special Summon (e.g. Black Horn of
+                # Heaven, Bottomless Trap Hole).
+                self._response_window(
+                    {"kind": "summon", "player": tp, "monster": choice.iid, "summon_kind": "special"}
+                )
                 self._check_life_points()
             elif isinstance(choice, FlipSummon):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")

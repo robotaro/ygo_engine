@@ -74,7 +74,9 @@ def _normal_summon_then_window(eng, s, iid, player=0):
     from ygo.moves import apply
 
     apply(s, NormalSummon(iid))
-    eng._response_window({"kind": "summon", "player": player, "monster": iid})
+    eng._response_window(
+        {"kind": "summon", "player": player, "monster": iid, "summon_kind": "normal"}
+    )
 
 
 # --- Horn of Heaven: Tribute 1, negate a Normal Summon + destroy ---------------

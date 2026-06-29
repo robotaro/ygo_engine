@@ -269,6 +269,10 @@ class Trigger:
     by: str = OPPONENT
     subject: str | None = None
     min_atk: int | None = None
+    # For a "summon" trigger: which Summon kinds it reacts to ("normal" | "flip" |
+    # "special"). Empty = any Summon (Bottomless Trap Hole, Horn of Heaven); set it
+    # to keep a card to its kinds (Trap Hole = Normal/Flip, Black Horn = Special).
+    summon_kinds: frozenset = frozenset()
 
 
 # --------------------------------------------------------------------------- #

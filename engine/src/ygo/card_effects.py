@@ -574,12 +574,30 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(DestroyTargets(),),
         ),
     ),
-    "Forced Back": (  # negate the Summon + return that monster to its owner's hand
+    "Forced Back": (  # negate the Normal/Flip Summon + return that monster to hand
         Effect(
             speed=3,
             timing="trigger",
-            trigger=Trigger(kind="summon", by=OPPONENT, subject="monster"),
+            trigger=Trigger(
+                kind="summon",
+                by=OPPONENT,
+                subject="monster",
+                summon_kinds=frozenset({"normal", "flip"}),
+            ),
             resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    "Black Horn of Heaven": (  # negate a Special Summon + destroy that monster
+        Effect(
+            speed=3,
+            timing="trigger",
+            trigger=Trigger(
+                kind="summon",
+                by=OPPONENT,
+                subject="monster",
+                summon_kinds=frozenset({"special"}),
+            ),
+            resolve=(DestroyTargets(),),
         ),
     ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
@@ -616,7 +634,13 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         Effect(
             speed=2,
             timing="trigger",
-            trigger=Trigger(kind="summon", by=OPPONENT, subject="monster", min_atk=1000),
+            trigger=Trigger(
+                kind="summon",
+                by=OPPONENT,
+                subject="monster",
+                min_atk=1000,
+                summon_kinds=frozenset({"normal", "flip"}),  # not Special Summons
+            ),
             resolve=(DestroyTargets(),),
         ),
     ),

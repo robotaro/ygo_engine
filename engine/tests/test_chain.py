@@ -137,7 +137,7 @@ def test_trap_hole_destroys_a_big_summon_but_not_a_small_one():
     big = s.spawn_on_field(reg.get("Blue-Eyes White Dragon"), 0, 0, Position.FACE_UP_ATTACK)
     _set_card(s, "Trap Hole", 1, 0)
     Engine(s, [GreedyAgent(), ActivateByName("Trap Hole")])._response_window(
-        {"kind": "summon", "player": 0, "monster": big.iid}
+        {"kind": "summon", "player": 0, "monster": big.iid, "summon_kind": "normal"}
     )
     assert s.inst(big.iid).zone is Zone.GRAVEYARD
 
@@ -147,7 +147,7 @@ def test_trap_hole_destroys_a_big_summon_but_not_a_small_one():
     small = s2.spawn_on_field(reg.get("Mystical Elf"), 0, 0, Position.FACE_UP_ATTACK)  # 800 ATK
     _set_card(s2, "Trap Hole", 1, 0)
     Engine(s2, [GreedyAgent(), ActivateByName("Trap Hole")])._response_window(
-        {"kind": "summon", "player": 0, "monster": small.iid}
+        {"kind": "summon", "player": 0, "monster": small.iid, "summon_kind": "normal"}
     )
     assert s2.inst(small.iid).zone is Zone.MONSTER
 

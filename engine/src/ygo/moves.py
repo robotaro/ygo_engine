@@ -705,6 +705,8 @@ def _trigger_matches(state, player, trigger, event) -> bool:
         return False
     if trigger.by == OPPONENT and event.get("player") != state.opponent_of(player):
         return False
+    if trigger.summon_kinds and event.get("summon_kind") not in trigger.summon_kinds:
+        return False  # e.g. Trap Hole ignores Special Summons
     if trigger.min_atk is not None:
         mon = event.get("monster")
         if mon is None or (state.inst(mon).card.attack or 0) < trigger.min_atk:
