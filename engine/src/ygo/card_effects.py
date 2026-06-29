@@ -23,6 +23,7 @@ from .effects import (
     BounceTargetsToHand,
     CanAttackDirectly,
     CardEffectNegation,
+    CoinFlip,
     CardFilter,
     CountTimes,
     CreateToken,
@@ -49,6 +50,7 @@ from .effects import (
     GainLifePoints,
     HandSpecialSummon,
     InflictDamage,
+    LoseHalfLifePoints,
     MillFromDeck,
     ModifyStatsTemporary,
     MultiAttacker,
@@ -1141,6 +1143,50 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
             resolve=(ChangeTargetPosition(to="defense"),),
+        ),
+    ),
+    # --- Batch 47: coin-flip (CoinFlip RNG primitive; calling is 50/50 -> heads) ---
+    # Jirai Gumo — when it declares an attack, coin toss; wrong -> lose half your LP.
+    "Jirai Gumo": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=SELF),
+            resolve=(CoinFlip(lose=(LoseHalfLifePoints(SELF),)),),
+        ),
+    ),
+    # Abare Ushioni — once/turn: coin toss; right -> 1000 to opponent, wrong -> 1000 to you.
+    "Abare Ushioni": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            resolve=(
+                CoinFlip(win=(InflictDamage(OPPONENT, 1000),), lose=(InflictDamage(SELF, 1000),)),
+            ),
+        ),
+    ),
+    # Cup of Ace — coin toss; heads -> you draw 2, tails -> opponent draws 2.
+    "Cup of Ace": (
+        Effect(
+            timing="ignition",
+            resolve=(CoinFlip(win=(Draw(SELF, 2),), lose=(Draw(OPPONENT, 2),)),),
+        ),
+    ),
+    # Barrel Dragon — once/turn: target 1 opponent monster; 3 tosses, 2+ heads -> destroy it.
+    "Barrel Dragon": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(CoinFlip(win=(DestroyTargets(),), count=3, win_threshold=2),),
+        ),
+    ),
+    # Blowback Dragon — once/turn: target 1 opponent card; 3 tosses, 2+ heads -> destroy it.
+    "Blowback Dragon": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            target=TargetSpec(count=1, where="opponent_card_field"),
+            resolve=(CoinFlip(win=(DestroyTargets(),), count=3, win_threshold=2),),
         ),
     ),
     "Mystical Space Typhoon": (

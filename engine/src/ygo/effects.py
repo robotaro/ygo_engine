@@ -1006,6 +1006,38 @@ class GainLifePoints(Primitive):
         ctx.state.players[ctx.side(self.player)].life_points += amount
 
 
+@dataclass(frozen=True)
+class LoseHalfLifePoints(Primitive):
+    """A player loses half their current Life Points, rounded down (Jirai Gumo's
+    failed coin toss)."""
+
+    player: str = SELF
+
+    def execute(self, ctx: EffectContext) -> None:
+        p = ctx.state.players[ctx.side(self.player)]
+        p.life_points -= p.life_points // 2
+
+
+@dataclass(frozen=True)
+class CoinFlip(Primitive):
+    """Toss ``count`` coins (each 50/50 via the seeded RNG) and run the ``win`` branch's
+    primitives if at least ``win_threshold`` come up heads, else the ``lose`` branch.
+    A single "toss a coin and call it" is count=1/threshold=1 (calling is 50/50 with no
+    information, so "call it right" is just a heads); "toss 3 times, 2+ heads" is
+    count=3/threshold=2 (Barrel/Blowback Dragon). Sub-primitives share this effect's
+    context (so they see the same targets — e.g. Barrel Dragon's targeted monster)."""
+
+    win: tuple = ()
+    lose: tuple = ()
+    count: int = 1
+    win_threshold: int = 1
+
+    def execute(self, ctx: EffectContext) -> None:
+        heads = sum(1 for _ in range(self.count) if ctx.state.rng.random() < 0.5)
+        for primitive in self.win if heads >= self.win_threshold else self.lose:
+            primitive.execute(ctx)
+
+
 # --- Slice 3: reactive primitives (read the triggering event) ---
 @dataclass(frozen=True)
 class NegateAttack(Primitive):

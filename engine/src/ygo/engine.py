@@ -316,6 +316,11 @@ class Engine:
         if self.result is not None:
             return
 
+        # The attacker's own "when this declares an attack" Trigger (Jirai Gumo) fires now.
+        self._fire_attack_declared_trigger(attacker)
+        if self.result is not None:
+            return
+
         if s.attack_negated:
             self.log("  the attack is negated")
             self._changed()
@@ -639,6 +644,25 @@ class Engine:
         )
         if effect is not None:
             self._trigger_effect(dealer_iid, effect, inst.controller, {"amount": amount})
+
+    def _fire_attack_declared_trigger(self, attacker_iid: int) -> None:
+        """Fire the attacking monster's OWN "when this card declares an attack" Trigger
+        Effect (Jirai Gumo's coin toss) on a fresh Chain — after the opponent's response
+        window, guarded on the attacker still being a live, face-up attacker."""
+        s = self.state
+        if self.result is not None:
+            return
+        inst = s.cards.get(attacker_iid)
+        if (
+            inst is None
+            or inst.zone is not Zone.MONSTER
+            or inst.position is not Position.FACE_UP_ATTACK
+            or not inst.effects_active
+        ):
+            return
+        effect = next(self._trigger_effects(inst.card, kind="attack_declared", by=SELF), None)
+        if effect is not None:
+            self._trigger_effect(attacker_iid, effect, inst.controller, {"attacker": attacker_iid})
 
     def _trigger_effect(self, source_iid: int, effect, controller: int, event: dict | None = None):
         """Put a triggered/flip monster effect onto a fresh Chain and resolve it.
