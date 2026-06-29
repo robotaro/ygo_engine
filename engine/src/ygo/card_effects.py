@@ -28,6 +28,7 @@ from .effects import (
     CardEffectNegation,
     CoinFlip,
     CardFilter,
+    CountdownSelfDestruct,
     CountTimes,
     CreateToken,
     DamageEqualToAttackerAtk,
@@ -4571,4 +4572,29 @@ CONTINUOUS.update({
             whose="controller",
         ),
     ),
+})
+
+
+# ===== Effects Batch 70: attack-lock floodgates (AttackRestriction extension) =====
+EFFECTS.update({
+    # Swords of Revealing Light — Normal Spell that stays face-up on the field; just
+    # activating it places it there (the lock + 3-turn timer live in CONTINUOUS). Its
+    # flip-the-opponent's-face-down-monsters rider on activation is not modelled.
+    "Swords of Revealing Light": _ACTIVATE_ONTO_FIELD,
+    # Gravity Bind — Continuous Trap: activate it onto the field; the Level lock is in
+    # CONTINUOUS.
+    "Gravity Bind": _ACTIVATE_ONTO_FIELD,
+})
+CONTINUOUS.update({
+    # Swords of Revealing Light — while face-up, the opponent's monsters cannot declare
+    # an attack; it self-destructs on the opponent's 3rd End Phase (EndPhaseTrigger ticks
+    # the countdown each of their End Phases).
+    "Swords of Revealing Light": (
+        AttackRestriction(all_cannot_attack=True, affects="opponent"),
+        EndPhaseTrigger(
+            Effect(resolve=(CountdownSelfDestruct(turns=3),)), whose="opponent"
+        ),
+    ),
+    # Gravity Bind — Level 4 or higher monsters cannot attack (both sides).
+    "Gravity Bind": (AttackRestriction(max_level_can_attack=3),),
 })

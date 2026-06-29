@@ -355,11 +355,19 @@ class AttackRestriction:
     ``one_per_battle_phase`` (The Dark Door): each player may declare at most one
     attack per Battle Phase. ``min_atk_cannot_attack`` (Messenger of Peace): no
     monster whose *effective* ATK is at or above this value may declare an attack
-    (both players). Modelled as data so the kernel stays card-agnostic.
+    (both players). ``max_level_can_attack`` (Gravity Bind): a monster whose Level is
+    *above* this value cannot attack (both players). ``all_cannot_attack`` (Swords of
+    Revealing Light): a blanket lock — no monster on the affected side may declare an
+    attack at all. ``affects`` scopes the blanket/level locks: "both" sides, or only
+    the source controller's "opponent" (Swords). Modelled as data so the kernel stays
+    card-agnostic.
     """
 
     one_per_battle_phase: bool = False
     min_atk_cannot_attack: int | None = None
+    max_level_can_attack: int | None = None
+    all_cannot_attack: bool = False
+    affects: str = "both"  # "both" | "opponent" (of the source's controller)
 
 
 @dataclass(frozen=True)
@@ -869,6 +877,26 @@ class BanishEventMonster(Primitive):
         iid = (ctx.event or {}).get("destroyed")
         if iid is not None and iid in ctx.state.cards:
             ctx.state.banish(iid)
+
+
+@dataclass(frozen=True)
+class CountdownSelfDestruct(Primitive):
+    """Tick a self-destruct counter on the source each time this fires; once it
+    reaches ``turns``, destroy the source. Swords of Revealing Light pairs this with
+    an ``EndPhaseTrigger(whose="opponent")`` so it counts the opponent's End Phases and
+    expires on their 3rd one."""
+
+    turns: int = 3
+    counter: str = "countdown"
+
+    def execute(self, ctx: EffectContext) -> None:
+        inst = ctx.state.cards.get(ctx.source_iid)
+        if inst is None:
+            return
+        n = inst.counters.get(self.counter, 0) + 1
+        inst.counters[self.counter] = n
+        if n >= self.turns:
+            ctx.state.send_to_graveyard(ctx.source_iid)
 
 
 @dataclass(frozen=True)

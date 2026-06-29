@@ -1033,6 +1033,28 @@ def _atk_attack_floor(state: GameState) -> int | None:
     return min(floors) if floors else None
 
 
+def _attack_floodgates(state: GameState, player: int) -> tuple[bool, int | None]:
+    """Scan active ``AttackRestriction`` passives for ``player``'s declarations and
+    return ``(blanket_blocked, level_cap)``: blanket_blocked = no attack may be declared
+    at all (Swords of Revealing Light locks the source controller's opponent); level_cap
+    = a monster whose Level is *above* it cannot attack (Gravity Bind, the lowest such
+    cap among active locks). ``affects="opponent"`` is resolved against each lock's own
+    source controller."""
+    blanket = False
+    caps: list[int] = []
+    for mod, ctrl in state.active_passives():
+        if not isinstance(mod, AttackRestriction):
+            continue
+        restricted_side = state.opponent_of(ctrl) if mod.affects == "opponent" else None
+        if mod.all_cannot_attack and (restricted_side is None or player == restricted_side):
+            blanket = True
+        if mod.max_level_can_attack is not None and (
+            restricted_side is None or player == restricted_side
+        ):
+            caps.append(mod.max_level_can_attack)
+    return blanket, (min(caps) if caps else None)
+
+
 def _toon_attack_targets(state: GameState, opp: int, opp_monsters: list[int]) -> list[int | None]:
     """A Toon may attack directly when the opponent controls no Toon monster; if
     they do, it must attack a Toon. (It may also attack normal monsters.)"""
@@ -1045,6 +1067,9 @@ def _toon_attack_targets(state: GameState, opp: int, opp_monsters: list[int]) ->
 def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
     if _attacks_locked_out(state, player):
         return []
+    blanket_locked, level_cap = _attack_floodgates(state, player)
+    if blanket_locked:
+        return []  # Swords of Revealing Light: this side cannot declare any attack
     atk_floor = _atk_attack_floor(state)
     opp = state.opponent_of(player)
     opp_monsters = [m for m in state.players[opp].monster_zones if m is not None]
@@ -1061,6 +1086,8 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
             continue  # an effect this turn barred this monster from attacking
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
             continue  # Messenger of Peace: too strong to declare an attack
+        if level_cap is not None and (inst.card.level or 0) > level_cap:
+            continue  # Gravity Bind: too high a Level to declare an attack
         if inst.card.is_toon:
             if inst.summoned_this_turn:
                 continue  # a Toon can't attack the turn it's Summoned

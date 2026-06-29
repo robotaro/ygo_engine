@@ -209,6 +209,9 @@ DECK = (
     + ["Garuda the Wind Spirit"] * 2
     + ["Lumina, Lightsworn Summoner"] * 2
     + ["The Wicked Worm Beast"] * 2
+    # attack-lock floodgates (AttackRestriction extension)
+    + ["Swords of Revealing Light"] * 2
+    + ["Gravity Bind"] * 2
 )
 
 

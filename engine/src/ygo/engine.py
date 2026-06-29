@@ -647,10 +647,17 @@ class Engine:
                 self._place_spell_counters()
             self._changed()
             self._pace()
-        # Spent, non-permanent Spells/Traps go to the Graveyard.
+        # Spent, non-permanent Spells/Traps go to the Graveyard — except a Normal
+        # Spell/Trap that "remains on the field" (Swords of Revealing Light), which we
+        # recognise by it carrying continuous markers that must stay live.
         for link in s.chain:
             inst = s.cards.get(link.source_iid)
-            if inst is not None and inst.zone is Zone.SPELL_TRAP and not inst.card.is_permanent:
+            if (
+                inst is not None
+                and inst.zone is Zone.SPELL_TRAP
+                and not inst.card.is_permanent
+                and not inst.card.continuous
+            ):
                 s.send_to_graveyard(link.source_iid)
         s.chain = []
         self._changed()
