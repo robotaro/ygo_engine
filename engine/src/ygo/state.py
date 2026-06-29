@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 
 from .cards import CardDef
 from .effects import (
+    AttackTargetProtection,
     BattleIndestructible,
     CanAttackDirectly,
     EquipMod,
@@ -496,6 +497,54 @@ class GameState:
                 if isinstance(mod, MultiAttacker):
                     return mod.times
         return 1
+
+    def _face_up_side_cards(self, player: int):
+        """Yield every face-up card on ``player``'s side — monsters, Spell/Traps and
+        the Field Spell alike — the sources that can radiate a side-wide rider."""
+        p = self.players[player]
+        for i in p.monster_zones:
+            if i is not None and self.cards[i].is_face_up:
+                yield self.cards[i]
+        for i in p.spell_trap_zones:
+            if i is not None and self.cards[i].is_face_up:
+                yield self.cards[i]
+        if p.field_zone is not None and self.cards[p.field_zone].is_face_up:
+            yield self.cards[p.field_zone]
+
+    def is_protected_attack_target(self, iid: int) -> bool:
+        """Whether the monster ``iid`` cannot be selected as an attack target by the
+        opponent — a face-up AttackTargetProtection on its controller's side covers it
+        (Decoyroid, Marauding Captain, Queen's Bodyguard, Marshmallon Glasses)."""
+        inst = self.cards.get(iid)
+        if inst is None or inst.zone is not Zone.MONSTER:
+            return False
+        controller = inst.controller
+        for src in self._face_up_side_cards(controller):
+            if not src.effects_active:
+                continue
+            for mod in src.card.continuous:
+                if not isinstance(mod, AttackTargetProtection):
+                    continue
+                if mod.requires_control_name_contains is not None and not any(
+                    m is not None
+                    and self.cards[m].is_face_up
+                    and mod.requires_control_name_contains in self.cards[m].card.name
+                    for m in self.players[controller].monster_zones
+                ):
+                    continue
+                if mod.exclude_self and src.iid == iid:
+                    continue
+                if (
+                    mod.exclude_name_contains is not None
+                    and mod.exclude_name_contains in inst.card.name
+                ):
+                    continue
+                if mod.race is not None and inst.card.race != mod.race:
+                    continue
+                if mod.name_contains is not None and mod.name_contains not in inst.card.name:
+                    continue
+                return True
+        return False
 
     def _effective_stat(self, iid: int, which: str) -> int:
         """A monster's effective ATK or DEF (``which`` is "atk"/"def"): printed base

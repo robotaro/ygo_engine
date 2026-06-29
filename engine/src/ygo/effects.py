@@ -182,6 +182,34 @@ class MultiAttacker:
 
 
 @dataclass(frozen=True)
+class AttackTargetProtection:
+    """A face-up card's continuous rider: certain monsters on its controller's side
+    cannot be *selected* as an attack target by the opponent (they stay on the field —
+    this only removes them from the attacker's target list). Read by the battle-phase
+    enumeration via ``GameState.is_protected_attack_target``; a monster source is
+    suppressed while its effect is inactive.
+
+    Which of the controller's monsters are covered:
+      * ``race`` / ``name_contains`` — narrow to monsters of that race / name substring
+        (both ``None`` = every monster on the controller's side). Marauding Captain
+        protects Warriors; Queen's Bodyguard protects "Allure Queen" monsters.
+      * ``exclude_self`` — the source monster itself stays attackable, so the opponent
+        is forced to attack *it* (a decoy: Decoyroid).
+      * ``exclude_name_contains`` — monsters with this name substring stay attackable
+        (a named decoy radiated by another card: Marshmallon Glasses → "Marshmallon").
+      * ``requires_control_name_contains`` — the rider is dormant unless the controller
+        also controls a face-up monster whose name contains this (Marshmallon Glasses
+        only works while "Marshmallon" is on the field).
+    """
+
+    race: str | None = None
+    name_contains: str | None = None
+    exclude_self: bool = False
+    exclude_name_contains: str | None = None
+    requires_control_name_contains: str | None = None
+
+
+@dataclass(frozen=True)
 class FieldMod:
     """A continuous flat ATK/DEF modifier a face-up Field/Continuous Spell radiates
     over every monster on the field that matches its filter (the "field layer").

@@ -13,6 +13,7 @@ from .effects import (
     OPPONENT,
     SELF,
     AttackRestriction,
+    AttackTargetProtection,
     BanishTargets,
     BattleIndestructible,
     BounceTargetsToDeck,
@@ -1509,6 +1510,9 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # Messenger of Peace — Continuous Spell with no activation effect; its
     # pay-or-destroy upkeep and ATK>=1500 attack lock live in CONTINUOUS below.
     "Messenger of Peace": _ACTIVATE_ONTO_FIELD,
+    # Marshmallon Glasses — Continuous Spell: while "Marshmallon" is in your Monster
+    # Zone, the opponent can only attack your Marshmallon (the protection is in CONTINUOUS).
+    "Marshmallon Glasses": _ACTIVATE_ONTO_FIELD,
     # Burning Land — Continuous Spell: activating it wipes every Field Spell, then
     # it burns the active player 500 each Standby (the burn lives in CONTINUOUS).
     "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
@@ -1665,6 +1669,23 @@ CONTINUOUS: dict[str, tuple] = {
     "Hayabusa Knight": (MultiAttacker(),),
     "Mataza the Zapper": (MultiAttacker(),),
     "Twinheaded Beast": (MultiAttacker(),),
+    # --- Batch 40: attack-target protection ("cannot be selected as an attack target") ---
+    # Decoyroid: the opponent must attack it — every OTHER monster you control is
+    # protected (a pure decoy).
+    "Decoyroid": (AttackTargetProtection(exclude_self=True),),
+    # Marauding Captain: your other Warriors can't be attacked (only the Captain).
+    # Its optional "on Normal Summon, SS a Lv4- monster from hand" rider is not modelled.
+    "Marauding Captain": (AttackTargetProtection(race="Warrior", exclude_self=True),),
+    # Queen's Bodyguard: "Allure Queen" monsters you control can't be attacked.
+    "Queen's Bodyguard": (AttackTargetProtection(name_contains="Allure Queen"),),
+    # Marshmallon Glasses (Continuous Spell): while you control "Marshmallon", the
+    # opponent can only attack your Marshmallon — every other monster is protected.
+    "Marshmallon Glasses": (
+        AttackTargetProtection(
+            exclude_name_contains="Marshmallon",
+            requires_control_name_contains="Marshmallon",
+        ),
+    ),
     # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
     # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).
     "Chaos Necromancer": (SelfStatMod(scaling="graveyard_monsters", scale_atk=300),),

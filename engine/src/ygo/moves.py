@@ -1018,9 +1018,16 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
         if inst.card.is_toon:
             if inst.summoned_this_turn:
                 continue  # a Toon can't attack the turn it's Summoned
-            targets = _toon_attack_targets(state, opp, opp_monsters)
+            targets = [
+                t
+                for t in _toon_attack_targets(state, opp, opp_monsters)
+                if t is None or not state.is_protected_attack_target(t)
+            ]
         elif opp_monsters:
-            targets = list(opp_monsters)
+            # A monster the opponent protects (Decoyroid/Marauding Captain decoys) is
+            # removed from the target list, but it still occupies the board — so it does
+            # not open up a direct attack; only a CanAttackDirectly rider bypasses it.
+            targets = [m for m in opp_monsters if not state.is_protected_attack_target(m)]
             if state.can_attack_directly(iid):
                 targets.append(None)  # Raging Flame Sprite: may bypass the monsters
         else:
