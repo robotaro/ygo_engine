@@ -52,6 +52,7 @@ from .effects import (
     InflictDamage,
     LoseHalfLifePoints,
     MillFromDeck,
+    ModifyAllStatsTemporary,
     ModifyStatsTemporary,
     MultiAttacker,
     NegateAttack,
@@ -189,6 +190,25 @@ def _any_special_summoned_monster(state, controller) -> bool:
 def _opponent_has_free_monster_zone(state, controller) -> bool:
     """Gate a Token summon onto the opponent's field (Ojama Trio)."""
     return state.first_empty_monster_zone(state.opponent_of(controller)) is not None
+
+
+def _only_controls_roid_machines(state, controller) -> bool:
+    """Supercharge gate: the only monsters you control are Machine-Type "roid" monsters
+    (so you must control at least one, and every monster you control qualifies)."""
+    mons = [state.inst(i) for i in state.players[controller].monster_zones if i is not None]
+    return bool(mons) and all(
+        m.card.race == "Machine" and "roid" in m.card.name for m in mons
+    )
+
+
+def _controls_amazoness(state, controller) -> bool:
+    """Amazoness Archers gate: you control at least one face-up "Amazoness" monster."""
+    return any(
+        iid is not None
+        and state.inst(iid).is_face_up
+        and "Amazoness" in state.inst(iid).card.name
+        for iid in state.players[controller].monster_zones
+    )
 
 
 def _gy_has_match(card_filter):
@@ -1176,6 +1196,74 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT),
             resolve=(ReflectBattleDamage(),),
+        ),
+    ),
+    # --- Batch 50: "selected as an attack target" gate + board-state-gated attack Traps ---
+    # Mirage Tube — Quick-Play, cannot be activated from hand (modelled as a Set-only
+    # trigger-timed Quick-Play): when a monster you control is the attack target, burn 1000.
+    "Mirage Tube": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, target_self_control=True),
+            resolve=(InflictDamage(OPPONENT, 1000),),
+        ),
+    ),
+    # Froggy Forcefield — your "Frog" (not "Frog the Jam") is the attack target: destroy
+    # all the opponent's Attack-Position monsters (the attacking player's).
+    "Froggy Forcefield": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(
+                kind="attack_declared",
+                by=OPPONENT,
+                target_self_control=True,
+                target_name_contains=frozenset({"Frog"}),
+                target_exclude_names=frozenset({"Frog the Jam"}),
+            ),
+            resolve=(DestroyAttackingAttackPositionMonsters(),),
+        ),
+    ),
+    # Justi-Break — opponent attacks your face-up Normal Monster: destroy every monster
+    # except face-up Attack-Position Normal Monsters.
+    "Justi-Break": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(
+                kind="attack_declared",
+                by=OPPONENT,
+                target_self_control=True,
+                target_normal_only=True,
+            ),
+            resolve=(DestroyAllMonsters(spare_face_up_attack_normal=True),),
+        ),
+    ),
+    # Supercharge — opponent declares an attack while the only monsters you control are
+    # Machine "roid" monsters: draw 2.
+    "Supercharge": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            condition=_only_controls_roid_machines,
+            resolve=(Draw(count=2),),
+        ),
+    ),
+    # Amazoness Archers — opponent declares an attack while you control an "Amazoness":
+    # switch all the opponent's monsters to Attack Position and drop them 500 ATK. (The
+    # "must attack this turn" clause — a drawback for the opponent — is omitted.)
+    "Amazoness Archers": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            condition=_controls_amazoness,
+            resolve=(
+                ChangeAllPositions(side=OPPONENT, to="attack"),
+                ModifyAllStatsTemporary(side=OPPONENT, atk=-500),
+            ),
         ),
     ),
     # --- Batch 48: attack redirect / cost-bearing attack Trap ---

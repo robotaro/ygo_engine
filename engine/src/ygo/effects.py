@@ -492,6 +492,18 @@ class Trigger:
     # "special"). Empty = any Summon (Bottomless Trap Hole, Horn of Heaven); set it
     # to keep a card to its kinds (Trap Hole = Normal/Flip, Black Horn = Special).
     summon_kinds: frozenset = frozenset()
+    # For an "attack_declared" trigger that keys off the DEFENDER's monster being
+    # attacked ("when a face-up monster you control is selected as an attack target" —
+    # Mirage Tube, Froggy Forcefield, Justi-Break). When ``target_self_control`` is set,
+    # the event's ``target`` must be a face-up monster the *activating* player controls,
+    # optionally narrowed: ``target_name_contains`` (any substring — "Frog"),
+    # ``target_exclude_names`` (not one of these — "Frog the Jam"), ``target_normal_only``
+    # (a Normal/vanilla monster — Justi-Break), ``target_max_level`` (Level cap).
+    target_self_control: bool = False
+    target_name_contains: frozenset = frozenset()
+    target_exclude_names: frozenset = frozenset()
+    target_normal_only: bool = False
+    target_max_level: int | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -624,12 +636,14 @@ class DestroyAllMonsters(Primitive):
     """Destroy every monster, or only one side's. ``face_up_only`` restricts it to
     face-up monsters (Lightning Vortex); ``races`` narrows to those Types (Magnetic
     Mosquito = face-up Machines); ``level`` narrows to one printed Level (4-Starred
-    Ladybug of Doom = all Level 4 the opponent controls)."""
+    Ladybug of Doom = all Level 4 the opponent controls). ``spare_face_up_attack_normal``
+    spares face-up Attack-Position Normal (vanilla) monsters (Justi-Break's exception)."""
 
     side: str | None = None  # None = both players, else SELF / OPPONENT
     face_up_only: bool = False
     races: frozenset = frozenset()
     level: int | None = None
+    spare_face_up_attack_normal: bool = False
 
     def execute(self, ctx: EffectContext) -> None:
         players = (0, 1) if self.side is None else (ctx.side(self.side),)
@@ -641,6 +655,11 @@ class DestroyAllMonsters(Primitive):
             and (not self.face_up_only or ctx.state.inst(iid).is_face_up)
             and (not self.races or ctx.state.inst(iid).card.race in self.races)
             and (self.level is None or ctx.state.inst(iid).card.level == self.level)
+            and not (
+                self.spare_face_up_attack_normal
+                and ctx.state.inst(iid).position is Position.FACE_UP_ATTACK
+                and ctx.state.inst(iid).card.is_vanilla
+            )
         ]
         for iid in victims:
             ctx.state.send_to_graveyard(iid)
@@ -846,6 +865,28 @@ class ModifyStatsTemporary(Primitive):
             if inst is not None and inst.zone is Zone.MONSTER:
                 inst.temp_atk += self.atk
                 inst.temp_def += self.defn
+
+
+@dataclass(frozen=True)
+class ModifyAllStatsTemporary(Primitive):
+    """Add a temporary ATK/DEF change to every face-up monster on a ``side`` until the
+    End Phase (Amazoness Archers drops all the opponent's monsters by 500 ATK). ``side``:
+    None = both, else SELF / OPPONENT. Deltas accumulate and clear like ModifyStatsTemporary."""
+
+    side: str | None = None
+    atk: int = 0
+    defn: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        players = (0, 1) if self.side is None else (ctx.side(self.side),)
+        for pl in players:
+            for iid in ctx.state.players[pl].monster_zones:
+                if iid is None:
+                    continue
+                inst = ctx.state.inst(iid)
+                if inst.is_face_up:
+                    inst.temp_atk += self.atk
+                    inst.temp_def += self.defn
 
 
 @dataclass(frozen=True)

@@ -963,6 +963,30 @@ def _trigger_matches(state, player, trigger, event) -> bool:
         mon = event.get("monster")
         if mon is None or (state.inst(mon).card.attack or 0) < trigger.min_atk:
             return False
+    if trigger.target_self_control and not _attack_target_matches(state, player, trigger, event):
+        return False
+    return True
+
+
+def _attack_target_matches(state, player, trigger, event) -> bool:
+    """For "when a face-up monster you control is selected as an attack target" Traps
+    (Mirage Tube, Froggy Forcefield, Justi-Break): the attack's target must be a face-up
+    monster ``player`` controls, narrowed by the trigger's target_* constraints."""
+    tgt = event.get("target")
+    if tgt is None or tgt not in state.cards:
+        return False  # a direct attack has no target monster
+    inst = state.inst(tgt)
+    if inst.controller != player or inst.zone is not Zone.MONSTER or not inst.is_face_up:
+        return False
+    card = inst.card
+    if trigger.target_name_contains and not any(s in card.name for s in trigger.target_name_contains):
+        return False
+    if trigger.target_exclude_names and card.name in trigger.target_exclude_names:
+        return False
+    if trigger.target_normal_only and not card.is_vanilla:
+        return False
+    if trigger.target_max_level is not None and (card.level or 0) > trigger.target_max_level:
+        return False
     return True
 
 
