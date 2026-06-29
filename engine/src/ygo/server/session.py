@@ -194,6 +194,7 @@ class HumanAgent(Agent):
             "discard": f"Discard {count} card(s) as a cost",
             "tribute": f"Tribute {count} monster(s) as a cost",
             "send": f"Send {count} card(s) to the GY as a cost",
+            "banish_from_gy": f"Banish {count} monster(s) from your GY as a cost",
         }.get(kind, f"Pay a cost of {count} card(s)")
         chosen: list[int] = []
         pool = list(candidates)

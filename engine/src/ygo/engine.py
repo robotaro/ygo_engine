@@ -375,7 +375,7 @@ class Engine:
         effect = next((e for e in card.effects if e.timing in ("ignition", "quick")), card.effects[0])
         reveal_for_activation(s, action.iid, action.zone_index)
         self.log(f"  {s.players[controller].name} activates {card.name}")
-        self._pay_activation_cost(action.iid, controller, effect)
+        self._pay_activation_cost(action.iid, controller, effect, tuple(action.targets))
         self._mark_once_per_turn(action.iid, effect)
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
 
@@ -386,7 +386,7 @@ class Engine:
         card = s.inst(action.iid).card
         effect = next((e for e in card.effects if e.timing == "ignition"), card.effects[0])
         self.log(f"  {s.players[controller].name} activates {card.name}'s effect")
-        self._pay_activation_cost(action.iid, controller, effect)
+        self._pay_activation_cost(action.iid, controller, effect, tuple(action.targets))
         self._mark_once_per_turn(action.iid, effect)
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
 
@@ -402,10 +402,11 @@ class Engine:
         if effect.disables_attack_this_turn:
             inst.attack_disabled_on_turn = self.state.turn_count
 
-    def _pay_activation_cost(self, source_iid: int, controller: int, effect) -> None:
-        """Pay an effect's activation costs (discard / Tribute / counter / send-to-GY)
-        before it resolves. The player picks the fodder (bot via heuristic, human via
-        a prompt); an illegal pick falls back to the default heuristic."""
+    def _pay_activation_cost(self, source_iid: int, controller: int, effect, targets=()) -> None:
+        """Pay an effect's activation costs (discard / Tribute / counter / send-to-GY /
+        banish-from-GY) before it resolves. The player picks the fodder (bot via
+        heuristic, human via a prompt); an illegal pick falls back to the default
+        heuristic. ``targets`` are excluded from the banish-from-GY fodder."""
         s = self.state
 
         def picker(kind: str, fodder: list[int], need: int):
@@ -414,7 +415,7 @@ class Engine:
                 chosen = Agent().choose_cost_fodder(s, controller, fodder, need, kind=kind)  # safe default
             return chosen
 
-        lines = pay_costs(s, controller, source_iid, effect, picker)
+        lines = pay_costs(s, controller, source_iid, effect, picker, targets)
         for line in lines:
             self.log(f"  {s.players[controller].name} {line} (cost)")
         if lines:

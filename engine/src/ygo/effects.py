@@ -1135,6 +1135,13 @@ class Effect:
     send_to_gy_filter: "CardFilter | None" = None
     send_to_gy_face_up: bool = False
     send_to_gy_exclude_self: bool = False
+    # Activation cost: banish this many monsters from the controller's Graveyard
+    # (Dark Armed Dragon banishes 1 DARK; Lekunga 2 WATER). ``banish_from_gy_filter``
+    # is a printed-card predicate (race/attribute/name). The effect's chosen targets
+    # are excluded from the fodder, so a GY-targeting payload never banishes its own
+    # target (cost and target stay disjoint).
+    banish_from_gy_cost: int = 0
+    banish_from_gy_filter: "CardFilter | None" = None
     # Activation cost: pay this many Life Points (Premature Burial pays 800, Autonomous
     # Action Unit 1500). Gated into enumeration — only offered while LP exceed the cost
     # (you can't pay a cost that would drop you to 0 or below).

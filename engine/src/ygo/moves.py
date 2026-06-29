@@ -269,6 +269,35 @@ def pay_discard_cost(
     return picks
 
 
+def banish_from_gy_fodder(state: GameState, controller: int, card_filter=None, exclude=()) -> list[int]:
+    """Monsters in ``controller``'s Graveyard that may be banished to pay a cost,
+    narrowed by an optional printed-card ``card_filter`` and excluding any iids in
+    ``exclude`` (the effect's own targets, so cost and target stay disjoint)."""
+    out: list[int] = []
+    for iid in state.players[controller].graveyard:
+        if iid in exclude:
+            continue
+        card = state.inst(iid).card
+        if not card.is_monster:
+            continue
+        if card_filter is not None and not card_filter.matches(card):
+            continue
+        out.append(iid)
+    return out
+
+
+def pay_banish_from_gy_cost(
+    state: GameState, controller: int, count: int, card_filter=None, chosen=None, exclude=()
+) -> list[int]:
+    """Banish ``count`` of ``controller``'s eligible Graveyard monsters as a cost.
+    ``chosen`` names them (player's pick); without it the first eligible are taken."""
+    fodder = banish_from_gy_fodder(state, controller, card_filter, exclude)
+    picks = _pick(fodder, count, chosen)
+    for iid in picks:
+        state.banish(iid)
+    return picks
+
+
 def pay_counter_cost(state: GameState, source_iid: int, count: int, ctype: str = "spell") -> None:
     """Remove ``count`` counters of ``ctype`` from the source card as a cost (Royal
     Magical Library)."""
@@ -347,14 +376,22 @@ def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) ->
         return False
     if effect.life_cost and state.players[controller].life_points <= effect.life_cost:
         return False
+    if effect.banish_from_gy_cost and (
+        len(banish_from_gy_fodder(state, controller, effect.banish_from_gy_filter))
+        < effect.banish_from_gy_cost
+    ):
+        return False
     return True
 
 
-def pay_costs(state: GameState, controller: int, source_iid: int, effect, picker=None) -> list[str]:
+def pay_costs(
+    state: GameState, controller: int, source_iid: int, effect, picker=None, targets=()
+) -> list[str]:
     """Pay every activation cost on ``effect`` before it resolves. ``picker(kind,
     fodder, count) -> tuple[int, ...]`` lets the player choose the fodder; ``None``
-    uses the deterministic default (first eligible). Returns one human-readable log
-    line per cost paid (the caller decides how to surface them)."""
+    uses the deterministic default (first eligible). ``targets`` are the effect's
+    chosen targets, excluded from the banish-from-GY fodder. Returns one
+    human-readable log line per cost paid (the caller decides how to surface them)."""
     lines: list[str] = []
     for kind, amount_attr, fodder_fn, pay_fn, verb in _FODDER_COSTS:
         n = getattr(effect, amount_attr)
@@ -370,6 +407,14 @@ def pay_costs(state: GameState, controller: int, source_iid: int, effect, picker
     if effect.life_cost:
         state.players[controller].life_points -= effect.life_cost
         lines.append(f"pays {effect.life_cost} LP")
+    if effect.banish_from_gy_cost:
+        n = effect.banish_from_gy_cost
+        fodder = banish_from_gy_fodder(state, controller, effect.banish_from_gy_filter, tuple(targets))
+        chosen = picker("banish_from_gy", fodder, n) if picker else None
+        paid = pay_banish_from_gy_cost(
+            state, controller, n, effect.banish_from_gy_filter, chosen, tuple(targets)
+        )
+        lines.append(f"banishes {', '.join(state.inst(i).name for i in paid)} from the GY")
     return lines
 
 
@@ -382,6 +427,7 @@ def _has_activation_cost(effect) -> bool:
         or effect.send_to_gy_cost
         or effect.counter_cost
         or effect.life_cost
+        or effect.banish_from_gy_cost
     )
 
 
@@ -1109,7 +1155,7 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
     controller = state.inst(action.iid).controller
     for effect in card.effects:
         if _has_activation_cost(effect):
-            pay_costs(state, controller, action.iid, effect)
+            pay_costs(state, controller, action.iid, effect, targets=action.targets)
             break
     resolve_card_effects(state, action.iid, action.targets)
     # A Normal Spell heads to the Graveyard; a permanent one (Equip/Continuous/Field) stays.

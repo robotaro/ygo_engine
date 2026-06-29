@@ -1006,6 +1006,39 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             )
         ),
     ),
+    # --- Batch 32: banish-from-GY activation cost ---
+    # Dark Armed Dragon: banish 1 DARK monster from your GY, then destroy 1 card on
+    # the field (its hand_summon condition is in HAND_SUMMONS / Batch 29).
+    "Dark Armed Dragon": (
+        Effect(
+            timing="ignition",
+            banish_from_gy_cost=1,
+            banish_from_gy_filter=CardFilter(card_kind="monster", attributes=frozenset({Attribute.DARK})),
+            target=TargetSpec(count=1, where="any_card_field"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    # Lekunga: banish 2 WATER monsters from your GY; Special Summon 1 Lekunga Token
+    # (Plant/WATER/L2/700/700). The "you can only control 1" limit is not modelled.
+    "Lekunga": (
+        Effect(
+            timing="ignition",
+            banish_from_gy_cost=2,
+            banish_from_gy_filter=CardFilter(card_kind="monster", attributes=frozenset({Attribute.WATER})),
+            condition=_has_free_monster_zone,
+            resolve=(
+                CreateToken(
+                    token_name="Lekunga Token",
+                    count=1,
+                    race="Plant",
+                    attribute=Attribute.WATER,
+                    level=2,
+                    atk=700,
+                    defn=700,
+                ),
+            ),
+        ),
+    ),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
     "Axe of Despair": _equip_effect(),
     "United We Stand": _equip_effect(),
