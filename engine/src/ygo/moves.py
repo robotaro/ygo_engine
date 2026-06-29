@@ -216,11 +216,11 @@ def tribute_fodder(state: GameState, controller: int, races=frozenset(), attrs=f
 
 
 def send_to_gy_fodder(
-    state: GameState, controller: int, source_iid: int, filt=None, face_up=False, exclude_self=False
+    state: GameState, controller: int, source_iid: int, card_filter=None, face_up=False, exclude_self=False
 ) -> list[int]:
     """Cards ``controller`` controls that may be sent from the field to the GY to pay
     a cost — monsters, Spell/Traps and the Field Spell — narrowed by an optional
-    printed-card ``filt`` (a CardFilter), a ``face_up`` requirement, and an
+    printed-card ``card_filter`` (a CardFilter), a ``face_up`` requirement, and an
     ``exclude_self`` flag (Daedalus sends a face-up "Umi"; Ultimate Baseball Kid
     sends another face-up FIRE monster)."""
     pl = state.players[controller]
@@ -231,7 +231,7 @@ def send_to_gy_fodder(
         inst = state.inst(iid)
         if face_up and not inst.is_face_up:
             continue
-        if filt is not None and not filt.matches(inst.card):
+        if card_filter is not None and not card_filter.matches(inst.card):
             continue
         out.append(iid)
     return out
@@ -242,14 +242,14 @@ def pay_send_to_gy_cost(
     controller: int,
     source_iid: int,
     count: int,
-    filt=None,
+    card_filter=None,
     face_up=False,
     exclude_self=False,
     chosen=None,
 ) -> list[int]:
     """Send ``count`` of ``controller``'s eligible field cards to the GY as a cost.
     ``chosen`` names them (player's pick); without it the first eligible are taken."""
-    fodder = send_to_gy_fodder(state, controller, source_iid, filt, face_up, exclude_self)
+    fodder = send_to_gy_fodder(state, controller, source_iid, card_filter, face_up, exclude_self)
     picks = _pick(fodder, count, chosen)
     for iid in picks:
         state.send_to_graveyard(iid)
@@ -541,9 +541,10 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
     return actions
 
 
-def _filter_monster_traits(state: GameState, iids: list[int], spec) -> list[int]:
-    """Narrow a monster pool to ``spec``'s race/attribute restriction (e.g. an
-    Equip that may only attach to a Spellcaster). No restriction -> unchanged."""
+def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
+    """Narrow a candidate pool to ``spec``'s restrictions — race / attribute (an
+    Equip only on a Spellcaster), card_kind (a Spell/Trap/Field target), exact name
+    or archetype substring, face-up, or Defense Position. No restriction -> unchanged."""
     if spec is None or not (
         spec.races
         or spec.attributes
@@ -590,17 +591,16 @@ def _kind_matches(card, kind: str) -> bool:
     return True
 
 
-def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[int, ...]]:
-    """List the legal target sets for an effect (``[()]`` means 'no target')."""
+def _target_pool(state: GameState, controller: int, spec) -> list[int]:
+    """The filtered iids a ``spec`` may target — the ``where``->pool dispatch shared
+    by ``target_candidates`` and ``_enumerate_targets``. Returns [] for no spec."""
     if spec is None:
-        return [()]
+        return []
     opp = state.opponent_of(controller)
     if spec.where == "opponent_monsters":
         candidates = [i for i in state.players[opp].monster_zones if i is not None]
     elif spec.where == "any_monster":
-        candidates = [
-            i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None
-        ]
+        candidates = [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
     elif spec.where == "spell_trap_field":
         candidates = _spell_trap_field(state)
     elif spec.where == "any_card_field":
@@ -613,7 +613,14 @@ def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[in
         candidates = _graveyard_monsters(state, (controller,))
     else:
         candidates = []
-    candidates = _filter_monster_traits(state, candidates, spec)
+    return _filter_targets(state, candidates, spec)
+
+
+def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[int, ...]]:
+    """List the legal target sets for an effect (``[()]`` means 'no target')."""
+    if spec is None:
+        return [()]
+    candidates = _target_pool(state, controller, spec)
     if spec.up_to:
         # "up to N": every non-empty subset of size 1..min(N, available).
         sets: list[tuple[int, ...]] = []
@@ -763,26 +770,7 @@ def _graveyard_monsters(state: GameState, players: tuple[int, ...]) -> list[int]
 
 def target_candidates(state: GameState, controller: int, spec) -> list[int]:
     """Flat list of individual iids an effect controlled by ``controller`` may target."""
-    if spec is None:
-        return []
-    opp = state.opponent_of(controller)
-    if spec.where == "opponent_monsters":
-        candidates = [i for i in state.players[opp].monster_zones if i is not None]
-    elif spec.where == "any_monster":
-        candidates = [i for pl in (0, 1) for i in state.players[pl].monster_zones if i is not None]
-    elif spec.where == "spell_trap_field":
-        candidates = _spell_trap_field(state)
-    elif spec.where == "any_card_field":
-        candidates = _all_field_cards(state)
-    elif spec.where == "opponent_card_field":
-        candidates = _opponent_field_cards(state, controller)
-    elif spec.where == "any_graveyard_monster":
-        candidates = _graveyard_monsters(state, (0, 1))
-    elif spec.where == "own_graveyard_monster":
-        candidates = _graveyard_monsters(state, (controller,))
-    else:
-        candidates = []
-    return _filter_monster_traits(state, candidates, spec)
+    return _target_pool(state, controller, spec)
 
 
 def _spell_trap_field(state: GameState) -> list[int]:

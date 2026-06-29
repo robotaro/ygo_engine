@@ -220,8 +220,10 @@ class TargetSpec:
     """What an effect targets, chosen by the controller at activation.
 
     ``where`` names a pool the engine can enumerate: "opponent_monsters",
-    "any_monster", "spell_trap_field", "any_graveyard_monster" (either GY),
-    "own_graveyard_monster" (the controller's GY only).
+    "any_monster", "spell_trap_field" (both players' Spell/Traps + Field Spells),
+    "any_card_field" (every card on the field), "opponent_card_field" (every card the
+    opponent controls), "any_graveyard_monster" (either GY), "own_graveyard_monster"
+    (the controller's GY only).
 
     ``races`` / ``attributes`` optionally narrow a monster pool to those races
     (e.g. an Equip that may only attach to a Spellcaster) or attributes — empty
@@ -868,11 +870,11 @@ class SearchFromDeck(Primitive):
     Activation is gated by a condition so there is always a match when it resolves;
     with none it does nothing."""
 
-    filter: CardFilter = CardFilter()
+    card_filter: CardFilter = CardFilter()
 
     def execute(self, ctx: EffectContext) -> None:
         player = ctx.state.players[ctx.controller]
-        eligible = [i for i in player.deck if self.filter.matches(ctx.state.inst(i).card)]
+        eligible = [i for i in player.deck if self.card_filter.matches(ctx.state.inst(i).card)]
         if eligible:
             pick = max(eligible, key=lambda i: ctx.state.inst(i).card.attack or 0)
             player.deck.remove(pick)
@@ -883,7 +885,7 @@ class SearchFromDeck(Primitive):
 
 @dataclass(frozen=True)
 class SpecialSummonFromDeck(Primitive):
-    """Special Summon 1 monster matching ``filt`` from the controller's Deck to an
+    """Special Summon 1 monster matching ``card_filter`` from the controller's Deck to an
     empty Monster Zone (Mystic Tomato & the battle-recruiters: "destroyed by battle
     -> Special Summon 1 [attribute/type] monster with 1500 or less ATK from your
     Deck"). The pick is deterministic — the highest-ATK eligible match (the best
@@ -891,7 +893,7 @@ class SpecialSummonFromDeck(Primitive):
     ask; interactive choice is a deferred enhancement, as with SearchFromDeck. The
     Deck is shuffled afterwards. No empty zone or no match -> nothing happens."""
 
-    filt: CardFilter = CardFilter()
+    card_filter: CardFilter = CardFilter()
     position: Position = Position.FACE_UP_ATTACK
 
     def execute(self, ctx: EffectContext) -> None:
@@ -901,7 +903,7 @@ class SpecialSummonFromDeck(Primitive):
         if index is None:
             return
         deck = s.players[controller].deck
-        eligible = [i for i in deck if s.inst(i).card.is_monster and self.filt.matches(s.inst(i).card)]
+        eligible = [i for i in deck if s.inst(i).card.is_monster and self.card_filter.matches(s.inst(i).card)]
         if eligible:
             pick = max(eligible, key=lambda i: s.inst(i).card.attack or 0)
             s.place_monster(pick, controller, index, self.position)

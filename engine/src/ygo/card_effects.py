@@ -213,7 +213,7 @@ def _search_effect(card_filter: CardFilter):
     return Effect(
         timing="ignition",
         condition=_can_search(card_filter),
-        resolve=(SearchFromDeck(filter=card_filter),),
+        resolve=(SearchFromDeck(card_filter=card_filter),),
     )
 
 
@@ -726,10 +726,10 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             Effect(
                 timing="trigger",
                 trigger=Trigger(kind="destroyed_by_battle", by=SELF),
-                resolve=(SpecialSummonFromDeck(filt=filt),),
+                resolve=(SpecialSummonFromDeck(card_filter=recruit),),
             ),
         )
-        for name, filt in {
+        for name, recruit in {
             "Mystic Tomato": CardFilter(card_kind="monster", attributes=frozenset({Attribute.DARK}), max_atk=1500),
             "Giant Rat": CardFilter(card_kind="monster", attributes=frozenset({Attribute.EARTH}), max_atk=1500),
             "Mother Grizzly": CardFilter(card_kind="monster", attributes=frozenset({Attribute.WATER}), max_atk=1500),
@@ -843,7 +843,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="flip",
             resolve=(
                 SpecialSummonFromDeck(
-                    filt=CardFilter(
+                    card_filter=CardFilter(
                         card_kind="monster",
                         name_contains=frozenset({"Gravekeeper's"}),
                         max_atk=1500,
@@ -858,7 +858,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="flip",
             resolve=(
                 SpecialSummonFromDeck(
-                    filt=CardFilter(names=frozenset({"Bubonic Vermin"})),
+                    card_filter=CardFilter(names=frozenset({"Bubonic Vermin"})),
                     position=Position.FACE_DOWN_DEFENSE,
                 ),
             ),
@@ -868,7 +868,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         Effect(
             speed=1,
             timing="flip",
-            resolve=(SearchFromDeck(filter=CardFilter(names=frozenset({"Commander Covington"}))),),
+            resolve=(SearchFromDeck(card_filter=CardFilter(names=frozenset({"Commander Covington"}))),),
         ),
     ),
     # --- Effects Batch 26: more Flip Effects (banish, mill, filtered mass destroy) ---
