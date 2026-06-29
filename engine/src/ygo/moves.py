@@ -451,8 +451,11 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             rule = state.inst(iid).card.hand_summon
             if rule is None:
                 continue
-            if rule.condition is None or rule.condition(state, player):
-                actions.append(SpecialSummonFromHand(iid))
+            if rule.condition is not None and not rule.condition(state, player):
+                continue
+            if _summon_banish_choice(state, player, rule) is None:
+                continue  # the banish cost (Chaos: 1 LIGHT + 1 DARK) can't be paid
+            actions.append(SpecialSummonFromHand(iid))
 
     # battle-position changes (not on the turn a monster was summoned/already changed)
     for iid in p.monster_zones:
@@ -1141,19 +1144,51 @@ def _union_unequip(state: GameState, action: UnionUnequip) -> str:
     return f"unequips {union.name} (Special Summon)"
 
 
+def _summon_banish_choice(state: GameState, player: int, rule) -> list[int] | None:
+    """Greedily assign disjoint Graveyard monsters to each of ``rule``'s banish
+    sub-costs (the Chaos monsters banish 1 LIGHT *and* 1 DARK). Returns the iids to
+    banish (``[]`` when there's no cost), or ``None`` when the cost can't be paid.
+    The pick is deterministic — first eligible per sub-cost — as interactive choice
+    of which monsters to banish is a deferred enhancement (cf. SpecialSummonFromDeck)."""
+    costs = getattr(rule, "banish_costs", ()) if rule is not None else ()
+    if not costs:
+        return []
+    gy = state.players[player].graveyard
+    chosen: list[int] = []
+    used: set[int] = set()
+    for sub in costs:
+        picks: list[int] = []
+        for iid in gy:
+            if iid in used:
+                continue
+            if sub.card_filter.matches(state.inst(iid).card):
+                picks.append(iid)
+                if len(picks) == sub.count:
+                    break
+        if len(picks) < sub.count:
+            return None
+        used.update(picks)
+        chosen.extend(picks)
+    return chosen
+
+
 def _special_summon_from_hand(state: GameState, action: SpecialSummonFromHand) -> str:
     """Special Summon a monster from the hand via its own ability. Does not consume
     the Normal Summon; the board condition was already checked at enumeration."""
     inst = state.inst(action.iid)
     player = inst.owner
     rule = inst.card.hand_summon
+    to_banish = _summon_banish_choice(state, player, rule) or []
+    for b in to_banish:
+        state.banish(b)  # pay the banish cost (1 LIGHT + 1 DARK for the Chaos monsters)
     index = action.zone_index
     if index is None or state.players[player].monster_zones[index] is not None:
         index = state.first_empty_monster_zone(player)
     position = rule.position if rule is not None else Position.FACE_UP_ATTACK
     state.place_monster(action.iid, player, index, position)
     inst.summoned_this_turn = True
-    return f"Special Summons {inst.name} (from the hand)"
+    extra = f" (banishing {len(to_banish)})" if to_banish else ""
+    return f"Special Summons {inst.name} (from the hand){extra}"
 
 
 def _summon(

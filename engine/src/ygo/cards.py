@@ -136,8 +136,12 @@ class CardDef:
         """True if this monster reaches the field via Normal/Tribute Summon.
 
         Fusion monsters need a Fusion Summon; Ritual monsters need a Ritual
-        Summon — neither can be Normal/Tribute Summoned.
+        Summon — neither can be Normal/Tribute Summoned. A monster whose hand-summon
+        rule is flagged ``cannot_normal_summon`` (the Chaos monsters) is likewise
+        barred — it only reaches the field via its own Special Summon.
         """
+        if self.hand_summon is not None and getattr(self.hand_summon, "cannot_normal_summon", False):
+            return False
         return self.is_monster and not self.is_fusion and not self.is_ritual
 
 

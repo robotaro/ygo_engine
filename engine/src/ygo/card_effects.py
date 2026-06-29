@@ -55,6 +55,7 @@ from .effects import (
     SpecialSummonFromGraveyard,
     SpellCounterHolder,
     StandbyUpkeep,
+    SummonCost,
     SwitchTargetsToAttack,
     TakeControl,
     TargetAttack,
@@ -154,6 +155,21 @@ def _controls_named_face_up(name: str):
             i is not None and state.inst(i).is_face_up and state.inst(i).card.name == name
             for i in state.players[controller].monster_zones
         )
+
+    return cond
+
+
+def _exactly_n_attr_in_gy(n: int, attribute: Attribute):
+    """Dark Armed Dragon's gate: you have *exactly* ``n`` monsters of ``attribute``
+    in your Graveyard."""
+
+    def cond(state, controller) -> bool:
+        count = sum(
+            1
+            for i in state.players[controller].graveyard
+            if state.inst(i).card.is_monster and state.inst(i).card.attribute is attribute
+        )
+        return count == n
 
     return cond
 
@@ -1198,10 +1214,33 @@ RITUALS: dict[str, str] = {
 # offers it during the controller's Main Phase as a SpecialSummonFromHand action
 # when the board condition holds (it does *not* use up the Normal Summon). These
 # are the cleanly-modellable, condition-only (no-cost) ignition self-summons.
+# The Chaos cost: banish 1 LIGHT *and* 1 DARK monster from your Graveyard.
+_CHAOS_BANISH = (
+    SummonCost(count=1, card_filter=CardFilter(card_kind="monster", attributes=frozenset({Attribute.LIGHT}))),
+    SummonCost(count=1, card_filter=CardFilter(card_kind="monster", attributes=frozenset({Attribute.DARK}))),
+)
+
 HAND_SUMMONS: dict[str, HandSpecialSummon] = {
     "Cyber Dragon": HandSpecialSummon(condition=_only_opponent_controls_monster),
     "The Fiend Megacyber": HandSpecialSummon(condition=_opponent_controls_at_least_more(2)),
     "Ancient Gear": HandSpecialSummon(condition=_controls_named_face_up("Ancient Gear")),
+    # --- Batch 29: cost/condition self-Special-Summon (cannot be Normal Summoned) ---
+    # The Chaos monsters: banish 1 LIGHT + 1 DARK from the GY (their on-field effects
+    # are deferred to a later batch; this makes them reach the field legally).
+    "Black Luster Soldier - Envoy of the Beginning": HandSpecialSummon(
+        cannot_normal_summon=True, banish_costs=_CHAOS_BANISH
+    ),
+    "Chaos Emperor Dragon - Envoy of the End": HandSpecialSummon(
+        cannot_normal_summon=True, banish_costs=_CHAOS_BANISH
+    ),
+    "Chaos Sorcerer": HandSpecialSummon(
+        cannot_normal_summon=True, banish_costs=_CHAOS_BANISH
+    ),
+    # Dark Armed Dragon: SS by *having exactly 3 DARK monsters* in the GY (a board
+    # condition, no banish cost for the Summon itself).
+    "Dark Armed Dragon": HandSpecialSummon(
+        cannot_normal_summon=True, condition=_exactly_n_attr_in_gy(3, Attribute.DARK)
+    ),
 }
 
 

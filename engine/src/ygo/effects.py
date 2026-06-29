@@ -107,10 +107,20 @@ class HandSpecialSummon:
     use up the turn's Normal Summon. ``condition`` is ``(state, controller) ->
     bool`` (None = always allowed); ``position`` is the battle position the monster
     arrives in (face-up Attack across the whole v6.0 pool). Carried on its own
-    ``CardDef.hand_summon`` slot, not in ``effects``."""
+    ``CardDef.hand_summon`` slot, not in ``effects``.
+
+    ``cannot_normal_summon`` (the Chaos monsters, the Sacred Beasts): the card can
+    *only* reach the field this way — it's barred from Normal/Tribute Summon (read
+    by ``CardDef.can_normal_summon``). ``banish_costs`` is an activation cost paid by
+    banishing monsters from the controller's Graveyard: each ``SummonCost`` banishes
+    ``count`` GY monsters matching its filter (Black Luster Soldier - Envoy of the
+    Beginning banishes 1 LIGHT *and* 1 DARK — two SummonCosts). The summon is only
+    offered when every sub-cost can be paid from disjoint GY monsters."""
 
     condition: "Callable[[GameState, int], bool] | None" = None
     position: Position = Position.FACE_UP_ATTACK
+    cannot_normal_summon: bool = False
+    banish_costs: "tuple[SummonCost, ...]" = ()
 
 
 @dataclass(frozen=True)
@@ -309,6 +319,17 @@ class CardFilter:
         if kind == "normal_monster" and not card.is_vanilla:
             return False
         return True
+
+
+@dataclass(frozen=True)
+class SummonCost:
+    """One sub-cost of a self-Special-Summon paid by banishing from the controller's
+    Graveyard: banish ``count`` GY monsters matching ``card_filter``. A monster with
+    several sub-costs (1 LIGHT *and* 1 DARK) lists one ``SummonCost`` each, and they
+    are paid from disjoint cards."""
+
+    count: int = 1
+    card_filter: CardFilter = CardFilter()
 
 
 @dataclass(frozen=True)
