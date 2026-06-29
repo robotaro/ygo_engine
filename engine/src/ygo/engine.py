@@ -90,6 +90,7 @@ class Engine:
     # ------------------------------------------------------------------ #
     def run(self) -> DuelResult:
         self.state.pending_draws.clear()  # ignore the opening-hand draws (pre-game)
+        self.state.summon_events.clear()  # ignore any pre-game Special Summons
         while self.result is None and self.state.turn_count <= self.max_turns:
             self._run_turn()
         if self.result is None:
@@ -274,12 +275,10 @@ class Engine:
             elif isinstance(choice, SpecialSummonFromHand):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._changed()
-                # The opponent may respond to the Special Summon (e.g. Black Horn of
-                # Heaven, Bottomless Trap Hole).
-                self._response_window(
-                    {"kind": "summon", "player": tp, "monster": choice.iid, "summon_kind": "special"}
-                )
-                self._trigger_summon_effect(choice.iid, "special")
+                # The summon was queued by state.special_summon; draining it opens the
+                # opponent's response window (Black Horn, Bottomless) + fires the monster's
+                # own "when Special Summoned" Trigger — the same path every SS route uses.
+                self._check_field_to_gy_triggers()
                 self._check_life_points()
             elif isinstance(choice, FlipSummon):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
@@ -774,26 +773,45 @@ class Engine:
         self._cleanup_toons()
 
     def _check_field_to_gy_triggers(self) -> None:
-        """Reconcile the board after cards leave the field, then fire "sent from field
-        to GY" / "destroyed by battle" effects (Sangan, Mystic Tomato)."""
+        """Reconcile the board, then drain the two post-event queues: "sent from field to
+        GY" / "destroyed by battle" effects (Sangan, Mystic Tomato), and Special Summons
+        (the opponent's response window + the monster's own "when Special Summoned"
+        Trigger). One guarded loop so a trigger that itself sends/summons is drained too —
+        e.g. a recruiter (a GY trigger) Special Summons a monster the opponent may then
+        respond to with Bottomless Trap Hole."""
         self._reconcile_field()
         if self._processing_gy:
-            return  # a nested resolution; the outer loop will drain the queue
+            return  # a nested resolution; the outer loop will drain the queues
         self._processing_gy = True
         try:
             s = self.state
-            while s.gy_from_field and self.result is None:
-                iid = s.gy_from_field.pop(0)
-                inst = s.cards.get(iid)
-                if inst is None:
-                    continue
-                effect = self._find_gy_trigger(inst)
-                if effect is not None:
-                    self._trigger_effect(iid, effect, inst.controller)
+            while (s.gy_from_field or s.summon_events) and self.result is None:
+                if s.gy_from_field:
+                    iid = s.gy_from_field.pop(0)
+                    inst = s.cards.get(iid)
+                    if inst is not None:
+                        effect = self._find_gy_trigger(inst)
+                        if effect is not None:
+                            self._trigger_effect(iid, effect, inst.controller)
+                else:
+                    self._fire_summon_event(*s.summon_events.pop(0))
                 # That resolution may have broken more bonds / orphaned more Equips.
                 self._reconcile_field()
         finally:
             self._processing_gy = False
+
+    def _fire_summon_event(self, iid: int, summoner: int) -> None:
+        """For a monster just Special Summoned via the chokepoint: let the opponent
+        respond (Bottomless Trap Hole, Black Horn of Heaven), then fire the monster's own
+        "when Special Summoned" Trigger — but only while it is still face-up on the field
+        (a negated/removed summon does neither)."""
+        inst = self.state.cards.get(iid)
+        if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
+            return
+        self._response_window(
+            {"kind": "summon", "player": summoner, "monster": iid, "summon_kind": "special"}
+        )
+        self._trigger_summon_effect(iid, "special")
 
     @staticmethod
     def _find_gy_trigger(inst):
