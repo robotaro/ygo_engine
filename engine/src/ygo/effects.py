@@ -646,6 +646,26 @@ class DestroyAllMonsters(Primitive):
 
 
 @dataclass(frozen=True)
+class DestroyAllSpecialSummoned(Primitive):
+    """Destroy every face-up Special-Summoned monster on the field, both sides (Fossil
+    Dyna Pachycephalo's flip, Jowgen the Spiritualist, Special Hurricane). Reads the
+    per-monster ``was_special_summoned`` flag stamped by ``state.special_summon`` /
+    Tokens — Normal/Tribute/Flip Summoned and Set monsters are spared."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        victims = [
+            iid
+            for pl in (0, 1)
+            for iid in ctx.state.players[pl].monster_zones
+            if iid is not None
+            and ctx.state.inst(iid).is_face_up
+            and ctx.state.inst(iid).was_special_summoned
+        ]
+        for iid in victims:
+            ctx.state.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
 class DestroyTargets(Primitive):
     """Destroy whatever the effect targeted."""
 
@@ -1281,7 +1301,8 @@ class CreateToken(Primitive):
             index = s.first_empty_monster_zone(player)
             if index is None:
                 break
-            s.spawn_on_field(token, player, index, self.position)
+            tok = s.spawn_on_field(token, player, index, self.position)
+            tok.was_special_summoned = True  # a Token is Special Summoned (Fossil Dyna hits it)
 
 
 # --- Slice 9: take-control ---

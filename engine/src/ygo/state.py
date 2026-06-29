@@ -100,6 +100,11 @@ class CardInstance:
     # recruit only when "destroyed by battle"). Stamped by send_to_graveyard, read
     # by the engine's "destroyed_by_battle" trigger while draining the GY queue.
     died_by_battle: bool = False
+    # True while this monster is face-up on the field having reached it via a Special
+    # Summon (vs. Normal/Tribute/Flip Summon or Set). Stamped True in state.special_summon
+    # (and on a Token), reset to False by place_monster (Normal Summon/Set) and on leaving
+    # the field — read by "destroy all Special Summoned monsters" (Fossil Dyna/Jowgen).
+    was_special_summoned: bool = False
     # The turn this card last activated a "once per turn" Ignition effect. Turn-stamped
     # so it expires on its own; reset when the card leaves the field.
     effect_activated_on_turn: int | None = None
@@ -260,6 +265,7 @@ class GameState:
         inst.zone_index = index
         inst.position = position
         inst.died_by_battle = False  # a revived monster carries no stale battle-death flag
+        inst.was_special_summoned = False  # Normal Summon/Set; special_summon re-stamps True
 
     def special_summon(
         self, iid: int, player: int, position: Position, *, index: int | None = None
@@ -283,6 +289,7 @@ class GameState:
             return False
         self.place_monster(iid, player, index, position)
         inst.summoned_this_turn = True
+        inst.was_special_summoned = True  # read by "destroy all Special Summoned monsters"
         # Queue the summon so the engine can open the opponent's response window
         # (Bottomless Trap Hole, Black Horn of Heaven) and fire the monster's own
         # "when Special Summoned" Trigger — uniformly, from whatever route summoned it.
@@ -318,6 +325,7 @@ class GameState:
         inst.temp_atk = 0
         inst.temp_def = 0
         inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
+        inst.was_special_summoned = False  # re-stamped by special_summon on a fresh summon
         inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
         inst.effect_activated_on_turn = None  # a revived card may use its once/turn again
         inst.attack_disabled_on_turn = None

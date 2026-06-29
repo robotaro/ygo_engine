@@ -26,6 +26,7 @@ from .effects import (
     DamageEqualToAttackerAtk,
     DestroyAllFieldSpells,
     DestroyAllOtherCards,
+    DestroyAllSpecialSummoned,
     DestroyAllSpellTraps,
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
@@ -143,6 +144,18 @@ def _opponent_has_faceup_monster(state, controller) -> bool:
 def _has_free_monster_zone(state, controller) -> bool:
     """Gate the Special Summon: you need an open Monster Zone to revive into."""
     return state.first_empty_monster_zone(controller) is not None
+
+
+def _any_special_summoned_monster(state, controller) -> bool:
+    """Gate "destroy all Special Summoned monsters" (Jowgen, Special Hurricane) — only
+    worth paying the discard when a face-up Special-Summoned monster is on the field."""
+    return any(
+        iid is not None
+        and state.inst(iid).is_face_up
+        and state.inst(iid).was_special_summoned
+        for pl in (0, 1)
+        for iid in state.players[pl].monster_zones
+    )
 
 
 def _opponent_has_free_monster_zone(state, controller) -> bool:
@@ -1523,6 +1536,30 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # --- Batch 43: Skill Drain — Continuous Trap, pay 1000 LP to activate (the
     # monster-effect negation lives in CONTINUOUS).
     "Skill Drain": (Effect(timing="ignition", life_cost=1000),),
+    # --- Batch 44: "destroy all Special Summoned monsters" floodgates ---
+    # Fossil Dyna Pachycephalo — Flip: destroy every Special-Summoned monster on the
+    # field (the continuous "neither player can Special Summon" lock is in CONTINUOUS).
+    "Fossil Dyna Pachycephalo": (_flip((DestroyAllSpecialSummoned(),)),),
+    # Jowgen the Spiritualist — Ignition: discard 1 -> destroy all Special-Summoned
+    # monsters (the continuous SS lock is in CONTINUOUS). The pool's "1 random" discard
+    # is modelled as a chosen discard cost (minor).
+    "Jowgen the Spiritualist": (
+        Effect(
+            timing="ignition",
+            discard_cost=1,
+            condition=_any_special_summoned_monster,
+            resolve=(DestroyAllSpecialSummoned(),),
+        ),
+    ),
+    # Special Hurricane — Normal Spell: discard 1 -> destroy all Special-Summoned monsters.
+    "Special Hurricane": (
+        Effect(
+            timing="ignition",
+            discard_cost=1,
+            condition=_any_special_summoned_monster,
+            resolve=(DestroyAllSpecialSummoned(),),
+        ),
+    ),
     # Burning Land — Continuous Spell: activating it wipes every Field Spell, then
     # it burns the active player 500 each Standby (the burn lives in CONTINUOUS).
     "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
@@ -1736,6 +1773,10 @@ CONTINUOUS: dict[str, tuple] = {
     "Skill Drain": (
         CardEffectNegation(negates="monster", prevent_activation=False, whose="both"),
     ),
+    # --- Batch 44: SS-floodgate monsters — "neither player can Special Summon" while
+    # face-up (the one-shot "destroy all SS monsters" half lives in EFFECTS).
+    "Fossil Dyna Pachycephalo": (SpecialSummonLock(whose="both"),),
+    "Jowgen the Spiritualist": (SpecialSummonLock(whose="both"),),
     # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
     # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).
     "Chaos Necromancer": (SelfStatMod(scaling="graveyard_monsters", scale_atk=300),),
