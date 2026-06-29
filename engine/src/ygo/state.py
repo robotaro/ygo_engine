@@ -501,6 +501,19 @@ class GameState:
                     and (mod.count_name_contains is None or mod.count_name_contains in self.cards[i].card.name)
                 )
                 total += flat + per * count
+            elif mod.scaling == "controlled_monsters":
+                per = mod.scale_atk if which == "atk" else mod.scale_defn
+                count = sum(
+                    1
+                    for i in self.players[inst.controller].monster_zones
+                    if i is not None
+                    and self.cards[i].is_face_up
+                    and not (mod.count_exclude_self and i == monster_iid)
+                    and (mod.count_attribute is None or self.cards[i].card.attribute == mod.count_attribute)
+                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+                    and (mod.count_name_contains is None or mod.count_name_contains in self.cards[i].card.name)
+                )
+                total += flat + per * count
             else:
                 total += flat
         return total

@@ -2212,6 +2212,33 @@ CONTINUOUS: dict[str, tuple] = {
     "Grass Phantom": (
         SelfStatMod(scaling="graveyard_monsters", scale_atk=500, count_name_contains="Grass Phantom"),
     ),
+    # --- Batch 55: continuous ATK scaling by the controller's own face-up monsters ---
+    # Amazoness Paladin: +100 ATK per "Amazoness" monster you control (counts itself).
+    "Amazoness Paladin": (
+        SelfStatMod(scaling="controlled_monsters", scale_atk=100, count_name_contains="Amazoness"),
+    ),
+    # Amazoness Tiger: +400 ATK per "Amazoness" you control, and the opponent can't attack
+    # any face-up "Amazoness" except this one ("you can only control 1" omitted).
+    "Amazoness Tiger": (
+        SelfStatMod(scaling="controlled_monsters", scale_atk=400, count_name_contains="Amazoness"),
+        AttackTargetProtection(name_contains="Amazoness", exclude_self=True),
+    ),
+    # Botanical Lion: +300 ATK per Plant-Type monster you control ("control can't switch" omitted).
+    "Botanical Lion": (
+        SelfStatMod(scaling="controlled_monsters", scale_atk=300, count_race="Plant"),
+    ),
+    # Elemental HERO Heat: +200 ATK per "Elemental HERO" monster you control.
+    "Elemental HERO Heat": (
+        SelfStatMod(scaling="controlled_monsters", scale_atk=200, count_name_contains="Elemental HERO"),
+    ),
+    # Lava Battleguard: +500 ATK per "Swamp Battleguard" you control (counts its partner).
+    "Lava Battleguard": (
+        SelfStatMod(scaling="controlled_monsters", scale_atk=500, count_name_contains="Swamp Battleguard"),
+    ),
+    # Swamp Battleguard: +500 ATK per "Lava Battleguard" you control.
+    "Swamp Battleguard": (
+        SelfStatMod(scaling="controlled_monsters", scale_atk=500, count_name_contains="Lava Battleguard"),
+    ),
     # --- Effects Batch 24: name-restricted Equip Spell boosts ---
     "Cyber Shield": (EquipMod(atk=500),),
     "Ancient Gear Tank": (EquipMod(atk=600),),

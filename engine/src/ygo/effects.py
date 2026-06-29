@@ -93,16 +93,23 @@ class SelfStatMod:
         Graveyard, narrowed by any of ``count_attribute`` / ``count_race`` /
         ``count_name_contains`` (Shadow Ghoul +100 per monster, Mudora +200 per Fairy,
         Beelze Frog +300 per "T.A.D.P.O.L.E."; Chaos Necromancer has base 0 ATK so its
-        ATK *is* 300 × the count)."""
+        ATK *is* 300 × the count).
+      * ``"controlled_monsters"`` adds them per face-up monster the controller controls,
+        narrowed by ``count_attribute`` / ``count_race`` / ``count_name_contains``
+        (Amazoness Paladin +100 per "Amazoness", Botanical Lion +300 per Plant, Hunter Owl
+        +500 per WIND). The source counts itself when it matches the filter, unless
+        ``count_exclude_self`` is set (Dragon Master Knight counts only OTHER Dragons)."""
 
     atk: int = 0
     defn: int = 0
-    scaling: str | None = None  # None | "face_up_attr_monsters" | "graveyard_monsters"
+    # None | "face_up_attr_monsters" | "graveyard_monsters" | "controlled_monsters"
+    scaling: str | None = None
     scale_atk: int = 0
     scale_defn: int = 0
     count_attribute: "Attribute | None" = None
     count_race: str | None = None
     count_name_contains: str | None = None
+    count_exclude_self: bool = False
 
 
 @dataclass(frozen=True)
