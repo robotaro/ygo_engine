@@ -415,7 +415,10 @@ class Trigger:
     "attacker"); ``min_atk`` is an optional gate (e.g. Trap Hole needs ATK >= 1000).
     """
 
-    kind: str  # "summon" | "attack_declared"
+    # The game event this reacts to. Known kinds: "summon" (Normal/Flip/Special — see
+    # summon_kinds), "attack_declared", "battle_damage_inflicted", "sent_to_gy_from_field",
+    # "destroyed_by_battle".
+    kind: str
     by: str = OPPONENT
     subject: str | None = None
     min_atk: int | None = None

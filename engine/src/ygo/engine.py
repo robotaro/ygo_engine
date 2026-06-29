@@ -565,6 +565,20 @@ class Engine:
     #  Monster-effect triggers
     # ------------------------------------------------------------------ #
     @staticmethod
+    def _trigger_effects(card, kind=None, by=None):
+        """Yield ``card``'s ``timing="trigger"`` Effects, optionally narrowed to a
+        Trigger ``kind`` and/or ``by`` side — the one place that knows the shape of a
+        trigger Effect, so every _fire_*/find_* trigger helper filters off this."""
+        for e in card.effects:
+            if e.timing != "trigger" or e.trigger is None:
+                continue
+            if kind is not None and e.trigger.kind != kind:
+                continue
+            if by is not None and e.trigger.by != by:
+                continue
+            yield e
+
+    @staticmethod
     def _flip_effect(card):
         return next((e for e in card.effects if e.timing == "flip"), None)
 
@@ -592,12 +606,8 @@ class Engine:
         effect = next(
             (
                 e
-                for e in inst.card.effects
-                if e.timing == "trigger"
-                and e.trigger is not None
-                and e.trigger.kind == "summon"
-                and e.trigger.by == SELF
-                and (not e.trigger.summon_kinds or summon_kind in e.trigger.summon_kinds)
+                for e in self._trigger_effects(inst.card, kind="summon", by=SELF)
+                if not e.trigger.summon_kinds or summon_kind in e.trigger.summon_kinds
             ),
             None,
         )
@@ -619,15 +629,7 @@ class Engine:
         if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
             return
         effect = next(
-            (
-                e
-                for e in inst.card.effects
-                if e.timing == "trigger"
-                and e.trigger is not None
-                and e.trigger.kind == "battle_damage_inflicted"
-                and e.trigger.by == SELF
-            ),
-            None,
+            self._trigger_effects(inst.card, kind="battle_damage_inflicted", by=SELF), None
         )
         if effect is not None:
             self._trigger_effect(dealer_iid, effect, inst.controller, {"amount": amount})
@@ -811,20 +813,16 @@ class Engine:
             self._trigger_flip_effect(iid)  # e.g. Man-Eater Bug
         self._trigger_summon_effect(iid, kind)
 
-    @staticmethod
-    def _find_gy_trigger(inst):
+    @classmethod
+    def _find_gy_trigger(cls, inst):
         """The card's "sent from field to GY" trigger effect (a battle-only one fires
         only on a battle death), or None."""
         return next(
             (
                 e
-                for e in inst.card.effects
-                if e.timing == "trigger"
-                and e.trigger is not None
-                and (
-                    e.trigger.kind == "sent_to_gy_from_field"
-                    or (e.trigger.kind == "destroyed_by_battle" and inst.died_by_battle)
-                )
+                for e in cls._trigger_effects(inst.card)
+                if e.trigger.kind == "sent_to_gy_from_field"
+                or (e.trigger.kind == "destroyed_by_battle" and inst.died_by_battle)
             ),
             None,
         )
