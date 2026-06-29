@@ -460,6 +460,19 @@ class BounceTargetsToDeck(Primitive):
 
 
 @dataclass(frozen=True)
+class ReturnSelfToDeck(Primitive):
+    """Return this card (the effect's source) to its owner's Deck — top by default.
+    Horn of the Unicorn returns itself from the Graveyard to the top of the Deck
+    when it leaves the field."""
+
+    to_top: bool = True
+
+    def execute(self, ctx: EffectContext) -> None:
+        if ctx.source_iid in ctx.state.cards:
+            ctx.state.return_to_deck(ctx.source_iid, to_top=self.to_top)
+
+
+@dataclass(frozen=True)
 class ReturnAllSpellTrapsToHand(Primitive):
     """Giant Trunade: return every Spell/Trap on the field (both players', including
     Field Spells and the activating card itself) to its owner's hand."""

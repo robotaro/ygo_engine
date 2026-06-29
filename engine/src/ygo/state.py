@@ -24,6 +24,17 @@ MAX_MONSTER_ZONES = 5
 MAX_SPELL_TRAP_ZONES = 5
 
 
+def _has_gy_trigger(card: CardDef) -> bool:
+    """Whether a card carries a 'sent from the field to the Graveyard' trigger
+    (Black Pendant, Horn of the Unicorn) — so non-monsters with one get queued."""
+    return any(
+        e.timing == "trigger"
+        and e.trigger is not None
+        and e.trigger.kind == "sent_to_gy_from_field"
+        for e in card.effects
+    )
+
+
 @dataclass
 class CardInstance:
     """A specific copy of a card as it exists in a duel."""
@@ -246,8 +257,10 @@ class GameState:
         inst.zone = Zone.GRAVEYARD
         self._clear_field_flags(inst)
         self.players[inst.owner].graveyard.append(iid)
-        # Queue "sent from the field to the Graveyard" triggers for the engine.
-        if from_field and inst.card.is_monster:
+        # Queue "sent from the field to the Graveyard" triggers for the engine. Every
+        # monster is queued (cheap; the engine skips those with no such trigger), plus
+        # any Spell/Trap that actually carries one (Black Pendant, Horn of the Unicorn).
+        if from_field and (inst.card.is_monster or _has_gy_trigger(inst.card)):
             self.gy_from_field.append(iid)
 
     def banish(self, iid: int) -> None:

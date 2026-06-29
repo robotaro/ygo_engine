@@ -42,6 +42,7 @@ from .effects import (
     NegatePreviousLink,
     Piercing,
     ReturnAllSpellTrapsToHand,
+    ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
     SearchFromDeck,
     SearchMonsterToHand,
@@ -600,6 +601,28 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(DestroyTargets(),),
         ),
     ),
+    # --- Effects Batch 19: "when sent from the field to the GY" triggers ---
+    # Equip Spells with a parting effect: activate (equip), boost via CONTINUOUS,
+    # and fire a trigger when they leave the field for the GY (whether destroyed
+    # directly or orphaned when the equipped monster leaves).
+    "Black Pendant": (
+        Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),
+        Effect(  # parting shot: 500 damage to the opponent
+            speed=1,
+            timing="trigger",
+            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
+            resolve=(InflictDamage(OPPONENT, 500),),
+        ),
+    ),
+    "Horn of the Unicorn": (
+        Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),
+        Effect(  # return itself to the top of the Deck instead of staying in the GY
+            speed=1,
+            timing="trigger",
+            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
+            resolve=(ReturnSelfToDeck(to_top=True),),
+        ),
+    ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
     # destroy that monster (NegatePreviousLink handles a monster on the Chain).
     "Divine Wrath": (  # discard 1; negate a monster effect + destroy that monster
@@ -880,6 +903,9 @@ CONTINUOUS: dict[str, tuple] = {
     "Axe of Despair": (EquipMod(atk=1000),),
     "United We Stand": (EquipMod(scaling="face_up_monsters", scale_atk=800, scale_defn=800),),
     "Mage Power": (EquipMod(scaling="spell_trap", scale_atk=500, scale_defn=500),),
+    # --- Effects Batch 19: Equips with a "sent to GY" parting effect (above) ---
+    "Black Pendant": (EquipMod(atk=500),),
+    "Horn of the Unicorn": (EquipMod(atk=700, defn=700),),
     # --- Effects Batch 2: race/attribute-restricted flat Equip Spells ---
     "Beast Fangs": (EquipMod(atk=300, defn=300),),
     "Book of Secret Arts": (EquipMod(atk=300, defn=300),),
