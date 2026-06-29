@@ -450,9 +450,9 @@ class GameState:
     def _self_stat_delta(self, monster_iid: int, which: str) -> int:
         """A monster's own continuous self-boost (SelfStatMod), e.g. Goggle Golem's
         unlocked ATK. Suppressed while the monster's effect is inactive (a Gemini
-        not yet Gemini Summoned)."""
+        not yet Gemini Summoned) or negated by Skill Drain."""
         inst = self.cards[monster_iid]
-        if not inst.effects_active:
+        if not inst.effects_active or self.monster_effects_negated(monster_iid):
             return 0
         total = 0
         for mod in inst.card.continuous:
@@ -489,9 +489,10 @@ class GameState:
 
     def _spell_counter_delta(self, monster_iid: int, which: str) -> int:
         """A monster's stat boost per Spell Counter on it (Mythical Beast Cerberus
-        gains 500 ATK each). Suppressed while the monster's effect is inactive."""
+        gains 500 ATK each). Suppressed while the monster's effect is inactive or
+        negated by Skill Drain."""
         inst = self.cards[monster_iid]
-        if not inst.effects_active:
+        if not inst.effects_active or self.monster_effects_negated(monster_iid):
             return 0
         n = inst.counters.get("spell", 0)
         if not n:
@@ -505,9 +506,10 @@ class GameState:
     def _self_rider(self, iid: int, marker_type):
         """The first active continuous rider of ``marker_type`` on the monster's own
         card, or None. A card's own riders are suppressed while its effect is off (a
-        Gemini that hasn't been Gemini Summoned) — that guard lives here, once."""
+        Gemini that hasn't been Gemini Summoned) or while a Skill Drain-style negator
+        shuts off its effects — those guards live here, once."""
         inst = self.cards[iid]
-        if not inst.effects_active:
+        if not inst.effects_active or self.monster_effects_negated(iid):
             return None
         return next((m for m in inst.card.continuous if isinstance(m, marker_type)), None)
 
@@ -593,7 +595,7 @@ class GameState:
         elif inst.card.is_trap:
             kind = "trap"
         else:
-            return False  # monster effects are negated by Skill Drain, a separate mechanism
+            return False  # a monster is handled by monster_effects_negated (Skill Drain)
         for src, mod in self.active_markers(CardEffectNegation, respect_negation=False):
             if mod.negates != kind:
                 continue
@@ -615,11 +617,44 @@ class GameState:
         return self._class_negator(iid, prevent_activation_only=True)
 
     def effect_negated(self, iid: int) -> bool:
-        """Whether the *effects* of the face-up Spell/Trap ``iid`` are negated by a
-        class negator (Jinzo/Royal Decree negate Traps; Spell Canceller/Imperial Order
-        negate Spells) — its chain link does not resolve and its continuous riders go
-        inert. Monsters are never negated here (returns False)."""
+        """Whether the *effects* of the face-up card ``iid`` are negated — its chain link
+        does not resolve and its continuous riders go inert. Dispatches by card kind:
+
+          * Spell/Trap — a class negator (Jinzo/Royal Decree negate Traps; Spell
+            Canceller/Imperial Order negate Spells).
+          * Monster — a Skill Drain-style negator (``monster_effects_negated``).
+
+        The single predicate that ``_resolve_chain``, ``active_markers`` and
+        ``_active_continuous_sources`` all read, so every negation class flows through
+        the same gate."""
+        inst = self.cards.get(iid)
+        if inst is None:
+            return False
+        if inst.card.is_monster:
+            return self.monster_effects_negated(iid)
         return self._class_negator(iid, prevent_activation_only=False)
+
+    def monster_effects_negated(self, iid: int) -> bool:
+        """Whether the face-up monster ``iid``'s effects are negated by a Skill Drain-style
+        negator (``CardEffectNegation`` with ``negates="monster"``). Only a monster that is
+        *face-up on the field right now* is negated — an effect resolving from the GY (a
+        recruiter destroyed in battle) or after the monster has left is NOT, matching Skill
+        Drain's "while they are face-up on the field" (and its "their effects can still be
+        activated": activation is never gated, only resolution and the continuous riders)."""
+        inst = self.cards.get(iid)
+        if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
+            return False
+        for src, mod in self.active_markers(CardEffectNegation, respect_negation=False):
+            if mod.negates != "monster":
+                continue
+            if mod.exclude_self and src.iid == iid:
+                continue
+            if mod.whose == "opponent" and inst.controller == src.controller:
+                continue
+            if mod.whose == "self" and inst.controller != src.controller:
+                continue
+            return True
+        return False
 
     def is_protected_attack_target(self, iid: int) -> bool:
         """Whether the monster ``iid`` cannot be selected as an attack target by the

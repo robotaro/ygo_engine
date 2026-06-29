@@ -233,14 +233,16 @@ class CardEffectNegation:
     (chain resolution), and ``GameState.active_markers`` (a negated Continuous
     Spell/Trap's own riders go inert).
 
-      * ``negates`` — which class is negated: "spell" or "trap". (Negating *monster*
-        effects — Skill Drain — is a separate, wider mechanism: it would also have to
-        suppress monster-sourced SelfStatMod/Piercing/recruiter triggers, so it is not
-        modelled by this marker.)
+      * ``negates`` — which class is negated: "spell", "trap" or "monster". The
+        "monster" form (Skill Drain) is read by ``GameState.monster_effects_negated``
+        and suppresses a face-up monster's continuous riders (SelfStatMod, the battle
+        riders, AttackTargetProtection/SpecialSummonLock on a monster) and negates its
+        effects on resolution — but ONLY while it is face-up on the field (a recruiter
+        firing from the GY is unaffected), and never gates activation.
       * ``prevent_activation`` — True for "… cannot be activated" cards (Jinzo,
         Spell Canceller): a Set/hand card of that class is not even offered for
         activation. False for "negate all … effects" cards (Royal Decree, Imperial
-        Order): the card still activates and goes to the GY, but its effect does
+        Order, Skill Drain): the card still activates/resolves, but its effect does
         nothing.
       * ``whose`` — which side's cards are affected: "both" (all four here),
         "opponent" (only the source controller's opponent), "self".

@@ -1520,6 +1520,9 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # effects (+ a Standby pay-700-or-die upkeep). Both just need to reach the field.
     "Royal Decree": _ACTIVATE_ONTO_FIELD,
     "Imperial Order": _ACTIVATE_ONTO_FIELD,
+    # --- Batch 43: Skill Drain — Continuous Trap, pay 1000 LP to activate (the
+    # monster-effect negation lives in CONTINUOUS).
+    "Skill Drain": (Effect(timing="ignition", life_cost=1000),),
     # Burning Land — Continuous Spell: activating it wipes every Field Spell, then
     # it burns the active player 500 each Standby (the burn lives in CONTINUOUS).
     "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
@@ -1726,6 +1729,12 @@ CONTINUOUS: dict[str, tuple] = {
     "Imperial Order": (
         CardEffectNegation(negates="spell", prevent_activation=False, whose="both"),
         StandbyUpkeep(pay_life=700, whose="controller"),
+    ),
+    # --- Batch 43: Skill Drain — negate the effects of ALL face-up monsters, both
+    # sides, while they are face-up (their effects can still be activated). Suppresses
+    # every face-up monster's continuous riders and negates its effects on resolution.
+    "Skill Drain": (
+        CardEffectNegation(negates="monster", prevent_activation=False, whose="both"),
     ),
     # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
     # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).
