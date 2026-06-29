@@ -238,6 +238,11 @@ class TargetSpec:
     # Restrict a Spell/Trap pool by kind: None | "spell" | "trap" | "field_spell"
     # (Hannibal Necromancer destroys only a face-up Trap).
     card_kind: str | None = None
+    # Restrict to a named target — ``names`` matches the exact card name (any of:
+    # Cyber Shield -> Harpie Lady / Harpie Lady Sisters), ``name_contains`` matches
+    # an archetype substring (Ancient Gear Tank -> any "Ancient Gear" monster).
+    names: frozenset = frozenset()
+    name_contains: frozenset = frozenset()
 
 
 @dataclass(frozen=True)

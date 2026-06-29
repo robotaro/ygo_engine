@@ -72,9 +72,10 @@ _ACTIVATE_ONTO_FIELD = (Effect(timing="ignition"),)
 _EQUIP_TARGET = TargetSpec(count=1, where="any_monster")
 
 
-def _equip_effect(races=(), attributes=()):
-    """A standard Equip Spell: activate by targeting a (race/attribute-restricted)
-    monster, then attach. The ATK/DEF boost lives in CONTINUOUS as an EquipMod."""
+def _equip_effect(races=(), attributes=(), names=(), name_contains=()):
+    """A standard Equip Spell: activate by targeting a restricted monster (by race/
+    attribute, an exact name, or an archetype substring), then attach. The ATK/DEF
+    boost lives in CONTINUOUS as an EquipMod."""
     return (
         Effect(
             timing="ignition",
@@ -83,6 +84,8 @@ def _equip_effect(races=(), attributes=()):
                 where="any_monster",
                 races=frozenset(races),
                 attributes=frozenset(attributes),
+                names=frozenset(names),
+                name_contains=frozenset(name_contains),
             ),
             resolve=(EquipToTarget(),),
         ),
@@ -742,6 +745,38 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             "Pyramid Turtle": CardFilter(card_kind="monster", races=frozenset({"Zombie"}), max_def=2000),
         }.items()
     },
+    # --- Effects Batch 24: name-restricted Equip Spells ---
+    # The equip target is filtered by exact name or by an archetype substring
+    # (TargetSpec.names / name_contains). Flat ATK boost lives in CONTINUOUS; the
+    # ones with a parting effect reuse the Batch 19 "sent from field to GY" trigger.
+    "Cyber Shield": _equip_effect(names=("Harpie Lady", "Harpie Lady Sisters")),
+    "Ancient Gear Tank": (
+        *_equip_effect(name_contains=("Ancient Gear",)),
+        Effect(  # when it leaves the field for the GY: 600 damage to the opponent
+            speed=1,
+            timing="trigger",
+            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
+            resolve=(InflictDamage(OPPONENT, 600),),
+        ),
+    ),
+    "Fuhma Shuriken": (
+        *_equip_effect(name_contains=("Ninja",)),
+        Effect(  # sent from the field to the GY: 700 damage to the opponent
+            speed=1,
+            timing="trigger",
+            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
+            resolve=(InflictDamage(OPPONENT, 700),),
+        ),
+    ),
+    "Magic Formula": (
+        *_equip_effect(names=("Dark Magician", "Dark Magician Girl")),
+        Effect(  # sent from the field to the GY: gain 1000 LP
+            speed=1,
+            timing="trigger",
+            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
+            resolve=(GainLifePoints(SELF, 1000),),
+        ),
+    ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
     # destroy that monster (NegatePreviousLink handles a monster on the Chain).
     "Divine Wrath": (  # discard 1; negate a monster effect + destroy that monster
@@ -1049,6 +1084,11 @@ CONTINUOUS: dict[str, tuple] = {
             scaling="face_up_attr_monsters", scale_atk=1000, count_attribute=Attribute.FIRE
         ),
     ),
+    # --- Effects Batch 24: name-restricted Equip Spell boosts ---
+    "Cyber Shield": (EquipMod(atk=500),),
+    "Ancient Gear Tank": (EquipMod(atk=600),),
+    "Fuhma Shuriken": (EquipMod(atk=700),),
+    "Magic Formula": (EquipMod(atk=700),),
     # --- Effects Batch 2: race/attribute-restricted flat Equip Spells ---
     "Beast Fangs": (EquipMod(atk=300, defn=300),),
     "Book of Secret Arts": (EquipMod(atk=300, defn=300),),

@@ -495,6 +495,8 @@ def _filter_monster_traits(state: GameState, iids: list[int], spec) -> list[int]
         or spec.face_up
         or spec.defense_position
         or spec.card_kind
+        or spec.names
+        or spec.name_contains
     ):
         return iids
     out: list[int] = []
@@ -513,6 +515,10 @@ def _filter_monster_traits(state: GameState, iids: list[int], spec) -> list[int]
         ):
             continue
         if spec.card_kind and not _kind_matches(card, spec.card_kind):
+            continue
+        if spec.names and card.name not in spec.names:
+            continue
+        if spec.name_contains and not any(s in card.name for s in spec.name_contains):
             continue
         out.append(i)
     return out
