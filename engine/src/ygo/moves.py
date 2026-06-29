@@ -518,6 +518,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         inst = state.inst(iid)
         if inst.summoned_this_turn or inst.position_changed_this_turn:
             continue
+        if inst.position_locked_until is not None and state.turn_count <= inst.position_locked_until:
+            continue  # Goblin Attack Force: frozen in Defense until its next turn
         if inst.position is Position.FACE_DOWN_DEFENSE:
             actions.append(FlipSummon(iid))
         elif inst.position in (Position.FACE_UP_ATTACK, Position.FACE_UP_DEFENSE):

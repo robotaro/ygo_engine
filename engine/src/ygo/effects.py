@@ -371,6 +371,19 @@ class AttackRestriction:
 
 
 @dataclass(frozen=True)
+class DefenseAfterAttack:
+    """A face-up monster that is changed to Defense Position once its attack resolves
+    (Spear Dragon, Axe Dragonute, the Goblin Attack Force family). ``lock_position``
+    (Goblin Attack Force, Giant Orc, Goblin Black Ops) additionally bars its battle
+    position from being changed back until its controller's next turn — the engine
+    stamps a turn deadline on the monster. The "end of the Damage Step" vs "end of the
+    Battle Phase" wording is immaterial for a single-attack monster, so both are modelled
+    as switching right after the attack resolves."""
+
+    lock_position: bool = False
+
+
+@dataclass(frozen=True)
 class StandbyUpkeep:
     """Something a face-up card does at the start of a Standby Phase (Slice 8).
 

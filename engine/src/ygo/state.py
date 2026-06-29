@@ -119,6 +119,11 @@ class CardInstance:
     # effect is activated"). Turn-stamped; read by attack enumeration.
     attack_disabled_on_turn: int | None = None
 
+    # The last turn_count through which this monster's battle position is frozen
+    # (Goblin Attack Force after it attacks). Absolute, so it survives turn resets and
+    # expires once turn_count passes it; read by the position-change action enumeration.
+    position_locked_until: int | None = None
+
     @property
     def name(self) -> str:
         return self.card.name

@@ -16,6 +16,7 @@ from typing import Callable
 from .agents import Agent
 from .effects import (
     SELF,
+    DefenseAfterAttack,
     DrawTrigger,
     EndPhaseTrigger,
     SpellCounterHolder,
@@ -443,6 +444,10 @@ class Engine:
         # Joan, Hydrogeddon) — fired from the (destroyer, destroyed) pairs combat recorded.
         self._fire_destroys_by_battle_trigger()
 
+        # Spear Dragon / Goblin Attack Force: switch the attacker to Defense once its
+        # attack has resolved (and lock its position if the rider says so).
+        self._switch_attacker_to_defense_after_attack(attacker)
+
     # ------------------------------------------------------------------ #
     #  The Chain
     # ------------------------------------------------------------------ #
@@ -788,6 +793,25 @@ class Engine:
             if effect.condition is not None and not effect.condition(s, inst.controller):
                 return  # Gravekeeper's Assailant needs "Necrovalley" on the field
             self._trigger_effect(attacker_iid, effect, inst.controller, {"attacker": attacker_iid})
+
+    def _switch_attacker_to_defense_after_attack(self, attacker_iid: int) -> None:
+        """A monster carrying a ``DefenseAfterAttack`` rider (Spear Dragon, the Goblin
+        Attack Force family) is changed to Defense Position once its attack resolves. A
+        ``lock_position`` rider also freezes it there through its controller's next turn
+        (turn_count + 2). No-op if it left the field or was flipped face-down in battle."""
+        s = self.state
+        inst = s.cards.get(attacker_iid)
+        if inst is None or inst.zone is not Zone.MONSTER or inst.position is not Position.FACE_UP_ATTACK:
+            return
+        mod = next((m for m in inst.card.continuous if isinstance(m, DefenseAfterAttack)), None)
+        if mod is None:
+            return
+        inst.position = Position.FACE_UP_DEFENSE
+        inst.position_changed_this_turn = True  # spent its position change for the turn
+        if mod.lock_position:
+            inst.position_locked_until = s.turn_count + 2  # through its controller's next turn
+        self.log(f"  {inst.name} switches to Defense Position after attacking")
+        self._changed()
 
     def _trigger_effect(self, source_iid: int, effect, controller: int, event: dict | None = None):
         """Put a triggered/flip monster effect onto a fresh Chain and resolve it.

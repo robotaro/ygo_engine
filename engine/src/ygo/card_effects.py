@@ -33,6 +33,7 @@ from .effects import (
     CreateToken,
     DamageEqualToAttackerAtk,
     DamageStepBonus,
+    DefenseAfterAttack,
     DestroyedByBattleAttack,
     DestroyAllFieldSpells,
     DestroyAllOtherCards,
@@ -2288,7 +2289,7 @@ CONTINUOUS: dict[str, tuple] = {
     # --- Batch 38: battle modifiers (direct attack / cannot be destroyed by battle) ---
     # Direct attackers (secondary riders — Goblin's end-Battle position change, Raging
     # Flame Sprite's ATK growth — are not modelled).
-    "Goblin Black Ops": (CanAttackDirectly(),),
+    "Goblin Black Ops": (CanAttackDirectly(), DefenseAfterAttack(lock_position=True)),
     "Raging Flame Sprite": (CanAttackDirectly(),),
     # Battle-indestructible (Arcana Force 0's no-position-change, Marshmallon's flipped
     # 1000 burn, and Spirit Reaper's destroy-when-targeted riders are not modelled).
@@ -4597,4 +4598,22 @@ CONTINUOUS.update({
     ),
     # Gravity Bind — Level 4 or higher monsters cannot attack (both sides).
     "Gravity Bind": (AttackRestriction(max_level_can_attack=3),),
+})
+
+
+# ===== Effects Batch 71: "switch to Defense after attacking" family (DefenseAfterAttack) =====
+CONTINUOUS.update({
+    # Spear Dragon — piercing battle damage, then switches to Defense after it attacks.
+    "Spear Dragon": (Piercing(), DefenseAfterAttack()),
+    # Axe Dragonute — switches to Defense at the end of the Damage Step it attacks.
+    "Axe Dragonute": (DefenseAfterAttack(),),
+    # Goblin Attack Force — 2300 ATK; after attacking it sits in Defense and cannot
+    # change position until its next turn.
+    "Goblin Attack Force": (DefenseAfterAttack(lock_position=True),),
+    # Goblin Elite Attack Force — same drawback (2200/1500).
+    "Goblin Elite Attack Force": (DefenseAfterAttack(lock_position=True),),
+    # Indomitable Fighter Lei Lei — same after-attack Defense + position lock.
+    "Indomitable Fighter Lei Lei": (DefenseAfterAttack(lock_position=True),),
+    # Giant Orc — 2200 ATK; after attacking, locked in Defense until its next turn.
+    "Giant Orc": (DefenseAfterAttack(lock_position=True),),
 })

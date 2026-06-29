@@ -212,6 +212,12 @@ DECK = (
     # attack-lock floodgates (AttackRestriction extension)
     + ["Swords of Revealing Light"] * 2
     + ["Gravity Bind"] * 2
+    # "switch to Defense after attacking" family (DefenseAfterAttack)
+    + ["Spear Dragon"] * 2
+    + ["Goblin Attack Force"] * 2
+    + ["Goblin Elite Attack Force"] * 2
+    + ["Axe Dragonute"] * 2
+    + ["Goblin Black Ops"] * 2
 )
 
 
