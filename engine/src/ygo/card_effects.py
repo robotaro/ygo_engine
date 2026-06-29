@@ -63,6 +63,7 @@ from .effects import (
     SelfStatMod,
     SpecialSummonFromDeck,
     SpecialSummonFromGraveyard,
+    SpecialSummonLock,
     SpellCounterHolder,
     StandbyUpkeep,
     SummonCost,
@@ -1685,6 +1686,17 @@ CONTINUOUS: dict[str, tuple] = {
             exclude_name_contains="Marshmallon",
             requires_control_name_contains="Marshmallon",
         ),
+    ),
+    # --- Batch 41: Special Summon locks (Barrier Statues / Vanity) ---
+    # The "Cannot be Special Summoned" clause restricting each Vanity monster *itself*
+    # is a card-level summon restriction the engine doesn't track yet (minor).
+    "Vanity's Fiend": (SpecialSummonLock(whose="both"),),
+    "Vanity's Ruler": (SpecialSummonLock(whose="opponent"),),
+    "Barrier Statue of the Inferno": (
+        SpecialSummonLock(whose="both", except_attribute=Attribute.FIRE),
+    ),
+    "Barrier Statue of the Torrent": (
+        SpecialSummonLock(whose="both", except_attribute=Attribute.WATER),
     ),
     # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
     # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).

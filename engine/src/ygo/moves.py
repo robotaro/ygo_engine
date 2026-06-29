@@ -499,6 +499,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
                 continue
             if rule.condition is not None and not rule.condition(state, player):
                 continue
+            if state.special_summon_locked(player, state.inst(iid).card):
+                continue  # a Barrier Statue / Vanity lock bars this Special Summon
             if _summon_banish_choice(state, player, rule) is None:
                 continue  # the banish cost (Chaos: 1 LIGHT + 1 DARK) can't be paid
             actions.append(SpecialSummonFromHand(iid))

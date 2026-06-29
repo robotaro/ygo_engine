@@ -25,6 +25,7 @@ from .effects import (
     MultiAttacker,
     Piercing,
     SelfStatMod,
+    SpecialSummonLock,
     SpellCounterHolder,
 )
 from .enums import Phase, Position, Zone
@@ -544,6 +545,27 @@ class GameState:
                 if mod.name_contains is not None and mod.name_contains not in inst.card.name:
                     continue
                 return True
+        return False
+
+    def special_summon_locked(self, player: int, card: "CardDef") -> bool:
+        """Whether ``player`` is currently prevented from Special Summoning ``card`` by a
+        face-up Special-Summon lock (Vanity's Fiend/Ruler, the Barrier Statues). Read by
+        every Special Summon route — a locked summon simply does not happen."""
+        for ctrl in (0, 1):
+            for src in self._face_up_side_cards(ctrl):
+                if not src.effects_active:
+                    continue
+                for mod in src.card.continuous:
+                    if not isinstance(mod, SpecialSummonLock):
+                        continue
+                    if mod.whose == "opponent" and player == ctrl:
+                        continue  # only the source controller's opponent is locked
+                    if (
+                        mod.except_attribute is not None
+                        and card.attribute == mod.except_attribute
+                    ):
+                        continue
+                    return True
         return False
 
     def _effective_stat(self, iid: int, which: str) -> int:

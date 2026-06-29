@@ -442,6 +442,12 @@ class Engine:
             chosen = fusion_iids[0]
         materials = next(mats for fid, mats in options if fid == chosen)
 
+        if s.special_summon_locked(controller, s.inst(chosen).card):
+            self.log("  Fusion Summon barred by a Special Summon lock")
+            s.send_to_graveyard(poly_iid)  # Polymerization fizzles; materials stay
+            self._changed()
+            return
+
         names = " + ".join(s.inst(m).name for m in materials)
         for m in materials:
             s.send_to_graveyard(m)
@@ -464,6 +470,8 @@ class Engine:
         if monster_name is None or not can_ritual_summon(s, controller, monster_name):
             return  # gated at activation; defensive
         monster_iid = ritual_monster_in_hand(s, controller, monster_name)
+        if s.special_summon_locked(controller, s.inst(monster_iid).card):
+            return  # a Special Summon lock bars the Ritual Summon (gated at activation too)
         required = s.inst(monster_iid).card.level or 0
         pool = ritual_tribute_pool(s, controller, monster_iid)
 

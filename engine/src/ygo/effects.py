@@ -210,6 +210,22 @@ class AttackTargetProtection:
 
 
 @dataclass(frozen=True)
+class SpecialSummonLock:
+    """A face-up card's continuous lock on Special Summoning, read by every Special
+    Summon route via ``GameState.special_summon_locked`` (a locked summon simply does
+    not happen).
+
+      * ``whose`` — "both" (Vanity's Fiend, the Barrier Statues) locks both players;
+        "opponent" (Vanity's Ruler) locks only the source controller's opponent.
+      * ``except_attribute`` — monsters of this attribute may still be Special Summoned
+        despite the lock (the Barrier Statues: Inferno allows FIRE, Torrent allows WATER).
+    """
+
+    whose: str = "both"  # "both" | "opponent"
+    except_attribute: "Attribute | None" = None
+
+
+@dataclass(frozen=True)
 class FieldMod:
     """A continuous flat ATK/DEF modifier a face-up Field/Continuous Spell radiates
     over every monster on the field that matches its filter (the "field layer").
@@ -1000,7 +1016,13 @@ class SpecialSummonFromDeck(Primitive):
         if index is None:
             return
         deck = s.players[controller].deck
-        eligible = [i for i in deck if s.inst(i).card.is_monster and self.card_filter.matches(s.inst(i).card)]
+        eligible = [
+            i
+            for i in deck
+            if s.inst(i).card.is_monster
+            and self.card_filter.matches(s.inst(i).card)
+            and not s.special_summon_locked(controller, s.inst(i).card)
+        ]
         if eligible:
             pick = max(eligible, key=lambda i: s.inst(i).card.attack or 0)
             s.place_monster(pick, controller, index, self.position)
@@ -1161,6 +1183,8 @@ class SpecialSummonFromGraveyard(Primitive):
             return
         if inst.card.is_spirit:
             return  # Spirit monsters can never be Special Summoned
+        if ctx.state.special_summon_locked(ctx.controller, inst.card):
+            return  # a Barrier Statue / Vanity lock bars this revival
         index = ctx.state.first_empty_monster_zone(ctx.controller)
         if index is None:
             return
@@ -1205,6 +1229,8 @@ class CreateToken(Primitive):
             defense=self.defn,
             is_token=True,
         )
+        if s.special_summon_locked(player, token):
+            return  # a Barrier Statue / Vanity lock bars Special Summoning Tokens
         for _ in range(self.count):
             index = s.first_empty_monster_zone(player)
             if index is None:
