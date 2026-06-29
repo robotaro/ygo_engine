@@ -305,6 +305,7 @@ class Engine:
         attacker, target = action.attacker, action.target
         s.attack_negated = False
         s.attack_redirect = None
+        s.reflect_battle_damage = False
         # Mark at declaration (not only in _resolve_attack) so a *negated* attack — which
         # returns before resolving — still counts as this monster having attacked.
         s.inst(attacker).attacked_this_turn = True

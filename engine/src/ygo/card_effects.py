@@ -63,6 +63,7 @@ from .effects import (
     ReturnFromGraveyardToDeck,
     ReturnFromGraveyardToHand,
     RedirectAttackToTarget,
+    ReflectBattleDamage,
     ReturnFromHandToDeck,
     ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
@@ -164,6 +165,13 @@ def _opponent_controls_3plus_attack(state, controller) -> bool:
         )
         >= 3
     )
+
+
+def _controls_monster_with_free_zone(state, controller) -> bool:
+    """Magical Arm Shield gate: you must control a monster (printed requirement) and have
+    a free Monster Zone to put the stolen monster in."""
+    has_monster = any(i is not None for i in state.players[controller].monster_zones)
+    return has_monster and state.first_empty_monster_zone(controller) is not None
 
 
 def _any_special_summoned_monster(state, controller) -> bool:
@@ -1144,6 +1152,30 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
             resolve=(ChangeTargetPosition(to="defense"),),
+        ),
+    ),
+    # --- Batch 49: take-control-the-attack + battle-damage reflection ---
+    # Magical Arm Shield — steal a non-attacking opponent monster (until the End Phase)
+    # and redirect the attack onto it (the attacker battles the monster you just took).
+    "Magical Arm Shield": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            condition=_controls_monster_with_free_zone,
+            target=TargetSpec(
+                count=1, where="opponent_monsters", face_up=True, exclude_attacker=True
+            ),
+            resolve=(TakeControl(until_end_of_turn=True), RedirectAttackToTarget()),
+        ),
+    ),
+    # Dimension Wall — the Battle Damage you would take from this battle hits the attacker.
+    "Dimension Wall": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            resolve=(ReflectBattleDamage(),),
         ),
     ),
     # --- Batch 48: attack redirect / cost-bearing attack Trap ---

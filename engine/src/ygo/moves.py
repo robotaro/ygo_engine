@@ -937,10 +937,11 @@ def _activations_for_effect(state, player, iid, effect, event):
         if effect.target is not None:
             # The controller picks the effect's target (Call of the Earthbound chooses the
             # redirected monster), rather than it coming from the trigger's subject.
-            return [
-                ActivateSpell(iid, targets=t)
-                for t in _enumerate_targets(state, player, effect.target)
-            ]
+            sets = _enumerate_targets(state, player, effect.target)
+            if effect.target.exclude_attacker and event is not None:
+                atkr = event.get("attacker")
+                sets = [t for t in sets if atkr not in t]  # Magical Arm Shield's "except"
+            return [ActivateSpell(iid, targets=t) for t in sets]
         return [ActivateSpell(iid, targets=_trigger_targets(effect.trigger, event))]
     if effect.timing == "quick":
         if effect.condition is not None and not effect.condition(state, player):
@@ -1304,9 +1305,17 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     atk = state.effective_attack(action.attacker)
     state.battle_damage_dealt = None  # reset; set below when the attacker damages opp
 
+    def _hit_defender(amount: int) -> None:
+        # Battle damage to the defending player — redirected to the attacker by Dimension
+        # Wall (then it's not "damage inflicted to the opponent", so no dealer trigger).
+        if state.reflect_battle_damage:
+            state.players[me].life_points -= amount
+        else:
+            state.players[opp].life_points -= amount
+            state.battle_damage_dealt = (action.attacker, amount)
+
     if action.target is None:
-        state.players[opp].life_points -= atk
-        state.battle_damage_dealt = (action.attacker, atk)
+        _hit_defender(atk)
         return f"{attacker.name} attacks directly — {atk} damage"
 
     target = state.inst(action.target)
@@ -1319,8 +1328,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         other = state.effective_attack(action.target)
         if atk > other:
             _battle_destroy(state, target.iid)
-            state.players[opp].life_points -= atk - other
-            state.battle_damage_dealt = (action.attacker, atk - other)
+            _hit_defender(atk - other)
             return f"{prefix}{attacker.name} ({atk}) destroys {target.name} ({other}) — {atk - other} damage"
         if atk < other:
             _battle_destroy(state, attacker.iid)
@@ -1337,8 +1345,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         _battle_destroy(state, target.iid)
         if state.has_piercing(action.attacker):
             dmg = atk - dfn
-            state.players[opp].life_points -= dmg
-            state.battle_damage_dealt = (action.attacker, dmg)
+            _hit_defender(dmg)
             return f"{prefix}{attacker.name} ({atk}) pierces {target.name} (DEF {dfn}) — {dmg} damage"
         return f"{prefix}{attacker.name} ({atk}) destroys defending {target.name} (DEF {dfn})"
     if atk < dfn:

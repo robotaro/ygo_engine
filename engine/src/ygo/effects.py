@@ -358,6 +358,7 @@ class TargetSpec:
     face_up: bool = False  # restrict to face-up monsters (e.g. Soul Taker)
     defense_position: bool = False  # restrict to Defense Position monsters (Shield Crush)
     attack_position: bool = False  # restrict to face-up Attack Position monsters (Cyber Gymnast)
+    exclude_attacker: bool = False  # drop the declared attacker (Magical Arm Shield's "except")
     up_to: bool = False  # ``count`` is a maximum — choose 1..count (Penguin Soldier)
     # Restrict a Spell/Trap pool by kind: None | "spell" | "trap" | "field_spell"
     # (Hannibal Necromancer destroys only a face-up Trap).
@@ -1051,11 +1052,21 @@ class NegateAttack(Primitive):
 class RedirectAttackToTarget(Primitive):
     """Redirect the current attack to this effect's first target — a monster the
     defender controls (Call of the Earthbound: you choose the new target; Jam Defender:
-    your Revival Jam). Read by engine._declare_attack after the response window."""
+    your Revival Jam; Magical Arm Shield: the monster you just stole). Read by
+    engine._declare_attack after the response window."""
 
     def execute(self, ctx: EffectContext) -> None:
         if ctx.targets:
             ctx.state.attack_redirect = ctx.targets[0]
+
+
+@dataclass(frozen=True)
+class ReflectBattleDamage(Primitive):
+    """Dimension Wall: the Battle Damage the controller would take from this battle is
+    dealt to the attacking player instead. Read by moves._resolve_attack."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.reflect_battle_damage = True
 
 
 @dataclass(frozen=True)
