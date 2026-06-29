@@ -114,6 +114,18 @@ def _on_sent_to_gy(resolve):
     )
 
 
+def _on_battle_damage(resolve, target=None):
+    """A trigger that fires when this monster inflicts battle damage to the opponent
+    (Masked Sorcerer draws, White Magical Hat discards). The engine fires it from the
+    state's transient combat record (engine._fire_battle_damage_trigger)."""
+    return Effect(
+        timing="trigger",
+        trigger=Trigger(kind="battle_damage_inflicted", by=SELF),
+        target=target,
+        resolve=resolve,
+    )
+
+
 def _opponent_has_faceup_monster(state, controller) -> bool:
     opp = state.opponent_of(controller)
     return any(
@@ -1255,6 +1267,18 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(BounceTargetsToHand(),),
         ),
     ),
+    # --- Batch 37: more "inflicts battle damage" monsters (existing primitives) ---
+    "Masked Sorcerer": (_on_battle_damage((Draw(count=1),)),),  # draw 1
+    "The Bistro Butcher": (_on_battle_damage((Draw(OPPONENT, count=2),)),),  # opp draws 2
+    "White Magical Hat": (  # opponent discards 1 random
+        _on_battle_damage((DiscardFromHand(OPPONENT, count=1, random=True),)),
+    ),
+    "Goe Goe the Gallant Ninja": (  # opponent discards 2 random
+        _on_battle_damage((DiscardFromHand(OPPONENT, count=2, random=True),)),
+    ),
+    "Blood Sucker": (_on_battle_damage((MillFromDeck(OPPONENT, count=1),)),),  # mill 1
+    # Goblin Zombie: mill 1 (its "when sent to GY, recover a Zombie" half is not modelled).
+    "Goblin Zombie": (_on_battle_damage((MillFromDeck(OPPONENT, count=1),)),),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
     "Axe of Despair": _equip_effect(),
     "United We Stand": _equip_effect(),
