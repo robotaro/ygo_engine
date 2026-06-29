@@ -14,6 +14,7 @@ from .effects import (
     SELF,
     AttackRestriction,
     AttackTargetProtection,
+    BanishAttackingDefensePositionMonsters,
     BanishTargets,
     BattleIndestructible,
     BounceTargetsToDeck,
@@ -144,6 +145,20 @@ def _opponent_has_faceup_monster(state, controller) -> bool:
 def _has_free_monster_zone(state, controller) -> bool:
     """Gate the Special Summon: you need an open Monster Zone to revive into."""
     return state.first_empty_monster_zone(controller) is not None
+
+
+def _opponent_controls_3plus_attack(state, controller) -> bool:
+    """Radiant Mirror Force gate: the attacking player (your opponent) must control 3+
+    face-up Attack-Position monsters."""
+    opp = state.opponent_of(controller)
+    return (
+        sum(
+            1
+            for iid in state.players[opp].monster_zones
+            if iid is not None and state.inst(iid).position is Position.FACE_UP_ATTACK
+        )
+        >= 3
+    )
 
 
 def _any_special_summoned_monster(state, controller) -> bool:
@@ -1010,6 +1025,65 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
             resolve=(NegateAttack(), DamageEqualToAttackerAtk()),
+        ),
+    ),
+    # --- Batch 45: reactive "when an opponent's monster declares an attack" Traps ---
+    # (the attack-declaration response window already exists; these all key off it)
+    # Sakuretsu Armor — destroy the attacker (the attack fizzles: no attacker left).
+    "Sakuretsu Armor": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    # Negate Attack — negate the attacking monster's attack (the "end the Battle Phase"
+    # clause is approximated by negating just this attack).
+    "Negate Attack": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            resolve=(NegateAttack(),),
+        ),
+    ),
+    # Malevolent Catastrophe — destroy all Spell/Trap Cards on the field.
+    "Malevolent Catastrophe": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            resolve=(DestroyAllSpellTraps(),),
+        ),
+    ),
+    # Widespread Ruin — destroy the opponent's highest-ATK Attack-Position monster.
+    "Widespread Ruin": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            resolve=(DestroyHighestAtkMonster(side=OPPONENT),),
+        ),
+    ),
+    # Radiant Mirror Force — only when the attacker controls 3+ Attack-Position monsters:
+    # destroy all of them.
+    "Radiant Mirror Force": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            condition=_opponent_controls_3plus_attack,
+            resolve=(DestroyAttackingAttackPositionMonsters(),),
+        ),
+    ),
+    # Dark Mirror Force — banish all the attacker's Defense-Position monsters.
+    "Dark Mirror Force": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            resolve=(BanishAttackingDefensePositionMonsters(),),
         ),
     ),
     "Mystical Space Typhoon": (

@@ -864,13 +864,17 @@ class DestroyHighestDefOpponentMonster(Primitive):
 
 @dataclass(frozen=True)
 class DestroyHighestAtkMonster(Primitive):
-    """Hammer Shot: destroy the face-up Attack-Position monster (either side) with
-    the highest ATK."""
+    """Hammer Shot: destroy the face-up Attack-Position monster with the highest ATK.
+    ``side`` restricts the pool: None = either side (Hammer Shot), OPPONENT = only the
+    controller's opponent (Widespread Ruin destroys the attacker's highest)."""
+
+    side: str | None = None
 
     def execute(self, ctx: EffectContext) -> None:
+        players = (0, 1) if self.side is None else (ctx.side(self.side),)
         cands = [
             iid
-            for pl in (0, 1)
+            for pl in players
             for iid in ctx.state.players[pl].monster_zones
             if iid is not None and ctx.state.inst(iid).position is Position.FACE_UP_ATTACK
         ]
@@ -992,6 +996,24 @@ class DestroyAttackingAttackPositionMonsters(Primitive):
         ]
         for iid in victims:
             ctx.state.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
+class BanishAttackingDefensePositionMonsters(Primitive):
+    """Dark Mirror Force: banish all the attacking player's Defense-Position monsters
+    (both face-up and face-down) — removed from play, not destroyed."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        attacker_player = (ctx.event or {}).get("player", ctx.state.opponent_of(ctx.controller))
+        victims = [
+            iid
+            for iid in ctx.state.players[attacker_player].monster_zones
+            if iid is not None
+            and ctx.state.inst(iid).position
+            in (Position.FACE_UP_DEFENSE, Position.FACE_DOWN_DEFENSE)
+        ]
+        for iid in victims:
+            ctx.state.banish(iid)
 
 
 @dataclass(frozen=True)

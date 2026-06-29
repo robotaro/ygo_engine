@@ -925,6 +925,8 @@ def _activations_for_effect(state, player, iid, effect, event):
     if effect.timing == "trigger":
         if event is None or not _trigger_matches(state, player, effect.trigger, event):
             return []
+        if effect.condition is not None and not effect.condition(state, player):
+            return []  # e.g. Radiant Mirror Force needs the attacker to control 3+ monsters
         if not can_pay_costs(state, player, iid, effect):
             return []  # e.g. Horn of Heaven needs a monster to Tribute
         return [ActivateSpell(iid, targets=_trigger_targets(effect.trigger, event))]
