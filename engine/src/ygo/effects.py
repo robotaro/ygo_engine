@@ -341,6 +341,41 @@ class TargetSpec:
     normal_only: bool = False
 
 
+def card_matches_traits(
+    card,
+    *,
+    names=frozenset(),
+    name_contains=frozenset(),
+    races=frozenset(),
+    attributes=frozenset(),
+    max_atk=None,
+    max_def=None,
+    min_level=None,
+    max_level=None,
+) -> bool:
+    """Whether a printed card satisfies the name/race/attribute/level/ATK/DEF
+    constraints (empty/None = no constraint). The single source of truth for these
+    trait checks, shared by ``CardFilter.matches`` and the move layer's target filter so
+    the two can never drift. (Card-kind and position checks stay with each caller.)"""
+    if names and card.name not in names:
+        return False
+    if name_contains and not any(s in card.name for s in name_contains):
+        return False
+    if races and card.race not in races:
+        return False
+    if attributes and card.attribute not in attributes:
+        return False
+    if max_atk is not None and (card.attack or 0) > max_atk:
+        return False
+    if max_def is not None and (card.defense or 0) > max_def:
+        return False
+    if min_level is not None and (card.level or 0) < min_level:
+        return False
+    if max_level is not None and (card.level or 0) > max_level:
+        return False
+    return True
+
+
 @dataclass(frozen=True)
 class CardFilter:
     """A predicate over a *printed* card, for fetching from the Deck (Reinforcement
@@ -365,21 +400,17 @@ class CardFilter:
     max_def: int | None = None
 
     def matches(self, card) -> bool:
-        if self.names and card.name not in self.names:
-            return False
-        if self.name_contains and not any(s in card.name for s in self.name_contains):
-            return False
-        if self.races and card.race not in self.races:
-            return False
-        if self.attributes and card.attribute not in self.attributes:
-            return False
-        if self.max_atk is not None and (card.attack or 0) > self.max_atk:
-            return False
-        if self.max_def is not None and (card.defense or 0) > self.max_def:
-            return False
-        if self.min_level is not None and (card.level or 0) < self.min_level:
-            return False
-        if self.max_level is not None and (card.level or 0) > self.max_level:
+        if not card_matches_traits(
+            card,
+            names=self.names,
+            name_contains=self.name_contains,
+            races=self.races,
+            attributes=self.attributes,
+            max_atk=self.max_atk,
+            max_def=self.max_def,
+            min_level=self.min_level,
+            max_level=self.max_level,
+        ):
             return False
         kind = self.card_kind
         if kind == "monster" and not card.is_monster:

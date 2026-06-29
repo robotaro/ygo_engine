@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import combinations
 
-from .effects import OPPONENT, AttackRestriction, EffectContext
+from .effects import OPPONENT, AttackRestriction, EffectContext, card_matches_traits
 from .enums import Phase, Position, SpellTrapProperty, Zone
 from .state import GameState
 
@@ -631,15 +631,16 @@ def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
     for i in iids:
         inst = state.inst(i)
         card = inst.card
-        if spec.races and card.race not in spec.races:
-            continue
-        if spec.attributes and card.attribute not in spec.attributes:
-            continue
-        if spec.max_atk is not None and (card.attack or 0) > spec.max_atk:
-            continue
-        if spec.min_level is not None and (card.level or 0) < spec.min_level:
-            continue
-        if spec.max_level is not None and (card.level or 0) > spec.max_level:
+        if not card_matches_traits(
+            card,
+            names=spec.names,
+            name_contains=spec.name_contains,
+            races=spec.races,
+            attributes=spec.attributes,
+            max_atk=spec.max_atk,
+            min_level=spec.min_level,
+            max_level=spec.max_level,
+        ):
             continue
         if spec.normal_only and not card.is_vanilla:
             continue
@@ -653,10 +654,6 @@ def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
         if spec.attack_position and inst.position is not Position.FACE_UP_ATTACK:
             continue
         if spec.card_kind and not _kind_matches(card, spec.card_kind):
-            continue
-        if spec.names and card.name not in spec.names:
-            continue
-        if spec.name_contains and not any(s in card.name for s in spec.name_contains):
             continue
         out.append(i)
     return out
