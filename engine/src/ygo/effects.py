@@ -1012,10 +1012,9 @@ class SpecialSummonFromDeck(Primitive):
     def execute(self, ctx: EffectContext) -> None:
         s = ctx.state
         controller = ctx.controller
-        index = s.first_empty_monster_zone(controller)
-        if index is None:
-            return
         deck = s.players[controller].deck
+        # Pick among monsters the lock would actually let through (so a Barrier Statue
+        # doesn't make us "pick" an un-summonable body while a legal one exists).
         eligible = [
             i
             for i in deck
@@ -1025,8 +1024,7 @@ class SpecialSummonFromDeck(Primitive):
         ]
         if eligible:
             pick = max(eligible, key=lambda i: s.inst(i).card.attack or 0)
-            s.place_monster(pick, controller, index, self.position)
-            s.inst(pick).summoned_this_turn = True
+            s.special_summon(pick, controller, self.position)
         s.rng.shuffle(deck)
 
 
@@ -1183,13 +1181,8 @@ class SpecialSummonFromGraveyard(Primitive):
             return
         if inst.card.is_spirit:
             return  # Spirit monsters can never be Special Summoned
-        if ctx.state.special_summon_locked(ctx.controller, inst.card):
-            return  # a Barrier Statue / Vanity lock bars this revival
-        index = ctx.state.first_empty_monster_zone(ctx.controller)
-        if index is None:
-            return
-        ctx.state.place_monster(target, ctx.controller, index, self.position)
-        inst.summoned_this_turn = True
+        if not ctx.state.special_summon(target, ctx.controller, self.position):
+            return  # a lock barred it, or no free Monster Zone
         if self.link:
             ctx.state.inst(ctx.source_iid).linked_to = target
             inst.linked_to = ctx.source_iid

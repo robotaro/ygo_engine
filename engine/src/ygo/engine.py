@@ -451,9 +451,7 @@ class Engine:
         names = " + ".join(s.inst(m).name for m in materials)
         for m in materials:
             s.send_to_graveyard(m)
-        index = s.first_empty_monster_zone(controller)
-        s.place_monster(chosen, controller, index, Position.FACE_UP_ATTACK)
-        s.inst(chosen).summoned_this_turn = True
+        s.special_summon(chosen, controller, Position.FACE_UP_ATTACK)
         self.log(f"  Fusion Summon: {s.inst(chosen).name} ({names})")
         s.send_to_graveyard(poly_iid)  # Polymerization is spent (Normal Spell)
         self._check_life_points()
@@ -492,12 +490,9 @@ class Engine:
         names = ", ".join(s.inst(t).name for t in tributes)
         for t in tributes:
             s.send_to_graveyard(t)
-        index = s.first_empty_monster_zone(controller)
-        if index is None:
+        if not s.special_summon(monster_iid, controller, Position.FACE_UP_ATTACK):
             s.send_to_graveyard(spell_iid)  # no room (shouldn't happen) — fizzle
             return
-        s.place_monster(monster_iid, controller, index, Position.FACE_UP_ATTACK)
-        s.inst(monster_iid).summoned_this_turn = True
         self.log(f"  Ritual Summon: {s.inst(monster_iid).name} (Tribute: {names})")
         s.send_to_graveyard(spell_iid)  # the Ritual Spell is spent
         self._check_life_points()

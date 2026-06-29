@@ -122,6 +122,24 @@ def test_scapegoat_makes_no_tokens_under_a_lock():
     assert tokens == []  # the Sheep Tokens are barred by the lock
 
 
+def test_union_cannot_unequip_summon_under_a_lock():
+    # Regression: a Union monster returning to the Monster Zone is a Special Summon, so
+    # it must honour the lock too. Routing every SS site through state.special_summon
+    # closed this gap (the Union route had silently skipped the check).
+    from ygo.moves import UnionEquip, UnionUnequip, apply, legal_actions
+
+    s = _fresh()
+    host = s.spawn_on_field(reg.get("X-Head Cannon"), 0, 0, Position.FACE_UP_ATTACK)
+    union = s.spawn_on_field(reg.get("Y-Dragon Head"), 0, 1, Position.FACE_UP_ATTACK)
+    apply(s, UnionEquip(union.iid, host.iid))
+    s.turn_count = 3
+    s.spawn_on_field(reg.get("Vanity's Fiend"), 0, 2, Position.FACE_UP_ATTACK)
+    # The unequip (a Special Summon) is neither offered nor performed under the lock.
+    assert not any(isinstance(a, UnionUnequip) for a in legal_actions(s, 0))
+    apply(s, UnionUnequip(union.iid))
+    assert s.inst(union.iid).zone is Zone.SPELL_TRAP  # still equipped — summon barred
+
+
 def test_no_lock_means_normal_special_summons():
     s = _fresh()
     assert not s.special_summon_locked(0, DARK)

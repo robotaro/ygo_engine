@@ -540,6 +540,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             continue
         if inst.union_acted_on_turn == state.turn_count or not union_mon_free:
             continue
+        if state.special_summon_locked(player, inst.card):
+            continue  # unequipping is a Special Summon — barred under a lock
         actions.append(UnionUnequip(iid))
 
     # Spell activations (Ignition/Quick from the hand) + Set Spell/Trap.
@@ -1197,11 +1199,10 @@ def _union_unequip(state: GameState, action: UnionUnequip) -> str:
     """Unequip a Union monster and Special Summon it back in face-up Attack Position."""
     union = state.inst(action.union_iid)
     player = union.controller
-    index = state.first_empty_monster_zone(player)
-    state.place_monster(action.union_iid, player, index, Position.FACE_UP_ATTACK)
+    if not state.special_summon(action.union_iid, player, Position.FACE_UP_ATTACK):
+        return f"cannot unequip {union.name} (Special Summon is locked or no zone)"
     union.equipped_to = None
     union.union_acted_on_turn = state.turn_count
-    union.summoned_this_turn = True  # Special Summoned this turn
     return f"unequips {union.name} (Special Summon)"
 
 
@@ -1242,12 +1243,8 @@ def _special_summon_from_hand(state: GameState, action: SpecialSummonFromHand) -
     to_banish = _summon_banish_choice(state, player, rule) or []
     for b in to_banish:
         state.banish(b)  # pay the banish cost (1 LIGHT + 1 DARK for the Chaos monsters)
-    index = action.zone_index
-    if index is None or state.players[player].monster_zones[index] is not None:
-        index = state.first_empty_monster_zone(player)
     position = rule.position if rule is not None else Position.FACE_UP_ATTACK
-    state.place_monster(action.iid, player, index, position)
-    inst.summoned_this_turn = True
+    state.special_summon(action.iid, player, position, index=action.zone_index)
     extra = f" (banishing {len(to_banish)})" if to_banish else ""
     return f"Special Summons {inst.name} (from the hand){extra}"
 

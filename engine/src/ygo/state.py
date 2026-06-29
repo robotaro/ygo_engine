@@ -255,6 +255,30 @@ class GameState:
         inst.position = position
         inst.died_by_battle = False  # a revived monster carries no stale battle-death flag
 
+    def special_summon(
+        self, iid: int, player: int, position: Position, *, index: int | None = None
+    ) -> bool:
+        """The single Special Summon chokepoint for an existing card instance — used by
+        every SS route (hand-SS, revival, recruiter, Union re-summon, Fusion, Ritual).
+
+        Honours the Special Summon lock (Barrier Statues / Vanity), finds a free Monster
+        Zone (preferring ``index`` when given and empty), places the monster and stamps
+        the per-turn summon bookkeeping. Returns True if the monster reached the field,
+        or False (a no-op) if a lock barred it or no zone was free. Callers that pay a
+        cost first (Fusion/Ritual materials) should also gate on ``special_summon_locked``
+        up front so they don't waste the cost on a fizzle. (Tokens are synthesised with
+        no source location, so ``CreateToken`` spawns them directly instead.)"""
+        inst = self.cards[iid]
+        if self.special_summon_locked(player, inst.card):
+            return False
+        if index is None or self.players[player].monster_zones[index] is not None:
+            index = self.first_empty_monster_zone(player)
+        if index is None:
+            return False
+        self.place_monster(iid, player, index, position)
+        inst.summoned_this_turn = True
+        return True
+
     def move_control(self, iid: int, new_controller: int, index: int) -> None:
         """Move a monster already on the field to ``new_controller``'s Monster Zone
         ``index`` — changing control, not ownership — keeping its battle position.
@@ -465,39 +489,33 @@ class GameState:
             if isinstance(mod, SpellCounterHolder)
         )
 
-    def has_piercing(self, iid: int) -> bool:
-        """Whether the monster deals piercing battle damage to a defender (a face-up
-        Piercing rider on its own card, active only while its effect is on)."""
+    def _self_rider(self, iid: int, marker_type):
+        """The first active continuous rider of ``marker_type`` on the monster's own
+        card, or None. A card's own riders are suppressed while its effect is off (a
+        Gemini that hasn't been Gemini Summoned) — that guard lives here, once."""
         inst = self.cards[iid]
-        return inst.effects_active and any(
-            isinstance(mod, Piercing) for mod in inst.card.continuous
-        )
+        if not inst.effects_active:
+            return None
+        return next((m for m in inst.card.continuous if isinstance(m, marker_type)), None)
+
+    def has_piercing(self, iid: int) -> bool:
+        """Whether the monster deals piercing battle damage to a defender it breaks."""
+        return self._self_rider(iid, Piercing) is not None
 
     def can_attack_directly(self, iid: int) -> bool:
         """Whether the monster may declare a direct attack despite the opponent having
-        monsters (a face-up CanAttackDirectly rider, active only while its effect is on)."""
-        inst = self.cards[iid]
-        return inst.effects_active and any(
-            isinstance(mod, CanAttackDirectly) for mod in inst.card.continuous
-        )
+        monsters (a face-up CanAttackDirectly rider)."""
+        return self._self_rider(iid, CanAttackDirectly) is not None
 
     def is_battle_indestructible(self, iid: int) -> bool:
-        """Whether the monster cannot be destroyed by battle (a face-up
-        BattleIndestructible rider, active only while its effect is on)."""
-        inst = self.cards[iid]
-        return inst.effects_active and any(
-            isinstance(mod, BattleIndestructible) for mod in inst.card.continuous
-        )
+        """Whether the monster cannot be destroyed by battle (a BattleIndestructible rider)."""
+        return self._self_rider(iid, BattleIndestructible) is not None
 
     def max_attacks(self, iid: int) -> int:
         """How many attacks the monster may declare this Battle Phase — 2+ for a
         face-up MultiAttacker (Hayabusa Knight), else 1."""
-        inst = self.cards[iid]
-        if inst.effects_active:
-            for mod in inst.card.continuous:
-                if isinstance(mod, MultiAttacker):
-                    return mod.times
-        return 1
+        mod = self._self_rider(iid, MultiAttacker)
+        return mod.times if mod is not None else 1
 
     def _face_up_side_cards(self, player: int):
         """Yield every face-up card on ``player``'s side — monsters, Spell/Traps and
