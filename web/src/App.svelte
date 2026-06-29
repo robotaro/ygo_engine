@@ -1,5 +1,9 @@
 <script>
   import { onMount } from 'svelte'
+  import { fly, fade } from 'svelte/transition'
+  import { flip } from 'svelte/animate'
+  import { tweened } from 'svelte/motion'
+  import { cubicOut } from 'svelte/easing'
   import CardTile from './lib/CardTile.svelte'
   import {
     board,
@@ -32,6 +36,34 @@
   $: you = $board?.you
   $: opp = $board?.opponent
   $: phase = $board?.phase
+
+  // Life points count up/down instead of snapping, and flash red on damage.
+  const youLp = tweened(8000, { duration: 550, easing: cubicOut })
+  const oppLp = tweened(8000, { duration: 550, easing: cubicOut })
+  $: if (you) youLp.set(you.lifePoints)
+  $: if (opp) oppLp.set(opp.lifePoints)
+  let youHit = false
+  let oppHit = false
+  onMount(() => {
+    let py = null
+    let po = null
+    return board.subscribe((b) => {
+      if (!b) {
+        py = po = null
+        return
+      }
+      if (py != null && b.you.lifePoints < py) {
+        youHit = true
+        setTimeout(() => (youHit = false), 600)
+      }
+      if (po != null && b.opponent.lifePoints < po) {
+        oppHit = true
+        setTimeout(() => (oppHit = false), 600)
+      }
+      py = b.you.lifePoints
+      po = b.opponent.lifePoints
+    })
+  })
   $: yourTurn = $awaiting
   $: dragging = draggedIid != null
   $: draggingMonster = draggedIid != null && !!summonOptions(draggedIid)
@@ -409,7 +441,7 @@
         onclick={onDirectAttack}
       >
         <div class="who">{opp.name}</div>
-        <div class="lp">LP {opp.lifePoints}</div>
+        <div class="lp" class:hit={oppHit}>LP {Math.round($oppLp)}</div>
         <div class="piles">hand {opp.handCount}</div>
         <div class="ohand">
           {#each Array(opp.handCount) as _}<div class="minicard back"></div>{/each}
@@ -447,7 +479,7 @@
             <span class="zlabel">GY</span>
           {/if}
           {#if openGy === 'opp' || oppGyTargetable}
-            <div class="gyflyout down">
+            <div class="gyflyout down" transition:fade={{ duration: 130 }}>
               {#each opp.graveyard as gy}
                 <div
                   class="gycard"
@@ -538,7 +570,7 @@
                   : null}
               onclick={() => onClickOwnMonster(slot.iid)}
             >
-              <CardTile card={slot} defense={isDefense(slot)} small />
+              <CardTile card={slot} faceDown={slot?.faceDown} defense={isDefense(slot)} small />
               {#if slot.geminiUnlocked}<span class="badge gemini">★</span>{/if}
             </div>
           {:else}
@@ -560,7 +592,7 @@
             <span class="zlabel">GY</span>
           {/if}
           {#if openGy === 'you' || youGyTargetable}
-            <div class="gyflyout">
+            <div class="gyflyout" transition:fade={{ duration: 130 }}>
               {#each you.graveyard as gy}
                 <div
                   class="gycard"
@@ -613,7 +645,7 @@
 
       <div class="playerbar you">
         <div class="who">{you.name}</div>
-        <div class="lp">LP {you.lifePoints}</div>
+        <div class="lp" class:hit={youHit}>LP {Math.round($youLp)}</div>
       </div>
 
       <!-- Hand -->
@@ -648,7 +680,7 @@
       {/if}
 
       <div class="hand">
-        {#each you.hand as card}
+        {#each you.hand as card (card.iid)}
           {@const opts = summonOptions(card.iid)}
           {@const activatable = canActivate(card.iid)}
           {@const settable = canSet(card.iid)}
@@ -661,6 +693,9 @@
               !settable &&
               !specialSummonable &&
               !mustDiscard}
+            animate:flip={{ duration: 240 }}
+            in:fly={{ y: 26, duration: 220 }}
+            out:fly={{ y: -34, duration: 200 }}
           >
             <div
               draggable={yourTurn && (!!opts || activatable || settable)}
@@ -851,6 +886,28 @@
     font-size: 18px;
     font-weight: 800;
     color: #ffe08a;
+    transition: color 0.25s ease;
+    transform-origin: left center;
+  }
+  .lp.hit {
+    color: #ff5a5a;
+    animation: lp-hit 0.5s ease;
+  }
+  @keyframes lp-hit {
+    0% {
+      transform: scale(1);
+    }
+    30% {
+      transform: scale(1.22);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lp.hit {
+      animation: none;
+    }
   }
   .piles {
     font-size: 12px;

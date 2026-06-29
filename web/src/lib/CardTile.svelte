@@ -1,4 +1,6 @@
 <script>
+  import cardBack from '../assets/card_back.jpg'
+
   let { card = null, faceDown = false, defense = false, small = false } = $props()
 
   const ATTR_COLORS = {
@@ -11,7 +13,10 @@
     DIVINE: '#b8860b',
   }
 
-  let hidden = $derived(faceDown || (card && card.name == null))
+  // A card shows its back when it's Set face-down, or when the server withheld
+  // its identity (an opponent's face-down card arrives with no name).
+  let dataHidden = $derived(card != null && card.name == null)
+  let showBack = $derived(faceDown || dataHidden)
   let accent = $derived(card && card.attribute ? ATTR_COLORS[card.attribute] : '#4a4a55')
   let tributeCost = $derived(
     card && card.cardType === 'monster' && card.level
@@ -22,54 +27,60 @@
           : 2
       : 0,
   )
+
+  // Compose the position turn (90° for Defense) with the face-down/up flip, so a
+  // Set monster revealed into Attack animates the turn and the flip in one move.
+  let transform = $derived(`rotate(${defense ? 90 : 0}deg) rotateY(${showBack ? 0 : 180}deg)`)
 </script>
 
 {#if !card}
   <div class="tile empty" class:small></div>
-{:else if hidden}
-  <div class="tile back" class:small class:rot={defense}>
-    <div class="back-emblem">YGO</div>
-  </div>
 {:else}
-  <div
-    class="tile card"
-    class:small
-    class:rot={defense}
-    style="--accent:{accent}"
-    title={card.text || card.name}
-  >
-    <!-- Text fallback (shown if there is no art, or the art fails to load). -->
-    <div class="name">{card.name}</div>
-    {#if card.cardType === 'monster'}
-      {#if card.level != null}<div class="lv">Lv{card.level}</div>{/if}
-      <div class="stats">
-        <span class="atk">{card.attack ?? '?'}</span><span class="slash">/</span><span
-          class="def">{card.defense ?? '?'}</span>
+  <div class="tile" class:small>
+    <div class="flip" style="transform: {transform}">
+      <!-- Back face: the real card back, shown while the card is face-down. -->
+      <div class="face back" title={card.name ?? 'Face-down card'}>
+        <img class="backimg" src={cardBack} alt="Face-down card" />
       </div>
-    {:else}
-      <div class="kind">{card.cardType}</div>
-    {/if}
 
-    {#if card.imageId}
-      <img
-        class="art"
-        src={`/cards/${card.imageId}.jpg`}
-        alt={card.name}
-        onerror={(e) => e.currentTarget.remove()}
-      />
-    {/if}
+      <!-- Front face -->
+      <div class="face front card" style="--accent:{accent}" title={card.text || card.name}>
+        {#if card.name != null}
+          <!-- Text fallback (shown if there is no art, or the art fails to load). -->
+          <div class="name">{card.name}</div>
+          {#if card.cardType === 'monster'}
+            {#if card.level != null}<div class="lv">Lv{card.level}</div>{/if}
+            <div class="stats">
+              <span class="atk">{card.attack ?? '?'}</span><span class="slash">/</span><span
+                class="def">{card.defense ?? '?'}</span>
+            </div>
+          {:else}
+            <div class="kind">{card.cardType}</div>
+          {/if}
 
-    <!-- Legibility overlays, above the art. -->
-    {#if tributeCost > 0}
-      <span class="trib" title={`Requires ${tributeCost} Tribute(s)`}>✦{tributeCost}</span>
-    {/if}
-    {#if card.cardType === 'monster'}
-      {@const shown = defense ? (card.effDef ?? card.defense) : (card.effAtk ?? card.attack)}
-      {@const base = defense ? card.defense : card.attack}
-      <span class="stat-badge" class:boosted={shown > base} class:weakened={shown < base}>
-        {shown}
-      </span>
-    {/if}
+          {#if card.imageId}
+            <img
+              class="art"
+              src={`/cards/${card.imageId}.jpg`}
+              alt={card.name}
+              onerror={(e) => e.currentTarget.remove()}
+            />
+          {/if}
+
+          <!-- Legibility overlays, above the art. -->
+          {#if tributeCost > 0}
+            <span class="trib" title={`Requires ${tributeCost} Tribute(s)`}>✦{tributeCost}</span>
+          {/if}
+          {#if card.cardType === 'monster'}
+            {@const shown = defense ? (card.effDef ?? card.defense) : (card.effAtk ?? card.attack)}
+            {@const base = defense ? card.defense : card.attack}
+            <span class="stat-badge" class:boosted={shown > base} class:weakened={shown < base}>
+              {shown}
+            </span>
+          {/if}
+        {/if}
+      </div>
+    </div>
   </div>
 {/if}
 
@@ -80,6 +91,10 @@
     border-radius: 7px;
     box-sizing: border-box;
     user-select: none;
+    perspective: 700px;
+    transition:
+      transform 0.16s ease,
+      box-shadow 0.16s ease;
   }
   .tile.small {
     width: 64px;
@@ -89,9 +104,45 @@
     border: 1px dashed #3a3a45;
     background: rgba(255, 255, 255, 0.02);
   }
-  .card {
-    position: relative;
+  /* Full-size hand cards lift toward the player on hover. */
+  .tile:not(.small):not(.empty):hover {
+    transform: translateY(-7px) scale(1.05);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55);
+    z-index: 5;
+  }
+
+  /* The two faces share a 3D space; rotating .flip turns the card over. */
+  .flip {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.25, 1);
+    will-change: transform;
+  }
+  .face {
+    position: absolute;
+    inset: 0;
+    border-radius: 7px;
     overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .face.front {
+    transform: rotateY(180deg);
+  }
+
+  .back {
+    background: #0a0a08;
+    border: 1px solid #5a4a1e;
+  }
+  .backimg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .card {
     border: 2px solid var(--accent);
     background: linear-gradient(160deg, #2b2b33, #1c1c22);
     padding: 5px;
@@ -100,9 +151,6 @@
     flex-direction: column;
     justify-content: space-between;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-  }
-  .rot {
-    transform: rotate(90deg);
   }
   .art {
     position: absolute;
@@ -147,7 +195,6 @@
     color: #bdbdbd;
     text-align: right;
   }
-  /* overlays sit above the art */
   .trib {
     position: absolute;
     top: 2px;
@@ -178,18 +225,14 @@
   .stat-badge.weakened {
     color: #ff8a7a;
   }
-  .back {
-    border: 2px solid #7a5c1e;
-    background: repeating-linear-gradient(45deg, #4a3a14, #4a3a14 6px, #5a4a1e 6px, #5a4a1e 12px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .back-emblem {
-    font-size: 13px;
-    font-weight: 800;
-    color: #d9bf7a;
-    letter-spacing: 1px;
-    opacity: 0.7;
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile,
+    .flip {
+      transition: none;
+    }
+    .tile:not(.small):not(.empty):hover {
+      transform: none;
+    }
   }
 </style>
