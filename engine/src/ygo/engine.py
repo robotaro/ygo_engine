@@ -125,6 +125,7 @@ class Engine:
     def _begin_turn(self, tp: int) -> None:
         s = self.state
         s.normal_summon_used = False
+        s.forced_attack_target = None  # Staunch Defender's lock lasts only its turn
         for iid in s.players[tp].monster_zones:
             if iid is not None:
                 s.inst(iid).reset_turn_flags()

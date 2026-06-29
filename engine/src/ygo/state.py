@@ -173,6 +173,7 @@ class GameState:
     attack_negated: bool = False  # transient flag set while resolving an attack response
     attack_redirect: int | None = None  # a response set a new attack target (Call of the Earthbound)
     reflect_battle_damage: bool = False  # Dimension Wall: my battle damage hits the attacker
+    forced_attack_target: int | None = None  # Staunch Defender: attacks this turn must hit only this monster
     gy_from_field: list = field(default_factory=list)  # monsters just sent field->GY (trigger queue)
     pending_draws: list = field(default_factory=list)  # players who just drew (draw-trigger queue)
     # Monsters just Summoned — (iid, summoner, kind) the engine drains to open the

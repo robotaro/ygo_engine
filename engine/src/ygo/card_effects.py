@@ -63,6 +63,7 @@ from .effects import (
     ReturnAllSpellTrapsToHand,
     ReturnFromGraveyardToDeck,
     ReturnFromGraveyardToHand,
+    ForceAttackTarget,
     RedirectAttackToTarget,
     ReflectBattleDamage,
     ReturnFromHandToDeck,
@@ -1264,6 +1265,19 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
                 ChangeAllPositions(side=OPPONENT, to="attack"),
                 ModifyAllStatsTemporary(side=OPPONENT, atk=-500),
             ),
+        ),
+    ),
+    # --- Batch 51: forced attack target ---
+    # Staunch Defender — when the opponent declares an attack, pick a face-up monster you
+    # control: redirect the current attack onto it, and for the rest of this turn the
+    # opponent may only attack that monster.
+    "Staunch Defender": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            target=TargetSpec(count=1, where="own_monsters", face_up=True),
+            resolve=(RedirectAttackToTarget(), ForceAttackTarget()),
         ),
     ),
     # --- Batch 48: attack redirect / cost-bearing attack Trap ---

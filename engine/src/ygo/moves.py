@@ -1071,6 +1071,11 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
                 targets.append(None)  # Raging Flame Sprite: may bypass the monsters
         else:
             targets = [None]  # direct attack
+        forced = state.forced_attack_target
+        if forced is not None and forced in state.players[opp].monster_zones:
+            # Staunch Defender: this turn the attacker may only target the chosen monster
+            # (and never attack directly). The lock lifts on its own once it leaves the field.
+            targets = [forced] if forced in targets else []
         actions.extend(DeclareAttack(iid, t) for t in targets)
     return actions
 

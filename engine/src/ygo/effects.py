@@ -1111,6 +1111,18 @@ class ReflectBattleDamage(Primitive):
 
 
 @dataclass(frozen=True)
+class ForceAttackTarget(Primitive):
+    """Staunch Defender: for the rest of this turn the opponent may only declare attacks
+    against this effect's first target (a face-up monster the controller picks). Sets
+    state.forced_attack_target, read by moves._battle_phase_actions; cleared at the start
+    of the next turn. The lock lifts on its own if that monster later leaves the field."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        if ctx.targets:
+            ctx.state.forced_attack_target = ctx.targets[0]
+
+
+@dataclass(frozen=True)
 class NegatePreviousLink(Primitive):
     """Counter-Trap negation (Magic Jammer, Dark Bribe, Divine Wrath, Goblin Out of
     the Frying Pan): negate the activation of the card this was chained to — the
