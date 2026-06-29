@@ -1313,6 +1313,19 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             ),
         ),
     ),
+    # --- Batch 53: was-Tribute-Summoned gate ---
+    # Blast Held by a Tribute — when a Tribute-Summoned opponent monster attacks, destroy
+    # all their face-up Attack-Position monsters and burn 1000.
+    "Blast Held by a Tribute": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(
+                kind="attack_declared", by=OPPONENT, attacker_was_tribute_summoned=True
+            ),
+            resolve=(DestroyAttackingAttackPositionMonsters(), InflictDamage(OPPONENT, 1000)),
+        ),
+    ),
     # --- Batch 48: attack redirect / cost-bearing attack Trap ---
     # Call of the Earthbound — redirect the attack to a monster you choose to control.
     "Call of the Earthbound": (

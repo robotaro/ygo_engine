@@ -965,6 +965,10 @@ def _trigger_matches(state, player, trigger, event) -> bool:
             return False
     if trigger.target_self_control and not _attack_target_matches(state, player, trigger, event):
         return False
+    if trigger.attacker_was_tribute_summoned:
+        atkr = event.get("attacker")
+        if atkr is None or atkr not in state.cards or not state.inst(atkr).was_tribute_summoned:
+            return False
     return True
 
 
@@ -1309,6 +1313,7 @@ def _summon(
     position = Position.FACE_UP_ATTACK if face_up else Position.FACE_DOWN_DEFENSE
     state.place_monster(iid, player, zone_index, position)
     inst.summoned_this_turn = True
+    inst.was_tribute_summoned = bool(tributes)  # read by Blast Held by a Tribute
     state.normal_summon_used = True
 
     verb = "Normal Summons" if face_up else "Sets"

@@ -105,6 +105,11 @@ class CardInstance:
     # (and on a Token), reset to False by place_monster (Normal Summon/Set) and on leaving
     # the field — read by "destroy all Special Summoned monsters" (Fossil Dyna/Jowgen).
     was_special_summoned: bool = False
+    # True while this monster is face-up on the field having reached it via a Tribute
+    # Summon (a Normal Summon that tributed 1+ monsters). Stamped in moves._summon,
+    # reset by place_monster / on leaving the field — read by "an opponent's monster
+    # that was Tribute Summoned declares an attack" (Blast Held by a Tribute).
+    was_tribute_summoned: bool = False
     # The turn this card last activated a "once per turn" Ignition effect. Turn-stamped
     # so it expires on its own; reset when the card leaves the field.
     effect_activated_on_turn: int | None = None
@@ -269,6 +274,7 @@ class GameState:
         inst.position = position
         inst.died_by_battle = False  # a revived monster carries no stale battle-death flag
         inst.was_special_summoned = False  # Normal Summon/Set; special_summon re-stamps True
+        inst.was_tribute_summoned = False  # moves._summon re-stamps True for a Tribute Summon
 
     def special_summon(
         self, iid: int, player: int, position: Position, *, index: int | None = None
@@ -329,6 +335,7 @@ class GameState:
         inst.temp_def = 0
         inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
         inst.was_special_summoned = False  # re-stamped by special_summon on a fresh summon
+        inst.was_tribute_summoned = False  # re-stamped by moves._summon on a fresh Tribute Summon
         inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
         inst.effect_activated_on_turn = None  # a revived card may use its once/turn again
         inst.attack_disabled_on_turn = None

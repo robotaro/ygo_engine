@@ -504,6 +504,9 @@ class Trigger:
     target_exclude_names: frozenset = frozenset()
     target_normal_only: bool = False
     target_max_level: int | None = None
+    # For an "attack_declared" trigger: require the declaring attacker to have been
+    # Tribute Summoned (Blast Held by a Tribute).
+    attacker_was_tribute_summoned: bool = False
 
 
 # --------------------------------------------------------------------------- #
