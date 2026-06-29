@@ -392,6 +392,30 @@ class StandbyUpkeep:
 
 
 @dataclass(frozen=True)
+class StandbyTrigger:
+    """A face-up card that fires a full Effect during a qualifying Standby Phase —
+    the general case beyond StandbyUpkeep's fixed-LP maintenance (Bowganian's 600
+    burn, Ebon Magician Curran's "×monsters they control" burn, Dancing Fairy's LP
+    gain, Destiny HERO - Defender's "opponent draws 1"). The engine fires ``effect``
+    on a fresh Chain as the *source controller's* effect, so its payload directions
+    (``InflictDamage(OPPONENT)``, ``Draw(OPPONENT)``) read relative to the controller.
+
+    ``whose`` mirrors StandbyUpkeep:
+      * "controller" — only the source controller's own Standby Phase.
+      * "opponent"   — only the controller's opponent's Standby Phase.
+      * "both"       — every Standby Phase.
+    ``requires_defense`` / ``requires_attack`` gate it on the source's face-up
+    battle position (Dancing Fairy must be in Attack, Destiny HERO - Defender in
+    Defense). The firing is suppressed while the source's effects are negated
+    (Skill Drain on a monster, Royal Decree on a Trap)."""
+
+    effect: "Effect"
+    whose: str = "controller"  # "controller" | "opponent" | "both"
+    requires_defense: bool = False
+    requires_attack: bool = False
+
+
+@dataclass(frozen=True)
 class DrawTrigger:
     """A face-up card's reaction to its controller drawing (Slice 10).
 

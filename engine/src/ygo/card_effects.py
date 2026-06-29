@@ -81,6 +81,7 @@ from .effects import (
     SpecialSummonFromHand,
     SpecialSummonLock,
     SpellCounterHolder,
+    StandbyTrigger,
     StandbyUpkeep,
     SummonCost,
     SwitchTargetsToAttack,
@@ -332,6 +333,16 @@ def _lp_above(amount: int):
 
     def cond(state, controller) -> bool:
         return state.players[controller].life_points > amount
+
+    return cond
+
+
+def _opp_lp_at_most(amount: int):
+    """Activation gate keyed off the opponent's Life Points (Minor Goblin Official
+    can only be activated when your opponent is at ``amount`` LP or less)."""
+
+    def cond(state, controller) -> bool:
+        return state.players[state.opponent_of(controller)].life_points <= amount
 
     return cond
 
@@ -2068,6 +2079,10 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(DestroyAllSpecialSummoned(),),
         ),
     ),
+    # --- Batch 65: Standby-Phase effects (StandbyTrigger; payloads in CONTINUOUS) ---
+    # Minor Goblin Official — Continuous Trap: activate only while the opponent is at
+    # 3000 LP or less; thereafter it burns them 500 each of THEIR Standby Phases.
+    "Minor Goblin Official": (Effect(timing="ignition", condition=_opp_lp_at_most(3000)),),
     # Burning Land — Continuous Spell: activating it wipes every Field Spell, then
     # it burns the active player 500 each Standby (the burn lives in CONTINUOUS).
     "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
@@ -2488,6 +2503,54 @@ CONTINUOUS: dict[str, tuple] = {
     # --- Slice 9: take-control ---
     # Snatch Steal gifts its victim 1000 LP at each of *their* Standby Phases.
     "Snatch Steal": (StandbyUpkeep(gain_life=1000, whose="opponent"),),
+    # --- Batch 65: Standby-Phase effects (StandbyTrigger fires a full Effect each
+    # qualifying Standby Phase — beyond StandbyUpkeep's fixed-LP maintenance) ---
+    # Bowganian: burn the opponent 600 each of your Standby Phases.
+    "Bowganian": (
+        StandbyTrigger(Effect(resolve=(InflictDamage(OPPONENT, 600),)), whose="controller"),
+    ),
+    # Ebon Magician Curran: burn 300 for each monster your opponent controls.
+    "Ebon Magician Curran": (
+        StandbyTrigger(
+            Effect(resolve=(InflictDamage(OPPONENT, value=CountTimes(300, "opponent_monsters")),)),
+            whose="controller",
+        ),
+    ),
+    # Dancing Fairy: while in face-up Defense, gain 1000 LP each of your Standby Phases.
+    "Dancing Fairy": (
+        StandbyTrigger(
+            Effect(resolve=(GainLifePoints(SELF, 1000),)),
+            whose="controller",
+            requires_defense=True,
+        ),
+    ),
+    # Spirit of the Breeze: while in face-up Attack, gain 1000 LP each of your Standbys.
+    "Spirit of the Breeze": (
+        StandbyTrigger(
+            Effect(resolve=(GainLifePoints(SELF, 1000),)),
+            whose="controller",
+            requires_attack=True,
+        ),
+    ),
+    # Destiny HERO - Defender: while in face-up Defense, your opponent draws 1 card at
+    # each of THEIR Standby Phases (a drawback that helps them).
+    "Destiny HERO - Defender": (
+        StandbyTrigger(
+            Effect(resolve=(Draw(OPPONENT, 1),)),
+            whose="opponent",
+            requires_defense=True,
+        ),
+    ),
+    # Lava Golem (Special Summoned to the opponent's field): its controller takes 1000
+    # damage each of their Standby Phases.
+    "Lava Golem": (
+        StandbyTrigger(Effect(resolve=(InflictDamage(SELF, 1000),)), whose="controller"),
+    ),
+    # Minor Goblin Official (Continuous Trap; activation gate in EFFECTS): burn the
+    # opponent 500 each of their Standby Phases.
+    "Minor Goblin Official": (
+        StandbyTrigger(Effect(resolve=(InflictDamage(OPPONENT, 500),)), whose="opponent"),
+    ),
     # --- Slice 10: draw-trigger hook ---
     # Solemn Wishes: gain 500 LP each time its controller draws a card(s).
     "Solemn Wishes": (DrawTrigger(gain_life=500),),

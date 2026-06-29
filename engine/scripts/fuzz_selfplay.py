@@ -190,6 +190,13 @@ DECK = (
     + ["Pitch-Black Warwolf"] * 2
     + ["Invader of Darkness"] * 2
     + ["Mechanical Hound"] * 2
+    # Standby-Phase effects (StandbyTrigger)
+    + ["Bowganian"] * 2
+    + ["Ebon Magician Curran"] * 2
+    + ["Dancing Fairy"] * 2
+    + ["Spirit of the Breeze"] * 2
+    + ["Destiny HERO - Defender"] * 2
+    + ["Minor Goblin Official"] * 2
 )
 
 

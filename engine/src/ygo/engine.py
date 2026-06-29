@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .agents import Agent
-from .effects import SELF, DrawTrigger, SpellCounterHolder, StandbyUpkeep
+from .effects import SELF, DrawTrigger, SpellCounterHolder, StandbyTrigger, StandbyUpkeep
 from .enums import Phase, Position, TURN_PHASES, Zone
 from .moves import (
     ActivateMonsterEffect,
@@ -191,6 +191,11 @@ class Engine:
             for mod in inst.card.continuous:
                 if isinstance(mod, StandbyUpkeep) and self._apply_standby_upkeep(inst, mod, tp):
                     fired = True
+                elif isinstance(mod, StandbyTrigger):
+                    # Fires a full Effect on its own Chain (Bowganian's burn) — that
+                    # path runs its own life-point / GY / draw checks, so it doesn't
+                    # need the fixed-LP `fired` bookkeeping below.
+                    self._fire_standby_trigger(inst, mod, tp)
         if fired:
             self._check_life_points()
             self._check_field_to_gy_triggers()
@@ -238,6 +243,28 @@ class Engine:
             self.log(f"  {victim.name} takes {mod.burn_life} damage from {name}")
             return True
         return False
+
+    def _fire_standby_trigger(self, inst, mod: StandbyTrigger, tp: int) -> None:
+        """Fire a face-up card's StandbyTrigger during ``tp``'s Standby Phase — the
+        source controller's Effect on a fresh Chain (Bowganian's burn, Dancing Fairy's
+        LP gain, Destiny HERO - Defender's "opponent draws"). Scoped by ``whose`` and
+        the source's battle position; suppressed while the source's effects are negated
+        (Skill Drain on a monster, Royal Decree / Imperial Order on a Spell/Trap)."""
+        s = self.state
+        if self.result is not None:
+            return
+        controller = inst.controller
+        if mod.whose == "controller" and controller != tp:
+            return  # only the controller's own Standby Phase
+        if mod.whose == "opponent" and controller == tp:
+            return  # only the controller's opponent's Standby Phase
+        if mod.requires_defense and inst.position is not Position.FACE_UP_DEFENSE:
+            return
+        if mod.requires_attack and inst.position is not Position.FACE_UP_ATTACK:
+            return
+        if s.effect_negated(inst.iid):
+            return
+        self._trigger_effect(inst.iid, mod.effect, controller)
 
     def _interactive_phase(self, tp: int) -> None:
         """Main Phase 1 / 2: the turn player takes moves until they Pass."""
