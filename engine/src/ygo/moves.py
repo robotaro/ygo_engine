@@ -185,6 +185,12 @@ def tributes_required(level: int | None) -> int:
 # --------------------------------------------------------------------------- #
 #  Activation costs (paid from the hand at activation)
 # --------------------------------------------------------------------------- #
+def _pick(fodder: list[int], count: int, chosen) -> list[int]:
+    """The fodder actually paid for a cost: the player's valid picks (capped at
+    ``count``), else the first ``count`` eligible (the deterministic headless default)."""
+    return [i for i in (chosen or []) if i in fodder][:count] or fodder[:count]
+
+
 def discard_fodder(state: GameState, controller: int, source_iid: int) -> list[int]:
     """Hand cards the controller may discard to pay a cost — every card except the
     one being activated (a Spell from hand can't discard itself as its own cost)."""
@@ -244,43 +250,10 @@ def pay_send_to_gy_cost(
     """Send ``count`` of ``controller``'s eligible field cards to the GY as a cost.
     ``chosen`` names them (player's pick); without it the first eligible are taken."""
     fodder = send_to_gy_fodder(state, controller, source_iid, filt, face_up, exclude_self)
-    picks = [i for i in (chosen or []) if i in fodder][:count] or fodder[:count]
+    picks = _pick(fodder, count, chosen)
     for iid in picks:
         state.send_to_graveyard(iid)
     return picks
-
-
-def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) -> bool:
-    """Whether ``controller`` can pay ``effect``'s activation cost right now (used to
-    gate legal enumeration). Covers discard, Tribute, counter and send-to-GY costs."""
-    need = getattr(effect, "discard_cost", 0)
-    if need and len(discard_fodder(state, controller, source_iid)) < need:
-        return False
-    tneed = getattr(effect, "tribute_cost", 0)
-    if tneed:
-        fodder = tribute_fodder(
-            state, controller, effect.tribute_races, effect.tribute_attributes
-        )
-        if len(fodder) < tneed:
-            return False
-    cneed = getattr(effect, "counter_cost", 0)
-    if cneed:
-        ctype = getattr(effect, "counter_type", "spell")
-        if state.inst(source_iid).counters.get(ctype, 0) < cneed:
-            return False
-    sneed = getattr(effect, "send_to_gy_cost", 0)
-    if sneed:
-        fodder = send_to_gy_fodder(
-            state,
-            controller,
-            source_iid,
-            effect.send_to_gy_filter,
-            effect.send_to_gy_face_up,
-            effect.send_to_gy_exclude_self,
-        )
-        if len(fodder) < sneed:
-            return False
-    return True
 
 
 def pay_discard_cost(
@@ -290,7 +263,7 @@ def pay_discard_cost(
     the cards (player's pick); without it, the first eligible cards are taken (the
     deterministic headless default). Returns the discarded iids."""
     fodder = discard_fodder(state, controller, source_iid)
-    picks = [i for i in (chosen or []) if i in fodder][:count] or fodder[:count]
+    picks = _pick(fodder, count, chosen)
     for iid in picks:
         state.send_to_graveyard(iid)
     return picks
@@ -317,11 +290,93 @@ def pay_tribute_cost(
     picks are recorded on the source card (``tributed_iids``) before they go to the
     Graveyard, so the payload can read their printed stats. Returns the iids."""
     fodder = tribute_fodder(state, controller, races, attrs)
-    picks = [i for i in (chosen or []) if i in fodder][:count] or fodder[:count]
+    picks = _pick(fodder, count, chosen)
     state.inst(source_iid).tributed_iids = list(picks)
     for iid in picks:
         state.send_to_graveyard(iid)
     return picks
+
+
+# A uniform table over the three "pick N cards from a fodder pool" activation costs.
+# Each entry: (kind, Effect amount-field, fodder fn, pay fn, log-verb template). The
+# counter cost is handled separately (it removes counters, not chosen cards). The
+# lambdas read the per-cost knobs (races/filter/...) straight off the Effect, so
+# ``can_pay_costs`` and ``pay_costs`` can iterate one list instead of four branches.
+_FODDER_COSTS = (
+    (
+        "discard",
+        "discard_cost",
+        lambda st, c, src, e: discard_fodder(st, c, src),
+        lambda st, c, src, n, ch, e: pay_discard_cost(st, c, src, n, ch),
+        "discards {names}",
+    ),
+    (
+        "tribute",
+        "tribute_cost",
+        lambda st, c, src, e: tribute_fodder(st, c, e.tribute_races, e.tribute_attributes),
+        lambda st, c, src, n, ch, e: pay_tribute_cost(
+            st, c, src, n, e.tribute_races, e.tribute_attributes, ch
+        ),
+        "Tributes {names}",
+    ),
+    (
+        "send",
+        "send_to_gy_cost",
+        lambda st, c, src, e: send_to_gy_fodder(
+            st, c, src, e.send_to_gy_filter, e.send_to_gy_face_up, e.send_to_gy_exclude_self
+        ),
+        lambda st, c, src, n, ch, e: pay_send_to_gy_cost(
+            st, c, src, n, e.send_to_gy_filter, e.send_to_gy_face_up, e.send_to_gy_exclude_self, ch
+        ),
+        "sends {names} to the GY",
+    ),
+)
+
+
+def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) -> bool:
+    """Whether ``controller`` can pay ``effect``'s activation cost right now (gates
+    legal enumeration). Covers the discard / Tribute / send-to-GY fodder costs and
+    the counter cost."""
+    for _kind, amount_attr, fodder_fn, _pay, _verb in _FODDER_COSTS:
+        n = getattr(effect, amount_attr)
+        if n and len(fodder_fn(state, controller, source_iid, effect)) < n:
+            return False
+    if effect.counter_cost and (
+        state.inst(source_iid).counters.get(effect.counter_type, 0) < effect.counter_cost
+    ):
+        return False
+    return True
+
+
+def pay_costs(state: GameState, controller: int, source_iid: int, effect, picker=None) -> list[str]:
+    """Pay every activation cost on ``effect`` before it resolves. ``picker(kind,
+    fodder, count) -> tuple[int, ...]`` lets the player choose the fodder; ``None``
+    uses the deterministic default (first eligible). Returns one human-readable log
+    line per cost paid (the caller decides how to surface them)."""
+    lines: list[str] = []
+    for kind, amount_attr, fodder_fn, pay_fn, verb in _FODDER_COSTS:
+        n = getattr(effect, amount_attr)
+        if not n:
+            continue
+        fodder = fodder_fn(state, controller, source_iid, effect)
+        chosen = picker(kind, fodder, n) if picker else None
+        paid = pay_fn(state, controller, source_iid, n, chosen, effect)
+        lines.append(verb.format(names=", ".join(state.inst(i).name for i in paid)))
+    if effect.counter_cost:
+        pay_counter_cost(state, source_iid, effect.counter_cost, effect.counter_type)
+        lines.append(f"removes {effect.counter_cost} {effect.counter_type} counter(s)")
+    return lines
+
+
+def _has_activation_cost(effect) -> bool:
+    """Whether ``effect`` carries any activation cost at all (the headless activate
+    path pays the first effect that does)."""
+    return bool(
+        effect.discard_cost
+        or effect.tribute_cost
+        or effect.send_to_gy_cost
+        or effect.counter_cost
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -1026,36 +1081,13 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
     """
     card = state.inst(action.iid).card
     reveal_for_activation(state, action.iid, action.zone_index)  # routes Field Spells too
-    # Pay any activation cost (discard) before resolving — the headless path picks
-    # the discard fodder deterministically (the interactive engine asks the player).
+    # Pay any activation cost before resolving — the headless path picks the fodder
+    # deterministically (the interactive engine asks the player via a picker). Covers
+    # all cost types uniformly, so a counter-cost Spell would pay here too.
     controller = state.inst(action.iid).controller
     for effect in card.effects:
-        paid = False
-        if getattr(effect, "discard_cost", 0):
-            pay_discard_cost(state, controller, action.iid, effect.discard_cost)
-            paid = True
-        if getattr(effect, "tribute_cost", 0):
-            pay_tribute_cost(
-                state,
-                controller,
-                action.iid,
-                effect.tribute_cost,
-                effect.tribute_races,
-                effect.tribute_attributes,
-            )
-            paid = True
-        if getattr(effect, "send_to_gy_cost", 0):
-            pay_send_to_gy_cost(
-                state,
-                controller,
-                action.iid,
-                effect.send_to_gy_cost,
-                effect.send_to_gy_filter,
-                effect.send_to_gy_face_up,
-                effect.send_to_gy_exclude_self,
-            )
-            paid = True
-        if paid:
+        if _has_activation_cost(effect):
+            pay_costs(state, controller, action.iid, effect)
             break
     resolve_card_effects(state, action.iid, action.targets)
     # A Normal Spell heads to the Graveyard; a permanent one (Equip/Continuous/Field) stays.

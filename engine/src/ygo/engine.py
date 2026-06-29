@@ -31,18 +31,13 @@ from .moves import (
     controls_toon_world,
     legal_actions,
     makeable_fusions,
-    pay_counter_cost,
-    pay_discard_cost,
-    pay_send_to_gy_cost,
-    pay_tribute_cost,
+    pay_costs,
     response_options,
     resolve_effect,
     reveal_for_activation,
     ritual_monster_in_hand,
     ritual_tribute_pool,
-    send_to_gy_fodder,
     target_candidates,
-    tribute_fodder,
 )
 from .state import GameState
 
@@ -398,63 +393,21 @@ class Engine:
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
 
     def _pay_activation_cost(self, source_iid: int, controller: int, effect) -> None:
-        """Pay an effect's activation cost — the discard cost and/or the Tribute
-        cost. The player chooses the fodder (bot via heuristic, human via a prompt),
-        then it's paid before the effect resolves."""
+        """Pay an effect's activation costs (discard / Tribute / counter / send-to-GY)
+        before it resolves. The player picks the fodder (bot via heuristic, human via
+        a prompt); an illegal pick falls back to the default heuristic."""
         s = self.state
-        need = getattr(effect, "discard_cost", 0)
-        if need:
-            fodder = [i for i in s.players[controller].hand if i != source_iid]
-            chosen = self.agents[controller].choose_cost_fodder(s, controller, fodder, need, kind="discard")
+
+        def picker(kind: str, fodder: list[int], need: int):
+            chosen = self.agents[controller].choose_cost_fodder(s, controller, fodder, need, kind=kind)
             if len(set(chosen)) != need or any(c not in fodder for c in chosen):
-                chosen = Agent().choose_cost_fodder(s, controller, fodder, need, kind="discard")
-            discarded = pay_discard_cost(s, controller, source_iid, need, chosen)
-            names = ", ".join(s.inst(i).name for i in discarded)
-            self.log(f"  {s.players[controller].name} discards {names} (cost)")
-            self._changed()
-        tneed = getattr(effect, "tribute_cost", 0)
-        if tneed:
-            fodder = tribute_fodder(s, controller, effect.tribute_races, effect.tribute_attributes)
-            chosen = self.agents[controller].choose_cost_fodder(s, controller, fodder, tneed, kind="tribute")
-            if len(set(chosen)) != tneed or any(c not in fodder for c in chosen):
-                chosen = Agent().choose_cost_fodder(s, controller, fodder, tneed, kind="tribute")
-            tributed = pay_tribute_cost(
-                s, controller, source_iid, tneed, effect.tribute_races, effect.tribute_attributes, chosen
-            )
-            names = ", ".join(s.inst(i).name for i in tributed)
-            self.log(f"  {s.players[controller].name} Tributes {names} (cost)")
-            self._changed()
-        cneed = getattr(effect, "counter_cost", 0)
-        if cneed:
-            ctype = getattr(effect, "counter_type", "spell")
-            pay_counter_cost(s, source_iid, cneed, ctype)
-            self.log(f"  {s.players[controller].name} removes {cneed} {ctype} counter(s) (cost)")
-            self._changed()
-        sneed = getattr(effect, "send_to_gy_cost", 0)
-        if sneed:
-            fodder = send_to_gy_fodder(
-                s,
-                controller,
-                source_iid,
-                effect.send_to_gy_filter,
-                effect.send_to_gy_face_up,
-                effect.send_to_gy_exclude_self,
-            )
-            chosen = self.agents[controller].choose_cost_fodder(s, controller, fodder, sneed, kind="send")
-            if len(set(chosen)) != sneed or any(c not in fodder for c in chosen):
-                chosen = Agent().choose_cost_fodder(s, controller, fodder, sneed, kind="send")
-            sent = pay_send_to_gy_cost(
-                s,
-                controller,
-                source_iid,
-                sneed,
-                effect.send_to_gy_filter,
-                effect.send_to_gy_face_up,
-                effect.send_to_gy_exclude_self,
-                chosen,
-            )
-            names = ", ".join(s.inst(i).name for i in sent)
-            self.log(f"  {s.players[controller].name} sends {names} to the GY (cost)")
+                chosen = Agent().choose_cost_fodder(s, controller, fodder, need, kind=kind)  # safe default
+            return chosen
+
+        lines = pay_costs(s, controller, source_iid, effect, picker)
+        for line in lines:
+            self.log(f"  {s.players[controller].name} {line} (cost)")
+        if lines:
             self._changed()
 
     def _fusion_summon(self, poly_iid: int, controller: int) -> None:
