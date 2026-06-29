@@ -156,7 +156,11 @@ class Engine:
         self._changed()
 
     def _process_draw_triggers(self) -> None:
-        """Solemn Wishes: pay each queued draw out to its drawer's face-up cards."""
+        """Solemn Wishes: pay each queued draw out to its drawer's face-up cards.
+
+        Unlike the gy_from_field / summon_events drain this needs no re-entrancy guard:
+        a draw trigger only gains Life Points, so draining one can't itself queue a draw.
+        """
         s = self.state
         while s.pending_draws:
             player = s.pending_draws.pop(0)
