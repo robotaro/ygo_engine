@@ -48,6 +48,7 @@ from .effects import (
     SearchMonsterToHand,
     SelfStatMod,
     SpecialSummonFromGraveyard,
+    SpellCounterHolder,
     StandbyUpkeep,
     SwitchTargetsToAttack,
     TakeControl,
@@ -623,6 +624,14 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(ReturnSelfToDeck(to_top=True),),
         ),
     ),
+    # --- Effects Batch 20: Spell Counters (accumulate + counter-cost / scaling) ---
+    # Royal Magical Library: a face-up monster Ignition effect that removes 3 Spell
+    # Counters (its activation cost) to draw 1. The counters themselves accumulate
+    # via the SpellCounterHolder in CONTINUOUS below.
+    "Royal Magical Library": (
+        Effect(timing="ignition", counter_cost=3, counter_type="spell", resolve=(Draw(count=1),)),
+    ),
+    # Mythical Beast Cerberus is purely passive (CONTINUOUS only) — no EFFECTS entry.
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
     # destroy that monster (NegatePreviousLink handles a monster on the Chain).
     "Divine Wrath": (  # discard 1; negate a monster effect + destroy that monster
@@ -906,6 +915,13 @@ CONTINUOUS: dict[str, tuple] = {
     # --- Effects Batch 19: Equips with a "sent to GY" parting effect (above) ---
     "Black Pendant": (EquipMod(atk=500),),
     "Horn of the Unicorn": (EquipMod(atk=700, defn=700),),
+    # --- Effects Batch 20: Spell Counter holders ---
+    # Royal Magical Library accumulates up to 3 Spell Counters (its draw cost).
+    "Royal Magical Library": (SpellCounterHolder(max_counters=3),),
+    # Mythical Beast Cerberus: no cap, +500 ATK per counter, wiped after it battles.
+    "Mythical Beast Cerberus": (
+        SpellCounterHolder(per_counter_atk=500, wipe_after_battle=True),
+    ),
     # --- Effects Batch 2: race/attribute-restricted flat Equip Spells ---
     "Beast Fangs": (EquipMod(atk=300, defn=300),),
     "Book of Secret Arts": (EquipMod(atk=300, defn=300),),

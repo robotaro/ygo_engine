@@ -16,7 +16,7 @@ import random
 from dataclasses import dataclass, field
 
 from .cards import CardDef
-from .effects import EquipMod, FieldMod, Piercing, SelfStatMod
+from .effects import EquipMod, FieldMod, Piercing, SelfStatMod, SpellCounterHolder
 from .enums import Phase, Position, Zone
 
 STARTING_LIFE_POINTS = 8000
@@ -80,6 +80,9 @@ class CardInstance:
     # Burst Breath). Recorded when the cost is paid so the payload can read the
     # tributed monster's printed stats after it has gone to the Graveyard.
     tributed_iids: list[int] = field(default_factory=list)
+    # Counters sitting on this card, keyed by type ("spell", ...). Cleared when the
+    # card leaves the field (Royal Magical Library, Mythical Beast Cerberus).
+    counters: dict[str, int] = field(default_factory=dict)
 
     @property
     def name(self) -> str:
@@ -246,6 +249,7 @@ class GameState:
         inst.control_equip_iid = None
         inst.gemini_unlocked = False  # a Gemini re-locks once it leaves the field
         inst.union_acted_on_turn = None
+        inst.counters = {}  # counters fall off when the card leaves the field
         inst.temp_atk = 0
         inst.temp_def = 0
 
@@ -375,6 +379,21 @@ class GameState:
             if isinstance(mod, SelfStatMod)
         )
 
+    def _spell_counter_delta(self, monster_iid: int, which: str) -> int:
+        """A monster's stat boost per Spell Counter on it (Mythical Beast Cerberus
+        gains 500 ATK each). Suppressed while the monster's effect is inactive."""
+        inst = self.cards[monster_iid]
+        if not inst.effects_active:
+            return 0
+        n = inst.counters.get("spell", 0)
+        if not n:
+            return 0
+        return sum(
+            n * (mod.per_counter_atk if which == "atk" else mod.per_counter_def)
+            for mod in inst.card.continuous
+            if isinstance(mod, SpellCounterHolder)
+        )
+
     def has_piercing(self, iid: int) -> bool:
         """Whether the monster deals piercing battle damage to a defender (a face-up
         Piercing rider on its own card, active only while its effect is on)."""
@@ -392,6 +411,7 @@ class GameState:
         )
         total += self._field_delta(iid, "atk")
         total += self._self_stat_delta(iid, "atk")
+        total += self._spell_counter_delta(iid, "atk")
         total += inst.temp_atk
         return max(0, total)
 
@@ -404,6 +424,7 @@ class GameState:
         )
         total += self._field_delta(iid, "def")
         total += self._self_stat_delta(iid, "def")
+        total += self._spell_counter_delta(iid, "def")
         total += inst.temp_def
         return max(0, total)
 

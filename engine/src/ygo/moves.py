@@ -140,6 +140,15 @@ class SetSpellTrap(Action):
 
 
 @dataclass(frozen=True)
+class ActivateMonsterEffect(Action):
+    """Activate a face-up monster's Ignition effect (e.g. Royal Magical Library
+    removes 3 Spell Counters to draw); may carry chosen targets."""
+
+    iid: int
+    targets: tuple[int, ...] = ()
+
+
+@dataclass(frozen=True)
 class DiscardCard(Action):
     """Discard a card (used to meet the End Phase hand-size limit)."""
 
@@ -213,6 +222,11 @@ def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) ->
         )
         if len(fodder) < tneed:
             return False
+    cneed = getattr(effect, "counter_cost", 0)
+    if cneed:
+        ctype = getattr(effect, "counter_type", "spell")
+        if state.inst(source_iid).counters.get(ctype, 0) < cneed:
+            return False
     return True
 
 
@@ -227,6 +241,13 @@ def pay_discard_cost(
     for iid in picks:
         state.send_to_graveyard(iid)
     return picks
+
+
+def pay_counter_cost(state: GameState, source_iid: int, count: int, ctype: str = "spell") -> None:
+    """Remove ``count`` counters of ``ctype`` from the source card as a cost (Royal
+    Magical Library)."""
+    counters = state.inst(source_iid).counters
+    counters[ctype] = max(0, counters.get(ctype, 0) - count)
 
 
 def pay_tribute_cost(
@@ -391,6 +412,23 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             continue
         for target_set in _enumerate_targets(state, player, effect.target):
             actions.append(ActivateSpell(iid, targets=target_set))
+
+    # Monster Ignition effects: a face-up monster you control with an "ignition"
+    # effect you may start at will (Royal Magical Library: remove 3 Spell Counters
+    # to draw). Gated by its condition and any activation cost (e.g. counters).
+    for iid in p.monster_zones:
+        if iid is None:
+            continue
+        inst = state.inst(iid)
+        if not inst.is_face_up or not inst.effects_active:
+            continue
+        effect = next((e for e in inst.card.effects if e.timing == "ignition"), None)
+        if effect is None or (effect.condition is not None and not effect.condition(state, player)):
+            continue
+        if not can_pay_costs(state, player, iid, effect):
+            continue
+        for target_set in _enumerate_targets(state, player, effect.target):
+            actions.append(ActivateMonsterEffect(iid, targets=target_set))
 
     return actions
 

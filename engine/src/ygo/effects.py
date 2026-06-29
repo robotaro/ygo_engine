@@ -105,6 +105,21 @@ class HandSpecialSummon:
 
 
 @dataclass(frozen=True)
+class SpellCounterHolder:
+    """A face-up card that accumulates Spell Counters: each time a Spell resolves it
+    gains 1 (up to ``max_counters``; 0 = no limit). Optional riders read elsewhere:
+    ``per_counter_atk``/``per_counter_def`` boost the monster's stats per counter
+    (Mythical Beast Cerberus), and ``wipe_after_battle`` clears them at the end of a
+    Battle Phase in which the monster battled. Counters live on the instance
+    (``CardInstance.counters['spell']``); this marker just declares the behaviour."""
+
+    max_counters: int = 0
+    per_counter_atk: int = 0
+    per_counter_def: int = 0
+    wipe_after_battle: bool = False
+
+
+@dataclass(frozen=True)
 class Piercing:
     """A face-up monster's continuous rider: when it attacks a Defense Position
     monster and its ATK exceeds the target's DEF, the excess (ATK - DEF) is dealt
@@ -881,4 +896,8 @@ class Effect:
     tribute_cost: int = 0
     tribute_races: frozenset = frozenset()
     tribute_attributes: frozenset = frozenset()
+    # Activation cost: remove this many counters of ``counter_type`` from the source
+    # card (Royal Magical Library removes 3 Spell Counters to draw).
+    counter_cost: int = 0
+    counter_type: str = "spell"
     resolve: tuple[Primitive, ...] = ()

@@ -14,9 +14,10 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .agents import Agent
-from .effects import DrawTrigger, StandbyUpkeep
+from .effects import DrawTrigger, SpellCounterHolder, StandbyUpkeep
 from .enums import Phase, Position, TURN_PHASES, Zone
 from .moves import (
+    ActivateMonsterEffect,
     ActivateSpell,
     ChainLink,
     DeclareAttack,
@@ -30,6 +31,7 @@ from .moves import (
     controls_toon_world,
     legal_actions,
     makeable_fusions,
+    pay_counter_cost,
     pay_discard_cost,
     pay_tribute_cost,
     response_options,
@@ -264,6 +266,8 @@ class Engine:
                 return
             if isinstance(choice, ActivateSpell):
                 self._activate_as_chain(choice, tp)
+            elif isinstance(choice, ActivateMonsterEffect):
+                self._activate_monster_effect(choice, tp)
             elif isinstance(choice, NormalSummon):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._changed()
@@ -302,13 +306,14 @@ class Engine:
             menu = legal_actions(s, tp) + [Pass()]
             choice = self.agents[tp].decide(s, menu)
             if isinstance(choice, Pass):
-                return
+                break
             if isinstance(choice, DeclareAttack):
                 self._declare_attack(choice, tp)
             else:
                 self.log(f"  {s.players[tp].name}: {apply(s, choice)}")
                 self._check_life_points()
                 self._changed()
+        self._wipe_spell_counters_after_battle()  # Mythical Beast Cerberus
 
     def _declare_attack(self, action: DeclareAttack, tp: int) -> None:
         """Declare an attack, open a response window, then resolve it if still valid."""
@@ -377,6 +382,16 @@ class Engine:
         self._pay_activation_cost(action.iid, controller, effect)
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
 
+    def _activate_monster_effect(self, action: ActivateMonsterEffect, controller: int) -> None:
+        """Turn player activates a face-up monster's Ignition effect (Royal Magical
+        Library). Pay its cost, then resolve it as a one-link Chain."""
+        s = self.state
+        card = s.inst(action.iid).card
+        effect = next((e for e in card.effects if e.timing == "ignition"), card.effects[0])
+        self.log(f"  {s.players[controller].name} activates {card.name}'s effect")
+        self._pay_activation_cost(action.iid, controller, effect)
+        self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
+
     def _pay_activation_cost(self, source_iid: int, controller: int, effect) -> None:
         """Pay an effect's activation cost — the discard cost and/or the Tribute
         cost. The player chooses the fodder (bot via heuristic, human via a prompt),
@@ -403,6 +418,12 @@ class Engine:
             )
             names = ", ".join(s.inst(i).name for i in tributed)
             self.log(f"  {s.players[controller].name} Tributes {names} (cost)")
+            self._changed()
+        cneed = getattr(effect, "counter_cost", 0)
+        if cneed:
+            ctype = getattr(effect, "counter_type", "spell")
+            pay_counter_cost(s, source_iid, cneed, ctype)
+            self.log(f"  {s.players[controller].name} removes {cneed} {ctype} counter(s) (cost)")
             self._changed()
 
     def _fusion_summon(self, poly_iid: int, controller: int) -> None:
@@ -533,6 +554,11 @@ class Engine:
                 continue
             resolve_effect(s, link.effect, link.source_iid, link.targets, link.event)
             self._check_life_points()
+            # "Each time a Spell Card resolves, place 1 Spell Counter" (Royal Magical
+            # Library, Mythical Beast Cerberus) — one per resolved Spell link.
+            spell = s.cards.get(link.source_iid)
+            if spell is not None and spell.card.is_spell:
+                self._place_spell_counters()
             self._changed()
             self._pace()
         # Spent, non-permanent Spells/Traps go to the Graveyard.
@@ -646,6 +672,42 @@ class Engine:
         else:
             s.move_control(monster.iid, original, index)
             self.log(f"  {monster.name} returns to {s.players[original].name}")
+
+    def _place_spell_counters(self) -> None:
+        """A Spell resolved: every face-up card with a SpellCounterHolder gains 1
+        Spell Counter, up to its max (0 = no limit)."""
+        s = self.state
+        bumped = False
+        for inst in s.cards.values():
+            if inst.zone not in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD) or not inst.is_face_up:
+                continue
+            holder = next((m for m in inst.card.continuous if isinstance(m, SpellCounterHolder)), None)
+            if holder is None:
+                continue
+            current = inst.counters.get("spell", 0)
+            if holder.max_counters and current >= holder.max_counters:
+                continue
+            inst.counters["spell"] = current + 1
+            bumped = True
+        if bumped:
+            self._changed()
+
+    def _wipe_spell_counters_after_battle(self) -> None:
+        """End of the Battle Phase: a monster that battled and whose SpellCounterHolder
+        says so loses all its Spell Counters (Mythical Beast Cerberus)."""
+        s = self.state
+        for iid in s.players[s.turn_player].monster_zones:
+            if iid is None:
+                continue
+            inst = s.inst(iid)
+            if not inst.attacked_this_turn or not inst.counters.get("spell"):
+                continue
+            if any(
+                isinstance(m, SpellCounterHolder) and m.wipe_after_battle
+                for m in inst.card.continuous
+            ):
+                inst.counters["spell"] = 0
+                self._changed()
 
     def _check_field_to_gy_triggers(self) -> None:
         """Reconcile the board after cards leave the field: destroy orphaned Equips
