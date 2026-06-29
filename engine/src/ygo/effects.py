@@ -913,6 +913,71 @@ class SwitchTargetsToAttack(Primitive):
             ctx.state.inst(iid).position = Position.FACE_UP_ATTACK
 
 
+_POSITIONS = {
+    "attack": Position.FACE_UP_ATTACK,
+    "defense": Position.FACE_UP_DEFENSE,
+    "face_down": Position.FACE_DOWN_DEFENSE,
+}
+
+
+def _set_position(inst, to: str) -> None:
+    """Move a monster to a battle position. ``to`` is "attack"/"defense"/"face_down"
+    (the latter, Book of Moon, turns it face-down so its effects switch off and its Flip
+    Effect can re-trigger) or "toggle" (rotate a face-up monster ATK<->DEF)."""
+    if to == "toggle":
+        inst.position = (
+            Position.FACE_UP_DEFENSE
+            if inst.position is Position.FACE_UP_ATTACK
+            else Position.FACE_UP_ATTACK
+        )
+    else:
+        inst.position = _POSITIONS[to]
+
+
+@dataclass(frozen=True)
+class ChangeTargetPosition(Primitive):
+    """Change the targeted monster(s) to ``to`` ("attack"/"defense"/"face_down") — Block
+    Attack (face-up Defense), Book of Moon / Ready for Intercepting (face-down Defense).
+    Only acts on monsters already face-up (it never flips a face-down monster face-up, so
+    no Flip Effect fires here)."""
+
+    to: str = "defense"
+
+    def execute(self, ctx: EffectContext) -> None:
+        for iid in ctx.targets:
+            inst = ctx.state.cards.get(iid)
+            if inst is not None and inst.is_face_up:
+                _set_position(inst, self.to)
+
+
+@dataclass(frozen=True)
+class ChangeAllPositions(Primitive):
+    """Change every face-up monster (optionally one ``side`` / level band) to ``to``:
+    "defense" (Earthquake, No Entry!!), "attack" (Level Limit - Area A) or "toggle"
+    (Zero Gravity, Windstorm of Etaqua — rotate each ATK<->DEF)."""
+
+    side: str | None = None  # None = both, else SELF / OPPONENT
+    to: str = "defense"
+    min_level: int | None = None
+    max_level: int | None = None
+
+    def execute(self, ctx: EffectContext) -> None:
+        players = (0, 1) if self.side is None else (ctx.side(self.side),)
+        for pl in players:
+            for iid in list(ctx.state.players[pl].monster_zones):
+                if iid is None:
+                    continue
+                inst = ctx.state.inst(iid)
+                if not inst.is_face_up:
+                    continue
+                lvl = inst.card.level or 0
+                if self.min_level is not None and lvl < self.min_level:
+                    continue
+                if self.max_level is not None and lvl > self.max_level:
+                    continue
+                _set_position(inst, self.to)
+
+
 @dataclass(frozen=True)
 class InflictDamage(Primitive):
     """Reduce a player's Life Points (burn). The amount is the flat ``amount``, or

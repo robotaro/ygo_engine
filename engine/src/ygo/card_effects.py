@@ -16,6 +16,8 @@ from .effects import (
     AttackTargetProtection,
     BanishAttackingDefensePositionMonsters,
     BanishTargets,
+    ChangeAllPositions,
+    ChangeTargetPosition,
     BattleIndestructible,
     BounceTargetsToDeck,
     BounceTargetsToHand,
@@ -1084,6 +1086,61 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT),
             resolve=(BanishAttackingDefensePositionMonsters(),),
+        ),
+    ),
+    # --- Batch 46: battle-position change ---
+    # Targeted:
+    "Block Attack": (  # change 1 opponent's Attack-Position monster to Defense
+        Effect(
+            timing="ignition",
+            target=TargetSpec(count=1, where="opponent_monsters", attack_position=True),
+            resolve=(ChangeTargetPosition(to="defense"),),
+        ),
+    ),
+    "Book of Moon": (  # Quick-Play: change 1 face-up monster to face-down Defense
+        Effect(
+            timing="quick",
+            target=TargetSpec(count=1, where="any_monster", face_up=True),
+            resolve=(ChangeTargetPosition(to="face_down"),),
+        ),
+    ),
+    "Ready for Intercepting": (  # change 1 Warrior/Spellcaster to face-down Defense
+        Effect(
+            speed=2,
+            timing="ignition",
+            target=TargetSpec(
+                count=1,
+                where="any_monster",
+                face_up=True,
+                races=frozenset({"Warrior", "Spellcaster"}),
+            ),
+            resolve=(ChangeTargetPosition(to="face_down"),),
+        ),
+    ),
+    # Mass:
+    "Earthquake": (  # change all face-up monsters to Defense
+        Effect(timing="ignition", resolve=(ChangeAllPositions(to="defense"),)),
+    ),
+    "No Entry!!": (  # Normal Trap: change all face-up monsters to Defense
+        Effect(speed=2, timing="ignition", resolve=(ChangeAllPositions(to="defense"),)),
+    ),
+    "Zero Gravity": (  # Normal Trap: rotate every face-up monster's position
+        Effect(speed=2, timing="ignition", resolve=(ChangeAllPositions(to="toggle"),)),
+    ),
+    "Windstorm of Etaqua": (  # rotate every face-up monster the opponent controls
+        Effect(
+            speed=2,
+            timing="ignition",
+            resolve=(ChangeAllPositions(side=OPPONENT, to="toggle"),),
+        ),
+    ),
+    # Attack-reaction (the equip "+500 ATK" mode of Kunai is omitted):
+    "Kunai with Chain": (  # change the attacking monster to Defense (the attack stops)
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            resolve=(ChangeTargetPosition(to="defense"),),
         ),
     ),
     "Mystical Space Typhoon": (
