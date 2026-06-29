@@ -343,6 +343,7 @@
     }
     if (phase !== 'battle_phase' || selectedAttacker == null) return
     if (validTargets.includes(iid)) {
+      lunge(selectedAttacker, iid)
       sendIntent({ kind: 'attack', attacker: selectedAttacker, target: iid })
       selectedAttacker = null
     }
@@ -351,9 +352,41 @@
   function onDirectAttack() {
     if (!yourTurn || phase !== 'battle_phase' || selectedAttacker == null) return
     if (validTargets.includes(null)) {
+      lunge(selectedAttacker, null)
       sendIntent({ kind: 'attack', attacker: selectedAttacker, target: null })
       selectedAttacker = null
     }
+  }
+
+  // The attacker lunges toward its target (a monster, or the opponent on a
+  // direct attack) and recoils, while the engine resolves the battle.
+  function lunge(attackerIid, targetIid) {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const aEl = document.querySelector(`.slot.mon.own[data-iid="${attackerIid}"]`)
+    if (!aEl || !aEl.animate) return
+    const tEl =
+      targetIid != null
+        ? document.querySelector(`.slot.mon[data-iid="${targetIid}"]`)
+        : document.querySelector('.playerbar.opp')
+    const a = aEl.getBoundingClientRect()
+    let dx = 0
+    let dy = -44
+    if (tEl) {
+      const t = tEl.getBoundingClientRect()
+      dx = t.left + t.width / 2 - (a.left + a.width / 2)
+      dy = t.top + t.height / 2 - (a.top + a.height / 2)
+    }
+    const k = 0.6 // charge most of the way, then snap back
+    aEl.style.zIndex = '20'
+    const anim = aEl.animate(
+      [
+        { transform: 'translate(0, 0)' },
+        { transform: `translate(${dx * k}px, ${dy * k}px) scale(1.1)`, offset: 0.4 },
+        { transform: 'translate(0, 0)' },
+      ],
+      { duration: 440, easing: 'cubic-bezier(.34, 1.15, .5, 1)' },
+    )
+    anim.onfinish = anim.oncancel = () => (aEl.style.zIndex = '')
   }
 
   // A Graveyard card may be a target (Monster Reborn picks either GY; Call of
@@ -498,6 +531,7 @@
         {#each opp.monsterZones as slot}
           <div
             class="slot mon"
+            data-iid={slot?.iid}
             class:targetable={slot &&
               ((selectedAttacker != null && validTargets.includes(slot.iid)) ||
                 targetCandidates.includes(slot.iid))}
@@ -550,6 +584,7 @@
           {#if slot}
             <div
               class="slot mon own"
+              data-iid={slot.iid}
               class:selected={selectedAttacker === slot.iid || unionSource === slot.iid}
               class:tribute={pendingTribute?.chosen.includes(slot.iid)}
               class:targetable={targetCandidates.includes(slot.iid) || unionHosts.includes(slot.iid)}
