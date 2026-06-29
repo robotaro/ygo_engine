@@ -345,6 +345,8 @@ def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) ->
         state.inst(source_iid).counters.get(effect.counter_type, 0) < effect.counter_cost
     ):
         return False
+    if effect.life_cost and state.players[controller].life_points <= effect.life_cost:
+        return False
     return True
 
 
@@ -365,6 +367,9 @@ def pay_costs(state: GameState, controller: int, source_iid: int, effect, picker
     if effect.counter_cost:
         pay_counter_cost(state, source_iid, effect.counter_cost, effect.counter_type)
         lines.append(f"removes {effect.counter_cost} {effect.counter_type} counter(s)")
+    if effect.life_cost:
+        state.players[controller].life_points -= effect.life_cost
+        lines.append(f"pays {effect.life_cost} LP")
     return lines
 
 
@@ -376,6 +381,7 @@ def _has_activation_cost(effect) -> bool:
         or effect.tribute_cost
         or effect.send_to_gy_cost
         or effect.counter_cost
+        or effect.life_cost
     )
 
 
@@ -560,6 +566,10 @@ def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
         or spec.card_kind
         or spec.names
         or spec.name_contains
+        or spec.max_atk is not None
+        or spec.min_level is not None
+        or spec.max_level is not None
+        or spec.normal_only
     ):
         return iids
     out: list[int] = []
@@ -569,6 +579,14 @@ def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
         if spec.races and card.race not in spec.races:
             continue
         if spec.attributes and card.attribute not in spec.attributes:
+            continue
+        if spec.max_atk is not None and (card.attack or 0) > spec.max_atk:
+            continue
+        if spec.min_level is not None and (card.level or 0) < spec.min_level:
+            continue
+        if spec.max_level is not None and (card.level or 0) > spec.max_level:
+            continue
+        if spec.normal_only and not card.is_vanilla:
             continue
         if spec.face_up and not inst.is_face_up:
             continue
@@ -620,6 +638,8 @@ def _target_pool(state: GameState, controller: int, spec) -> list[int]:
         candidates = _graveyard_monsters(state, (0, 1))
     elif spec.where == "own_graveyard_monster":
         candidates = _graveyard_monsters(state, (controller,))
+    elif spec.where == "opponent_graveyard_monster":
+        candidates = _graveyard_monsters(state, (opp,))
     else:
         candidates = []
     return _filter_targets(state, candidates, spec)

@@ -223,11 +223,14 @@ class TargetSpec:
     "any_monster", "spell_trap_field" (both players' Spell/Traps + Field Spells),
     "any_card_field" (every card on the field), "opponent_card_field" (every card the
     opponent controls), "any_graveyard_monster" (either GY), "own_graveyard_monster"
-    (the controller's GY only).
+    (the controller's GY only), "opponent_graveyard_monster" (the opponent's GY only —
+    Autonomous Action Unit steals a revival target).
 
     ``races`` / ``attributes`` optionally narrow a monster pool to those races
     (e.g. an Equip that may only attach to a Spellcaster) or attributes — empty
-    means "any".
+    means "any". ``max_atk`` / ``min_level`` / ``max_level`` bound a revival target's
+    printed ATK / Level (Limit Reverse fetches a 1000-or-less-ATK monster from the GY);
+    ``normal_only`` restricts it to a Normal (vanilla) monster (Birthright, Silent Doom).
     """
 
     count: int = 1
@@ -246,6 +249,12 @@ class TargetSpec:
     # an archetype substring (Ancient Gear Tank -> any "Ancient Gear" monster).
     names: frozenset = frozenset()
     name_contains: frozenset = frozenset()
+    # Revival-target bounds (own/any/opponent GY pools): cap printed ATK, bound the
+    # Level, or require a Normal (vanilla) monster. Unset = no restriction.
+    max_atk: int | None = None
+    min_level: int | None = None
+    max_level: int | None = None
+    normal_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -948,14 +957,16 @@ class ReturnSpellFromGraveyardToHand(Primitive):
 class SpecialSummonFromGraveyard(Primitive):
     """Special Summon the targeted Graveyard monster to the controller's side.
 
-    The monster arrives face-up Attack (Monster Reborn also allows Defense; we
-    keep Attack for now). With ``link`` set (Call of the Haunted), the source card
-    and the summoned monster are bonded both ways: if either later leaves the
-    field, ``GameState`` / the engine destroy the other (see ``_cleanup_linked``).
-    The summon fails quietly with no free Monster Zone or no valid target.
+    The monster arrives in ``position`` (default face-up Attack; Silent Doom /
+    Soul Resurrection summon in face-up Defense). With ``link`` set (Call of the
+    Haunted, Premature Burial), the source card and the summoned monster are bonded
+    both ways: if either later leaves the field, ``GameState`` / the engine destroy
+    the other (see ``_cleanup_linked``). The summon fails quietly with no free
+    Monster Zone or no valid target.
     """
 
     link: bool = False
+    position: Position = Position.FACE_UP_ATTACK
 
     def execute(self, ctx: EffectContext) -> None:
         target = ctx.targets[0] if ctx.targets else None
@@ -969,7 +980,7 @@ class SpecialSummonFromGraveyard(Primitive):
         index = ctx.state.first_empty_monster_zone(ctx.controller)
         if index is None:
             return
-        ctx.state.place_monster(target, ctx.controller, index, Position.FACE_UP_ATTACK)
+        ctx.state.place_monster(target, ctx.controller, index, self.position)
         inst.summoned_this_turn = True
         if self.link:
             ctx.state.inst(ctx.source_iid).linked_to = target
@@ -1055,4 +1066,8 @@ class Effect:
     send_to_gy_filter: "CardFilter | None" = None
     send_to_gy_face_up: bool = False
     send_to_gy_exclude_self: bool = False
+    # Activation cost: pay this many Life Points (Premature Burial pays 800, Autonomous
+    # Action Unit 1500). Gated into enumeration — only offered while LP exceed the cost
+    # (you can't pay a cost that would drop you to 0 or below).
+    life_cost: int = 0
     resolve: tuple[Primitive, ...] = ()

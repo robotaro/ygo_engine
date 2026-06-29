@@ -1010,6 +1010,96 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(SpecialSummonFromGraveyard(link=True),),
         ),
     ),
+    # --- Batch 28: reborn-style Spell/Traps (SS another monster from a Graveyard) ---
+    # Premature Burial — Equip Spell: pay 800 LP, revive any monster from your GY in
+    # Attack and bond to it (it dies if this Equip leaves the field).
+    "Premature Burial": (
+        Effect(
+            timing="ignition",
+            life_cost=800,
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="own_graveyard_monster"),
+            resolve=(SpecialSummonFromGraveyard(link=True),),
+        ),
+    ),
+    # Birthright — Continuous Trap: revive a Normal Monster from your GY in Attack.
+    "Birthright": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="own_graveyard_monster", normal_only=True),
+            resolve=(SpecialSummonFromGraveyard(link=True),),
+        ),
+    ),
+    # Silent Doom — Normal Spell: revive a Normal Monster from your GY in Defense
+    # (a Defense-Position monster can't declare attacks — the card's "cannot attack").
+    "Silent Doom": (
+        Effect(
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="own_graveyard_monster", normal_only=True),
+            resolve=(SpecialSummonFromGraveyard(position=Position.FACE_UP_DEFENSE),),
+        ),
+    ),
+    # Soul Resurrection — Continuous Trap: revive a Normal Monster in Defense, bonded.
+    "Soul Resurrection": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="own_graveyard_monster", normal_only=True),
+            resolve=(SpecialSummonFromGraveyard(link=True, position=Position.FACE_UP_DEFENSE),),
+        ),
+    ),
+    # Limit Reverse — Continuous Trap: revive a 1000-or-less-ATK monster in Attack,
+    # bonded (the position-change destruction rider is not modelled).
+    "Limit Reverse": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="own_graveyard_monster", max_atk=1000),
+            resolve=(SpecialSummonFromGraveyard(link=True),),
+        ),
+    ),
+    # O - Oversoul — Normal Spell: revive an "Elemental HERO" Normal Monster.
+    "O - Oversoul": (
+        Effect(
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            target=TargetSpec(
+                count=1,
+                where="own_graveyard_monster",
+                normal_only=True,
+                name_contains=frozenset({"Elemental HERO"}),
+            ),
+            resolve=(SpecialSummonFromGraveyard(),),
+        ),
+    ),
+    # Fossil Excavation — Continuous Trap: discard 1, revive a Dinosaur from your GY,
+    # bonded (the "negate its effects" rider is not modelled).
+    "Fossil Excavation": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            discard_cost=1,
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="own_graveyard_monster", races=frozenset({"Dinosaur"})),
+            resolve=(SpecialSummonFromGraveyard(link=True),),
+        ),
+    ),
+    # Autonomous Action Unit — Equip Spell: pay 1500 LP, steal a monster from the
+    # OPPONENT's GY to your side in Attack, bonded.
+    "Autonomous Action Unit": (
+        Effect(
+            timing="ignition",
+            life_cost=1500,
+            condition=_has_free_monster_zone,
+            target=TargetSpec(count=1, where="opponent_graveyard_monster"),
+            resolve=(SpecialSummonFromGraveyard(link=True),),
+        ),
+    ),
     # --- Slice 7: Field Spells (stat layers) + one Continuous attack restriction ---
     # These have no resolution effect; activating them just places them face-up,
     # and their `continuous` layer (below) does the rest.
