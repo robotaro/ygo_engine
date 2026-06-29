@@ -405,9 +405,9 @@ class Engine:
         need = getattr(effect, "discard_cost", 0)
         if need:
             fodder = [i for i in s.players[controller].hand if i != source_iid]
-            chosen = self.agents[controller].choose_discards(s, controller, fodder, need)
+            chosen = self.agents[controller].choose_cost_fodder(s, controller, fodder, need, kind="discard")
             if len(set(chosen)) != need or any(c not in fodder for c in chosen):
-                chosen = Agent().choose_discards(s, controller, fodder, need)  # safe default
+                chosen = Agent().choose_cost_fodder(s, controller, fodder, need, kind="discard")
             discarded = pay_discard_cost(s, controller, source_iid, need, chosen)
             names = ", ".join(s.inst(i).name for i in discarded)
             self.log(f"  {s.players[controller].name} discards {names} (cost)")
@@ -415,9 +415,9 @@ class Engine:
         tneed = getattr(effect, "tribute_cost", 0)
         if tneed:
             fodder = tribute_fodder(s, controller, effect.tribute_races, effect.tribute_attributes)
-            chosen = self.agents[controller].choose_cost_tributes(s, controller, fodder, tneed)
+            chosen = self.agents[controller].choose_cost_fodder(s, controller, fodder, tneed, kind="tribute")
             if len(set(chosen)) != tneed or any(c not in fodder for c in chosen):
-                chosen = Agent().choose_cost_tributes(s, controller, fodder, tneed)  # safe default
+                chosen = Agent().choose_cost_fodder(s, controller, fodder, tneed, kind="tribute")
             tributed = pay_tribute_cost(
                 s, controller, source_iid, tneed, effect.tribute_races, effect.tribute_attributes, chosen
             )
@@ -440,9 +440,9 @@ class Engine:
                 effect.send_to_gy_face_up,
                 effect.send_to_gy_exclude_self,
             )
-            chosen = self.agents[controller].choose_cost_sends(s, controller, fodder, sneed)
+            chosen = self.agents[controller].choose_cost_fodder(s, controller, fodder, sneed, kind="send")
             if len(set(chosen)) != sneed or any(c not in fodder for c in chosen):
-                chosen = Agent().choose_cost_sends(s, controller, fodder, sneed)  # safe default
+                chosen = Agent().choose_cost_fodder(s, controller, fodder, sneed, kind="send")
             sent = pay_send_to_gy_cost(
                 s,
                 controller,

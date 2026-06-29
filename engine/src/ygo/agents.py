@@ -51,34 +51,19 @@ class Agent:
         """Pick one card iid from a list (e.g. which Fusion Monster to summon)."""
         return option_iids[0] if option_iids else None
 
-    def choose_discards(self, state: GameState, controller: int, candidates: list[int], count: int):
-        """Pick ``count`` cards from the hand to discard as a cost. Default: the
-        weakest fodder (lowest ATK, then lowest Level) — keep the good cards."""
+    def choose_cost_fodder(
+        self, state: GameState, controller: int, candidates: list[int], count: int, *, kind: str = "discard"
+    ):
+        """Pick ``count`` cards to pay an activation cost — a discard, a Tribute, or a
+        send-to-GY (``kind`` is "discard"/"tribute"/"send"; it only affects a human's
+        prompt). Default: the weakest fodder (lowest ATK, then Level) — keep the good
+        cards. Used for Tribute to the Doomed, Spiritual Fire Art, Daedalus, etc."""
         ranked = sorted(
             candidates,
             key=lambda i: (state.inst(i).card.attack or 0, state.inst(i).card.level or 0),
         )
         return tuple(ranked[:count])
 
-    def choose_cost_tributes(self, state: GameState, controller: int, candidates: list[int], count: int):
-        """Pick ``count`` of your monsters to Tribute as an activation cost (Spiritual
-        Fire Art, Icarus Attack). Count-based (not Level-total). Default: the weakest
-        (lowest ATK, then lowest Level) — keep the good monsters on the board."""
-        ranked = sorted(
-            candidates,
-            key=lambda i: (state.inst(i).card.attack or 0, state.inst(i).card.level or 0),
-        )
-        return tuple(ranked[:count])
-
-    def choose_cost_sends(self, state: GameState, controller: int, candidates: list[int], count: int):
-        """Pick ``count`` of your field cards to send to the GY as an activation cost
-        (Levia-Dragon - Daedalus, Ultimate Baseball Kid). Default: the weakest fodder
-        (lowest ATK, then lowest Level)."""
-        ranked = sorted(
-            candidates,
-            key=lambda i: (state.inst(i).card.attack or 0, state.inst(i).card.level or 0),
-        )
-        return tuple(ranked[:count])
 
     def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):
         """Pick monsters to Tribute whose Levels total >= ``required`` (Ritual
@@ -121,13 +106,9 @@ class RandomAgent(Agent):
     def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
         return self.rng.choice(option_iids) if option_iids else None
 
-    def choose_discards(self, state: GameState, controller: int, candidates: list[int], count: int):
-        return tuple(self.rng.sample(candidates, count)) if len(candidates) >= count else tuple(candidates)
-
-    def choose_cost_tributes(self, state: GameState, controller: int, candidates: list[int], count: int):
-        return tuple(self.rng.sample(candidates, count)) if len(candidates) >= count else tuple(candidates)
-
-    def choose_cost_sends(self, state: GameState, controller: int, candidates: list[int], count: int):
+    def choose_cost_fodder(
+        self, state: GameState, controller: int, candidates: list[int], count: int, *, kind: str = "discard"
+    ):
         return tuple(self.rng.sample(candidates, count)) if len(candidates) >= count else tuple(candidates)
 
     def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):

@@ -99,4 +99,4 @@ def test_choose_discards_default_dumps_the_weakest():
     s = GameState.new(("A", "B"), seed=0)
     weak = _in_hand(s, "Mystical Elf")  # ATK 800
     strong = _in_hand(s, "Summoned Skull")  # ATK 2500
-    assert Agent().choose_discards(s, 0, [weak.iid, strong.iid], 1) == (weak.iid,)
+    assert Agent().choose_cost_fodder(s, 0, [weak.iid, strong.iid], 1, kind="discard") == (weak.iid,)

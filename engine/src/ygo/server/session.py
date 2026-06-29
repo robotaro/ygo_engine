@@ -145,8 +145,21 @@ class HumanAgent(Agent):
                 return tuple(chosen)
             self.session.send({"type": "illegal", "intent": intent})
 
-    def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
-        """Pick one card from a list (e.g. which Fusion Monster to summon)."""
+    @staticmethod
+    def _card_option(state: GameState, iid: int) -> dict:
+        """The card-summary dict the client renders in a 'choose' prompt."""
+        c = state.inst(iid).card
+        return {
+            "iid": iid,
+            "name": c.name,
+            "attack": c.attack,
+            "defense": c.defense,
+            "level": c.level,
+            "imageId": c.image_id,
+        }
+
+    def _choose_one(self, state: GameState, prompt: str, pool: list[int]) -> int:
+        """Send a single-card 'choose' decision and block until a valid pick."""
         self.session.send(
             {
                 "type": "decision",
@@ -154,17 +167,7 @@ class HumanAgent(Agent):
                 "player": self.player,
                 "state": state_to_dict(state, self.player),
                 "prompt": prompt,
-                "options": [
-                    {
-                        "iid": i,
-                        "name": state.inst(i).card.name,
-                        "attack": state.inst(i).card.attack,
-                        "defense": state.inst(i).card.defense,
-                        "level": state.inst(i).card.level,
-                        "imageId": state.inst(i).card.image_id,
-                    }
-                    for i in option_iids
-                ],
+                "options": [self._card_option(state, i) for i in pool],
             }
         )
         while True:
@@ -172,122 +175,32 @@ class HumanAgent(Agent):
             if intent is None:
                 raise EngineAborted()
             iid = intent.get("iid")
-            if intent.get("kind") == "choose" and iid in option_iids:
+            if intent.get("kind") == "choose" and iid in pool:
                 return iid
             self.session.send({"type": "illegal", "intent": intent})
 
-    def choose_discards(self, state: GameState, controller: int, candidates: list[int], count: int):
-        """Activation cost: pick ``count`` hand cards to discard. Reuses the generic
-        single-card 'choose' prompt, once per card to discard."""
-        chosen: list[int] = []
-        pool = list(candidates)
-        for _ in range(count):
-            self.session.send(
-                {
-                    "type": "decision",
-                    "context": "choose",
-                    "player": self.player,
-                    "state": state_to_dict(state, self.player),
-                    "prompt": f"Discard {count} card(s) as a cost — choose {count - len(chosen)} more",
-                    "options": [
-                        {
-                            "iid": i,
-                            "name": state.inst(i).card.name,
-                            "attack": state.inst(i).card.attack,
-                            "defense": state.inst(i).card.defense,
-                            "level": state.inst(i).card.level,
-                            "imageId": state.inst(i).card.image_id,
-                        }
-                        for i in pool
-                    ],
-                }
-            )
-            while True:
-                intent = self.session.wait_for_intent()
-                if intent is None:
-                    raise EngineAborted()
-                iid = intent.get("iid")
-                if intent.get("kind") == "choose" and iid in pool:
-                    chosen.append(iid)
-                    pool.remove(iid)
-                    break
-                self.session.send({"type": "illegal", "intent": intent})
-        return tuple(chosen)
+    def choose_card(self, state: GameState, prompt: str, option_iids: list[int]):
+        """Pick one card from a list (e.g. which Fusion Monster to summon)."""
+        pool = list(option_iids)
+        return self._choose_one(state, prompt, pool) if pool else None
 
-    def choose_cost_tributes(self, state: GameState, controller: int, candidates: list[int], count: int):
-        """Activation cost: pick ``count`` of your monsters to Tribute. Reuses the
-        generic single-card 'choose' prompt, once per monster to Tribute."""
+    def choose_cost_fodder(
+        self, state: GameState, controller: int, candidates: list[int], count: int, *, kind: str = "discard"
+    ):
+        """Activation cost: pick ``count`` cards one at a time — a discard, a Tribute,
+        or a send-to-GY (``kind`` only changes the prompt wording). Reuses the generic
+        single-card 'choose' prompt."""
+        verb = {
+            "discard": f"Discard {count} card(s) as a cost",
+            "tribute": f"Tribute {count} monster(s) as a cost",
+            "send": f"Send {count} card(s) to the GY as a cost",
+        }.get(kind, f"Pay a cost of {count} card(s)")
         chosen: list[int] = []
         pool = list(candidates)
         for _ in range(count):
-            self.session.send(
-                {
-                    "type": "decision",
-                    "context": "choose",
-                    "player": self.player,
-                    "state": state_to_dict(state, self.player),
-                    "prompt": f"Tribute {count} monster(s) as a cost — choose {count - len(chosen)} more",
-                    "options": [
-                        {
-                            "iid": i,
-                            "name": state.inst(i).card.name,
-                            "attack": state.inst(i).card.attack,
-                            "defense": state.inst(i).card.defense,
-                            "level": state.inst(i).card.level,
-                            "imageId": state.inst(i).card.image_id,
-                        }
-                        for i in pool
-                    ],
-                }
-            )
-            while True:
-                intent = self.session.wait_for_intent()
-                if intent is None:
-                    raise EngineAborted()
-                iid = intent.get("iid")
-                if intent.get("kind") == "choose" and iid in pool:
-                    chosen.append(iid)
-                    pool.remove(iid)
-                    break
-                self.session.send({"type": "illegal", "intent": intent})
-        return tuple(chosen)
-
-    def choose_cost_sends(self, state: GameState, controller: int, candidates: list[int], count: int):
-        """Activation cost: pick ``count`` of your field cards to send to the GY.
-        Reuses the generic single-card 'choose' prompt, once per card to send."""
-        chosen: list[int] = []
-        pool = list(candidates)
-        for _ in range(count):
-            self.session.send(
-                {
-                    "type": "decision",
-                    "context": "choose",
-                    "player": self.player,
-                    "state": state_to_dict(state, self.player),
-                    "prompt": f"Send {count} card(s) to the GY as a cost — choose {count - len(chosen)} more",
-                    "options": [
-                        {
-                            "iid": i,
-                            "name": state.inst(i).card.name,
-                            "attack": state.inst(i).card.attack,
-                            "defense": state.inst(i).card.defense,
-                            "level": state.inst(i).card.level,
-                            "imageId": state.inst(i).card.image_id,
-                        }
-                        for i in pool
-                    ],
-                }
-            )
-            while True:
-                intent = self.session.wait_for_intent()
-                if intent is None:
-                    raise EngineAborted()
-                iid = intent.get("iid")
-                if intent.get("kind") == "choose" and iid in pool:
-                    chosen.append(iid)
-                    pool.remove(iid)
-                    break
-                self.session.send({"type": "illegal", "intent": intent})
+            iid = self._choose_one(state, f"{verb} — choose {count - len(chosen)} more", pool)
+            chosen.append(iid)
+            pool.remove(iid)
         return tuple(chosen)
 
     def choose_tributes(self, state: GameState, controller: int, candidates: list[int], required: int):
