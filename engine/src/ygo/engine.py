@@ -598,6 +598,8 @@ class Engine:
         inst = self.state.cards.get(iid)
         if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
             return  # the Summon was negated / the monster left the field
+        if not inst.effects_active:
+            return  # a Gemini Normal Summoned (not yet Gemini Summoned) has no live effect
         effect = next(
             (
                 e
@@ -736,6 +738,8 @@ class Engine:
         for inst in s.cards.values():
             if inst.zone not in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD) or not inst.is_face_up:
                 continue
+            if not inst.effects_active:
+                continue  # a Gemini not yet Gemini Summoned has no live counter holder
             holder = next((m for m in inst.card.continuous if isinstance(m, SpellCounterHolder)), None)
             if holder is None or not holder.accumulates:
                 continue  # Breaker only gets its summon counter — never accrues more
@@ -757,6 +761,8 @@ class Engine:
             inst = s.inst(iid)
             if not inst.attacked_this_turn or not inst.counters.get("spell"):
                 continue
+            if not inst.effects_active:
+                continue  # a Gemini not yet Gemini Summoned has no live counter holder
             if any(
                 isinstance(m, SpellCounterHolder) and m.wipe_after_battle
                 for m in inst.card.continuous
