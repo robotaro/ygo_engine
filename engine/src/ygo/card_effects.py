@@ -169,6 +169,11 @@ def _chain_top_is_spell_or_trap(state, controller) -> bool:
     return card is not None and (card.is_spell or card.is_trap)
 
 
+def _chain_top_is_monster(state, controller) -> bool:
+    card = _chain_top_card(state)
+    return card is not None and card.is_monster
+
+
 def _all_conditions(*conds):
     """Combine activation gates: all must hold (e.g. pay-LP gate AND a Chain gate)."""
 
@@ -537,7 +542,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             timing="quick",
             discard_cost=1,
             condition=_chain_top_is_spell,
-            resolve=(NegatePreviousLink(destroy=True),),
+            resolve=(NegatePreviousLink(),),
         ),
     ),
     "Seven Tools of the Bandit": (  # pay 1000 LP; negate a Trap + destroy it
@@ -545,7 +550,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             speed=3,
             timing="quick",
             condition=_all_conditions(_lp_above(1000), _chain_top_is_trap),
-            resolve=(InflictDamage(SELF, 1000), NegatePreviousLink(destroy=True)),
+            resolve=(InflictDamage(SELF, 1000), NegatePreviousLink()),
         ),
     ),
     "Dark Bribe": (  # opponent draws 1; negate a Spell/Trap + destroy it
@@ -553,7 +558,48 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             speed=3,
             timing="quick",
             condition=_chain_top_is_spell_or_trap,
-            resolve=(Draw(OPPONENT, count=1), NegatePreviousLink(destroy=True)),
+            resolve=(Draw(OPPONENT, count=1), NegatePreviousLink()),
+        ),
+    ),
+    # --- Effects Batch 17: negate the Summon / a monster effect / negate+bounce ---
+    # Negate the Summon: a Counter Trap in the Summon response window that removes
+    # the just-Summoned monster (subject="monster"). Our Summon window fires only on
+    # Normal Summons, so these act on Normal Summons (a known simplification).
+    "Horn of Heaven": (  # Tribute 1 monster; negate the Summon + destroy that monster
+        Effect(
+            speed=3,
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=OPPONENT, subject="monster"),
+            tribute_cost=1,
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Forced Back": (  # negate the Summon + return that monster to its owner's hand
+        Effect(
+            speed=3,
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=OPPONENT, subject="monster"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+    # Negate a monster effect: chain onto a monster-effect link and negate it, then
+    # destroy that monster (NegatePreviousLink handles a monster on the Chain).
+    "Divine Wrath": (  # discard 1; negate a monster effect + destroy that monster
+        Effect(
+            speed=3,
+            timing="quick",
+            discard_cost=1,
+            condition=_chain_top_is_monster,
+            resolve=(NegatePreviousLink(aftermath="destroy"),),
+        ),
+    ),
+    # Negate the activation of a Spell, but return it to the hand instead of destroy.
+    "Goblin Out of the Frying Pan": (  # pay 500 LP; negate a Spell + bounce it to hand
+        Effect(
+            speed=3,
+            timing="quick",
+            condition=_all_conditions(_lp_above(500), _chain_top_is_spell),
+            resolve=(InflictDamage(SELF, 500), NegatePreviousLink(aftermath="bounce")),
         ),
     ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---

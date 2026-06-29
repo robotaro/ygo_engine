@@ -636,13 +636,17 @@ class NegateAttack(Primitive):
 
 @dataclass(frozen=True)
 class NegatePreviousLink(Primitive):
-    """Counter-Trap negation (Magic Jammer, Seven Tools of the Bandit, Dark Bribe):
-    negate the activation of the card this was chained to — the Chain link directly
-    below this one — so that link's effect never resolves. ``destroy`` also sends
-    that card to the Graveyard ("and if you do, destroy it"). Reads ``state.chain``
-    to find its own link, so it only works inside a resolving Chain."""
+    """Counter-Trap negation (Magic Jammer, Dark Bribe, Divine Wrath, Goblin Out of
+    the Frying Pan): negate the activation of the card this was chained to — the
+    Chain link directly below this one — so that link's effect never resolves.
 
-    destroy: bool = True
+    ``aftermath`` then disposes of that card: "destroy" sends it to the Graveyard
+    ("and if you do, destroy it"), "bounce" returns it to the owner's hand, "none"
+    leaves it where it is. Works for a Spell/Trap *or* a monster (Divine Wrath
+    negates a monster effect). Reads ``state.chain`` to find its own link, so it
+    only works inside a resolving Chain."""
+
+    aftermath: str = "destroy"  # "destroy" | "bounce" | "none"
 
     def execute(self, ctx: EffectContext) -> None:
         chain = ctx.state.chain
@@ -654,10 +658,13 @@ class NegatePreviousLink(Primitive):
             return  # nothing below to negate
         target = chain[idx - 1]
         target.negated = True
-        if self.destroy:
-            inst = ctx.state.cards.get(target.source_iid)
-            if inst is not None and inst.zone is Zone.SPELL_TRAP:
-                ctx.state.send_to_graveyard(target.source_iid)
+        inst = ctx.state.cards.get(target.source_iid)
+        if inst is None or inst.zone not in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD):
+            return  # already gone, or not on the field
+        if self.aftermath == "destroy":
+            ctx.state.send_to_graveyard(target.source_iid)
+        elif self.aftermath == "bounce":
+            ctx.state.return_to_hand(target.source_iid)
 
 
 @dataclass(frozen=True)
