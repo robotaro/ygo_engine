@@ -379,6 +379,12 @@ def _has_activation_cost(effect) -> bool:
     )
 
 
+def _off_cooldown(inst, effect, turn: int) -> bool:
+    """Whether a "once per turn" Ignition effect is available — i.e. the source card
+    hasn't already used it this turn (always True for effects with no such limit)."""
+    return not (effect.once_per_turn and inst.effect_activated_on_turn == turn)
+
+
 # --------------------------------------------------------------------------- #
 #  Legal-move enumeration
 # --------------------------------------------------------------------------- #
@@ -516,7 +522,7 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         effect = next((e for e in inst.card.effects if e.timing == "ignition"), None)
         if effect is None or (effect.condition is not None and not effect.condition(state, player)):
             continue
-        if not can_pay_costs(state, player, iid, effect):
+        if not can_pay_costs(state, player, iid, effect) or not _off_cooldown(inst, effect, state.turn_count):
             continue
         for target_set in _enumerate_targets(state, player, effect.target):
             actions.append(ActivateSpell(iid, targets=target_set))
@@ -533,7 +539,7 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
         effect = next((e for e in inst.card.effects if e.timing == "ignition"), None)
         if effect is None or (effect.condition is not None and not effect.condition(state, player)):
             continue
-        if not can_pay_costs(state, player, iid, effect):
+        if not can_pay_costs(state, player, iid, effect) or not _off_cooldown(inst, effect, state.turn_count):
             continue
         for target_set in _enumerate_targets(state, player, effect.target):
             actions.append(ActivateMonsterEffect(iid, targets=target_set))
@@ -550,6 +556,7 @@ def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
         or spec.attributes
         or spec.face_up
         or spec.defense_position
+        or spec.attack_position
         or spec.card_kind
         or spec.names
         or spec.name_contains
@@ -569,6 +576,8 @@ def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
             Position.FACE_UP_DEFENSE,
             Position.FACE_DOWN_DEFENSE,
         ):
+            continue
+        if spec.attack_position and inst.position is not Position.FACE_UP_ATTACK:
             continue
         if spec.card_kind and not _kind_matches(card, spec.card_kind):
             continue
@@ -929,6 +938,8 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
         inst = state.inst(iid)
         if inst.position is not Position.FACE_UP_ATTACK or inst.attacked_this_turn:
             continue
+        if inst.attack_disabled_on_turn == state.turn_count:
+            continue  # an effect this turn barred this monster from attacking
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
             continue  # Messenger of Peace: too strong to declare an attack
         if inst.card.is_toon:

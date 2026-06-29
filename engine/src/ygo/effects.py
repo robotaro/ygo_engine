@@ -236,6 +236,7 @@ class TargetSpec:
     attributes: frozenset = frozenset()
     face_up: bool = False  # restrict to face-up monsters (e.g. Soul Taker)
     defense_position: bool = False  # restrict to Defense Position monsters (Shield Crush)
+    attack_position: bool = False  # restrict to face-up Attack Position monsters (Cyber Gymnast)
     up_to: bool = False  # ``count`` is a maximum — choose 1..count (Penguin Soldier)
     # Restrict a Spell/Trap pool by kind: None | "spell" | "trap" | "field_spell"
     # (Hannibal Necromancer destroys only a face-up Trap).
@@ -1023,6 +1024,13 @@ class Effect:
     target: TargetSpec | None = None
     # Optional activation gate: (state, controller) -> bool.
     condition: Callable[["GameState", int], bool] | None = None
+    # "Once per turn": the source card may activate this Ignition effect only once
+    # each turn. Gated in enumeration via CardInstance.effect_activated_on_turn, which
+    # the engine stamps on activation.
+    once_per_turn: bool = False
+    # "This card cannot attack the turn this effect is activated" (Volcanic Slicer,
+    # Super Conductor Tyranno). The engine stamps CardInstance.attack_disabled_on_turn.
+    disables_attack_this_turn: bool = False
     # Activation cost: discard this many cards from the hand (paid at activation,
     # before resolution). Gated into legal enumeration — the action is only offered
     # when the controller has enough discard fodder (other than the card itself).

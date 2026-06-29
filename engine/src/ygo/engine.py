@@ -376,6 +376,7 @@ class Engine:
         reveal_for_activation(s, action.iid, action.zone_index)
         self.log(f"  {s.players[controller].name} activates {card.name}")
         self._pay_activation_cost(action.iid, controller, effect)
+        self._mark_once_per_turn(action.iid, effect)
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
 
     def _activate_monster_effect(self, action: ActivateMonsterEffect, controller: int) -> None:
@@ -386,7 +387,20 @@ class Engine:
         effect = next((e for e in card.effects if e.timing == "ignition"), card.effects[0])
         self.log(f"  {s.players[controller].name} activates {card.name}'s effect")
         self._pay_activation_cost(action.iid, controller, effect)
+        self._mark_once_per_turn(action.iid, effect)
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
+
+    def _mark_once_per_turn(self, iid: int, effect) -> None:
+        """Stamp the per-turn bookkeeping an activated effect leaves on its source: a
+        "once per turn" use (so enumeration won't offer it again this turn) and/or a
+        "cannot attack the turn this effect is activated" lock."""
+        if iid not in self.state.cards:
+            return
+        inst = self.state.inst(iid)
+        if effect.once_per_turn:
+            inst.effect_activated_on_turn = self.state.turn_count
+        if effect.disables_attack_this_turn:
+            inst.attack_disabled_on_turn = self.state.turn_count
 
     def _pay_activation_cost(self, source_iid: int, controller: int, effect) -> None:
         """Pay an effect's activation costs (discard / Tribute / counter / send-to-GY)

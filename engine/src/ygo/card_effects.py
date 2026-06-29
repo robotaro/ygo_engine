@@ -824,6 +824,42 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "4-Starred Ladybug of Doom": (  # destroy all Level 4 monsters the opponent controls
         _flip(resolve=(DestroyAllMonsters(side=OPPONENT, level=4),)),
     ),
+    # --- Effects Batch 27: once-per-turn monster Ignition effects ---
+    # Effect.once_per_turn gates re-use this turn (engine stamps the source);
+    # disables_attack_this_turn bars the monster from attacking after it fires.
+    "Neo-Spacian Air Hummingbird": (  # gain 500 LP per card in the opponent's hand
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            resolve=(GainLifePoints(SELF, value=CountTimes(500, "opponent_hand")),),
+        ),
+    ),
+    "Cyber Gymnast": (  # discard 1; destroy a face-up Attack Position opponent monster
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            discard_cost=1,
+            target=TargetSpec(count=1, where="opponent_monsters", attack_position=True),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Volcanic Slicer": (  # 500 damage, but it can't attack this turn
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            disables_attack_this_turn=True,
+            resolve=(InflictDamage(OPPONENT, 500),),
+        ),
+    ),
+    "Super Conductor Tyranno": (  # Tribute 1 monster -> 1000 damage, can't attack this turn
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            tribute_cost=1,
+            disables_attack_this_turn=True,
+            resolve=(InflictDamage(OPPONENT, 1000),),
+        ),
+    ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
     # destroy that monster (NegatePreviousLink handles a monster on the Chain).
     "Divine Wrath": (  # discard 1; negate a monster effect + destroy that monster

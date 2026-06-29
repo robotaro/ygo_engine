@@ -87,6 +87,12 @@ class CardInstance:
     # recruit only when "destroyed by battle"). Stamped by send_to_graveyard, read
     # by the engine's "destroyed_by_battle" trigger while draining the GY queue.
     died_by_battle: bool = False
+    # The turn this card last activated a "once per turn" Ignition effect. Turn-stamped
+    # so it expires on its own; reset when the card leaves the field.
+    effect_activated_on_turn: int | None = None
+    # The turn an effect disabled this card's attack ("cannot attack the turn this
+    # effect is activated"). Turn-stamped; read by attack enumeration.
+    attack_disabled_on_turn: int | None = None
 
     @property
     def name(self) -> str:
@@ -262,6 +268,8 @@ class GameState:
         inst.temp_def = 0
         inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
         inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
+        inst.effect_activated_on_turn = None  # a revived card may use its once/turn again
+        inst.attack_disabled_on_turn = None
 
     def send_to_graveyard(self, iid: int, by_battle: bool = False) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``
