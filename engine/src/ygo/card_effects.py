@@ -20,6 +20,7 @@ from .effects import (
     CountTimes,
     DamageEqualToAttackerAtk,
     DestroyAllFieldSpells,
+    DestroyAllOtherCards,
     DestroyAllSpellTraps,
     DestroyAllMonsters,
     DestroyAttackingAttackPositionMonsters,
@@ -686,6 +687,30 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(ReturnAllSetCardsToHand(),),
         ),
     ),
+    # --- Effects Batch 22: send-from-field-to-GY activation cost ---
+    # Levia-Dragon - Daedalus: Ignition — send a face-up "Umi" you control to the GY
+    # (the cost); destroy all OTHER cards on the field.
+    "Levia-Dragon - Daedalus": (
+        Effect(
+            timing="ignition",
+            send_to_gy_cost=1,
+            send_to_gy_filter=CardFilter(names=frozenset({"Umi"})),
+            send_to_gy_face_up=True,
+            resolve=(DestroyAllOtherCards(),),
+        ),
+    ),
+    # Ultimate Baseball Kid: Ignition — send another face-up FIRE monster you control
+    # to the GY; inflict 500 damage. Its +1000 ATK/FIRE-monster scale is in CONTINUOUS.
+    "Ultimate Baseball Kid": (
+        Effect(
+            timing="ignition",
+            send_to_gy_cost=1,
+            send_to_gy_filter=CardFilter(card_kind="monster", attributes=frozenset({Attribute.FIRE})),
+            send_to_gy_face_up=True,
+            send_to_gy_exclude_self=True,
+            resolve=(InflictDamage(OPPONENT, 500),),
+        ),
+    ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
     # destroy that monster (NegatePreviousLink handles a monster on the Chain).
     "Divine Wrath": (  # discard 1; negate a monster effect + destroy that monster
@@ -985,6 +1010,13 @@ CONTINUOUS: dict[str, tuple] = {
     # Hannibal Necromancer: max 1, non-accumulating, no stat rider.
     "Hannibal Necromancer": (
         SpellCounterHolder(max_counters=1, accumulates=False),
+    ),
+    # --- Effects Batch 22: Ultimate Baseball Kid's scaling self-boost ---
+    # +1000 ATK for each OTHER face-up FIRE monster on the field (both sides).
+    "Ultimate Baseball Kid": (
+        SelfStatMod(
+            scaling="face_up_attr_monsters", scale_atk=1000, count_attribute=Attribute.FIRE
+        ),
     ),
     # --- Effects Batch 2: race/attribute-restricted flat Equip Spells ---
     "Beast Fangs": (EquipMod(atk=300, defn=300),),

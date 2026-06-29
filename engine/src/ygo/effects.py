@@ -83,10 +83,19 @@ class SelfStatMod:
     of this card becomes 2100" — a flat self-boost). Read by
     ``GameState.effective_attack/defense`` straight off the monster's own
     ``continuous`` list, and suppressed while the monster's effect is inactive
-    (a Gemini that hasn't been Gemini Summoned yet)."""
+    (a Gemini that hasn't been Gemini Summoned yet).
+
+    Optionally *scaling*: ``scaling="face_up_attr_monsters"`` adds ``scale_atk``/
+    ``scale_defn`` per OTHER face-up monster on the field (both sides) — narrowed to
+    ``count_attribute`` when set. Ultimate Baseball Kid: +1000 ATK per other face-up
+    FIRE monster."""
 
     atk: int = 0
     defn: int = 0
+    scaling: str | None = None  # None | "face_up_attr_monsters"
+    scale_atk: int = 0
+    scale_defn: int = 0
+    count_attribute: "Attribute | None" = None
 
 
 @dataclass(frozen=True)
@@ -550,6 +559,24 @@ class PlaceCountersOnSelf(Primitive):
 
 
 @dataclass(frozen=True)
+class DestroyAllOtherCards(Primitive):
+    """Destroy every card on the field except the effect's own source — monsters,
+    Spells/Traps and Field Spells, both players' (Levia-Dragon - Daedalus)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        victims: list[int] = []
+        for pl in (0, 1):
+            victims += [i for i in s.players[pl].monster_zones if i is not None]
+            victims += [i for i in s.players[pl].spell_trap_zones if i is not None]
+            if s.players[pl].field_zone is not None:
+                victims.append(s.players[pl].field_zone)
+        for iid in victims:
+            if iid != ctx.source_iid and iid in s.cards:
+                s.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
 class DestroyAllFieldSpells(Primitive):
     """Burning Land: destroy every Field Spell on the field (both players')."""
 
@@ -946,4 +973,13 @@ class Effect:
     # card (Royal Magical Library removes 3 Spell Counters to draw).
     counter_cost: int = 0
     counter_type: str = "spell"
+    # Activation cost: send this many cards you control from the field to the GY
+    # (Levia-Dragon - Daedalus sends a face-up "Umi"; Ultimate Baseball Kid sends
+    # another face-up FIRE monster). ``send_to_gy_filter`` is a printed-card
+    # predicate (name/race/attribute/kind), ``send_to_gy_face_up`` requires the card
+    # be face-up, and ``send_to_gy_exclude_self`` bars the source card itself.
+    send_to_gy_cost: int = 0
+    send_to_gy_filter: "CardFilter | None" = None
+    send_to_gy_face_up: bool = False
+    send_to_gy_exclude_self: bool = False
     resolve: tuple[Primitive, ...] = ()

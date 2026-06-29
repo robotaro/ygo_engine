@@ -209,9 +209,50 @@ def tribute_fodder(state: GameState, controller: int, races=frozenset(), attrs=f
     return out
 
 
+def send_to_gy_fodder(
+    state: GameState, controller: int, source_iid: int, filt=None, face_up=False, exclude_self=False
+) -> list[int]:
+    """Cards ``controller`` controls that may be sent from the field to the GY to pay
+    a cost — monsters, Spell/Traps and the Field Spell — narrowed by an optional
+    printed-card ``filt`` (a CardFilter), a ``face_up`` requirement, and an
+    ``exclude_self`` flag (Daedalus sends a face-up "Umi"; Ultimate Baseball Kid
+    sends another face-up FIRE monster)."""
+    pl = state.players[controller]
+    out: list[int] = []
+    for iid in list(pl.monster_zones) + list(pl.spell_trap_zones) + [pl.field_zone]:
+        if iid is None or (exclude_self and iid == source_iid):
+            continue
+        inst = state.inst(iid)
+        if face_up and not inst.is_face_up:
+            continue
+        if filt is not None and not filt.matches(inst.card):
+            continue
+        out.append(iid)
+    return out
+
+
+def pay_send_to_gy_cost(
+    state: GameState,
+    controller: int,
+    source_iid: int,
+    count: int,
+    filt=None,
+    face_up=False,
+    exclude_self=False,
+    chosen=None,
+) -> list[int]:
+    """Send ``count`` of ``controller``'s eligible field cards to the GY as a cost.
+    ``chosen`` names them (player's pick); without it the first eligible are taken."""
+    fodder = send_to_gy_fodder(state, controller, source_iid, filt, face_up, exclude_self)
+    picks = [i for i in (chosen or []) if i in fodder][:count] or fodder[:count]
+    for iid in picks:
+        state.send_to_graveyard(iid)
+    return picks
+
+
 def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) -> bool:
     """Whether ``controller`` can pay ``effect``'s activation cost right now (used to
-    gate legal enumeration). Covers the discard cost and the Tribute cost."""
+    gate legal enumeration). Covers discard, Tribute, counter and send-to-GY costs."""
     need = getattr(effect, "discard_cost", 0)
     if need and len(discard_fodder(state, controller, source_iid)) < need:
         return False
@@ -226,6 +267,18 @@ def can_pay_costs(state: GameState, controller: int, source_iid: int, effect) ->
     if cneed:
         ctype = getattr(effect, "counter_type", "spell")
         if state.inst(source_iid).counters.get(ctype, 0) < cneed:
+            return False
+    sneed = getattr(effect, "send_to_gy_cost", 0)
+    if sneed:
+        fodder = send_to_gy_fodder(
+            state,
+            controller,
+            source_iid,
+            effect.send_to_gy_filter,
+            effect.send_to_gy_face_up,
+            effect.send_to_gy_exclude_self,
+        )
+        if len(fodder) < sneed:
             return False
     return True
 
@@ -983,6 +1036,17 @@ def _activate_spell(state: GameState, action: ActivateSpell) -> str:
                 effect.tribute_cost,
                 effect.tribute_races,
                 effect.tribute_attributes,
+            )
+            paid = True
+        if getattr(effect, "send_to_gy_cost", 0):
+            pay_send_to_gy_cost(
+                state,
+                controller,
+                action.iid,
+                effect.send_to_gy_cost,
+                effect.send_to_gy_filter,
+                effect.send_to_gy_face_up,
+                effect.send_to_gy_exclude_self,
             )
             paid = True
         if paid:

@@ -33,12 +33,14 @@ from .moves import (
     makeable_fusions,
     pay_counter_cost,
     pay_discard_cost,
+    pay_send_to_gy_cost,
     pay_tribute_cost,
     response_options,
     resolve_effect,
     reveal_for_activation,
     ritual_monster_in_hand,
     ritual_tribute_pool,
+    send_to_gy_fodder,
     target_candidates,
     tribute_fodder,
 )
@@ -427,6 +429,32 @@ class Engine:
             ctype = getattr(effect, "counter_type", "spell")
             pay_counter_cost(s, source_iid, cneed, ctype)
             self.log(f"  {s.players[controller].name} removes {cneed} {ctype} counter(s) (cost)")
+            self._changed()
+        sneed = getattr(effect, "send_to_gy_cost", 0)
+        if sneed:
+            fodder = send_to_gy_fodder(
+                s,
+                controller,
+                source_iid,
+                effect.send_to_gy_filter,
+                effect.send_to_gy_face_up,
+                effect.send_to_gy_exclude_self,
+            )
+            chosen = self.agents[controller].choose_cost_sends(s, controller, fodder, sneed)
+            if len(set(chosen)) != sneed or any(c not in fodder for c in chosen):
+                chosen = Agent().choose_cost_sends(s, controller, fodder, sneed)  # safe default
+            sent = pay_send_to_gy_cost(
+                s,
+                controller,
+                source_iid,
+                sneed,
+                effect.send_to_gy_filter,
+                effect.send_to_gy_face_up,
+                effect.send_to_gy_exclude_self,
+                chosen,
+            )
+            names = ", ".join(s.inst(i).name for i in sent)
+            self.log(f"  {s.players[controller].name} sends {names} to the GY (cost)")
             self._changed()
 
     def _fusion_summon(self, poly_iid: int, controller: int) -> None:

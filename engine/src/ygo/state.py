@@ -373,11 +373,26 @@ class GameState:
         inst = self.cards[monster_iid]
         if not inst.effects_active:
             return 0
-        return sum(
-            (mod.atk if which == "atk" else mod.defn)
-            for mod in inst.card.continuous
-            if isinstance(mod, SelfStatMod)
-        )
+        total = 0
+        for mod in inst.card.continuous:
+            if not isinstance(mod, SelfStatMod):
+                continue
+            flat = mod.atk if which == "atk" else mod.defn
+            if mod.scaling == "face_up_attr_monsters":
+                per = mod.scale_atk if which == "atk" else mod.scale_defn
+                count = sum(
+                    1
+                    for pl in self.players
+                    for i in pl.monster_zones
+                    if i is not None
+                    and i != monster_iid
+                    and self.cards[i].is_face_up
+                    and (mod.count_attribute is None or self.cards[i].card.attribute == mod.count_attribute)
+                )
+                total += flat + per * count
+            else:
+                total += flat
+        return total
 
     def _spell_counter_delta(self, monster_iid: int, which: str) -> int:
         """A monster's stat boost per Spell Counter on it (Mythical Beast Cerberus
