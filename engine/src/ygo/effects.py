@@ -635,6 +635,32 @@ class NegateAttack(Primitive):
 
 
 @dataclass(frozen=True)
+class NegatePreviousLink(Primitive):
+    """Counter-Trap negation (Magic Jammer, Seven Tools of the Bandit, Dark Bribe):
+    negate the activation of the card this was chained to — the Chain link directly
+    below this one — so that link's effect never resolves. ``destroy`` also sends
+    that card to the Graveyard ("and if you do, destroy it"). Reads ``state.chain``
+    to find its own link, so it only works inside a resolving Chain."""
+
+    destroy: bool = True
+
+    def execute(self, ctx: EffectContext) -> None:
+        chain = ctx.state.chain
+        idx = next(
+            (i for i, link in enumerate(chain) if link.source_iid == ctx.source_iid),
+            None,
+        )
+        if idx is None or idx == 0:
+            return  # nothing below to negate
+        target = chain[idx - 1]
+        target.negated = True
+        if self.destroy:
+            inst = ctx.state.cards.get(target.source_iid)
+            if inst is not None and inst.zone is Zone.SPELL_TRAP:
+                ctx.state.send_to_graveyard(target.source_iid)
+
+
+@dataclass(frozen=True)
 class DestroyAttackingAttackPositionMonsters(Primitive):
     """Mirror Force: destroy all the attacking player's Attack-Position monsters."""
 

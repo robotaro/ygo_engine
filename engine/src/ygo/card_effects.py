@@ -39,6 +39,7 @@ from .effects import (
     InflictDamage,
     ModifyStatsTemporary,
     NegateAttack,
+    NegatePreviousLink,
     Piercing,
     ReturnAllSpellTrapsToHand,
     ReturnSpellFromGraveyardToHand,
@@ -139,6 +140,40 @@ def _lp_above(amount: int):
 
     def cond(state, controller) -> bool:
         return state.players[controller].life_points > amount
+
+    return cond
+
+
+def _chain_top_card(state):
+    """The printed card whose activation is currently on top of the Chain — the one
+    a Counter Trap would be responding to (None if the Chain is empty)."""
+    chain = state.chain
+    if not chain:
+        return None
+    inst = state.cards.get(chain[-1].source_iid)
+    return inst.card if inst is not None else None
+
+
+def _chain_top_is_spell(state, controller) -> bool:
+    card = _chain_top_card(state)
+    return card is not None and card.is_spell
+
+
+def _chain_top_is_trap(state, controller) -> bool:
+    card = _chain_top_card(state)
+    return card is not None and card.is_trap
+
+
+def _chain_top_is_spell_or_trap(state, controller) -> bool:
+    card = _chain_top_card(state)
+    return card is not None and (card.is_spell or card.is_trap)
+
+
+def _all_conditions(*conds):
+    """Combine activation gates: all must hold (e.g. pay-LP gate AND a Chain gate)."""
+
+    def cond(state, controller) -> bool:
+        return all(c(state, controller) for c in conds)
 
     return cond
 
@@ -490,6 +525,36 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     ),
     "Toon Table of Contents": (  # 1 "Toon" card (any card with Toon in its name)
         _search_effect(CardFilter(name_contains=frozenset({"Toon"}))),
+    ),
+    # --- Effects Batch 16: negate the activation (Counter Traps, Spell Speed 3) ---
+    # Chained in response to an activation, they negate the Chain link directly
+    # below (NegatePreviousLink) so it never resolves, and destroy that card. The
+    # condition gates them to the kind of card they may negate (read off the Chain
+    # top). pay-1000-LP is modelled at resolution (like Toon World).
+    "Magic Jammer": (  # discard 1; negate a Spell + destroy it
+        Effect(
+            speed=3,
+            timing="quick",
+            discard_cost=1,
+            condition=_chain_top_is_spell,
+            resolve=(NegatePreviousLink(destroy=True),),
+        ),
+    ),
+    "Seven Tools of the Bandit": (  # pay 1000 LP; negate a Trap + destroy it
+        Effect(
+            speed=3,
+            timing="quick",
+            condition=_all_conditions(_lp_above(1000), _chain_top_is_trap),
+            resolve=(InflictDamage(SELF, 1000), NegatePreviousLink(destroy=True)),
+        ),
+    ),
+    "Dark Bribe": (  # opponent draws 1; negate a Spell/Trap + destroy it
+        Effect(
+            speed=3,
+            timing="quick",
+            condition=_chain_top_is_spell_or_trap,
+            resolve=(Draw(OPPONENT, count=1), NegatePreviousLink(destroy=True)),
+        ),
     ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---
     "Sparks": (Effect(resolve=(InflictDamage(OPPONENT, 200),)),),

@@ -513,6 +513,12 @@ class Engine:
     def _resolve_chain(self) -> None:
         s = self.state
         for link in reversed(s.chain):
+            if link.negated:
+                name = s.inst(link.source_iid).name if link.source_iid in s.cards else "effect"
+                self.log(f"  {name} is negated")
+                self._changed()
+                self._pace()
+                continue
             resolve_effect(s, link.effect, link.source_iid, link.targets, link.event)
             self._check_life_points()
             self._changed()

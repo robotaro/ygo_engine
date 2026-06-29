@@ -32,6 +32,9 @@ class ChainLink:
     controller: int
     targets: tuple[int, ...] = ()
     event: dict | None = None
+    # Set True by a Counter-Trap negation (Magic Jammer): this link's effect is
+    # skipped when the Chain resolves.
+    negated: bool = False
 
 
 # --------------------------------------------------------------------------- #
