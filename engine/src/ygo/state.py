@@ -554,6 +554,21 @@ class GameState:
             out = [i for i in out if not self.cards[i].is_face_up]
         return out
 
+    def active_markers(self, marker_type, players=(0, 1)):
+        """Yield (card_instance, marker) for every face-up card on the given side(s)
+        whose effect is live (a Gemini not yet Gemini Summoned is skipped) and which
+        carries a continuous rider of ``marker_type``. The one place that owns the
+        "scan the field for a live continuous marker" pattern — so the effects_active
+        guard can never be forgotten by a caller (it was, twice, before this)."""
+        for pl in players:
+            for iid in self.field_cards(pl, face_up_only=True):
+                inst = self.cards[iid]
+                if not inst.effects_active:
+                    continue
+                for mod in inst.card.continuous:
+                    if isinstance(mod, marker_type):
+                        yield inst, mod
+
     def is_protected_attack_target(self, iid: int) -> bool:
         """Whether the monster ``iid`` cannot be selected as an attack target by the
         opponent — a face-up AttackTargetProtection on its controller's side covers it
@@ -562,54 +577,38 @@ class GameState:
         if inst is None or inst.zone is not Zone.MONSTER:
             return False
         controller = inst.controller
-        for sid in self.field_cards(controller, face_up_only=True):
-            src = self.cards[sid]
-            if not src.effects_active:
+        for src, mod in self.active_markers(AttackTargetProtection, (controller,)):
+            if mod.requires_control_name_contains is not None and not any(
+                m is not None
+                and self.cards[m].is_face_up
+                and mod.requires_control_name_contains in self.cards[m].card.name
+                for m in self.players[controller].monster_zones
+            ):
                 continue
-            for mod in src.card.continuous:
-                if not isinstance(mod, AttackTargetProtection):
-                    continue
-                if mod.requires_control_name_contains is not None and not any(
-                    m is not None
-                    and self.cards[m].is_face_up
-                    and mod.requires_control_name_contains in self.cards[m].card.name
-                    for m in self.players[controller].monster_zones
-                ):
-                    continue
-                if mod.exclude_self and src.iid == iid:
-                    continue
-                if (
-                    mod.exclude_name_contains is not None
-                    and mod.exclude_name_contains in inst.card.name
-                ):
-                    continue
-                if mod.race is not None and inst.card.race != mod.race:
-                    continue
-                if mod.name_contains is not None and mod.name_contains not in inst.card.name:
-                    continue
-                return True
+            if mod.exclude_self and src.iid == iid:
+                continue
+            if (
+                mod.exclude_name_contains is not None
+                and mod.exclude_name_contains in inst.card.name
+            ):
+                continue
+            if mod.race is not None and inst.card.race != mod.race:
+                continue
+            if mod.name_contains is not None and mod.name_contains not in inst.card.name:
+                continue
+            return True
         return False
 
     def special_summon_locked(self, player: int, card: "CardDef") -> bool:
         """Whether ``player`` is currently prevented from Special Summoning ``card`` by a
         face-up Special-Summon lock (Vanity's Fiend/Ruler, the Barrier Statues). Read by
         every Special Summon route — a locked summon simply does not happen."""
-        for ctrl in (0, 1):
-            for sid in self.field_cards(ctrl, face_up_only=True):
-                src = self.cards[sid]
-                if not src.effects_active:
-                    continue
-                for mod in src.card.continuous:
-                    if not isinstance(mod, SpecialSummonLock):
-                        continue
-                    if mod.whose == "opponent" and player == ctrl:
-                        continue  # only the source controller's opponent is locked
-                    if (
-                        mod.except_attribute is not None
-                        and card.attribute == mod.except_attribute
-                    ):
-                        continue
-                    return True
+        for src, mod in self.active_markers(SpecialSummonLock):
+            if mod.whose == "opponent" and player == src.controller:
+                continue  # only the source controller's opponent is locked
+            if mod.except_attribute is not None and card.attribute == mod.except_attribute:
+                continue
+            return True
         return False
 
     def _effective_stat(self, iid: int, which: str) -> int:

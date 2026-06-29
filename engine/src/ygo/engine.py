@@ -160,14 +160,10 @@ class Engine:
         s = self.state
         while s.pending_draws:
             player = s.pending_draws.pop(0)
-            for iid in s.field_cards(player, face_up_only=True):
-                inst = s.cards.get(iid)
-                if inst is None or not inst.effects_active:
-                    continue  # a Gemini not yet Gemini Summoned has no live effect
-                for mod in inst.card.continuous:
-                    if isinstance(mod, DrawTrigger) and mod.gain_life:
-                        s.players[player].life_points += mod.gain_life
-                        self.log(f"  {s.players[player].name} gains {mod.gain_life} LP from {inst.name}")
+            for inst, mod in s.active_markers(DrawTrigger, (player,)):
+                if mod.gain_life:
+                    s.players[player].life_points += mod.gain_life
+                    self.log(f"  {s.players[player].name} gains {mod.gain_life} LP from {inst.name}")
 
     # ------------------------------------------------------------------ #
     def _standby_phase(self, tp: int) -> None:
@@ -304,6 +300,8 @@ class Engine:
         s = self.state
         attacker, target = action.attacker, action.target
         s.attack_negated = False
+        # Mark at declaration (not only in _resolve_attack) so a *negated* attack — which
+        # returns before resolving — still counts as this monster having attacked.
         s.inst(attacker).attacked_this_turn = True
         self.log(f"  {s.players[tp].name} declares an attack with {s.inst(attacker).name}")
         self._changed()
@@ -726,13 +724,8 @@ class Engine:
         Spell Counter, up to its max (0 = no limit)."""
         s = self.state
         bumped = False
-        for inst in s.cards.values():
-            if inst.zone not in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD) or not inst.is_face_up:
-                continue
-            if not inst.effects_active:
-                continue  # a Gemini not yet Gemini Summoned has no live counter holder
-            holder = next((m for m in inst.card.continuous if isinstance(m, SpellCounterHolder)), None)
-            if holder is None or not holder.accumulates:
+        for inst, holder in s.active_markers(SpellCounterHolder):
+            if not holder.accumulates:
                 continue  # Breaker only gets its summon counter — never accrues more
             current = inst.counters.get("spell", 0)
             if holder.max_counters and current >= holder.max_counters:
@@ -746,18 +739,8 @@ class Engine:
         """End of the Battle Phase: a monster that battled and whose SpellCounterHolder
         says so loses all its Spell Counters (Mythical Beast Cerberus)."""
         s = self.state
-        for iid in s.players[s.turn_player].monster_zones:
-            if iid is None:
-                continue
-            inst = s.inst(iid)
-            if not inst.attacked_this_turn or not inst.counters.get("spell"):
-                continue
-            if not inst.effects_active:
-                continue  # a Gemini not yet Gemini Summoned has no live counter holder
-            if any(
-                isinstance(m, SpellCounterHolder) and m.wipe_after_battle
-                for m in inst.card.continuous
-            ):
+        for inst, holder in s.active_markers(SpellCounterHolder, (s.turn_player,)):
+            if holder.wipe_after_battle and inst.attacked_this_turn and inst.counters.get("spell"):
                 inst.counters["spell"] = 0
                 self._changed()
 
