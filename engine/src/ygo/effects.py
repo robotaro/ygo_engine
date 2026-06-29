@@ -644,11 +644,7 @@ class ReturnAllSpellTrapsToHand(Primitive):
 
     def execute(self, ctx: EffectContext) -> None:
         s = ctx.state
-        victims: list[int] = []
-        for pl in (0, 1):
-            victims += [i for i in s.players[pl].spell_trap_zones if i is not None]
-            if s.players[pl].field_zone is not None:
-                victims.append(s.players[pl].field_zone)
+        victims = s.field_cards(0, monsters=False) + s.field_cards(1, monsters=False)
         for iid in victims:
             s.return_to_hand(iid)
 
@@ -661,11 +657,7 @@ class ReturnAllSetCardsToHand(Primitive):
 
     def execute(self, ctx: EffectContext) -> None:
         s = ctx.state
-        victims: list[int] = []
-        for pl in (0, 1):
-            zones = list(s.players[pl].monster_zones) + list(s.players[pl].spell_trap_zones)
-            zones.append(s.players[pl].field_zone)
-            victims += [i for i in zones if i is not None and not s.inst(i).is_face_up]
+        victims = s.field_cards(0, face_down_only=True) + s.field_cards(1, face_down_only=True)
         for iid in victims:
             s.return_to_hand(iid)
 
@@ -699,12 +691,7 @@ class DestroyAllOtherCards(Primitive):
 
     def execute(self, ctx: EffectContext) -> None:
         s = ctx.state
-        victims: list[int] = []
-        for pl in (0, 1):
-            victims += [i for i in s.players[pl].monster_zones if i is not None]
-            victims += [i for i in s.players[pl].spell_trap_zones if i is not None]
-            if s.players[pl].field_zone is not None:
-                victims.append(s.players[pl].field_zone)
+        victims = s.field_cards(0) + s.field_cards(1)
         for iid in victims:
             if iid != ctx.source_iid and iid in s.cards:
                 s.send_to_graveyard(iid)
@@ -733,9 +720,7 @@ class DestroyAllSpellTraps(Primitive):
         players = (0, 1) if self.side is None else (ctx.side(self.side),)
         victims: list[int] = []
         for pl in players:
-            victims += [i for i in ctx.state.players[pl].spell_trap_zones if i is not None]
-            if ctx.state.players[pl].field_zone is not None:
-                victims.append(ctx.state.players[pl].field_zone)
+            victims += ctx.state.field_cards(pl, monsters=False)
         for iid in victims:
             ctx.state.send_to_graveyard(iid)
 

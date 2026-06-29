@@ -526,18 +526,33 @@ class GameState:
         mod = self._self_rider(iid, MultiAttacker)
         return mod.times if mod is not None else 1
 
-    def _face_up_side_cards(self, player: int):
-        """Yield every face-up card on ``player``'s side — monsters, Spell/Traps and
-        the Field Spell alike — the sources that can radiate a side-wide rider."""
+    def field_cards(
+        self,
+        player: int,
+        *,
+        monsters: bool = True,
+        spell_traps: bool = True,
+        field: bool = True,
+        face_up_only: bool = False,
+        face_down_only: bool = False,
+    ) -> list[int]:
+        """The iids of ``player``'s cards on the field, filtered by zone kind and facing.
+        The single source for "iterate a side's zones" — used by the field-wide rider
+        scans, mass removal/return primitives and target pools. Returns a snapshot list,
+        so destroying a card mid-iteration is safe."""
         p = self.players[player]
-        for i in p.monster_zones:
-            if i is not None and self.cards[i].is_face_up:
-                yield self.cards[i]
-        for i in p.spell_trap_zones:
-            if i is not None and self.cards[i].is_face_up:
-                yield self.cards[i]
-        if p.field_zone is not None and self.cards[p.field_zone].is_face_up:
-            yield self.cards[p.field_zone]
+        out: list[int] = []
+        if monsters:
+            out += [i for i in p.monster_zones if i is not None]
+        if spell_traps:
+            out += [i for i in p.spell_trap_zones if i is not None]
+        if field and p.field_zone is not None:
+            out.append(p.field_zone)
+        if face_up_only:
+            out = [i for i in out if self.cards[i].is_face_up]
+        if face_down_only:
+            out = [i for i in out if not self.cards[i].is_face_up]
+        return out
 
     def is_protected_attack_target(self, iid: int) -> bool:
         """Whether the monster ``iid`` cannot be selected as an attack target by the
@@ -547,7 +562,8 @@ class GameState:
         if inst is None or inst.zone is not Zone.MONSTER:
             return False
         controller = inst.controller
-        for src in self._face_up_side_cards(controller):
+        for sid in self.field_cards(controller, face_up_only=True):
+            src = self.cards[sid]
             if not src.effects_active:
                 continue
             for mod in src.card.continuous:
@@ -579,7 +595,8 @@ class GameState:
         face-up Special-Summon lock (Vanity's Fiend/Ruler, the Barrier Statues). Read by
         every Special Summon route — a locked summon simply does not happen."""
         for ctrl in (0, 1):
-            for src in self._face_up_side_cards(ctrl):
+            for sid in self.field_cards(ctrl, face_up_only=True):
+                src = self.cards[sid]
                 if not src.effects_active:
                     continue
                 for mod in src.card.continuous:

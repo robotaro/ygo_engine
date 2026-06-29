@@ -155,23 +155,12 @@ class Engine:
         self._process_draw_triggers()
         self._changed()
 
-    def _faceup_cards(self, player: int) -> list[int]:
-        """A player's own face-up cards (Field + Spell/Trap + Monster zones),
-        snapshotted so destroying one mid-iteration is safe."""
-        s = self.state
-        p = s.players[player]
-        return [
-            iid
-            for iid in [p.field_zone, *p.spell_trap_zones, *p.monster_zones]
-            if iid is not None and s.cards[iid].is_face_up
-        ]
-
     def _process_draw_triggers(self) -> None:
         """Solemn Wishes: pay each queued draw out to its drawer's face-up cards."""
         s = self.state
         while s.pending_draws:
             player = s.pending_draws.pop(0)
-            for iid in self._faceup_cards(player):
+            for iid in s.field_cards(player, face_up_only=True):
                 inst = s.cards.get(iid)
                 if inst is None or not inst.effects_active:
                     continue  # a Gemini not yet Gemini Summoned has no live effect
@@ -211,7 +200,7 @@ class Engine:
         s = self.state
         order: list[int] = []
         for pl in (s.turn_player, s.opponent_of(s.turn_player)):
-            order.extend(self._faceup_cards(pl))
+            order.extend(s.field_cards(pl, face_up_only=True))
         return order
 
     def _apply_standby_upkeep(self, inst, mod: StandbyUpkeep, tp: int) -> bool:

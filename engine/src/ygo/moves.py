@@ -860,21 +860,13 @@ def target_candidates(state: GameState, controller: int, spec) -> list[int]:
 def _spell_trap_field(state: GameState) -> list[int]:
     """Every Spell/Trap on the field, both players' — including Field Spells
     (so Mystical Space Typhoon can destroy a Field Spell too)."""
-    out: list[int] = []
-    for pl in (0, 1):
-        out += [i for i in state.players[pl].spell_trap_zones if i is not None]
-        if state.players[pl].field_zone is not None:
-            out.append(state.players[pl].field_zone)
-    return out
+    return state.field_cards(0, monsters=False) + state.field_cards(1, monsters=False)
 
 
 def _all_field_cards(state: GameState) -> list[int]:
     """Every card on the field, both players' — monsters and Spells/Traps/Field
     alike (Raigeki Break targets 'any card on the field')."""
-    out: list[int] = []
-    for pl in (0, 1):
-        out += [i for i in state.players[pl].monster_zones if i is not None]
-    return out + _spell_trap_field(state)
+    return state.field_cards(0) + state.field_cards(1)
 
 
 def _opponent_field_cards(state: GameState, controller: int) -> list[int]:
