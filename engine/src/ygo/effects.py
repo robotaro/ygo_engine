@@ -159,6 +159,20 @@ class Piercing:
 
 
 @dataclass(frozen=True)
+class CanAttackDirectly:
+    """A face-up monster's rider: it may declare a direct attack even while the
+    opponent controls monsters (Raging Flame Sprite, Goblin Black Ops). Read by the
+    battle-phase enumeration; suppressed while the monster's effect is inactive."""
+
+
+@dataclass(frozen=True)
+class BattleIndestructible:
+    """A face-up monster's rider: it cannot be destroyed by battle — it survives a
+    combat it would lose, though battle damage still applies normally (Marshmallon,
+    Spirit Reaper, Arcana Force 0 - The Fool). Read by the combat step."""
+
+
+@dataclass(frozen=True)
 class FieldMod:
     """A continuous flat ATK/DEF modifier a face-up Field/Continuous Spell radiates
     over every monster on the field that matches its filter (the "field layer").

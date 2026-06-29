@@ -14,8 +14,10 @@ from .effects import (
     SELF,
     AttackRestriction,
     BanishTargets,
+    BattleIndestructible,
     BounceTargetsToDeck,
     BounceTargetsToHand,
+    CanAttackDirectly,
     CardFilter,
     CountTimes,
     CreateToken,
@@ -1279,6 +1281,9 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Blood Sucker": (_on_battle_damage((MillFromDeck(OPPONENT, count=1),)),),  # mill 1
     # Goblin Zombie: mill 1 (its "when sent to GY, recover a Zombie" half is not modelled).
     "Goblin Zombie": (_on_battle_damage((MillFromDeck(OPPONENT, count=1),)),),
+    # Spirit Reaper: opponent discards 1 random on battle damage (it's also
+    # battle-indestructible — see CONTINUOUS).
+    "Spirit Reaper": (_on_battle_damage((DiscardFromHand(OPPONENT, count=1, random=True),)),),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
     "Axe of Despair": _equip_effect(),
     "United We Stand": _equip_effect(),
@@ -1645,6 +1650,16 @@ CONTINUOUS: dict[str, tuple] = {
     ),
     # Airknight Parshath: piercing rider (the draw-on-damage trigger is in EFFECTS).
     "Airknight Parshath": (Piercing(),),
+    # --- Batch 38: battle modifiers (direct attack / cannot be destroyed by battle) ---
+    # Direct attackers (secondary riders — Goblin's end-Battle position change, Raging
+    # Flame Sprite's ATK growth — are not modelled).
+    "Goblin Black Ops": (CanAttackDirectly(),),
+    "Raging Flame Sprite": (CanAttackDirectly(),),
+    # Battle-indestructible (Arcana Force 0's no-position-change, Marshmallon's flipped
+    # 1000 burn, and Spirit Reaper's destroy-when-targeted riders are not modelled).
+    "Arcana Force 0 - The Fool": (BattleIndestructible(),),
+    "Marshmallon": (BattleIndestructible(),),
+    "Spirit Reaper": (BattleIndestructible(),),  # its battle-damage discard is in EFFECTS
     # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
     # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).
     "Chaos Necromancer": (SelfStatMod(scaling="graveyard_monsters", scale_atk=300),),

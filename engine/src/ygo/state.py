@@ -16,7 +16,15 @@ import random
 from dataclasses import dataclass, field
 
 from .cards import CardDef
-from .effects import EquipMod, FieldMod, Piercing, SelfStatMod, SpellCounterHolder
+from .effects import (
+    BattleIndestructible,
+    CanAttackDirectly,
+    EquipMod,
+    FieldMod,
+    Piercing,
+    SelfStatMod,
+    SpellCounterHolder,
+)
 from .enums import Phase, Position, Zone
 
 STARTING_LIFE_POINTS = 8000
@@ -458,6 +466,22 @@ class GameState:
         inst = self.cards[iid]
         return inst.effects_active and any(
             isinstance(mod, Piercing) for mod in inst.card.continuous
+        )
+
+    def can_attack_directly(self, iid: int) -> bool:
+        """Whether the monster may declare a direct attack despite the opponent having
+        monsters (a face-up CanAttackDirectly rider, active only while its effect is on)."""
+        inst = self.cards[iid]
+        return inst.effects_active and any(
+            isinstance(mod, CanAttackDirectly) for mod in inst.card.continuous
+        )
+
+    def is_battle_indestructible(self, iid: int) -> bool:
+        """Whether the monster cannot be destroyed by battle (a face-up
+        BattleIndestructible rider, active only while its effect is on)."""
+        inst = self.cards[iid]
+        return inst.effects_active and any(
+            isinstance(mod, BattleIndestructible) for mod in inst.card.continuous
         )
 
     def _effective_stat(self, iid: int, which: str) -> int:

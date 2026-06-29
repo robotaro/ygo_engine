@@ -1019,6 +1019,8 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
             targets = _toon_attack_targets(state, opp, opp_monsters)
         elif opp_monsters:
             targets = list(opp_monsters)
+            if state.can_attack_directly(iid):
+                targets.append(None)  # Raging Flame Sprite: may bypass the monsters
         else:
             targets = [None]  # direct attack
         actions.extend(DeclareAttack(iid, t) for t in targets)
@@ -1265,6 +1267,14 @@ def _summon(
     return f"{verb} {inst.name}{extra}"
 
 
+def _battle_destroy(state: GameState, iid: int) -> None:
+    """Destroy a monster as a result of battle — unless it's battle-indestructible
+    (Marshmallon, Spirit Reaper), in which case it survives. Battle damage is applied
+    separately by the caller, so an indestructible loser still costs its controller LP."""
+    if not state.is_battle_indestructible(iid):
+        state.send_to_graveyard(iid, by_battle=True)
+
+
 def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     """Resolve one attack using the v6.0 Determining Damage rules (no piercing)."""
     attacker = state.inst(action.attacker)
@@ -1288,23 +1298,23 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     if target.position is Position.FACE_UP_ATTACK:
         other = state.effective_attack(action.target)
         if atk > other:
-            state.send_to_graveyard(target.iid, by_battle=True)
+            _battle_destroy(state, target.iid)
             state.players[opp].life_points -= atk - other
             state.battle_damage_dealt = (action.attacker, atk - other)
             return f"{prefix}{attacker.name} ({atk}) destroys {target.name} ({other}) — {atk - other} damage"
         if atk < other:
-            state.send_to_graveyard(attacker.iid, by_battle=True)
+            _battle_destroy(state, attacker.iid)
             state.players[me].life_points -= other - atk
             return f"{prefix}{attacker.name} ({atk}) is destroyed by {target.name} ({other}) — {other - atk} damage to attacker"
-        state.send_to_graveyard(attacker.iid, by_battle=True)
-        state.send_to_graveyard(target.iid, by_battle=True)
+        _battle_destroy(state, attacker.iid)
+        _battle_destroy(state, target.iid)
         return f"{prefix}{attacker.name} and {target.name} ({atk}) destroy each other"
 
     # defending monster: ATK vs DEF. No battle damage on a clean break — unless the
     # attacker has a piercing rider (Dark Driceratops), which deals the excess.
     dfn = state.effective_defense(action.target)
     if atk > dfn:
-        state.send_to_graveyard(target.iid, by_battle=True)
+        _battle_destroy(state, target.iid)
         if state.has_piercing(action.attacker):
             dmg = atk - dfn
             state.players[opp].life_points -= dmg
