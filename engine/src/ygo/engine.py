@@ -670,6 +670,8 @@ class Engine:
             return
         effect = next(self._trigger_effects(inst.card, kind="attack_declared", by=SELF), None)
         if effect is not None:
+            if effect.condition is not None and not effect.condition(s, inst.controller):
+                return  # Gravekeeper's Assailant needs "Necrovalley" on the field
             self._trigger_effect(attacker_iid, effect, inst.controller, {"attacker": attacker_iid})
 
     def _trigger_effect(self, source_iid: int, effect, controller: int, event: dict | None = None):

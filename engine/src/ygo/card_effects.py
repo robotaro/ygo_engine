@@ -219,6 +219,23 @@ def _has_card_in_hand(state, controller) -> bool:
     return bool(state.players[controller].hand)
 
 
+def _field_spell_on_field(name):
+    """Build a condition: a face-up Field Spell of this name sits in either player's Field
+    Zone (Gravekeeper's Assailant needs "Necrovalley" on the field)."""
+
+    def cond(state, controller) -> bool:
+        for pl in (0, 1):
+            fz = state.players[pl].field_zone
+            if fz is not None and state.inst(fz).is_face_up and state.inst(fz).card.name == name:
+                return True
+        return False
+
+    return cond
+
+
+_necrovalley_on_field = _field_spell_on_field("Necrovalley")
+
+
 def _gy_has_match(card_filter):
     """Activation gate for a recover-from-GY effect: the controller's Graveyard holds
     at least one card matching ``card_filter`` (so it can't whiff)."""
@@ -1324,6 +1341,18 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
                 kind="attack_declared", by=OPPONENT, attacker_was_tribute_summoned=True
             ),
             resolve=(DestroyAttackingAttackPositionMonsters(), InflictDamage(OPPONENT, 1000)),
+        ),
+    ),
+    # --- Batch 54: monster "when this declares an attack" (condition-gated) ---
+    # Gravekeeper's Assailant — when it attacks while "Necrovalley" is on the field, flip
+    # an opponent's monster's battle position. Fires via engine._fire_attack_declared_trigger.
+    "Gravekeeper's Assailant": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=SELF),
+            condition=_necrovalley_on_field,
+            target=TargetSpec(count=1, where="opponent_monsters", face_up=True),
+            resolve=(ChangeTargetPosition(to="toggle"),),
         ),
     ),
     # --- Batch 48: attack redirect / cost-bearing attack Trap ---
