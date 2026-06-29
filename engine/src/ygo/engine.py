@@ -14,7 +14,14 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .agents import Agent
-from .effects import SELF, DrawTrigger, SpellCounterHolder, StandbyTrigger, StandbyUpkeep
+from .effects import (
+    SELF,
+    DrawTrigger,
+    EndPhaseTrigger,
+    SpellCounterHolder,
+    StandbyTrigger,
+    StandbyUpkeep,
+)
 from .enums import Phase, Position, TURN_PHASES, Zone
 from .moves import (
     ActivateMonsterEffect,
@@ -258,6 +265,44 @@ class Engine:
             return  # only the controller's own Standby Phase
         if mod.whose == "opponent" and controller == tp:
             return  # only the controller's opponent's Standby Phase
+        if mod.requires_defense and inst.position is not Position.FACE_UP_DEFENSE:
+            return
+        if mod.requires_attack and inst.position is not Position.FACE_UP_ATTACK:
+            return
+        if s.effect_negated(inst.iid):
+            return
+        self._trigger_effect(inst.iid, mod.effect, controller)
+
+    def _fire_end_phase_triggers(self, tp: int) -> None:
+        """Fire every face-up card's EndPhaseTrigger during ``tp``'s End Phase — the
+        End-Phase analogue of the Standby-Phase trigger sweep (Lady Heat's burn, the
+        Lightsworn mills, Little-Winguard / Garuda position changes). Same face-up,
+        turn-player-first, snapshotted order so a card destroying another mid-phase is
+        safe."""
+        s = self.state
+        for iid in self._standby_upkeep_order():  # generic face-up field scan
+            if self.result is not None:
+                break
+            inst = s.cards.get(iid)
+            if inst is None or not inst.is_face_up or not inst.effects_active:
+                continue  # left the field, or a Gemini not yet Gemini Summoned
+            for mod in inst.card.continuous:
+                if isinstance(mod, EndPhaseTrigger):
+                    self._fire_end_phase_trigger(inst, mod, tp)
+
+    def _fire_end_phase_trigger(self, inst, mod: EndPhaseTrigger, tp: int) -> None:
+        """Fire one face-up card's EndPhaseTrigger during ``tp``'s End Phase — the
+        source controller's Effect on a fresh Chain. Scoped by ``whose`` and the
+        source's battle position; suppressed while the source's effects are negated.
+        (Identical scoping to ``_fire_standby_trigger``, one phase later.)"""
+        s = self.state
+        if self.result is not None:
+            return
+        controller = inst.controller
+        if mod.whose == "controller" and controller != tp:
+            return  # only the controller's own End Phase
+        if mod.whose == "opponent" and controller == tp:
+            return  # only the controller's opponent's End Phase
         if mod.requires_defense and inst.position is not Position.FACE_UP_DEFENSE:
             return
         if mod.requires_attack and inst.position is not Position.FACE_UP_ATTACK:
@@ -956,6 +1001,8 @@ class Engine:
 
     def _end_phase(self, tp: int) -> None:
         self._revert_end_of_turn_control(tp)
+        if self.result is None:
+            self._fire_end_phase_triggers(tp)
         if self.result is None:
             self._return_spirits(tp)
         if self.result is None:

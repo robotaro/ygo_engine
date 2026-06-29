@@ -416,6 +416,30 @@ class StandbyTrigger:
 
 
 @dataclass(frozen=True)
+class EndPhaseTrigger:
+    """A face-up card that fires a full Effect during a qualifying End Phase — the
+    End-Phase analogue of StandbyTrigger (Elemental HERO Lady Heat's "×HEROes" burn,
+    Lumina's Lightsworn mill, Little-Winguard's position change, The Wicked Worm
+    Beast's self-bounce, Garuda's opponent-End-Phase position change). The engine
+    fires ``effect`` on a fresh Chain as the *source controller's* effect, so its
+    payload directions read relative to the controller.
+
+    ``whose``:
+      * "controller" — only the source controller's own End Phase.
+      * "opponent"   — only the controller's opponent's End Phase.
+      * "both"       — every End Phase (each player's).
+    ``requires_defense`` / ``requires_attack`` gate it on the source's face-up
+    battle position. The firing is suppressed while the source's effects are negated
+    (Skill Drain on a monster, Royal Decree on a Trap). Optional "you can" wording is
+    treated as mandatory in the headless engine, matching StandbyTrigger."""
+
+    effect: "Effect"
+    whose: str = "controller"  # "controller" | "opponent" | "both"
+    requires_defense: bool = False
+    requires_attack: bool = False
+
+
+@dataclass(frozen=True)
 class DrawTrigger:
     """A face-up card's reaction to its controller drawing (Slice 10).
 
@@ -725,6 +749,18 @@ def _count_pool(ctx: EffectContext, pool: str, card_filter=None) -> int:
         if card_filter is None:
             return len(gy)
         return sum(1 for i in gy if card_filter.matches(s.inst(i).card))
+    if pool == "own_monsters":
+        # Face-up monsters the controller controls (Elemental HERO Lady Heat's
+        # "for each face-up 'Elemental HERO' you control" burn). An optional
+        # card_filter narrows by name/race; with none, every face-up own monster.
+        zones = s.players[ctx.controller].monster_zones
+        return sum(
+            1
+            for i in zones
+            if i is not None
+            and s.inst(i).is_face_up
+            and (card_filter is None or card_filter.matches(s.inst(i).card))
+        )
     return 0
 
 

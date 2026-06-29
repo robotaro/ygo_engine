@@ -203,6 +203,12 @@ DECK = (
     + ["Hydrogeddon"] * 2
     + ["Divine Knight Ishzark"] * 2
     + ["Blue Thunder T-45"] * 2
+    # during-End-Phase triggers (EndPhaseTrigger)
+    + ["Elemental HERO Lady Heat"] * 2
+    + ["Little-Winguard"] * 2
+    + ["Garuda the Wind Spirit"] * 2
+    + ["Lumina, Lightsworn Summoner"] * 2
+    + ["The Wicked Worm Beast"] * 2
 )
 
 

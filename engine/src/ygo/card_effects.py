@@ -49,6 +49,7 @@ from .effects import (
     Draw,
     DrawTrigger,
     Effect,
+    EndPhaseTrigger,
     EquipMod,
     EquipToTarget,
     FieldMod,
@@ -4473,5 +4474,101 @@ CONTINUOUS.update({
     'Z-Metal Tank': (
         UnionMod(host_names=frozenset({"X-Head Cannon", "Y-Dragon Head"})),
         EquipMod(atk=600, defn=600),
+    ),
+})
+
+
+# ===== Effects Batch 69: during-End-Phase triggers (EndPhaseTrigger) =====
+EFFECTS.update({
+    # Lumina, Lightsworn Summoner — Ignition revive (the End-Phase mill is in CONTINUOUS):
+    # discard 1, then Special Summon a Level-4-or-lower "Lightsworn" from your GY.
+    "Lumina, Lightsworn Summoner": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            discard_cost=1,
+            target=TargetSpec(
+                count=1,
+                where="own_graveyard_monster",
+                max_level=4,
+                name_contains=frozenset({"Lightsworn"}),
+            ),
+            resolve=(SpecialSummonFromGraveyard(),),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    # Elemental HERO Lady Heat — during each of YOUR End Phases, burn the opponent 200
+    # for each face-up "Elemental HERO" you control (counts Lady Heat herself).
+    "Elemental HERO Lady Heat": (
+        EndPhaseTrigger(
+            Effect(
+                resolve=(
+                    InflictDamage(
+                        OPPONENT,
+                        value=CountTimes(
+                            200,
+                            "own_monsters",
+                            card_filter=CardFilter(
+                                card_kind="monster",
+                                name_contains=frozenset({"Elemental HERO"}),
+                            ),
+                        ),
+                    ),
+                )
+            ),
+            whose="controller",
+        ),
+    ),
+    # Little-Winguard — during your End Phase you may change its own battle position
+    # (self-target by name, toggle ATK<->DEF).
+    "Little-Winguard": (
+        EndPhaseTrigger(
+            Effect(
+                once_per_turn=True,
+                target=TargetSpec(
+                    count=1,
+                    where="own_monsters",
+                    face_up=True,
+                    names=frozenset({"Little-Winguard"}),
+                ),
+                resolve=(ChangeTargetPosition(to="toggle"),),
+            ),
+            whose="controller",
+        ),
+    ),
+    # Garuda the Wind Spirit — during your OPPONENT's End Phase, change the battle
+    # position of 1 face-up monster they control. (Its Nomi summon restriction — only
+    # Special Summoned by banishing a WIND monster from your GY — is a summon-method
+    # rule not modelled here.)
+    "Garuda the Wind Spirit": (
+        EndPhaseTrigger(
+            Effect(
+                target=TargetSpec(count=1, where="opponent_monsters", face_up=True),
+                resolve=(ChangeTargetPosition(to="toggle"),),
+            ),
+            whose="opponent",
+        ),
+    ),
+    # Lumina, Lightsworn Summoner — during your End Phase, send the top 3 of your Deck
+    # to the GY (the Lightsworn mill; its revive is the Ignition Effect above).
+    "Lumina, Lightsworn Summoner": (
+        EndPhaseTrigger(Effect(resolve=(MillFromDeck(SELF, 3),)), whose="controller"),
+    ),
+    # The Wicked Worm Beast — mandatory: returns itself to the owner's hand during the
+    # controller's End Phase (self-target by name so it only ever bounces itself).
+    "The Wicked Worm Beast": (
+        EndPhaseTrigger(
+            Effect(
+                target=TargetSpec(
+                    count=1,
+                    where="own_monsters",
+                    face_up=True,
+                    names=frozenset({"The Wicked Worm Beast"}),
+                ),
+                resolve=(BounceTargetsToHand(),),
+            ),
+            whose="controller",
+        ),
     ),
 })
