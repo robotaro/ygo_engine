@@ -655,6 +655,10 @@ def _count_pool(ctx: EffectContext, pool: str, card_filter=None) -> int:
         return len(s.players[opp].hand)
     if pool == "opponent_hand_and_field":
         return len(s.players[opp].hand) + _field_card_count(s, opp)
+    if pool == "opponent_spell_trap":
+        return sum(1 for i in s.players[opp].spell_trap_zones if i is not None) + (
+            1 if s.players[opp].field_zone is not None else 0
+        )
     if pool == "opponent_graveyard":
         return len(s.players[opp].graveyard)
     if pool == "opponent_banished":

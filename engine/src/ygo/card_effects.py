@@ -990,6 +990,25 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(TakeControl(until_end_of_turn=True),),
         ),
     ),
+    # --- Batch 62: more clean Flip effects (GY summon / GY->Deck / LP / count-burn) ---
+    "Spirit Caller": (  # SS 1 Level 3-or-lower Normal Monster from your GY
+        _flip(
+            target=TargetSpec(
+                count=1, where="own_graveyard_monster", normal_only=True, max_level=3
+            ),
+            resolve=(SpecialSummonFromGraveyard(),),
+        ),
+    ),
+    "Des Feral Imp": (  # shuffle 1 card from your GY into the Deck
+        _flip(resolve=(ReturnFromGraveyardToDeck(CardFilter()),)),
+    ),
+    "Princess of Tsurugi": (  # 500 damage per Spell/Trap the opponent controls
+        _flip(resolve=(InflictDamage(OPPONENT, value=CountTimes(500, "opponent_spell_trap")),)),
+    ),
+    "The Immortal of Thunder": (  # gain 3000 LP; when sent from field to GY, lose 5000 LP
+        _flip(resolve=(GainLifePoints(SELF, 3000),)),
+        _on_sent_to_gy((InflictDamage(SELF, 5000),)),
+    ),
     "Des Koala": (  # 400 damage to the opponent for each card in their hand
         _flip(resolve=(InflictDamage(OPPONENT, value=CountTimes(400, "opponent_hand")),)),
     ),

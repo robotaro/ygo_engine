@@ -175,6 +175,11 @@ DECK = (
     + ["Rafflesia Seduction"] * 2
     + ["Jowls of Dark Demise"] * 2
     + ["Dragon Manipulator"] * 2
+    # clean Flip effects (GY summon / GY->Deck / LP / count-burn)
+    + ["Spirit Caller"] * 2
+    + ["Des Feral Imp"] * 2
+    + ["Princess of Tsurugi"] * 2
+    + ["The Immortal of Thunder"] * 2
 )
 
 
