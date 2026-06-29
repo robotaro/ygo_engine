@@ -14,6 +14,7 @@ import random
 from .enums import Phase, Position, Zone
 from .moves import (
     Action,
+    ActivateMonsterEffect,
     ActivateSpell,
     DeclareAttack,
     DiscardCard,
@@ -167,6 +168,17 @@ class GreedyAgent(Agent):
                 and state.inst(a.iid).card.name in self.AUTO_SPELLS
             ):
                 return a
+        # Fire a no-downside monster Ignition effect (Royal Magical Library draws a
+        # card; Breaker pops a Spell/Trap). Only when it targets nothing or an
+        # opponent's card, so we never spend a counter to hit our own board.
+        monster_effects = [
+            a
+            for a in legal
+            if isinstance(a, ActivateMonsterEffect)
+            and (not a.targets or any(state.inst(t).controller != player for t in a.targets))
+        ]
+        if monster_effects:
+            return monster_effects[0]
         # Revive the strongest monster we can (Monster Reborn, a Set Call of the
         # Haunted) — any activation that targets a monster sitting in a Graveyard.
         revivals = [

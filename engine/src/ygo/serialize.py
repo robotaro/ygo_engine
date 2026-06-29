@@ -15,6 +15,7 @@ from __future__ import annotations
 from .enums import Position
 from .moves import (
     Action,
+    ActivateMonsterEffect,
     ActivateSpell,
     ChangePosition,
     DeclareAttack,
@@ -133,6 +134,7 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
     position_changes: list[int] = []
     discards: list[int] = []
     activatable: dict[int, list[list[int]]] = {}
+    monster_activatable: dict[int, list[list[int]]] = {}
     settable: list[int] = []
     gemini_summonable: list[int] = []
     special_summonable: list[int] = []
@@ -162,6 +164,8 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
             attackers.setdefault(a.attacker, []).append(a.target)
         elif isinstance(a, ActivateSpell):
             activatable.setdefault(a.iid, []).append(list(a.targets))
+        elif isinstance(a, ActivateMonsterEffect):
+            monster_activatable.setdefault(a.iid, []).append(list(a.targets))
         elif isinstance(a, SetSpellTrap):
             settable.append(a.iid)
         elif isinstance(a, DiscardCard):
@@ -182,6 +186,9 @@ def legal_to_dict(state: GameState, player: int, *, with_pass: bool) -> dict:
         "positionChanges": position_changes,
         # iid -> [[target iids]...]; [[]] means "activatable, no target"
         "activatable": {str(k): v for k, v in activatable.items()},
+        # face-up monster iid -> [[target iids]...]; an Ignition effect (Royal Magical
+        # Library, Breaker) you may start from a monster you control
+        "monsterActivatable": {str(k): v for k, v in monster_activatable.items()},
         "settable": settable,
         "discards": discards,
         "canPass": with_pass,
@@ -268,6 +275,21 @@ def match_intent(intent: dict, legal: list[Action], state: GameState) -> Action 
         if match is None:
             return None
         return ActivateSpell(iid=iid, targets=targets, zone_index=intent.get("zoneIndex"))
+
+    if kind == "activateMonster":
+        iid = intent.get("iid")
+        targets = tuple(intent.get("targets", []))
+        match = next(
+            (
+                a
+                for a in legal
+                if isinstance(a, ActivateMonsterEffect)
+                and a.iid == iid
+                and set(a.targets) == set(targets)
+            ),
+            None,
+        )
+        return ActivateMonsterEffect(iid=iid, targets=targets) if match is not None else None
 
     if kind == "set":
         # A card iid is either a Spell/Trap (Set face-down in the S/T row) or a
