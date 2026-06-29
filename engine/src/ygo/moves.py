@@ -574,7 +574,9 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             continue
         if inst.set_on_turn is None or inst.set_on_turn >= state.turn_count:
             continue  # can't activate the turn it was Set
-        effect = next((e for e in inst.card.effects if e.timing == "ignition"), None)
+        # Ignition Spell/Traps and Set Quick-Play Spells may be started at will on your
+        # own turn; purely reactive Traps (timing="trigger") wait for a response window.
+        effect = next((e for e in inst.card.effects if e.timing in ("ignition", "quick")), None)
         if effect is None or (effect.condition is not None and not effect.condition(state, player)):
             continue
         if not can_pay_costs(state, player, iid, effect) or not _off_cooldown(inst, effect, state.turn_count):

@@ -980,6 +980,40 @@ class ReturnSpellFromGraveyardToHand(Primitive):
         ctx.state.inst(iid).zone = Zone.HAND
 
 
+@dataclass(frozen=True)
+class ReturnFromGraveyardToHand(Primitive):
+    """Add up to ``count`` cards from the controller's Graveyard matching
+    ``card_filter`` to the hand (Quick Charger adds 2 low-Level "Batteryman"; Monster
+    Eye a "Polymerization"). The pick is deterministic — first eligible — as
+    interactive Graveyard selection is a deferred enhancement (cf. SearchFromDeck).
+    Fewer matches than ``count`` -> recover as many as there are."""
+
+    card_filter: CardFilter = CardFilter()
+    count: int = 1
+
+    def execute(self, ctx: EffectContext) -> None:
+        gy = list(ctx.state.players[ctx.controller].graveyard)
+        picks = [i for i in gy if self.card_filter.matches(ctx.state.inst(i).card)][: self.count]
+        for iid in picks:
+            ctx.state.return_to_hand(iid)
+
+
+@dataclass(frozen=True)
+class ReturnFromGraveyardToDeck(Primitive):
+    """Return up to ``count`` matching cards from the controller's Graveyard to the
+    Deck, then shuffle (Ray of Hope returns 2 LIGHT monsters; Volcanic Recharge up to
+    3 "Volcanic"). Deterministic first-eligible pick, like its to-hand sibling."""
+
+    card_filter: CardFilter = CardFilter()
+    count: int = 1
+
+    def execute(self, ctx: EffectContext) -> None:
+        gy = list(ctx.state.players[ctx.controller].graveyard)
+        picks = [i for i in gy if self.card_filter.matches(ctx.state.inst(i).card)][: self.count]
+        for iid in picks:
+            ctx.state.return_to_deck(iid, to_top=False)
+
+
 # --- Slice 6: Special Summon from the Graveyard ---
 @dataclass(frozen=True)
 class SpecialSummonFromGraveyard(Primitive):

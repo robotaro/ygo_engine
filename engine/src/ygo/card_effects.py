@@ -47,6 +47,8 @@ from .effects import (
     PlaceCountersOnSelf,
     ReturnAllSetCardsToHand,
     ReturnAllSpellTrapsToHand,
+    ReturnFromGraveyardToDeck,
+    ReturnFromGraveyardToHand,
     ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
     SearchFromDeck,
@@ -125,6 +127,19 @@ def _has_free_monster_zone(state, controller) -> bool:
 def _opponent_has_free_monster_zone(state, controller) -> bool:
     """Gate a Token summon onto the opponent's field (Ojama Trio)."""
     return state.first_empty_monster_zone(state.opponent_of(controller)) is not None
+
+
+def _gy_has_match(card_filter):
+    """Activation gate for a recover-from-GY effect: the controller's Graveyard holds
+    at least one card matching ``card_filter`` (so it can't whiff)."""
+
+    def cond(state, controller) -> bool:
+        return any(
+            card_filter.matches(state.inst(i).card)
+            for i in state.players[controller].graveyard
+        )
+
+    return cond
 
 
 def _control_no_monsters(state, controller) -> bool:
@@ -1035,6 +1050,66 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
                     level=2,
                     atk=700,
                     defn=700,
+                ),
+            ),
+        ),
+    ),
+    # --- Batch 33: recover cards from your Graveyard (to hand / to Deck) ---
+    # Quick Charger — Quick-Play: add 2 Level-4-or-lower "Batteryman" from GY to hand.
+    "Quick Charger": (
+        Effect(
+            speed=2,
+            timing="quick",
+            condition=_gy_has_match(
+                CardFilter(card_kind="monster", name_contains=frozenset({"Batteryman"}), max_level=4)
+            ),
+            resolve=(
+                ReturnFromGraveyardToHand(
+                    card_filter=CardFilter(
+                        card_kind="monster", name_contains=frozenset({"Batteryman"}), max_level=4
+                    ),
+                    count=2,
+                ),
+            ),
+        ),
+    ),
+    # Ray of Hope — Normal Trap: add 2 LIGHT monsters from your GY to the Deck, shuffle.
+    "Ray of Hope": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_gy_has_match(CardFilter(card_kind="monster", attributes=frozenset({Attribute.LIGHT}))),
+            resolve=(
+                ReturnFromGraveyardToDeck(
+                    card_filter=CardFilter(card_kind="monster", attributes=frozenset({Attribute.LIGHT})),
+                    count=2,
+                ),
+            ),
+        ),
+    ),
+    # Volcanic Recharge — Normal Trap: return up to 3 "Volcanic" monsters to the Deck.
+    "Volcanic Recharge": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_gy_has_match(CardFilter(card_kind="monster", name_contains=frozenset({"Volcanic"}))),
+            resolve=(
+                ReturnFromGraveyardToDeck(
+                    card_filter=CardFilter(card_kind="monster", name_contains=frozenset({"Volcanic"})),
+                    count=3,
+                ),
+            ),
+        ),
+    ),
+    # Monster Eye — monster Ignition: pay 1000 LP; add 1 "Polymerization" from GY to hand.
+    "Monster Eye": (
+        Effect(
+            timing="ignition",
+            life_cost=1000,
+            condition=_gy_has_match(CardFilter(names=frozenset({"Polymerization"}))),
+            resolve=(
+                ReturnFromGraveyardToHand(
+                    card_filter=CardFilter(names=frozenset({"Polymerization"})), count=1
                 ),
             ),
         ),
