@@ -18,6 +18,7 @@ from .effects import (
     BounceTargetsToHand,
     CardFilter,
     CountTimes,
+    CreateToken,
     DamageEqualToAttackerAtk,
     DestroyAllFieldSpells,
     DestroyAllOtherCards,
@@ -119,6 +120,11 @@ def _opponent_has_faceup_monster(state, controller) -> bool:
 def _has_free_monster_zone(state, controller) -> bool:
     """Gate the Special Summon: you need an open Monster Zone to revive into."""
     return state.first_empty_monster_zone(controller) is not None
+
+
+def _opponent_has_free_monster_zone(state, controller) -> bool:
+    """Gate a Token summon onto the opponent's field (Ojama Trio)."""
+    return state.first_empty_monster_zone(state.opponent_of(controller)) is not None
 
 
 def _control_no_monsters(state, controller) -> bool:
@@ -985,6 +991,21 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         _flip(target=TargetSpec(count=2, where="any_monster"), resolve=(DestroyTargets(),)),
     ),
     "Sangan": (_on_sent_to_gy((SearchMonsterToHand(1500),)),),
+    # Dandylion — sent from the field to the GY: 2 Fluff Tokens (Plant/WIND/L1/0/0).
+    "Dandylion": (
+        _on_sent_to_gy(
+            (
+                CreateToken(
+                    token_name="Fluff Token",
+                    count=2,
+                    position=Position.FACE_UP_DEFENSE,
+                    race="Plant",
+                    attribute=Attribute.WIND,
+                    level=1,
+                ),
+            )
+        ),
+    ),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
     "Axe of Despair": _equip_effect(),
     "United We Stand": _equip_effect(),
@@ -1114,6 +1135,76 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             condition=_has_free_monster_zone,
             target=TargetSpec(count=1, where="opponent_graveyard_monster"),
             resolve=(SpecialSummonFromGraveyard(link=True),),
+        ),
+    ),
+    # --- Batch 30: Token generators (CreateToken). The "you cannot Summon other
+    # monsters this turn" / "cannot be Tributed" riders are not modelled. ---
+    "Scapegoat": (  # Quick-Play: 4 Sheep Tokens (Beast/EARTH/L1/0/0) in Defense
+        Effect(
+            speed=2,
+            timing="quick",
+            condition=_has_free_monster_zone,
+            resolve=(
+                CreateToken(
+                    token_name="Sheep Token",
+                    count=4,
+                    position=Position.FACE_UP_DEFENSE,
+                    race="Beast",
+                    attribute=Attribute.EARTH,
+                    level=1,
+                ),
+            ),
+        ),
+    ),
+    "Fires of Doomsday": (  # Quick-Play: 2 Doomsday Tokens (Fiend/DARK/L1/0/0) Defense
+        Effect(
+            speed=2,
+            timing="quick",
+            condition=_has_free_monster_zone,
+            resolve=(
+                CreateToken(
+                    token_name="Doomsday Token",
+                    count=2,
+                    position=Position.FACE_UP_DEFENSE,
+                    race="Fiend",
+                    attribute=Attribute.DARK,
+                    level=1,
+                ),
+            ),
+        ),
+    ),
+    "Fiend's Sanctuary": (  # Normal Spell: 1 Metal Fiend Token (Fiend/DARK/L1/0/0)
+        Effect(
+            timing="ignition",
+            condition=_has_free_monster_zone,
+            resolve=(
+                CreateToken(
+                    token_name="Metal Fiend Token",
+                    count=1,
+                    race="Fiend",
+                    attribute=Attribute.DARK,
+                    level=1,
+                ),
+            ),
+        ),
+    ),
+    "Ojama Trio": (  # Normal Trap: 3 Ojama Tokens (Beast/LIGHT/L2/0/1000) to OPPONENT
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=_opponent_has_free_monster_zone,
+            resolve=(
+                CreateToken(
+                    token_name="Ojama Token",
+                    count=3,
+                    position=Position.FACE_UP_DEFENSE,
+                    to_opponent=True,
+                    race="Beast",
+                    attribute=Attribute.LIGHT,
+                    level=2,
+                    defn=1000,
+                ),
+            ),
         ),
     ),
     # --- Slice 7: Field Spells (stat layers) + one Continuous attack restriction ---

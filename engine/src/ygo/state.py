@@ -278,6 +278,12 @@ class GameState:
         inst = self.cards[iid]
         from_field = inst.zone in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD)
         self._remove_from_current_location(iid)
+        if inst.card.is_token:
+            # A Token that leaves the field is removed from the game — it never rests
+            # in the Graveyard, so it raises no "sent to GY" trigger and is forgotten.
+            self._clear_field_flags(inst)
+            del self.cards[iid]
+            return
         inst.zone = Zone.GRAVEYARD
         self._clear_field_flags(inst)
         inst.died_by_battle = by_battle and from_field

@@ -60,6 +60,8 @@ class CardDef:
     # --- meta ---
     status: str | None = None  # banlist: Forbidden / Limited / Semi-Limited / None
     image_id: int | None = None  # YGOPRODeck art id (None -> no downloaded art)
+    is_token: bool = False  # a Token (Scapegoat's Sheep, ...): made on the fly, not
+    # in the registry, and removed from the game (never to the GY) when it leaves play
 
     # Declarative effect layer.
     effects: tuple = ()  # activated/triggered abilities

@@ -1008,6 +1008,47 @@ class SpecialSummonFromGraveyard(Primitive):
             inst.linked_to = ctx.source_iid
 
 
+@dataclass(frozen=True)
+class CreateToken(Primitive):
+    """Special Summon Token monsters synthesised on the fly (Scapegoat's 4 Sheep
+    Tokens, Fires of Doomsday's 2 Doomsday Tokens). The Token's printed body is built
+    here — it has no registry entry — and is flagged ``is_token`` so it's removed from
+    the game (never to the GY) when it leaves the field. ``count`` Tokens drop into
+    empty Monster Zones, stopping early when they fill; ``to_opponent`` puts them on
+    the opponent's field instead (Ojama Trio). They arrive in ``position``."""
+
+    token_name: str = "Token"
+    count: int = 1
+    position: Position = Position.FACE_UP_ATTACK
+    to_opponent: bool = False
+    race: str = ""
+    attribute: Attribute = Attribute.DARK
+    level: int = 1
+    atk: int = 0
+    defn: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        from .cards import CardDef, CardType  # local import — cards imports this module
+
+        s = ctx.state
+        player = ctx.side(OPPONENT) if self.to_opponent else ctx.controller
+        token = CardDef(
+            name=self.token_name,
+            card_type=CardType.MONSTER,
+            attribute=self.attribute,
+            race=self.race,
+            level=self.level,
+            attack=self.atk,
+            defense=self.defn,
+            is_token=True,
+        )
+        for _ in range(self.count):
+            index = s.first_empty_monster_zone(player)
+            if index is None:
+                break
+            s.spawn_on_field(token, player, index, self.position)
+
+
 # --- Slice 9: take-control ---
 @dataclass(frozen=True)
 class TakeControl(Primitive):
