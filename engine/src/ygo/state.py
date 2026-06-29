@@ -91,6 +91,11 @@ class CardInstance:
     # accumulate here and the engine clears them in the End Phase.
     temp_atk: int = 0
     temp_def: int = 0
+    # Permanent ATK/DEF deltas stamped by an effect and carried for the monster's life
+    # on the field (Slate Warrior's "gains 500" / "the destroyer loses 500", Zombyra's
+    # "loses 200 each time it destroys"). Never cleared by the turn reset.
+    perm_atk: int = 0
+    perm_def: int = 0
     # The monster(s) Tributed as this card's activation cost (Spiritual Fire Art,
     # Burst Breath). Recorded when the cost is paid so the payload can read the
     # tributed monster's printed stats after it has gone to the Graveyard.
@@ -424,11 +429,23 @@ class GameState:
                         if isinstance(mod, EquipMod):  # an Equip may also carry non-stat passives
                             yield mod, equip.controller
 
-    def _mod_delta(self, mod, controller: int, which: str) -> int:
+    def _mod_delta(self, mod, controller: int, which: str, host_iid: int) -> int:
         flat = mod.atk if which == "atk" else mod.defn
         per = mod.scale_atk if which == "atk" else mod.scale_defn
         if mod.scaling is None:
             return flat
+        if mod.scaling == "lp_megamorph":
+            # Megamorph: the equipped monster's ATK becomes double its original ATK while
+            # your LP < the opponent's, or half while your LP > theirs (DEF untouched).
+            if which != "atk":
+                return 0
+            base = self.cards[host_iid].card.attack or 0
+            me, opp = self.players[controller].life_points, self.players[self.opponent_of(controller)].life_points
+            if me < opp:
+                return base  # base + base = double
+            if me > opp:
+                return -(base // 2)  # base - base/2 = half
+            return 0
         if mod.scaling == "face_up_monsters":
             count = sum(
                 1 for i in self.players[controller].monster_zones if i is not None and self.cards[i].is_face_up
@@ -886,8 +903,9 @@ class GameState:
             return 0
         base = (inst.card.attack if which == "atk" else inst.card.defense) or 0
         temp = inst.temp_atk if which == "atk" else inst.temp_def
-        total = base + temp
-        total += sum(self._mod_delta(mod, ctrl, which) for mod, ctrl in self._equip_mods_on(iid))
+        perm = inst.perm_atk if which == "atk" else inst.perm_def
+        total = base + temp + perm
+        total += sum(self._mod_delta(mod, ctrl, which, iid) for mod, ctrl in self._equip_mods_on(iid))
         total += self._field_delta(iid, which)
         total += self._self_stat_delta(iid, which)
         total += self._spell_counter_delta(iid, which)

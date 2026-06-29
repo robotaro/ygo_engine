@@ -34,6 +34,7 @@ from .effects import (
     CreateToken,
     DamageEqualToAttackerAtk,
     DamageStepBonus,
+    DebuffBattleDestroyer,
     DefenseAfterAttack,
     DestroyedByBattleAttack,
     DestroyAllFieldSpells,
@@ -62,6 +63,7 @@ from .effects import (
     LoseHalfLifePoints,
     MillFromDeck,
     ModifyAllStatsTemporary,
+    ModifySelfPermanentStats,
     ModifyStatsTemporary,
     MultiAttacker,
     NegateAttack,
@@ -4653,4 +4655,55 @@ EFFECTS.update({
             resolve=(DestroyTargets(),),
         ),
     ),
+})
+
+
+# ===== Effects Batch 73: permanent ATK debuff + Megamorph + Nimble (deck-impact) =====
+EFFECTS.update({
+    # Slate Warrior — FLIP: gains 500 ATK/DEF (a permanent self-buff). And when it is
+    # destroyed by battle, the monster that destroyed it permanently loses 500 ATK/DEF.
+    "Slate Warrior": (
+        _flip(resolve=(ModifySelfPermanentStats(atk=500, defn=500),)),
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(DebuffBattleDestroyer(atk=-500, defn=-500),),
+        ),
+    ),
+    # Zombyra the Dark — each time it destroys a monster by battle it permanently loses
+    # 200 ATK. (Its "cannot attack directly" clause is the default for a monster, so it
+    # needs no marker.)
+    "Zombyra the Dark": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(ModifySelfPermanentStats(atk=-200),),
+        ),
+    ),
+    # Megamorph — Equip Spell: activating it attaches to a monster; the LP-comparison
+    # ATK multiplier (double while behind on LP, half while ahead) is the EquipMod below.
+    "Megamorph": _equip_effect(),
+    # Nimble Momonga — destroyed by battle & sent to the GY: gain 1000 LP, then Special
+    # Summon any number of "Nimble Momonga" from the Deck in face-down Defense Position.
+    "Nimble Momonga": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(
+                GainLifePoints(SELF, 1000),
+                SpecialSummonFromDeck(
+                    card_filter=CardFilter(
+                        card_kind="monster", name_contains=frozenset({"Nimble Momonga"})
+                    ),
+                    position=Position.FACE_DOWN_DEFENSE,
+                    count=2,
+                ),
+            ),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    # Megamorph — ATK becomes double the equipped monster's original ATK while your LP
+    # is below your opponent's, or half while it is above (read in effective_attack).
+    "Megamorph": (EquipMod(scaling="lp_megamorph"),),
 })

@@ -57,7 +57,7 @@ class EquipMod:
 
     atk: int = 0
     defn: int = 0
-    scaling: str | None = None  # None | "face_up_monsters" | "spell_trap"
+    scaling: str | None = None  # None | "face_up_monsters" | "spell_trap" | "lp_megamorph"
     scale_atk: int = 0
     scale_defn: int = 0
 
@@ -1094,6 +1094,43 @@ class ModifyAllStatsTemporary(Primitive):
 
 
 @dataclass(frozen=True)
+class ModifySelfPermanentStats(Primitive):
+    """Permanently change the effect source's own ATK/DEF for as long as it stays on the
+    field (Slate Warrior's FLIP "+500", Zombyra's "loses 200 each time it destroys")."""
+
+    atk: int = 0
+    defn: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        inst = ctx.state.cards.get(ctx.source_iid)
+        if inst is not None and inst.zone is Zone.MONSTER:
+            inst.perm_atk += self.atk
+            inst.perm_def += self.defn
+
+
+@dataclass(frozen=True)
+class DebuffBattleDestroyer(Primitive):
+    """Permanently change the ATK/DEF of the monster that just destroyed the source by
+    battle (Slate Warrior: "the monster that destroyed it loses 500 ATK and DEF"). Reads
+    the engine's transient ``battle_destroyed_by`` record — still populated when this
+    monster's "destroyed by battle" GY trigger resolves, just before it is drained."""
+
+    atk: int = 0
+    defn: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        destroyer_iid = next(
+            (dr for dr, dd in s.battle_destroyed_by if dd == ctx.source_iid and dr is not None),
+            None,
+        )
+        inst = s.cards.get(destroyer_iid) if destroyer_iid is not None else None
+        if inst is not None and inst.zone is Zone.MONSTER:
+            inst.perm_atk += self.atk
+            inst.perm_def += self.defn
+
+
+@dataclass(frozen=True)
 class DestroyHighestDefOpponentMonster(Primitive):
     """Smashing Ground: destroy the opponent's face-up monster with the highest DEF."""
 
@@ -1496,23 +1533,27 @@ class SpecialSummonFromDeck(Primitive):
 
     card_filter: CardFilter = CardFilter()
     position: Position = Position.FACE_UP_ATTACK
+    count: int = 1  # up to this many matches (Nimble Momonga: "any number" of copies)
 
     def execute(self, ctx: EffectContext) -> None:
         s = ctx.state
         controller = ctx.controller
         deck = s.players[controller].deck
-        # Pick among monsters the lock would actually let through (so a Barrier Statue
-        # doesn't make us "pick" an un-summonable body while a legal one exists).
-        eligible = [
-            i
-            for i in deck
-            if s.inst(i).card.is_monster
-            and self.card_filter.matches(s.inst(i).card)
-            and not s.special_summon_locked(controller, s.inst(i).card)
-        ]
-        if eligible:
+        for _ in range(self.count):
+            # Pick among monsters the lock would actually let through (so a Barrier Statue
+            # doesn't make us "pick" an un-summonable body while a legal one exists).
+            eligible = [
+                i
+                for i in deck
+                if s.inst(i).card.is_monster
+                and self.card_filter.matches(s.inst(i).card)
+                and not s.special_summon_locked(controller, s.inst(i).card)
+            ]
+            if not eligible:
+                break
             pick = max(eligible, key=lambda i: s.inst(i).card.attack or 0)
-            s.special_summon(pick, controller, self.position)
+            if not s.special_summon(pick, controller, self.position):
+                break  # no free Monster Zone left
         s.rng.shuffle(deck)
 
 

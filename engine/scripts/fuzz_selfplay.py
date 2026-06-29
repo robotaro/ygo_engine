@@ -222,6 +222,11 @@ DECK = (
     + ["Ring of Destruction"] * 2
     + ["Card Destruction"] * 2
     + ["Dust Tornado"] * 2
+    # permanent ATK debuff + Megamorph + Nimble (deck-impact)
+    + ["Slate Warrior"] * 2
+    + ["Zombyra the Dark"] * 2
+    + ["Megamorph"] * 2
+    + ["Nimble Momonga"] * 3
 )
 
 
