@@ -1557,6 +1557,23 @@ class DiscardFromHand(Primitive):
 
 
 @dataclass(frozen=True)
+class CardDestructionExchange(Primitive):
+    """Card Destruction: both players discard their entire hand, then each draws that
+    many cards (controller first). The activated Card Destruction is already out of the
+    hand, so it is not among the discards. Draws are capped at the deck size so a short
+    deck can't over-draw."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        for pl in (ctx.controller, s.opponent_of(ctx.controller)):
+            hand = list(s.players[pl].hand)
+            for iid in hand:
+                s.send_to_graveyard(iid)
+            if hand:
+                s.draw(pl, min(len(hand), len(s.players[pl].deck)))
+
+
+@dataclass(frozen=True)
 class ReturnFromHandToDeck(Primitive):
     """Return ``count`` cards from a player's hand to their Deck, then shuffle (The
     Forceful Sentry, Trap Dustshoot). ``monsters_only`` restricts the pick to Monster

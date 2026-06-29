@@ -25,6 +25,7 @@ from .effects import (
     BounceTargetsToDeck,
     BounceTargetsToHand,
     CanAttackDirectly,
+    CardDestructionExchange,
     CardEffectNegation,
     CoinFlip,
     CardFilter,
@@ -4616,4 +4617,40 @@ CONTINUOUS.update({
     "Indomitable Fighter Lei Lei": (DefenseAfterAttack(lock_position=True),),
     # Giant Orc — 2200 ATK; after attacking, locked in Defense until its next turn.
     "Giant Orc": (DefenseAfterAttack(lock_position=True),),
+})
+
+
+# ===== Effects Batch 72: deck-impact staples (Ring of Destruction, Card Destruction, Dust Tornado) =====
+EFFECTS.update({
+    # Ring of Destruction — Normal Trap (current ruling): during the opponent's turn,
+    # target 1 face-up monster they control; you take damage equal to its ATK, then deal
+    # the same to the opponent, then destroy it. (Simplifications: the "ATK <= their LP"
+    # targeting clause is dropped, and the burn reads effective ATK — the engine has no
+    # original-ATK value source for an arbitrary target.)
+    "Ring of Destruction": (
+        Effect(
+            speed=2,
+            timing="quick",
+            once_per_turn=True,
+            condition=lambda s, c: s.turn_player != c,  # only during the opponent's turn
+            target=TargetSpec(count=1, where="opponent_monsters", face_up=True),
+            resolve=(
+                InflictDamage("self", value=TargetAttack()),
+                InflictDamage(OPPONENT, value=TargetAttack()),
+                DestroyTargets(),
+            ),
+        ),
+    ),
+    # Card Destruction — both players discard their whole hand, then each draws that many.
+    "Card Destruction": (Effect(resolve=(CardDestructionExchange(),)),),
+    # Dust Tornado — Normal Trap: destroy 1 Spell/Trap your opponent controls. (Its
+    # optional "then you can Set 1 Spell/Trap from your hand" rider is not modelled.)
+    "Dust Tornado": (
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="opponent_spell_trap"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
 })

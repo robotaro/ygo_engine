@@ -218,6 +218,10 @@ DECK = (
     + ["Goblin Elite Attack Force"] * 2
     + ["Axe Dragonute"] * 2
     + ["Goblin Black Ops"] * 2
+    # deck-impact staples
+    + ["Ring of Destruction"] * 2
+    + ["Card Destruction"] * 2
+    + ["Dust Tornado"] * 2
 )
 
 

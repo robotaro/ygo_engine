@@ -699,6 +699,8 @@ def _target_pool(state: GameState, controller: int, spec) -> list[int]:
         candidates = _all_field_cards(state)
     elif spec.where == "opponent_card_field":
         candidates = _opponent_field_cards(state, controller)
+    elif spec.where == "opponent_spell_trap":
+        candidates = state.field_cards(opp, monsters=False)  # opponent's S/T + Field Spell
     elif spec.where == "any_graveyard_monster":
         candidates = _graveyard_monsters(state, (0, 1))
     elif spec.where == "own_graveyard_monster":
