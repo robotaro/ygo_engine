@@ -636,6 +636,19 @@ class TargetAttack(ValueSource):
         return ctx.state.effective_attack(iid)
 
 
+@dataclass(frozen=True)
+class DestroyedByBattleAttack(ValueSource):
+    """The original (printed) ATK of the monster this card just destroyed by battle —
+    read from the ``destroyed`` iid on the triggering event (Guardian Angel Joan gains
+    that much LP). The monster is in the Graveyard by now, so this is its base ATK."""
+
+    def value(self, ctx: EffectContext) -> int:
+        iid = (ctx.event or {}).get("destroyed")
+        if iid is None or iid not in ctx.state.cards:
+            return 0
+        return ctx.state.inst(iid).card.attack or 0
+
+
 def _tributed_atk(ctx: EffectContext) -> int:
     """Sum of the printed ATK of the monster(s) Tributed as this card's activation
     cost — read off the source card's recorded ``tributed_iids``. Printed (base)
@@ -807,6 +820,19 @@ class BanishTargets(Primitive):
         for iid in list(ctx.targets):
             if iid in ctx.state.cards:
                 ctx.state.banish(iid)
+
+
+@dataclass(frozen=True)
+class BanishEventMonster(Primitive):
+    """Banish the monster named on the triggering event's ``destroyed`` field — the
+    monster this card just destroyed by battle (Divine Knight Ishzark banishes it
+    instead of leaving it in the Graveyard). It's already in the GY by resolution, so
+    this moves it on to the banished pile; the end state is the same."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        iid = (ctx.event or {}).get("destroyed")
+        if iid is not None and iid in ctx.state.cards:
+            ctx.state.banish(iid)
 
 
 @dataclass(frozen=True)

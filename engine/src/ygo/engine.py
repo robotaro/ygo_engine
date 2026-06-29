@@ -394,6 +394,10 @@ class Engine:
         # Airknight Parshath) — fired after combat from the state's transient record.
         self._fire_battle_damage_trigger()
 
+        # "When this card destroys a monster by battle" (Masked Chopper, Guardian Angel
+        # Joan, Hydrogeddon) — fired from the (destroyer, destroyed) pairs combat recorded.
+        self._fire_destroys_by_battle_trigger()
+
     # ------------------------------------------------------------------ #
     #  The Chain
     # ------------------------------------------------------------------ #
@@ -680,6 +684,37 @@ class Engine:
         )
         if effect is not None:
             self._trigger_effect(dealer_iid, effect, inst.controller, {"amount": amount})
+
+    def _fire_destroys_by_battle_trigger(self) -> None:
+        """Fire each monster's "when this card destroys a monster by battle" SELF Trigger
+        (Masked Chopper's 2000 burn, Guardian Angel Joan's LP gain, Hydrogeddon's recruit,
+        Divine Knight Ishzark's banish) from the transient ``battle_destroyed_by`` record.
+        Each (destroyer, destroyed) pair fires the destroyer's effect on a fresh Chain,
+        guarded on the destroyer still being a live face-up monster — so mutual destruction,
+        where the destroyer itself died, does not fire. The event carries the ``destroyed``
+        iid so the payload can read its original ATK (Joan) or banish it (Ishzark)."""
+        s = self.state
+        pairs = s.battle_destroyed_by
+        s.battle_destroyed_by = []
+        for destroyer_iid, destroyed_iid in pairs:
+            if self.result is not None:
+                return
+            inst = s.cards.get(destroyer_iid)
+            if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
+                continue
+            if not inst.effects_active:
+                continue  # a Gemini not yet Gemini Summoned has no effect
+            effect = next(self._trigger_effects(inst.card, kind="destroys_by_battle", by=SELF), None)
+            if effect is None:
+                continue
+            if effect.condition is not None and not effect.condition(s, inst.controller):
+                continue
+            self._trigger_effect(
+                destroyer_iid,
+                effect,
+                inst.controller,
+                {"destroyer": destroyer_iid, "destroyed": destroyed_iid},
+            )
 
     def _fire_attack_declared_trigger(self, attacker_iid: int) -> None:
         """Fire the attacking monster's OWN "when this card declares an attack" Trigger

@@ -1324,12 +1324,16 @@ def _summon(
     return f"{verb} {inst.name}{extra}"
 
 
-def _battle_destroy(state: GameState, iid: int) -> None:
+def _battle_destroy(state: GameState, iid: int, destroyer_iid: int | None = None) -> None:
     """Destroy a monster as a result of battle — unless it's battle-indestructible
     (Marshmallon, Spirit Reaper), in which case it survives. Battle damage is applied
-    separately by the caller, so an indestructible loser still costs its controller LP."""
+    separately by the caller, so an indestructible loser still costs its controller LP.
+    When it actually dies, record ``(destroyer_iid, iid)`` so the engine can fire the
+    destroyer's "when this card destroys a monster by battle" SELF Trigger."""
     if not state.is_battle_indestructible(iid):
         state.send_to_graveyard(iid, by_battle=True)
+        if destroyer_iid is not None:
+            state.battle_destroyed_by.append((destroyer_iid, iid))
 
 
 def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
@@ -1343,6 +1347,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         action.attacker, action.target, is_attacker=True, which="atk"
     )
     state.battle_damage_dealt = None  # reset; set below when the attacker damages opp
+    state.battle_destroyed_by = []  # reset; appended below for each combat death
 
     def _hit_defender(amount: int) -> None:
         # Battle damage to the defending player — redirected to the attacker by Dimension
@@ -1368,15 +1373,15 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
             action.target, action.attacker, is_attacker=False, which="atk"
         )
         if atk > other:
-            _battle_destroy(state, target.iid)
+            _battle_destroy(state, target.iid, attacker.iid)
             _hit_defender(atk - other)
             return f"{prefix}{attacker.name} ({atk}) destroys {target.name} ({other}) — {atk - other} damage"
         if atk < other:
-            _battle_destroy(state, attacker.iid)
+            _battle_destroy(state, attacker.iid, target.iid)
             state.players[me].life_points -= other - atk
             return f"{prefix}{attacker.name} ({atk}) is destroyed by {target.name} ({other}) — {other - atk} damage to attacker"
-        _battle_destroy(state, attacker.iid)
-        _battle_destroy(state, target.iid)
+        _battle_destroy(state, attacker.iid, target.iid)
+        _battle_destroy(state, target.iid, attacker.iid)
         return f"{prefix}{attacker.name} and {target.name} ({atk}) destroy each other"
 
     # defending monster: ATK vs DEF. No battle damage on a clean break — unless the
@@ -1385,7 +1390,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         action.target, action.attacker, is_attacker=False, which="defn"
     )
     if atk > dfn:
-        _battle_destroy(state, target.iid)
+        _battle_destroy(state, target.iid, attacker.iid)
         if state.has_piercing(action.attacker):
             dmg = atk - dfn
             _hit_defender(dmg)

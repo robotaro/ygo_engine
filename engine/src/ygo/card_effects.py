@@ -17,6 +17,7 @@ from .effects import (
     AttackRestriction,
     AttackTargetProtection,
     BanishAttackingDefensePositionMonsters,
+    BanishEventMonster,
     BanishTargets,
     ChangeAllPositions,
     ChangeTargetPosition,
@@ -31,6 +32,7 @@ from .effects import (
     CreateToken,
     DamageEqualToAttackerAtk,
     DamageStepBonus,
+    DestroyedByBattleAttack,
     DestroyAllFieldSpells,
     DestroyAllOtherCards,
     DestroyAllSpecialSummoned,
@@ -1820,6 +1822,61 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # Spirit Reaper: opponent discards 1 random on battle damage (it's also
     # battle-indestructible — see CONTINUOUS).
     "Spirit Reaper": (_on_battle_damage((DiscardFromHand(OPPONENT, count=1, random=True),)),),
+    # --- Batch 66: "when this card destroys a monster by battle" SELF Triggers ---
+    # The engine fires a SELF "destroys_by_battle" Trigger after combat for each monster
+    # that destroyed an opponent's monster (engine._fire_destroys_by_battle_trigger); the
+    # event's "destroyed" iid lets the payload read the dead monster's original ATK / banish it.
+    # Masked Chopper: burn the opponent 2000.
+    "Masked Chopper": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(InflictDamage(OPPONENT, 2000),),
+        ),
+    ),
+    # Guardian Angel Joan: gain LP equal to the destroyed monster's original ATK.
+    "Guardian Angel Joan": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(GainLifePoints(SELF, value=DestroyedByBattleAttack()),),
+        ),
+    ),
+    # Hydrogeddon: Special Summon another "Hydrogeddon" from your Deck (the recruit is
+    # deterministic, as with the battle-recruiters).
+    "Hydrogeddon": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(SpecialSummonFromDeck(CardFilter(names=frozenset({"Hydrogeddon"})),),),
+        ),
+    ),
+    # Divine Knight Ishzark: banish the monster it destroyed (instead of leaving it in the GY).
+    "Divine Knight Ishzark": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(BanishEventMonster(),),
+        ),
+    ),
+    # Blue Thunder T-45: Special Summon 1 "Thunder Option Token" (Machine/LIGHT/Lv4/
+    # 1500/1500). The "cannot be Tributed for a Tribute Summon" rider is not modelled.
+    "Blue Thunder T-45": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(
+                CreateToken(
+                    token_name="Thunder Option Token",
+                    race="Machine",
+                    attribute=Attribute.LIGHT,
+                    level=4,
+                    atk=1500,
+                    defn=1500,
+                ),
+            ),
+        ),
+    ),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
     "Axe of Despair": _equip_effect(),
     "United We Stand": _equip_effect(),

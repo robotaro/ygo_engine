@@ -196,6 +196,11 @@ class GameState:
     # (dealer_iid, amount) — for the engine's "inflicts battle damage" Trigger. Set in
     # _resolve_attack, drained by the engine after the attack, cleared each declaration.
     battle_damage_dealt: tuple | None = None
+    # Transient record of (destroyer_iid, destroyed_iid) pairs from the attack just
+    # resolved — for the engine's "when this card destroys a monster by battle" SELF
+    # Trigger (Masked Chopper, Guardian Angel Joan). Reset each _resolve_attack, drained
+    # by the engine after the attack.
+    battle_destroyed_by: list = field(default_factory=list)
     seed: int = 0
     rng: random.Random = field(default_factory=random.Random)
     _next_iid: int = 0

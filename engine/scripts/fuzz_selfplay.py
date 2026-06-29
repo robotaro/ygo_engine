@@ -197,6 +197,12 @@ DECK = (
     + ["Spirit of the Breeze"] * 2
     + ["Destiny HERO - Defender"] * 2
     + ["Minor Goblin Official"] * 2
+    # "destroys a monster by battle" SELF triggers
+    + ["Masked Chopper"] * 2
+    + ["Guardian Angel Joan"] * 2
+    + ["Hydrogeddon"] * 2
+    + ["Divine Knight Ishzark"] * 2
+    + ["Blue Thunder T-45"] * 2
 )
 
 
