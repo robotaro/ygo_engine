@@ -155,6 +155,13 @@ DECK = (
     + ["Penumbral Soldier Lady"] * 2
     + ["Steamroid"] * 2
     + ["Black Veloci"] * 2
+    # archetype/race anthems + self-shield lords
+    + ["Command Knight"] * 2
+    + ["Freya, Spirit of Victory"] * 2
+    + ["Shining Angel"] * 2
+    + ["Hunter Owl"] * 2
+    + ["Nightmare Penguin"] * 2
+    + ["Mother Grizzly"] * 2
 )
 
 

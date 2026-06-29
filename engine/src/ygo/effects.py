@@ -236,6 +236,13 @@ class AttackTargetProtection:
       * ``requires_control_name_contains`` — the rider is dormant unless the controller
         also controls a face-up monster whose name contains this (Marshmallon Glasses
         only works while "Marshmallon" is on the field).
+      * ``self_only`` — the rider covers ONLY the source monster, not a race/name class
+        (Command Knight / Freya / Hunter Owl shield just themselves).
+      * ``requires_control_other`` / ``requires_control_other_race`` /
+        ``requires_control_other_attribute`` — dormant unless the controller also controls
+        a face-up monster OTHER than the source (any / of that race / of that attribute):
+        Command Knight needs "another monster", Freya "another Fairy", Hunter Owl "another
+        WIND monster".
     """
 
     race: str | None = None
@@ -243,6 +250,10 @@ class AttackTargetProtection:
     exclude_self: bool = False
     exclude_name_contains: str | None = None
     requires_control_name_contains: str | None = None
+    self_only: bool = False
+    requires_control_other: bool = False
+    requires_control_other_race: str | None = None
+    requires_control_other_attribute: "Attribute | None" = None
 
 
 @dataclass(frozen=True)

@@ -569,6 +569,14 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(BounceTargetsToDeck(to_top=True),),
         ),
     ),
+    # Batch 59: Nightmare Penguin — flipped face-up: bounce 1 card the opponent controls
+    # (its WATER anthem is the CONTINUOUS FieldMod).
+    "Nightmare Penguin": (
+        _flip(
+            target=TargetSpec(count=1, where="opponent_card_field"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
     # --- Effects Batch 13: dynamic values (amount derived from the board) ---
     # Count-based burn/heal ("... for each ..."): the amount is computed at
     # resolution time from a card count via CountTimes(per, pool). The Normal
@@ -2293,6 +2301,29 @@ CONTINUOUS: dict[str, tuple] = {
     "Black Veloci": (
         DamageStepBonus(atk=400, when="attacking"),
         DamageStepBonus(atk=-400, when="attacked"),
+    ),
+    # --- Batch 59: archetype/race anthems + "lord shields itself" ---
+    # Command Knight: all your Warriors +400 ATK; while you control another monster, the
+    # opponent can't target Command Knight for attacks.
+    "Command Knight": (
+        FieldMod(atk=400, races=frozenset({"Warrior"}), side="self"),
+        AttackTargetProtection(self_only=True, requires_control_other=True),
+    ),
+    # Freya, Spirit of Victory: all your Fairies +400 ATK/DEF; while you control another
+    # Fairy, the opponent can't target Freya for attacks.
+    "Freya, Spirit of Victory": (
+        FieldMod(atk=400, defn=400, races=frozenset({"Fairy"}), side="self"),
+        AttackTargetProtection(self_only=True, requires_control_other_race="Fairy"),
+    ),
+    # Hunter Owl: +500 ATK per face-up WIND monster you control (counts itself); while you
+    # control another WIND monster, the opponent can't target it for attacks.
+    "Hunter Owl": (
+        SelfStatMod(scaling="controlled_monsters", scale_atk=500, count_attribute=Attribute.WIND),
+        AttackTargetProtection(self_only=True, requires_control_other_attribute=Attribute.WIND),
+    ),
+    # Nightmare Penguin: all your face-up WATER monsters +200 ATK (its flip-bounce is in EFFECTS).
+    "Nightmare Penguin": (
+        FieldMod(atk=200, attributes=frozenset({Attribute.WATER}), side="self"),
     ),
     # --- Effects Batch 24: name-restricted Equip Spell boosts ---
     "Cyber Shield": (EquipMod(atk=500),),

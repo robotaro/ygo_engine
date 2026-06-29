@@ -750,6 +750,30 @@ class GameState:
             return True
         return False
 
+    def _controls_other_required(self, mod, src_iid: int, controller: int) -> bool:
+        """Whether an AttackTargetProtection's "control another monster" gate holds: the
+        controller controls a face-up monster OTHER than the source matching the gate (any
+        / a race / an attribute). True when no such gate is set."""
+        if not (
+            mod.requires_control_other
+            or mod.requires_control_other_race is not None
+            or mod.requires_control_other_attribute is not None
+        ):
+            return True
+        for m in self.players[controller].monster_zones:
+            if m is None or m == src_iid or not self.cards[m].is_face_up:
+                continue
+            card = self.cards[m].card
+            if mod.requires_control_other_race is not None and card.race != mod.requires_control_other_race:
+                continue
+            if (
+                mod.requires_control_other_attribute is not None
+                and card.attribute != mod.requires_control_other_attribute
+            ):
+                continue
+            return True
+        return False
+
     def is_protected_attack_target(self, iid: int) -> bool:
         """Whether the monster ``iid`` cannot be selected as an attack target by the
         opponent — a face-up AttackTargetProtection on its controller's side covers it
@@ -766,6 +790,10 @@ class GameState:
                 for m in self.players[controller].monster_zones
             ):
                 continue
+            if not self._controls_other_required(mod, src.iid, controller):
+                continue  # Command Knight needs "another monster" (Freya/Hunter Owl: of a kind)
+            if mod.self_only and iid != src.iid:
+                continue  # the rider shields only its own source monster
             if mod.exclude_self and src.iid == iid:
                 continue
             if (
