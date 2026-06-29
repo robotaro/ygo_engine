@@ -463,6 +463,19 @@ class GameState:
         for mod, ctrl in self.active_passives():
             if isinstance(mod, FieldMod) and self._field_mod_applies(mod, monster, ctrl):
                 total += mod.atk if which == "atk" else mod.defn
+        # Monster-borne field anthems (Bladefly: all WIND +500 / all EARTH −400): a face-up
+        # monster whose effects are live radiates its FieldMod riders to every matching
+        # monster on the field (both sides), suppressed under Skill Drain / while inactive.
+        for ctrl, pl in enumerate(self.players):
+            for sid in pl.monster_zones:
+                if sid is None:
+                    continue
+                src = self.cards[sid]
+                if not src.is_face_up or not src.effects_active or self.monster_effects_negated(sid):
+                    continue
+                for mod in src.card.continuous:
+                    if isinstance(mod, FieldMod) and self._field_mod_applies(mod, monster, ctrl):
+                        total += mod.atk if which == "atk" else mod.defn
         return total
 
     def _self_stat_delta(self, monster_iid: int, which: str) -> int:

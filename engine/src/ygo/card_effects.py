@@ -2239,6 +2239,24 @@ CONTINUOUS: dict[str, tuple] = {
     "Swamp Battleguard": (
         SelfStatMod(scaling="controlled_monsters", scale_atk=500, count_name_contains="Lava Battleguard"),
     ),
+    # --- Batch 56: monster-borne attribute anthems (field-wide, both sides) ---
+    # The elemental boosters: +500 ATK to one Attribute, -400 ATK to the opposing one.
+    "Bladefly": (
+        FieldMod(atk=500, attributes=frozenset({Attribute.WIND})),
+        FieldMod(atk=-400, attributes=frozenset({Attribute.EARTH})),
+    ),
+    "Milus Radiant": (
+        FieldMod(atk=500, attributes=frozenset({Attribute.EARTH})),
+        FieldMod(atk=-400, attributes=frozenset({Attribute.WIND})),
+    ),
+    "Star Boy": (
+        FieldMod(atk=500, attributes=frozenset({Attribute.WATER})),
+        FieldMod(atk=-400, attributes=frozenset({Attribute.FIRE})),
+    ),
+    "Witch's Apprentice": (
+        FieldMod(atk=500, attributes=frozenset({Attribute.DARK})),
+        FieldMod(atk=-400, attributes=frozenset({Attribute.LIGHT})),
+    ),
     # --- Effects Batch 24: name-restricted Equip Spell boosts ---
     "Cyber Shield": (EquipMod(atk=500),),
     "Ancient Gear Tank": (EquipMod(atk=600),),
