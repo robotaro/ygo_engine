@@ -273,6 +273,26 @@ class SpecialSummonLock:
 
 
 @dataclass(frozen=True)
+class ActivationLock:
+    """A face-up monster's continuous lock on the OPPONENT *activating* a card class,
+    read by ``GameState.cannot_activate_card``. Unlike CardEffectNegation it doesn't
+    negate — it just bars activation, and only in its scope:
+
+      * ``locks`` — "spell" or "trap".
+      * ``quick_play_only`` — only Quick-Play Spells (Invader of Darkness).
+      * ``during_battle_phase_only`` — only during the Battle Phase (Mirage Dragon,
+        Pitch-Black Warwolf bar the opponent's Traps mid-combat).
+      * ``requires_empty_hand`` — only while the SOURCE's controller has an empty hand
+        (Mechanical Hound). Suppressed while the source's effect is inactive/negated.
+    """
+
+    locks: str = "spell"  # "spell" | "trap"
+    quick_play_only: bool = False
+    during_battle_phase_only: bool = False
+    requires_empty_hand: bool = False
+
+
+@dataclass(frozen=True)
 class CardEffectNegation:
     """A face-up card that shuts off a whole CLASS of card effects on the field
     (Jinzo, Spell Canceller, Royal Decree, Imperial Order). Read by

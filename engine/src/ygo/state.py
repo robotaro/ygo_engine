@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 
 from .cards import CardDef
 from .effects import (
+    ActivationLock,
     AttackTargetProtection,
     BattleIndestructible,
     CanAttackDirectly,
@@ -30,7 +31,7 @@ from .effects import (
     SpecialSummonLock,
     SpellCounterHolder,
 )
-from .enums import Phase, Position, Zone
+from .enums import Phase, Position, SpellTrapProperty, Zone
 
 STARTING_LIFE_POINTS = 8000
 MAX_MONSTER_ZONES = 5
@@ -729,7 +730,29 @@ class GameState:
                 return True
             if inst.card.is_trap and self.action_locked("trap", inst.controller):
                 return True
+            if self._activation_locked_by_monster(inst):
+                return True
         return self._class_negator(iid, prevent_activation_only=True)
+
+    def _activation_locked_by_monster(self, inst) -> bool:
+        """Whether a face-up ActivationLock monster bars its controller's opponent from
+        activating ``inst`` right now (Mirage Dragon / Invader of Darkness / Mechanical
+        Hound). Scope-checked: class, Quick-Play-only, Battle-Phase-only, empty-hand."""
+        for src, mod in self.active_markers(ActivationLock):
+            if inst.controller != self.opponent_of(src.controller):
+                continue  # the lock only hits the source controller's opponent
+            if mod.locks == "spell" and not inst.card.is_spell:
+                continue
+            if mod.locks == "trap" and not inst.card.is_trap:
+                continue
+            if mod.quick_play_only and inst.card.subtype is not SpellTrapProperty.QUICK_PLAY:
+                continue
+            if mod.during_battle_phase_only and self.phase is not Phase.BATTLE:
+                continue
+            if mod.requires_empty_hand and self.players[src.controller].hand:
+                continue
+            return True
+        return False
 
     def effect_negated(self, iid: int) -> bool:
         """Whether the *effects* of the face-up card ``iid`` are negated — its chain link

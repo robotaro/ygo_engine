@@ -12,6 +12,7 @@ from __future__ import annotations
 from .effects import (
     OPPONENT,
     SELF,
+    ActivationLock,
     ApplyActionLock,
     AttackRestriction,
     AttackTargetProtection,
@@ -2420,6 +2421,14 @@ CONTINUOUS: dict[str, tuple] = {
     "Fairy King Truesdale": (
         FieldMod(atk=500, defn=500, races=frozenset({"Plant"}), side="self", source_in_defense=True),
     ),
+    # --- Batch 64: continuous activation locks (ActivationLock rider) ---
+    # Mirage Dragon / Pitch-Black Warwolf: opponent can't activate Traps in the Battle Phase.
+    "Mirage Dragon": (ActivationLock(locks="trap", during_battle_phase_only=True),),
+    "Pitch-Black Warwolf": (ActivationLock(locks="trap", during_battle_phase_only=True),),
+    # Invader of Darkness: opponent can't activate Quick-Play Spells.
+    "Invader of Darkness": (ActivationLock(locks="spell", quick_play_only=True),),
+    # Mechanical Hound: while you hold no cards, opponent can't activate Spells.
+    "Mechanical Hound": (ActivationLock(locks="spell", requires_empty_hand=True),),
     # --- Effects Batch 24: name-restricted Equip Spell boosts ---
     "Cyber Shield": (EquipMod(atk=500),),
     "Ancient Gear Tank": (EquipMod(atk=600),),

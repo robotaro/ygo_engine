@@ -185,6 +185,11 @@ DECK = (
     + ["Sonic Jammer"] * 2
     + ["Whirlwind Weasel"] * 2
     + ["Searchlightman"] * 2
+    # continuous activation locks
+    + ["Mirage Dragon"] * 2
+    + ["Pitch-Black Warwolf"] * 2
+    + ["Invader of Darkness"] * 2
+    + ["Mechanical Hound"] * 2
 )
 
 
