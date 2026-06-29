@@ -29,6 +29,8 @@
   let openGy = null // which Graveyard's contents are expanded ('you' | 'opp')
   let ritualChosen = [] // iids picked for a Ritual Tribute
   let unionSource = null // a Union monster picked, awaiting a host to equip to
+  let preview = null // a card shown enlarged for reading (left-click)
+  let ctx = null // right-click context menu: { x, y, items[] }
 
   onMount(() => newGame())
 
@@ -156,6 +158,101 @@
   }
   function isDefense(slot) {
     return slot?.position?.includes('defense')
+  }
+
+  // --- card preview: left-click any known card to enlarge and read it ---
+  function findCard(iid) {
+    const pools = [
+      you?.hand,
+      you?.monsterZones,
+      you?.spellTrapZones,
+      you?.graveyard,
+      you?.fieldZone && [you.fieldZone],
+      opp?.monsterZones,
+      opp?.spellTrapZones,
+      opp?.graveyard,
+      opp?.fieldZone && [opp.fieldZone],
+    ]
+    for (const p of pools) {
+      const c = p?.find?.((x) => x && x.iid === iid)
+      if (c) return c
+    }
+    return null
+  }
+  function enlarge(card) {
+    if (card && card.name != null) {
+      preview = card
+      ctx = null
+    }
+  }
+  function closeOverlays() {
+    preview = null
+    ctx = null
+  }
+
+  // --- right-click context menu: a card's legal actions live here, so a plain
+  //     click never changes a monster's battle position by accident ---
+  function summonToFirstZone(iid) {
+    if (!yourTurn) return
+    const opts = summonOptions(iid)
+    if (!opts || !opts.summon?.length) return
+    const zoneIndex = firstEmptyZone()
+    if (zoneIndex == null) return
+    if (opts.summon.some((c) => c.length === 0)) {
+      sendIntent({ kind: 'summon', iid, tributes: [], zoneIndex })
+    } else {
+      pendingTribute = { iid, zoneIndex, needed: opts.summon[0].length, chosen: [], mode: 'summon' }
+    }
+  }
+  function buildContext(card, where, zoneIndex) {
+    const items = []
+    const iid = card?.iid
+    if (yourTurn && card && card.name != null) {
+      if (where === 'ownMonster') {
+        if (phase === 'battle_phase' && attackTargets(iid))
+          items.push({ label: 'Declare Attack', fn: () => (selectedAttacker = iid) })
+        if (canChangePos(iid))
+          items.push({
+            label: isDefense(card) ? 'Switch to Attack' : 'Switch to Defense',
+            fn: () => sendIntent({ kind: 'changePosition', iid }),
+          })
+        if (canFlip(iid))
+          items.push({ label: 'Flip Summon', fn: () => sendIntent({ kind: 'flip', iid }) })
+        if (canGeminiSummon(iid))
+          items.push({ label: 'Gemini Summon', fn: () => sendIntent({ kind: 'geminiSummon', iid }) })
+        if (canUnionEquip(iid))
+          items.push({ label: 'Equip as Union…', fn: () => (unionSource = iid) })
+      } else if (where === 'ownSpellTrap') {
+        if (canActivate(iid)) items.push({ label: 'Activate', fn: () => beginActivate(iid, zoneIndex) })
+        if (canUnionUnequip(iid))
+          items.push({ label: 'Unequip Union', fn: () => sendIntent({ kind: 'unionUnequip', union: iid }) })
+      } else if (where === 'hand') {
+        const opts = summonOptions(iid)
+        if (opts?.summon?.length) items.push({ label: 'Summon', fn: () => summonToFirstZone(iid) })
+        if (canSpecialSummon(iid)) items.push({ label: 'Special Summon', fn: () => specialSummon(iid) })
+        if (canActivate(iid)) items.push({ label: 'Activate', fn: () => activateSpell(iid) })
+        if (canSet(iid)) items.push({ label: 'Set', fn: () => setCard(iid) })
+        else if (opts?.set?.length) items.push({ label: 'Set', fn: () => onSet(iid) })
+      }
+    }
+    if (card && card.name != null) items.push({ label: 'Enlarge', fn: () => enlarge(card) })
+    return items
+  }
+  function openContext(e, card, where, zoneIndex) {
+    const items = buildContext(card, where, zoneIndex)
+    if (!items.length) return
+    e.preventDefault()
+    const w = 190
+    const h = 12 + items.length * 32
+    ctx = {
+      x: Math.max(6, Math.min(e.clientX, window.innerWidth - w - 6)),
+      y: Math.max(6, Math.min(e.clientY, window.innerHeight - h - 6)),
+      items,
+    }
+  }
+  function runCtx(item) {
+    ctx = null
+    item.fn()
   }
 
   // interactions
@@ -299,7 +396,10 @@
   }
 
   function onClickOwnMonster(iid) {
-    if (!yourTurn) return
+    if (!yourTurn) {
+      enlarge(findCard(iid))
+      return
+    }
     if ($targetRequest) {
       chooseEngineTarget(iid)
       return
@@ -321,32 +421,30 @@
       }
       return
     }
-    if (phase === 'battle_phase') {
-      if (attackTargets(iid)) selectedAttacker = selectedAttacker === iid ? null : iid
+    if (phase === 'battle_phase' && attackTargets(iid)) {
+      selectedAttacker = selectedAttacker === iid ? null : iid
       return
     }
-    if (canUnionEquip(iid)) unionSource = iid // enter host-pick mode
-    else if (canGeminiSummon(iid)) sendIntent({ kind: 'geminiSummon', iid })
-    else if (canFlip(iid)) sendIntent({ kind: 'flip', iid })
-    else if (canChangePos(iid)) sendIntent({ kind: 'changePosition', iid })
+    // Idle click just reads the card. Position change / Flip / Gemini / Union
+    // all live in the right-click menu now, so nothing happens by accident.
+    enlarge(findCard(iid))
   }
 
   function onClickOppMonster(iid) {
-    if (!yourTurn) return
-    if ($targetRequest) {
-      chooseEngineTarget(iid)
-      return
-    }
-    if (pendingTarget) {
-      chooseTarget(iid)
-      return
-    }
-    if (phase !== 'battle_phase' || selectedAttacker == null) return
-    if (validTargets.includes(iid)) {
+    if (yourTurn && $targetRequest) return chooseEngineTarget(iid)
+    if (yourTurn && pendingTarget) return chooseTarget(iid)
+    if (
+      yourTurn &&
+      phase === 'battle_phase' &&
+      selectedAttacker != null &&
+      validTargets.includes(iid)
+    ) {
       lunge(selectedAttacker, iid)
       sendIntent({ kind: 'attack', attacker: selectedAttacker, target: iid })
       selectedAttacker = null
+      return
     }
+    enlarge(findCard(iid))
   }
 
   function onDirectAttack() {
@@ -392,9 +490,9 @@
   // A Graveyard card may be a target (Monster Reborn picks either GY; Call of
   // the Haunted picks your own) for the active activation/forced-effect prompt.
   function onClickGraveyard(iid) {
-    if (!yourTurn) return
-    if ($targetRequest) chooseEngineTarget(iid)
-    else if (pendingTarget) chooseTarget(iid)
+    if (yourTurn && $targetRequest) return chooseEngineTarget(iid)
+    if (yourTurn && pendingTarget) return chooseTarget(iid)
+    enlarge(findCard(iid))
   }
 
   function toggleGy(side) {
@@ -403,18 +501,17 @@
 
   // A Spell/Trap card may be a target (e.g. Mystical Space Typhoon hits either
   // player's), or — for your own Set Continuous Trap — something to activate.
-  function onClickOwnSpellTrap(iid, zoneIndex) {
-    if (!yourTurn) return
-    if ($targetRequest) return chooseEngineTarget(iid)
-    if (pendingTarget) return chooseTarget(iid)
-    if (canUnionUnequip(iid)) return sendIntent({ kind: 'unionUnequip', union: iid })
-    if (canActivate(iid)) beginActivate(iid, zoneIndex)
+  function onClickOwnSpellTrap(iid) {
+    if (yourTurn && $targetRequest) return chooseEngineTarget(iid)
+    if (yourTurn && pendingTarget) return chooseTarget(iid)
+    // Activate / Unequip moved to the right-click menu (no accidental activation).
+    enlarge(findCard(iid))
   }
 
   function onClickOppSpellTrap(iid) {
-    if (!yourTurn) return
-    if ($targetRequest) chooseEngineTarget(iid)
-    else if (pendingTarget) chooseTarget(iid)
+    if (yourTurn && $targetRequest) return chooseEngineTarget(iid)
+    if (yourTurn && pendingTarget) return chooseTarget(iid)
+    enlarge(findCard(iid))
   }
 
   function isFieldSpell(iid) {
@@ -425,9 +522,10 @@
   // The Field Zone holds a Field Spell; it can also be a target (Mystical Space
   // Typhoon hits Field Spells too).
   function onClickFieldZone(slot) {
-    if (!yourTurn || !slot) return
-    if ($targetRequest) chooseEngineTarget(slot.iid)
-    else if (pendingTarget) chooseTarget(slot.iid)
+    if (!slot) return
+    if (yourTurn && $targetRequest) return chooseEngineTarget(slot.iid)
+    if (yourTurn && pendingTarget) return chooseTarget(slot.iid)
+    enlarge(slot)
   }
 
   function onDropField(e) {
@@ -439,7 +537,8 @@
   }
 
   function onHandClick(iid) {
-    if (mustDiscard) sendIntent({ kind: 'discard', iid })
+    if (mustDiscard) return sendIntent({ kind: 'discard', iid })
+    enlarge(findCard(iid))
   }
 
   function nextPhase() {
@@ -494,6 +593,7 @@
             class="slot st"
             class:targetable={slot && targetCandidates.includes(slot.iid)}
             onclick={() => slot && onClickOppSpellTrap(slot.iid)}
+            oncontextmenu={(e) => slot && openContext(e, slot, 'opp')}
           >
             <CardTile card={slot} faceDown={slot?.faceDown} small />
           </div>
@@ -506,7 +606,7 @@
         <!-- front line: Graveyard · Monsters · Field -->
         <div class="slot pile gy" class:targetable={oppGyTargetable} onclick={() => toggleGy('opp')}>
           {#if opp.graveyard.length}
-            <CardTile card={opp.graveyard[opp.graveyard.length - 1]} small />
+            <CardTile card={opp.graveyard[opp.graveyard.length - 1]} faceDown small />
             <span class="count">{opp.graveyard.length}</span>
           {:else}
             <span class="zlabel">GY</span>
@@ -520,6 +620,10 @@
                   onclick={(e) => {
                     e.stopPropagation()
                     onClickGraveyard(gy.iid)
+                  }}
+                  oncontextmenu={(e) => {
+                    e.stopPropagation()
+                    openContext(e, gy, 'gy')
                   }}
                 >
                   <CardTile card={gy} small />
@@ -536,6 +640,7 @@
               ((selectedAttacker != null && validTargets.includes(slot.iid)) ||
                 targetCandidates.includes(slot.iid))}
             onclick={() => slot && onClickOppMonster(slot.iid)}
+            oncontextmenu={(e) => slot && openContext(e, slot, 'opp')}
           >
             <CardTile card={slot} faceDown={slot?.faceDown} defense={isDefense(slot)} small />
           </div>
@@ -544,6 +649,7 @@
           class="slot field"
           class:targetable={opp.fieldZone && targetCandidates.includes(opp.fieldZone.iid)}
           onclick={() => onClickFieldZone(opp.fieldZone)}
+          oncontextmenu={(e) => opp.fieldZone && openContext(e, opp.fieldZone, 'opp')}
         >
           <CardTile card={opp.fieldZone} small />
         </div>
@@ -577,6 +683,7 @@
           ondragover={(e) => e.preventDefault()}
           ondrop={onDropField}
           onclick={() => onClickFieldZone(you.fieldZone)}
+          oncontextmenu={(e) => you.fieldZone && openContext(e, you.fieldZone, 'field')}
         >
           <CardTile card={you.fieldZone} small />
         </div>
@@ -604,6 +711,7 @@
                   ? 'Union — click, then click a host to equip'
                   : null}
               onclick={() => onClickOwnMonster(slot.iid)}
+              oncontextmenu={(e) => openContext(e, slot, 'ownMonster')}
             >
               <CardTile card={slot} faceDown={slot?.faceDown} defense={isDefense(slot)} small />
               {#if slot.geminiUnlocked}<span class="badge gemini">★</span>{/if}
@@ -621,7 +729,7 @@
         {/each}
         <div class="slot pile gy" class:targetable={youGyTargetable} onclick={() => toggleGy('you')}>
           {#if you.graveyard.length}
-            <CardTile card={you.graveyard[you.graveyard.length - 1]} small />
+            <CardTile card={you.graveyard[you.graveyard.length - 1]} faceDown small />
             <span class="count">{you.graveyard.length}</span>
           {:else}
             <span class="zlabel">GY</span>
@@ -635,6 +743,10 @@
                   onclick={(e) => {
                     e.stopPropagation()
                     onClickGraveyard(gy.iid)
+                  }}
+                  oncontextmenu={(e) => {
+                    e.stopPropagation()
+                    openContext(e, gy, 'gy')
                   }}
                 >
                   <CardTile card={gy} small />
@@ -656,7 +768,8 @@
               class:actionable={yourTurn && (canActivate(slot.iid) || canUnionUnequip(slot.iid))}
               class:targetable={targetCandidates.includes(slot.iid)}
               title={canUnionUnequip(slot.iid) ? 'Unequip this Union (Special Summon it back)' : null}
-              onclick={() => onClickOwnSpellTrap(slot.iid, i)}
+              onclick={() => onClickOwnSpellTrap(slot.iid)}
+              oncontextmenu={(e) => openContext(e, slot, 'ownSpellTrap', i)}
             >
               <CardTile card={slot} small />
             </div>
@@ -737,6 +850,7 @@
               ondragstart={() => (draggedIid = card.iid)}
               ondragend={() => (draggedIid = null)}
               onclick={() => onHandClick(card.iid)}
+              oncontextmenu={(e) => openContext(e, card, 'hand')}
             >
               <CardTile {card} />
             </div>
@@ -829,6 +943,65 @@
     </div>
   {/if}
 </main>
+
+<svelte:window
+  onkeydown={(e) => {
+    if (e.key === 'Escape') closeOverlays()
+  }}
+/>
+
+{#if ctx}
+  <button
+    class="ctxbackdrop"
+    aria-label="Close menu"
+    onclick={() => (ctx = null)}
+    oncontextmenu={(e) => {
+      e.preventDefault()
+      ctx = null
+    }}
+  ></button>
+  <div class="ctxmenu" style="left:{ctx.x}px; top:{ctx.y}px">
+    {#each ctx.items as item}
+      <button onclick={() => runCtx(item)}>{item.label}</button>
+    {/each}
+  </div>
+{/if}
+
+{#if preview}
+  <div
+    class="cardzoom"
+    role="presentation"
+    onclick={() => (preview = null)}
+    transition:fade={{ duration: 120 }}
+  >
+    <div class="zoombody" role="presentation" onclick={(e) => e.stopPropagation()}>
+      <div class="zoomart">
+        <div class="zoomfallback">{preview.name}</div>
+        {#if preview.imageId}
+          <img
+            src={`/cards/${preview.imageId}.jpg`}
+            alt={preview.name}
+            onerror={(e) => e.currentTarget.remove()}
+          />
+        {/if}
+      </div>
+      <div class="zoominfo">
+        <h3>{preview.name}</h3>
+        <div class="zoommeta">
+          {#if preview.cardType === 'monster'}
+            {#if preview.attribute}<span>{preview.attribute}</span>{/if}
+            {#if preview.level != null}<span>Level {preview.level}</span>{/if}
+            <span>ATK {preview.attack ?? '?'} · DEF {preview.defense ?? '?'}</span>
+          {:else}
+            <span>{preview.cardType}{preview.subtype ? ` · ${preview.subtype}` : ''}</span>
+          {/if}
+        </div>
+        {#if preview.text}<p class="zoomtext">{preview.text}</p>{/if}
+        <button class="zoomclose" onclick={() => (preview = null)}>Close</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   :global(body) {
@@ -1277,5 +1450,126 @@
   .resultcard h2 {
     margin: 0 0 8px;
     font-size: 28px;
+  }
+
+  /* Card preview (left-click any card to read it big). */
+  .cardzoom {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.74);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .zoombody {
+    display: flex;
+    gap: 20px;
+    background: #161620;
+    border: 1px solid #3a3a48;
+    border-radius: 12px;
+    padding: 18px;
+    max-width: 600px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  .zoomart {
+    position: relative;
+    width: 232px;
+    height: 338px;
+    flex: none;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #4a4a55;
+    background: linear-gradient(160deg, #2b2b33, #1c1c22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .zoomart img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .zoomfallback {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f3f3f3;
+    text-align: center;
+    padding: 12px;
+  }
+  .zoominfo {
+    display: flex;
+    flex-direction: column;
+    max-width: 300px;
+  }
+  .zoominfo h3 {
+    margin: 2px 0 8px;
+    font-size: 20px;
+    color: #ffe08a;
+  }
+  .zoommeta {
+    font-size: 12px;
+    color: #c4c4cc;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .zoomtext {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #dcdce4;
+    overflow-y: auto;
+    flex: 1;
+    white-space: pre-wrap;
+    margin: 0;
+  }
+  .zoomclose {
+    margin-top: 12px;
+    align-self: flex-start;
+  }
+
+  /* Right-click context menu. */
+  .ctxbackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 210;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: default;
+  }
+  .ctxmenu {
+    position: fixed;
+    z-index: 211;
+    background: #1b1b24;
+    border: 1px solid #44444f;
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 168px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+  }
+  .ctxmenu button {
+    text-align: left;
+    background: none;
+    border: none;
+    color: #eaeaf0;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .ctxmenu button:hover {
+    background: #2e2e3c;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cardzoom {
+      transition: none;
+    }
   }
 </style>
