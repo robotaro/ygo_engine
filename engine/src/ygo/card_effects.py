@@ -69,9 +69,6 @@ from .enums import Attribute, Position
 # resolution of their own — placing them face-up is what turns on their layer.
 _ACTIVATE_ONTO_FIELD = (Effect(timing="ignition"),)
 
-# Equip-target spec shared by the Equip Spells below.
-_EQUIP_TARGET = TargetSpec(count=1, where="any_monster")
-
 
 def _equip_effect(races=(), attributes=(), names=(), name_contains=()):
     """A standard Equip Spell: activate by targeting a restricted monster (by race/
@@ -90,6 +87,23 @@ def _equip_effect(races=(), attributes=(), names=(), name_contains=()):
             ),
             resolve=(EquipToTarget(),),
         ),
+    )
+
+
+def _flip(resolve, target=None):
+    """A Flip Effect (speed 1) — fires when the monster is turned face-up (Flip
+    Summoned or flipped by an attack). ``target`` is an optional TargetSpec."""
+    return Effect(speed=1, timing="flip", target=target, resolve=resolve)
+
+
+def _on_sent_to_gy(resolve):
+    """A trigger (speed 1) that fires when this card is sent from the field to the GY
+    — destroyed directly or orphaned (Black Pendant's burn, Magic Formula's LP gain)."""
+    return Effect(
+        speed=1,
+        timing="trigger",
+        trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
+        resolve=resolve,
     )
 
 
@@ -342,28 +356,13 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         ),
     ),
     "Hane-Hane": (  # FLIP: bounce 1 monster on the field
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=1, where="any_monster"),
-            resolve=(BounceTargetsToHand(),),
-        ),
+        _flip(target=TargetSpec(count=1, where="any_monster"), resolve=(BounceTargetsToHand(),)),
     ),
     "Gravekeeper's Guard": (  # FLIP: bounce 1 of the opponent's monsters
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=1, where="opponent_monsters"),
-            resolve=(BounceTargetsToHand(),),
-        ),
+        _flip(target=TargetSpec(count=1, where="opponent_monsters"), resolve=(BounceTargetsToHand(),)),
     ),
     "Gale Lizard": (  # FLIP: bounce 1 of the opponent's monsters
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=1, where="opponent_monsters"),
-            resolve=(BounceTargetsToHand(),),
-        ),
+        _flip(target=TargetSpec(count=1, where="opponent_monsters"), resolve=(BounceTargetsToHand(),)),
     ),
     # Giant Trunade — return every Spell/Trap on the field to hand.
     "Giant Trunade": (Effect(resolve=(ReturnAllSpellTrapsToHand(),)),),
@@ -371,20 +370,10 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # FLIP effects that return up to N monsters to the hand (the player chooses how
     # many, 1..N). Reuses the bounce primitive with TargetSpec(up_to=True).
     "Penguin Soldier": (
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=2, where="any_monster", up_to=True),
-            resolve=(BounceTargetsToHand(),),
-        ),
+        _flip(target=TargetSpec(count=2, where="any_monster", up_to=True), resolve=(BounceTargetsToHand(),)),
     ),
     "Hade-Hane": (
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=3, where="any_monster", up_to=True),
-            resolve=(BounceTargetsToHand(),),
-        ),
+        _flip(target=TargetSpec(count=3, where="any_monster", up_to=True), resolve=(BounceTargetsToHand(),)),
     ),
     # --- Effects Batch 12: mass Spell/Trap destruction + Defense-position removal ---
     "Heavy Storm": (Effect(resolve=(DestroyAllSpellTraps(),)),),  # all S/T on the field
@@ -615,22 +604,12 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # and fire a trigger when they leave the field for the GY (whether destroyed
     # directly or orphaned when the equipped monster leaves).
     "Black Pendant": (
-        Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),
-        Effect(  # parting shot: 500 damage to the opponent
-            speed=1,
-            timing="trigger",
-            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
-            resolve=(InflictDamage(OPPONENT, 500),),
-        ),
+        *_equip_effect(),
+        _on_sent_to_gy((InflictDamage(OPPONENT, 500),)),  # parting shot to the opponent
     ),
     "Horn of the Unicorn": (
-        Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),
-        Effect(  # return itself to the top of the Deck instead of staying in the GY
-            speed=1,
-            timing="trigger",
-            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
-            resolve=(ReturnSelfToDeck(to_top=True),),
-        ),
+        *_equip_effect(),
+        _on_sent_to_gy((ReturnSelfToDeck(to_top=True),)),  # back to the top of the Deck
     ),
     # --- Effects Batch 20: Spell Counters (accumulate + counter-cost / scaling) ---
     # Royal Magical Library: a face-up monster Ignition effect that removes 3 Spell
@@ -753,94 +732,55 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Cyber Shield": _equip_effect(names=("Harpie Lady", "Harpie Lady Sisters")),
     "Ancient Gear Tank": (
         *_equip_effect(name_contains=("Ancient Gear",)),
-        Effect(  # when it leaves the field for the GY: 600 damage to the opponent
-            speed=1,
-            timing="trigger",
-            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
-            resolve=(InflictDamage(OPPONENT, 600),),
-        ),
+        _on_sent_to_gy((InflictDamage(OPPONENT, 600),)),  # 600 damage to the opponent
     ),
     "Fuhma Shuriken": (
         *_equip_effect(name_contains=("Ninja",)),
-        Effect(  # sent from the field to the GY: 700 damage to the opponent
-            speed=1,
-            timing="trigger",
-            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
-            resolve=(InflictDamage(OPPONENT, 700),),
-        ),
+        _on_sent_to_gy((InflictDamage(OPPONENT, 700),)),  # 700 damage to the opponent
     ),
     "Magic Formula": (
         *_equip_effect(names=("Dark Magician", "Dark Magician Girl")),
-        Effect(  # sent from the field to the GY: gain 1000 LP
-            speed=1,
-            timing="trigger",
-            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
-            resolve=(GainLifePoints(SELF, 1000),),
-        ),
+        _on_sent_to_gy((GainLifePoints(SELF, 1000),)),  # gain 1000 LP
     ),
     # --- Effects Batch 25: Flip Effects sweep (composed from existing primitives) ---
     # timing="flip" fires via engine._trigger_flip_effect when the monster is turned
     # face-up (Flip Summon, or being attacked). These reuse targeted/typed
     # destruction, bounce, burn-per-card, the Batch 23 SS-from-Deck and Batch 15 search.
     "Old Vindictive Magician": (  # destroy 1 monster the opponent controls
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=1, where="opponent_monsters"),
-            resolve=(DestroyTargets(),),
-        ),
+        _flip(target=TargetSpec(count=1, where="opponent_monsters"), resolve=(DestroyTargets(),)),
     ),
     "White Ninja": (  # destroy 1 Defense Position monster on the field
-        Effect(
-            speed=1,
-            timing="flip",
+        _flip(
             target=TargetSpec(count=1, where="any_monster", defense_position=True),
             resolve=(DestroyTargets(),),
         ),
     ),
     "Armed Ninja": (  # destroy 1 Spell on the field
-        Effect(
-            speed=1,
-            timing="flip",
+        _flip(
             target=TargetSpec(count=1, where="spell_trap_field", card_kind="spell"),
             resolve=(DestroyTargets(),),
         ),
     ),
     "Crimson Ninja": (  # destroy 1 Trap on the field
-        Effect(
-            speed=1,
-            timing="flip",
+        _flip(
             target=TargetSpec(count=1, where="spell_trap_field", card_kind="trap"),
             resolve=(DestroyTargets(),),
         ),
     ),
     "Trap Master": (  # select 1 Trap on the field and destroy it
-        Effect(
-            speed=1,
-            timing="flip",
+        _flip(
             target=TargetSpec(count=1, where="spell_trap_field", card_kind="trap"),
             resolve=(DestroyTargets(),),
         ),
     ),
     "Tornado Bird": (  # return 2 Spell/Trap Cards on the field to their owners' hands
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=2, where="spell_trap_field"),
-            resolve=(BounceTargetsToHand(),),
-        ),
+        _flip(target=TargetSpec(count=2, where="spell_trap_field"), resolve=(BounceTargetsToHand(),)),
     ),
     "Des Koala": (  # 400 damage to the opponent for each card in their hand
-        Effect(
-            speed=1,
-            timing="flip",
-            resolve=(InflictDamage(OPPONENT, value=CountTimes(400, "opponent_hand")),),
-        ),
+        _flip(resolve=(InflictDamage(OPPONENT, value=CountTimes(400, "opponent_hand")),)),
     ),
     "Gravekeeper's Spy": (  # SS 1 "Gravekeeper's" monster with 1500 or less ATK from Deck
-        Effect(
-            speed=1,
-            timing="flip",
+        _flip(
             resolve=(
                 SpecialSummonFromDeck(
                     card_filter=CardFilter(
@@ -853,9 +793,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         ),
     ),
     "Bubonic Vermin": (  # SS 1 "Bubonic Vermin" from the Deck in face-down Defense
-        Effect(
-            speed=1,
-            timing="flip",
+        _flip(
             resolve=(
                 SpecialSummonFromDeck(
                     card_filter=CardFilter(names=frozenset({"Bubonic Vermin"})),
@@ -865,45 +803,26 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         ),
     ),
     "Machina Defender": (  # add 1 "Commander Covington" from the Deck to the hand
-        Effect(
-            speed=1,
-            timing="flip",
-            resolve=(SearchFromDeck(card_filter=CardFilter(names=frozenset({"Commander Covington"}))),),
-        ),
+        _flip(resolve=(SearchFromDeck(card_filter=CardFilter(names=frozenset({"Commander Covington"}))),)),
     ),
     # --- Effects Batch 26: more Flip Effects (banish, mill, filtered mass destroy) ---
     "Witch Doctor of Chaos": (  # banish 1 monster from either Graveyard
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=1, where="any_graveyard_monster"),
-            resolve=(BanishTargets(),),
-        ),
+        _flip(target=TargetSpec(count=1, where="any_graveyard_monster"), resolve=(BanishTargets(),)),
     ),
     "Reaper of the Cards": (  # destroy 1 Trap on the field
-        Effect(
-            speed=1,
-            timing="flip",
+        _flip(
             target=TargetSpec(count=1, where="spell_trap_field", card_kind="trap"),
             resolve=(DestroyTargets(),),
         ),
     ),
     "Needle Worm": (  # send the top 5 cards of the opponent's Deck to the GY
-        Effect(speed=1, timing="flip", resolve=(MillFromDeck(OPPONENT, 5),)),
+        _flip(resolve=(MillFromDeck(OPPONENT, 5),)),
     ),
     "Magnetic Mosquito": (  # destroy all face-up Machine-Type monsters on the field
-        Effect(
-            speed=1,
-            timing="flip",
-            resolve=(DestroyAllMonsters(races=frozenset({"Machine"}), face_up_only=True),),
-        ),
+        _flip(resolve=(DestroyAllMonsters(races=frozenset({"Machine"}), face_up_only=True),)),
     ),
     "4-Starred Ladybug of Doom": (  # destroy all Level 4 monsters the opponent controls
-        Effect(
-            speed=1,
-            timing="flip",
-            resolve=(DestroyAllMonsters(side=OPPONENT, level=4),),
-        ),
+        _flip(resolve=(DestroyAllMonsters(side=OPPONENT, level=4),)),
     ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
     # destroy that monster (NegatePreviousLink handles a monster on the Chain).
@@ -1002,39 +921,22 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     ),
     # --- Slice 4: monster effects (Flip + Trigger) ---
     "Man-Eater Bug": (
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=1, where="any_monster"),  # "regardless of position"
-            resolve=(DestroyTargets(),),
-        ),
+        # "regardless of position"
+        _flip(target=TargetSpec(count=1, where="any_monster"), resolve=(DestroyTargets(),)),
     ),
-    "Magician of Faith": (
-        Effect(speed=1, timing="flip", resolve=(ReturnSpellFromGraveyardToHand(),)),
-    ),
+    "Magician of Faith": (_flip(resolve=(ReturnSpellFromGraveyardToHand(),)),),
     # --- Effects Batch 4: more clean Flip effects (reuse the flip timing) ---
-    "Poison Mummy": (Effect(speed=1, timing="flip", resolve=(InflictDamage(OPPONENT, 500),)),),
-    "Skelengel": (Effect(speed=1, timing="flip", resolve=(Draw(count=1),)),),
+    "Poison Mummy": (_flip(resolve=(InflictDamage(OPPONENT, 500),)),),
+    "Skelengel": (_flip(resolve=(Draw(count=1),)),),
     "Nobleman-Eater Bug": (
-        Effect(
-            speed=1,
-            timing="flip",
-            target=TargetSpec(count=2, where="any_monster"),  # you select 2 to destroy
-            resolve=(DestroyTargets(),),
-        ),
+        # you select 2 to destroy
+        _flip(target=TargetSpec(count=2, where="any_monster"), resolve=(DestroyTargets(),)),
     ),
-    "Sangan": (
-        Effect(
-            speed=1,
-            timing="trigger",
-            trigger=Trigger(kind="sent_to_gy_from_field", by=SELF),
-            resolve=(SearchMonsterToHand(1500),),
-        ),
-    ),
+    "Sangan": (_on_sent_to_gy((SearchMonsterToHand(1500),)),),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
-    "Axe of Despair": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
-    "United We Stand": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
-    "Mage Power": (Effect(timing="ignition", target=_EQUIP_TARGET, resolve=(EquipToTarget(),)),),
+    "Axe of Despair": _equip_effect(),
+    "United We Stand": _equip_effect(),
+    "Mage Power": _equip_effect(),
     # --- Effects Batch 2: race/attribute-restricted flat Equip Spells ---
     # Race-restricted +300 ATK/DEF (the classic "tribal" equips). The host filter
     # is on the target; the boost is the EquipMod in CONTINUOUS below.
