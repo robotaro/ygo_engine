@@ -72,8 +72,10 @@ from .effects import (
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
+    RevealRandomHandCardSummonOrGY,
     SpecialSummonFromDeck,
     SpecialSummonFromGraveyard,
+    SpecialSummonFromHand,
     SpecialSummonLock,
     SpellCounterHolder,
     StandbyUpkeep,
@@ -210,6 +212,11 @@ def _controls_amazoness(state, controller) -> bool:
         and "Amazoness" in state.inst(iid).card.name
         for iid in state.players[controller].monster_zones
     )
+
+
+def _has_card_in_hand(state, controller) -> bool:
+    """A Hero Emerges gate: the controller must hold at least one card to reveal."""
+    return bool(state.players[controller].hand)
 
 
 def _gy_has_match(card_filter):
@@ -1278,6 +1285,32 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             trigger=Trigger(kind="attack_declared", by=OPPONENT),
             target=TargetSpec(count=1, where="own_monsters", face_up=True),
             resolve=(RedirectAttackToTarget(), ForceAttackTarget()),
+        ),
+    ),
+    # --- Batch 52: Special Summon from the hand on an attack ---
+    # A Hero Emerges — reveal 1 random card from your hand; if it's a freely-summonable
+    # monster, Special Summon it, otherwise send it to the Graveyard.
+    "A Hero Emerges": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            condition=_has_card_in_hand,
+            resolve=(RevealRandomHandCardSummonOrGY(),),
+        ),
+    ),
+    # Relieve Monster — return 1 monster you control to the hand, then Special Summon 1
+    # Level 4-or-lower monster from your hand.
+    "Relieve Monster": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT),
+            target=TargetSpec(count=1, where="own_monsters"),
+            resolve=(
+                BounceTargetsToHand(),
+                SpecialSummonFromHand(card_filter=CardFilter(card_kind="monster", max_level=4)),
+            ),
         ),
     ),
     # --- Batch 48: attack redirect / cost-bearing attack Trap ---

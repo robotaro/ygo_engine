@@ -1456,6 +1456,56 @@ class SpecialSummonFromGraveyard(Primitive):
 
 
 @dataclass(frozen=True)
+class SpecialSummonFromHand(Primitive):
+    """Special Summon 1 monster from the controller's hand matching ``card_filter``
+    (Relieve Monster summons a Level 4-or-lower monster). The pick is deterministic — the
+    highest-ATK eligible monster, like SearchFromDeck; interactive choice is a deferred
+    enhancement. Fails quietly with no eligible monster, no free Monster Zone, or under a
+    Special Summon lock."""
+
+    card_filter: CardFilter = CardFilter()
+    position: Position = Position.FACE_UP_ATTACK
+
+    def execute(self, ctx: EffectContext) -> None:
+        eligible = [
+            iid
+            for iid in ctx.state.players[ctx.controller].hand
+            if ctx.state.inst(iid).card.is_monster
+            and not ctx.state.inst(iid).card.is_spirit
+            and self.card_filter.matches(ctx.state.inst(iid).card)
+        ]
+        if not eligible:
+            return
+        iid = max(eligible, key=lambda i: ctx.state.inst(i).card.attack or 0)
+        ctx.state.special_summon(iid, ctx.controller, self.position)
+
+
+@dataclass(frozen=True)
+class RevealRandomHandCardSummonOrGY(Primitive):
+    """A Hero Emerges: reveal 1 random card from the controller's hand. If it's a monster
+    that can be Special Summoned (a freely-summonable monster — not a Ritual/Nomi that
+    needs its own method — with a free Monster Zone and no lock), Special Summon it;
+    otherwise send it to the Graveyard."""
+
+    position: Position = Position.FACE_UP_ATTACK
+
+    def execute(self, ctx: EffectContext) -> None:
+        hand = ctx.state.players[ctx.controller].hand
+        if not hand:
+            return
+        iid = ctx.state.rng.choice(list(hand))
+        card = ctx.state.inst(iid).card
+        summoned = (
+            card.is_monster
+            and card.can_normal_summon
+            and not card.is_spirit
+            and ctx.state.special_summon(iid, ctx.controller, self.position)
+        )
+        if not summoned and ctx.state.inst(iid).zone is Zone.HAND:
+            ctx.state.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
 class CreateToken(Primitive):
     """Special Summon Token monsters synthesised on the fly (Scapegoat's 4 Sheep
     Tokens, Fires of Doomsday's 2 Doomsday Tokens). The Token's printed body is built
