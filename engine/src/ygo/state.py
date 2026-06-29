@@ -154,6 +154,10 @@ class GameState:
     attack_negated: bool = False  # transient flag set while resolving an attack response
     gy_from_field: list = field(default_factory=list)  # monsters just sent field->GY (trigger queue)
     pending_draws: list = field(default_factory=list)  # players who just drew (draw-trigger queue)
+    # Transient record of the attacker that just dealt battle damage to its opponent —
+    # (dealer_iid, amount) — for the engine's "inflicts battle damage" Trigger. Set in
+    # _resolve_attack, drained by the engine after the attack, cleared each declaration.
+    battle_damage_dealt: tuple | None = None
     seed: int = 0
     rng: random.Random = field(default_factory=random.Random)
     _next_iid: int = 0

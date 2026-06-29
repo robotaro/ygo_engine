@@ -1272,9 +1272,11 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     me = attacker.controller
     opp = state.opponent_of(me)
     atk = state.effective_attack(action.attacker)
+    state.battle_damage_dealt = None  # reset; set below when the attacker damages opp
 
     if action.target is None:
         state.players[opp].life_points -= atk
+        state.battle_damage_dealt = (action.attacker, atk)
         return f"{attacker.name} attacks directly — {atk} damage"
 
     target = state.inst(action.target)
@@ -1288,6 +1290,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         if atk > other:
             state.send_to_graveyard(target.iid, by_battle=True)
             state.players[opp].life_points -= atk - other
+            state.battle_damage_dealt = (action.attacker, atk - other)
             return f"{prefix}{attacker.name} ({atk}) destroys {target.name} ({other}) — {atk - other} damage"
         if atk < other:
             state.send_to_graveyard(attacker.iid, by_battle=True)
@@ -1305,6 +1308,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         if state.has_piercing(action.attacker):
             dmg = atk - dfn
             state.players[opp].life_points -= dmg
+            state.battle_damage_dealt = (action.attacker, dmg)
             return f"{prefix}{attacker.name} ({atk}) pierces {target.name} (DEF {dfn}) — {dmg} damage"
         return f"{prefix}{attacker.name} ({atk}) destroys defending {target.name} (DEF {dfn})"
     if atk < dfn:

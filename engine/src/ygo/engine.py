@@ -359,6 +359,10 @@ class Engine:
             self._trigger_effect(iid, effect, controller)
             self._check_life_points()
 
+        # "When this card inflicts battle damage to your opponent" (Don Zaloog,
+        # Airknight Parshath) — fired after combat from the state's transient record.
+        self._fire_battle_damage_trigger()
+
     # ------------------------------------------------------------------ #
     #  The Chain
     # ------------------------------------------------------------------ #
@@ -606,6 +610,34 @@ class Engine:
         )
         if effect is not None:
             self._trigger_effect(iid, effect, inst.controller)
+
+    def _fire_battle_damage_trigger(self) -> None:
+        """Fire a monster's "when it inflicts battle damage to your opponent" SELF
+        Trigger (Don Zaloog, Vampire Lady, Airknight Parshath) — read from the state's
+        transient ``battle_damage_dealt`` record set during combat. Only fires if the
+        dealer is still face-up on the field; the event carries the damage ``amount``."""
+        s = self.state
+        dealt = s.battle_damage_dealt
+        s.battle_damage_dealt = None
+        if dealt is None or self.result is not None:
+            return
+        dealer_iid, amount = dealt
+        inst = s.cards.get(dealer_iid)
+        if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
+            return
+        effect = next(
+            (
+                e
+                for e in inst.card.effects
+                if e.timing == "trigger"
+                and e.trigger is not None
+                and e.trigger.kind == "battle_damage_inflicted"
+                and e.trigger.by == SELF
+            ),
+            None,
+        )
+        if effect is not None:
+            self._trigger_effect(dealer_iid, effect, inst.controller, {"amount": amount})
 
     def _trigger_effect(self, source_iid: int, effect, controller: int, event: dict | None = None):
         """Put a triggered/flip monster effect onto a fresh Chain and resolve it.

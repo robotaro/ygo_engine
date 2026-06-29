@@ -1224,6 +1224,37 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(ReturnFromHandToDeck(OPPONENT, count=1, monsters_only=True),),
         ),
     ),
+    # --- Batch 36: "when this inflicts battle damage to your opponent" triggers ---
+    # The engine fires a SELF "battle_damage_inflicted" Trigger after combat (see
+    # engine._fire_battle_damage_trigger). Cards offering a *choice* of effects model
+    # one representative mode (noted per card).
+    # Airknight Parshath: draw 1 (its piercing rider is the CONTINUOUS entry above).
+    "Airknight Parshath": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="battle_damage_inflicted", by=SELF),
+            resolve=(Draw(count=1),),
+        ),
+    ),
+    # Don Zaloog: discard 1 random card from the opponent's hand (the deck-mill mode
+    # of its "1 of these effects" choice is not modelled).
+    "Don Zaloog": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="battle_damage_inflicted", by=SELF),
+            resolve=(DiscardFromHand(OPPONENT, count=1, random=True),),
+        ),
+    ),
+    # Dark Scorpion - Chick the Yellow: return 1 card on the field to the hand (the
+    # look-at-top-of-Deck mode is not modelled).
+    "Dark Scorpion - Chick the Yellow": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="battle_damage_inflicted", by=SELF),
+            target=TargetSpec(count=1, where="any_card_field"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
     # --- Slice 5: Equip Spells — activate (target a monster) then stay attached ---
     "Axe of Despair": _equip_effect(),
     "United We Stand": _equip_effect(),
@@ -1588,6 +1619,8 @@ CONTINUOUS: dict[str, tuple] = {
             scaling="face_up_attr_monsters", scale_atk=1000, count_attribute=Attribute.FIRE
         ),
     ),
+    # Airknight Parshath: piercing rider (the draw-on-damage trigger is in EFFECTS).
+    "Airknight Parshath": (Piercing(),),
     # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
     # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).
     "Chaos Necromancer": (SelfStatMod(scaling="graveyard_monsters", scale_atk=300),),
