@@ -173,6 +173,15 @@ class BattleIndestructible:
 
 
 @dataclass(frozen=True)
+class MultiAttacker:
+    """A face-up monster's rider: it may declare up to ``times`` attacks each Battle
+    Phase (Hayabusa Knight, Mataza the Zapper, Twinheaded Beast all = 2). Read by the
+    battle-phase enumeration via ``GameState.max_attacks``; suppressed while inactive."""
+
+    times: int = 2
+
+
+@dataclass(frozen=True)
 class FieldMod:
     """A continuous flat ATK/DEF modifier a face-up Field/Continuous Spell radiates
     over every monster on the field that matches its filter (the "field layer").

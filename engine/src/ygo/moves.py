@@ -1007,8 +1007,10 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
         if iid is None:
             continue
         inst = state.inst(iid)
-        if inst.position is not Position.FACE_UP_ATTACK or inst.attacked_this_turn:
+        if inst.position is not Position.FACE_UP_ATTACK:
             continue
+        if inst.attacks_made_this_turn >= state.max_attacks(iid):
+            continue  # used up its attack(s) this Battle Phase (2+ for a MultiAttacker)
         if inst.attack_disabled_on_turn == state.turn_count:
             continue  # an effect this turn barred this monster from attacking
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
@@ -1279,6 +1281,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     """Resolve one attack using the v6.0 Determining Damage rules (no piercing)."""
     attacker = state.inst(action.attacker)
     attacker.attacked_this_turn = True
+    attacker.attacks_made_this_turn += 1
     me = attacker.controller
     opp = state.opponent_of(me)
     atk = state.effective_attack(action.attacker)

@@ -21,6 +21,7 @@ from .effects import (
     CanAttackDirectly,
     EquipMod,
     FieldMod,
+    MultiAttacker,
     Piercing,
     SelfStatMod,
     SpellCounterHolder,
@@ -58,6 +59,7 @@ class CardInstance:
     # Per-turn flags (reset by the engine each turn).
     summoned_this_turn: bool = False
     attacked_this_turn: bool = False
+    attacks_made_this_turn: int = 0  # how many attacks declared this turn (multi-attackers)
     position_changed_this_turn: bool = False
     # The turn on which a Spell/Trap was Set face-down (it can't activate that turn).
     set_on_turn: int | None = None
@@ -115,6 +117,7 @@ class CardInstance:
         on a control change, and when the card leaves the field."""
         self.summoned_this_turn = False
         self.attacked_this_turn = False
+        self.attacks_made_this_turn = 0
         self.position_changed_this_turn = False
 
     @property
@@ -483,6 +486,16 @@ class GameState:
         return inst.effects_active and any(
             isinstance(mod, BattleIndestructible) for mod in inst.card.continuous
         )
+
+    def max_attacks(self, iid: int) -> int:
+        """How many attacks the monster may declare this Battle Phase — 2+ for a
+        face-up MultiAttacker (Hayabusa Knight), else 1."""
+        inst = self.cards[iid]
+        if inst.effects_active:
+            for mod in inst.card.continuous:
+                if isinstance(mod, MultiAttacker):
+                    return mod.times
+        return 1
 
     def _effective_stat(self, iid: int, which: str) -> int:
         """A monster's effective ATK or DEF (``which`` is "atk"/"def"): printed base

@@ -45,6 +45,7 @@ from .effects import (
     InflictDamage,
     MillFromDeck,
     ModifyStatsTemporary,
+    MultiAttacker,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -1660,6 +1661,10 @@ CONTINUOUS: dict[str, tuple] = {
     "Arcana Force 0 - The Fool": (BattleIndestructible(),),
     "Marshmallon": (BattleIndestructible(),),
     "Spirit Reaper": (BattleIndestructible(),),  # its battle-damage discard is in EFFECTS
+    # --- Batch 39: attack twice (MultiAttacker; secondary riders not modelled) ---
+    "Hayabusa Knight": (MultiAttacker(),),
+    "Mataza the Zapper": (MultiAttacker(),),
+    "Twinheaded Beast": (MultiAttacker(),),
     # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
     # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).
     "Chaos Necromancer": (SelfStatMod(scaling="graveyard_monsters", scale_atk=300),),
