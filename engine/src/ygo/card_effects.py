@@ -38,6 +38,7 @@ from .effects import (
     GainLifePoints,
     HandSpecialSummon,
     InflictDamage,
+    MillFromDeck,
     ModifyStatsTemporary,
     NegateAttack,
     NegatePreviousLink,
@@ -868,6 +869,40 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             speed=1,
             timing="flip",
             resolve=(SearchFromDeck(filter=CardFilter(names=frozenset({"Commander Covington"}))),),
+        ),
+    ),
+    # --- Effects Batch 26: more Flip Effects (banish, mill, filtered mass destroy) ---
+    "Witch Doctor of Chaos": (  # banish 1 monster from either Graveyard
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="any_graveyard_monster"),
+            resolve=(BanishTargets(),),
+        ),
+    ),
+    "Reaper of the Cards": (  # destroy 1 Trap on the field
+        Effect(
+            speed=1,
+            timing="flip",
+            target=TargetSpec(count=1, where="spell_trap_field", card_kind="trap"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    "Needle Worm": (  # send the top 5 cards of the opponent's Deck to the GY
+        Effect(speed=1, timing="flip", resolve=(MillFromDeck(OPPONENT, 5),)),
+    ),
+    "Magnetic Mosquito": (  # destroy all face-up Machine-Type monsters on the field
+        Effect(
+            speed=1,
+            timing="flip",
+            resolve=(DestroyAllMonsters(races=frozenset({"Machine"}), face_up_only=True),),
+        ),
+    ),
+    "4-Starred Ladybug of Doom": (  # destroy all Level 4 monsters the opponent controls
+        Effect(
+            speed=1,
+            timing="flip",
+            resolve=(DestroyAllMonsters(side=OPPONENT, level=4),),
         ),
     ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then

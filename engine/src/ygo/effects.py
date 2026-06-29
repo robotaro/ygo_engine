@@ -438,10 +438,14 @@ class Draw(Primitive):
 @dataclass(frozen=True)
 class DestroyAllMonsters(Primitive):
     """Destroy every monster, or only one side's. ``face_up_only`` restricts it to
-    face-up monsters (Lightning Vortex destroys only face-up monsters)."""
+    face-up monsters (Lightning Vortex); ``races`` narrows to those Types (Magnetic
+    Mosquito = face-up Machines); ``level`` narrows to one printed Level (4-Starred
+    Ladybug of Doom = all Level 4 the opponent controls)."""
 
     side: str | None = None  # None = both players, else SELF / OPPONENT
     face_up_only: bool = False
+    races: frozenset = frozenset()
+    level: int | None = None
 
     def execute(self, ctx: EffectContext) -> None:
         players = (0, 1) if self.side is None else (ctx.side(self.side),)
@@ -449,7 +453,10 @@ class DestroyAllMonsters(Primitive):
             iid
             for pl in players
             for iid in ctx.state.players[pl].monster_zones
-            if iid is not None and (not self.face_up_only or ctx.state.inst(iid).is_face_up)
+            if iid is not None
+            and (not self.face_up_only or ctx.state.inst(iid).is_face_up)
+            and (not self.races or ctx.state.inst(iid).card.race in self.races)
+            and (self.level is None or ctx.state.inst(iid).card.level == self.level)
         ]
         for iid in victims:
             ctx.state.send_to_graveyard(iid)
@@ -900,6 +907,22 @@ class SpecialSummonFromDeck(Primitive):
             s.place_monster(pick, controller, index, self.position)
             s.inst(pick).summoned_this_turn = True
         s.rng.shuffle(deck)
+
+
+@dataclass(frozen=True)
+class MillFromDeck(Primitive):
+    """Send the top ``count`` cards of a player's Deck to their Graveyard (Needle
+    Worm decks the opponent; ``player`` is SELF or OPPONENT). The "top" is the end
+    of the deck list (where draws come from). Fewer cards than ``count`` -> mill
+    as many as there are."""
+
+    player: str = OPPONENT
+    count: int = 1
+
+    def execute(self, ctx: EffectContext) -> None:
+        deck = ctx.state.players[ctx.side(self.player)].deck
+        for _ in range(min(self.count, len(deck))):
+            ctx.state.send_to_graveyard(deck[-1])
 
 
 @dataclass(frozen=True)
