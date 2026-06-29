@@ -85,17 +85,24 @@ class SelfStatMod:
     ``continuous`` list, and suppressed while the monster's effect is inactive
     (a Gemini that hasn't been Gemini Summoned yet).
 
-    Optionally *scaling*: ``scaling="face_up_attr_monsters"`` adds ``scale_atk``/
-    ``scale_defn`` per OTHER face-up monster on the field (both sides) — narrowed to
-    ``count_attribute`` when set. Ultimate Baseball Kid: +1000 ATK per other face-up
-    FIRE monster."""
+    Optionally *scaling*:
+      * ``"face_up_attr_monsters"`` adds ``scale_atk``/``scale_defn`` per OTHER face-up
+        monster on the field (both sides) — narrowed to ``count_attribute`` when set
+        (Ultimate Baseball Kid: +1000 ATK per other face-up FIRE monster).
+      * ``"graveyard_monsters"`` adds them per monster in the controller's *own*
+        Graveyard, narrowed by any of ``count_attribute`` / ``count_race`` /
+        ``count_name_contains`` (Shadow Ghoul +100 per monster, Mudora +200 per Fairy,
+        Beelze Frog +300 per "T.A.D.P.O.L.E."; Chaos Necromancer has base 0 ATK so its
+        ATK *is* 300 × the count)."""
 
     atk: int = 0
     defn: int = 0
-    scaling: str | None = None  # None | "face_up_attr_monsters"
+    scaling: str | None = None  # None | "face_up_attr_monsters" | "graveyard_monsters"
     scale_atk: int = 0
     scale_defn: int = 0
     count_attribute: "Attribute | None" = None
+    count_race: str | None = None
+    count_name_contains: str | None = None
 
 
 @dataclass(frozen=True)

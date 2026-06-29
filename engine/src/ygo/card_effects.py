@@ -1370,6 +1370,21 @@ CONTINUOUS: dict[str, tuple] = {
             scaling="face_up_attr_monsters", scale_atk=1000, count_attribute=Attribute.FIRE
         ),
     ),
+    # --- Batch 31: continuous ATK scaling by the controller's own Graveyard ---
+    # Chaos Necromancer: base 0 ATK, so its ATK *is* 300 x (monsters in your GY).
+    "Chaos Necromancer": (SelfStatMod(scaling="graveyard_monsters", scale_atk=300),),
+    # Shadow Ghoul: +100 ATK per monster in your GY.
+    "Shadow Ghoul": (SelfStatMod(scaling="graveyard_monsters", scale_atk=100),),
+    # Mudora: +200 ATK per Fairy-Type monster in your GY.
+    "Mudora": (SelfStatMod(scaling="graveyard_monsters", scale_atk=200, count_race="Fairy"),),
+    # Beelze Frog: +300 ATK per "T.A.D.P.O.L.E." in your GY.
+    "Beelze Frog": (
+        SelfStatMod(scaling="graveyard_monsters", scale_atk=300, count_name_contains="T.A.D.P.O.L.E."),
+    ),
+    # Grass Phantom: +500 ATK per "Grass Phantom" in your GY.
+    "Grass Phantom": (
+        SelfStatMod(scaling="graveyard_monsters", scale_atk=500, count_name_contains="Grass Phantom"),
+    ),
     # --- Effects Batch 24: name-restricted Equip Spell boosts ---
     "Cyber Shield": (EquipMod(atk=500),),
     "Ancient Gear Tank": (EquipMod(atk=600),),
