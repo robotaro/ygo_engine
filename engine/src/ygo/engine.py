@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .agents import Agent
-from .effects import DrawTrigger, SpellCounterHolder, StandbyUpkeep
+from .effects import SELF, DrawTrigger, SpellCounterHolder, StandbyUpkeep
 from .enums import Phase, Position, TURN_PHASES, Zone
 from .moves import (
     ActivateMonsterEffect,
@@ -276,6 +276,7 @@ class Engine:
                 self._response_window(
                     {"kind": "summon", "player": tp, "monster": choice.iid, "summon_kind": "normal"}
                 )
+                self._trigger_summon_effect(choice.iid, "normal")  # e.g. Breaker
                 self._check_life_points()
             elif isinstance(choice, SpecialSummonFromHand):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
@@ -285,11 +286,13 @@ class Engine:
                 self._response_window(
                     {"kind": "summon", "player": tp, "monster": choice.iid, "summon_kind": "special"}
                 )
+                self._trigger_summon_effect(choice.iid, "special")
                 self._check_life_points()
             elif isinstance(choice, FlipSummon):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._changed()
                 self._trigger_flip_effect(choice.iid)  # e.g. Man-Eater Bug
+                self._trigger_summon_effect(choice.iid, "flip")
                 self._check_life_points()
             else:
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
@@ -586,6 +589,32 @@ class Engine:
         if effect is not None:
             self._trigger_effect(iid, effect, inst.controller)
 
+    def _trigger_summon_effect(self, iid: int, summon_kind: str) -> None:
+        """Fire a monster's own "when (Normal) Summoned" Trigger Effect — its
+        controller's effect on a fresh Chain, after the Summon has resolved and
+        survived any summon-negation window (Breaker places a Spell Counter on
+        itself; Gravekeeper's Curse burns 500). A ``summon_kinds``-restricted
+        Trigger only fires on its kinds (Breaker = Normal Summon only)."""
+        if self.result is not None:
+            return
+        inst = self.state.cards.get(iid)
+        if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
+            return  # the Summon was negated / the monster left the field
+        effect = next(
+            (
+                e
+                for e in inst.card.effects
+                if e.timing == "trigger"
+                and e.trigger is not None
+                and e.trigger.kind == "summon"
+                and e.trigger.by == SELF
+                and (not e.trigger.summon_kinds or summon_kind in e.trigger.summon_kinds)
+            ),
+            None,
+        )
+        if effect is not None:
+            self._trigger_effect(iid, effect, inst.controller)
+
     def _trigger_effect(self, source_iid: int, effect, controller: int, event: dict | None = None):
         """Put a triggered/flip monster effect onto a fresh Chain and resolve it.
 
@@ -682,8 +711,8 @@ class Engine:
             if inst.zone not in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD) or not inst.is_face_up:
                 continue
             holder = next((m for m in inst.card.continuous if isinstance(m, SpellCounterHolder)), None)
-            if holder is None:
-                continue
+            if holder is None or not holder.accumulates:
+                continue  # Breaker only gets its summon counter — never accrues more
             current = inst.counters.get("spell", 0)
             if holder.max_counters and current >= holder.max_counters:
                 continue

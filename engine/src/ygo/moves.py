@@ -437,7 +437,11 @@ def _filter_monster_traits(state: GameState, iids: list[int], spec) -> list[int]
     """Narrow a monster pool to ``spec``'s race/attribute restriction (e.g. an
     Equip that may only attach to a Spellcaster). No restriction -> unchanged."""
     if spec is None or not (
-        spec.races or spec.attributes or spec.face_up or spec.defense_position
+        spec.races
+        or spec.attributes
+        or spec.face_up
+        or spec.defense_position
+        or spec.card_kind
     ):
         return iids
     out: list[int] = []
@@ -455,8 +459,21 @@ def _filter_monster_traits(state: GameState, iids: list[int], spec) -> list[int]
             Position.FACE_DOWN_DEFENSE,
         ):
             continue
+        if spec.card_kind and not _kind_matches(card, spec.card_kind):
+            continue
         out.append(i)
     return out
+
+
+def _kind_matches(card, kind: str) -> bool:
+    """Whether a Spell/Trap (or Field Spell) target matches a ``card_kind`` filter."""
+    if kind == "spell":
+        return card.is_spell
+    if kind == "trap":
+        return card.is_trap
+    if kind == "field_spell":
+        return card.is_spell and card.subtype is SpellTrapProperty.FIELD
+    return True
 
 
 def _enumerate_targets(state: GameState, controller: int, spec) -> list[tuple[int, ...]]:

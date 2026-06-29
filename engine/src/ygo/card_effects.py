@@ -41,6 +41,8 @@ from .effects import (
     NegateAttack,
     NegatePreviousLink,
     Piercing,
+    PlaceCountersOnSelf,
+    ReturnAllSetCardsToHand,
     ReturnAllSpellTrapsToHand,
     ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
@@ -632,6 +634,58 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         Effect(timing="ignition", counter_cost=3, counter_type="spell", resolve=(Draw(count=1),)),
     ),
     # Mythical Beast Cerberus is purely passive (CONTINUOUS only) — no EFFECTS entry.
+    # --- Effects Batch 21: on-Summon monster Trigger Effects ---
+    # A monster's own "when (Normal) Summoned" effect now fires on a fresh Chain
+    # (engine._trigger_summon_effect), after the Summon survives any negation window.
+    # Breaker the Magical Warrior: on Normal Summon, place 1 Spell Counter on itself
+    # (max. 1, non-accumulating — see CONTINUOUS); +300 ATK per counter; an Ignition
+    # effect removes 1 counter to destroy 1 Spell/Trap on the field.
+    "Breaker the Magical Warrior": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=SELF, summon_kinds=frozenset({"normal"})),
+            resolve=(PlaceCountersOnSelf(count=1),),
+        ),
+        Effect(
+            timing="ignition",
+            counter_cost=1,
+            counter_type="spell",
+            target=TargetSpec(count=1, where="spell_trap_field"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    # Hannibal Necromancer: same shape as Breaker, but its Ignition destroys only a
+    # face-up Trap on the field.
+    "Hannibal Necromancer": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=SELF, summon_kinds=frozenset({"normal"})),
+            resolve=(PlaceCountersOnSelf(count=1),),
+        ),
+        Effect(
+            timing="ignition",
+            counter_cost=1,
+            counter_type="spell",
+            target=TargetSpec(count=1, where="spell_trap_field", card_kind="trap", face_up=True),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    # Gravekeeper's Curse: when Summoned (any way), inflict 500 damage to the opponent.
+    "Gravekeeper's Curse": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=SELF),
+            resolve=(InflictDamage(OPPONENT, 500),),
+        ),
+    ),
+    # Byser Shock: when Summoned (any way), return all Set cards on the field to hand.
+    "Byser Shock": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=SELF),
+            resolve=(ReturnAllSetCardsToHand(),),
+        ),
+    ),
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
     # destroy that monster (NegatePreviousLink handles a monster on the Chain).
     "Divine Wrath": (  # discard 1; negate a monster effect + destroy that monster
@@ -921,6 +975,16 @@ CONTINUOUS: dict[str, tuple] = {
     # Mythical Beast Cerberus: no cap, +500 ATK per counter, wiped after it battles.
     "Mythical Beast Cerberus": (
         SpellCounterHolder(per_counter_atk=500, wipe_after_battle=True),
+    ),
+    # --- Effects Batch 21: Breaker-family Spell Counter holders ---
+    # Breaker: holds its single summon-placed counter (max 1, non-accumulating),
+    # +300 ATK while it carries it.
+    "Breaker the Magical Warrior": (
+        SpellCounterHolder(max_counters=1, per_counter_atk=300, accumulates=False),
+    ),
+    # Hannibal Necromancer: max 1, non-accumulating, no stat rider.
+    "Hannibal Necromancer": (
+        SpellCounterHolder(max_counters=1, accumulates=False),
     ),
     # --- Effects Batch 2: race/attribute-restricted flat Equip Spells ---
     "Beast Fangs": (EquipMod(atk=300, defn=300),),

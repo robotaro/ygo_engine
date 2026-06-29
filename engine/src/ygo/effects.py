@@ -106,17 +106,21 @@ class HandSpecialSummon:
 
 @dataclass(frozen=True)
 class SpellCounterHolder:
-    """A face-up card that accumulates Spell Counters: each time a Spell resolves it
-    gains 1 (up to ``max_counters``; 0 = no limit). Optional riders read elsewhere:
+    """A face-up card that holds Spell Counters (up to ``max_counters``; 0 = no
+    limit). When ``accumulates`` (the default), it gains 1 each time a Spell
+    resolves (Royal Magical Library); set it False for a card that only ever
+    receives counters from its own effect (Breaker places 1 when Normal Summoned
+    and never accrues more). Optional riders read elsewhere:
     ``per_counter_atk``/``per_counter_def`` boost the monster's stats per counter
-    (Mythical Beast Cerberus), and ``wipe_after_battle`` clears them at the end of a
-    Battle Phase in which the monster battled. Counters live on the instance
+    (Mythical Beast Cerberus, Breaker), and ``wipe_after_battle`` clears them at the
+    end of a Battle Phase in which the monster battled. Counters live on the instance
     (``CardInstance.counters['spell']``); this marker just declares the behaviour."""
 
     max_counters: int = 0
     per_counter_atk: int = 0
     per_counter_def: int = 0
     wipe_after_battle: bool = False
+    accumulates: bool = True
 
 
 @dataclass(frozen=True)
@@ -222,6 +226,9 @@ class TargetSpec:
     face_up: bool = False  # restrict to face-up monsters (e.g. Soul Taker)
     defense_position: bool = False  # restrict to Defense Position monsters (Shield Crush)
     up_to: bool = False  # ``count`` is a maximum — choose 1..count (Penguin Soldier)
+    # Restrict a Spell/Trap pool by kind: None | "spell" | "trap" | "field_spell"
+    # (Hannibal Necromancer destroys only a face-up Trap).
+    card_kind: str | None = None
 
 
 @dataclass(frozen=True)
@@ -501,6 +508,45 @@ class ReturnAllSpellTrapsToHand(Primitive):
                 victims.append(s.players[pl].field_zone)
         for iid in victims:
             s.return_to_hand(iid)
+
+
+@dataclass(frozen=True)
+class ReturnAllSetCardsToHand(Primitive):
+    """Byser Shock: return every face-down (Set) card on the field — Set monsters
+    and Set Spells/Traps (and a Set Field Spell), both players' — to its owner's
+    hand."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        victims: list[int] = []
+        for pl in (0, 1):
+            zones = list(s.players[pl].monster_zones) + list(s.players[pl].spell_trap_zones)
+            zones.append(s.players[pl].field_zone)
+            victims += [i for i in zones if i is not None and not s.inst(i).is_face_up]
+        for iid in victims:
+            s.return_to_hand(iid)
+
+
+@dataclass(frozen=True)
+class PlaceCountersOnSelf(Primitive):
+    """Place counters on the effect's own source card (Breaker placing a Spell
+    Counter on itself when Normal Summoned). Capped at the source's
+    ``SpellCounterHolder.max_counters`` when it declares one (0 = no cap)."""
+
+    count: int = 1
+    counter_type: str = "spell"
+
+    def execute(self, ctx: EffectContext) -> None:
+        inst = ctx.state.cards.get(ctx.source_iid)
+        if inst is None:
+            return
+        holder = next(
+            (m for m in inst.card.continuous if isinstance(m, SpellCounterHolder)), None
+        )
+        new = inst.counters.get(self.counter_type, 0) + self.count
+        if holder is not None and holder.max_counters:
+            new = min(new, holder.max_counters)
+        inst.counters[self.counter_type] = new
 
 
 @dataclass(frozen=True)
