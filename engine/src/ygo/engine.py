@@ -790,7 +790,10 @@ class Engine:
                         for e in inst.card.effects
                         if e.timing == "trigger"
                         and e.trigger is not None
-                        and e.trigger.kind == "sent_to_gy_from_field"
+                        and (
+                            e.trigger.kind == "sent_to_gy_from_field"
+                            or (e.trigger.kind == "destroyed_by_battle" and inst.died_by_battle)
+                        )
                     ),
                     None,
                 )

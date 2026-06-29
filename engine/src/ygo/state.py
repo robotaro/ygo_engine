@@ -83,6 +83,10 @@ class CardInstance:
     # Counters sitting on this card, keyed by type ("spell", ...). Cleared when the
     # card leaves the field (Royal Magical Library, Mythical Beast Cerberus).
     counters: dict[str, int] = field(default_factory=dict)
+    # True for a card sent to the GY *by battle* this trip (Mystic Tomato & friends
+    # recruit only when "destroyed by battle"). Stamped by send_to_graveyard, read
+    # by the engine's "destroyed_by_battle" trigger while draining the GY queue.
+    died_by_battle: bool = False
 
     @property
     def name(self) -> str:
@@ -253,13 +257,16 @@ class GameState:
         inst.temp_atk = 0
         inst.temp_def = 0
 
-    def send_to_graveyard(self, iid: int) -> None:
-        """Move a card to its *owner's* Graveyard, clearing field flags."""
+    def send_to_graveyard(self, iid: int, by_battle: bool = False) -> None:
+        """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``
+        marks a battle destruction so a "destroyed by battle" trigger can tell it
+        apart from an effect destruction (Mystic Tomato recruits only on battle)."""
         inst = self.cards[iid]
         from_field = inst.zone in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD)
         self._remove_from_current_location(iid)
         inst.zone = Zone.GRAVEYARD
         self._clear_field_flags(inst)
+        inst.died_by_battle = by_battle and from_field
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine. Every
         # monster is queued (cheap; the engine skips those with no such trigger), plus

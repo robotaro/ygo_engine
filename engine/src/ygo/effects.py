@@ -249,7 +249,8 @@ class CardFilter:
     ``card_kind``: None | "monster" | "spell" | "trap" | "field_spell" |
     "normal_monster". ``names`` matches the exact card name (any of); ``name_contains``
     matches an archetype substring (any of); ``races`` / ``attributes`` narrow a
-    monster; ``min_level`` / ``max_level`` bound a monster's Level.
+    monster; ``min_level`` / ``max_level`` bound a monster's Level; ``max_atk`` caps
+    its ATK (the battle-recruiters fetch a monster with 1500 or less ATK).
     """
 
     names: frozenset = frozenset()
@@ -259,6 +260,8 @@ class CardFilter:
     card_kind: str | None = None
     min_level: int | None = None
     max_level: int | None = None
+    max_atk: int | None = None
+    max_def: int | None = None
 
     def matches(self, card) -> bool:
         if self.names and card.name not in self.names:
@@ -268,6 +271,10 @@ class CardFilter:
         if self.races and card.race not in self.races:
             return False
         if self.attributes and card.attribute not in self.attributes:
+            return False
+        if self.max_atk is not None and (card.attack or 0) > self.max_atk:
+            return False
+        if self.max_def is not None and (card.defense or 0) > self.max_def:
             return False
         if self.min_level is not None and (card.level or 0) < self.min_level:
             return False
@@ -860,6 +867,34 @@ class SearchFromDeck(Primitive):
             player.hand.append(pick)
             ctx.state.inst(pick).zone = Zone.HAND
         ctx.state.rng.shuffle(player.deck)
+
+
+@dataclass(frozen=True)
+class SpecialSummonFromDeck(Primitive):
+    """Special Summon 1 monster matching ``filt`` from the controller's Deck to an
+    empty Monster Zone (Mystic Tomato & the battle-recruiters: "destroyed by battle
+    -> Special Summon 1 [attribute/type] monster with 1500 or less ATK from your
+    Deck"). The pick is deterministic — the highest-ATK eligible match (the best
+    on-curve body under the recruiter's ATK cap) — since primitives have no agent to
+    ask; interactive choice is a deferred enhancement, as with SearchFromDeck. The
+    Deck is shuffled afterwards. No empty zone or no match -> nothing happens."""
+
+    filt: CardFilter = CardFilter()
+    position: Position = Position.FACE_UP_ATTACK
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        controller = ctx.controller
+        index = s.first_empty_monster_zone(controller)
+        if index is None:
+            return
+        deck = s.players[controller].deck
+        eligible = [i for i in deck if s.inst(i).card.is_monster and self.filt.matches(s.inst(i).card)]
+        if eligible:
+            pick = max(eligible, key=lambda i: s.inst(i).card.attack or 0)
+            s.place_monster(pick, controller, index, self.position)
+            s.inst(pick).summoned_this_turn = True
+        s.rng.shuffle(deck)
 
 
 @dataclass(frozen=True)

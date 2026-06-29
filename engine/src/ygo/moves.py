@@ -1146,22 +1146,22 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     if target.position is Position.FACE_UP_ATTACK:
         other = state.effective_attack(action.target)
         if atk > other:
-            state.send_to_graveyard(target.iid)
+            state.send_to_graveyard(target.iid, by_battle=True)
             state.players[opp].life_points -= atk - other
             return f"{prefix}{attacker.name} ({atk}) destroys {target.name} ({other}) — {atk - other} damage"
         if atk < other:
-            state.send_to_graveyard(attacker.iid)
+            state.send_to_graveyard(attacker.iid, by_battle=True)
             state.players[me].life_points -= other - atk
             return f"{prefix}{attacker.name} ({atk}) is destroyed by {target.name} ({other}) — {other - atk} damage to attacker"
-        state.send_to_graveyard(attacker.iid)
-        state.send_to_graveyard(target.iid)
+        state.send_to_graveyard(attacker.iid, by_battle=True)
+        state.send_to_graveyard(target.iid, by_battle=True)
         return f"{prefix}{attacker.name} and {target.name} ({atk}) destroy each other"
 
     # defending monster: ATK vs DEF. No battle damage on a clean break — unless the
     # attacker has a piercing rider (Dark Driceratops), which deals the excess.
     dfn = state.effective_defense(action.target)
     if atk > dfn:
-        state.send_to_graveyard(target.iid)
+        state.send_to_graveyard(target.iid, by_battle=True)
         if state.has_piercing(action.attacker):
             dmg = atk - dfn
             state.players[opp].life_points -= dmg

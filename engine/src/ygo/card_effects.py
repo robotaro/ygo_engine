@@ -50,6 +50,7 @@ from .effects import (
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
+    SpecialSummonFromDeck,
     SpecialSummonFromGraveyard,
     SpellCounterHolder,
     StandbyUpkeep,
@@ -711,6 +712,36 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             resolve=(InflictDamage(OPPONENT, 500),),
         ),
     ),
+    # --- Effects Batch 23: "destroyed by battle" -> Special Summon from the Deck ---
+    # The classic recruiter family: when destroyed by battle and sent to the GY,
+    # Special Summon 1 matching monster (ATK 1500 or less) from the Deck. Fires via
+    # the engine's "destroyed_by_battle" trigger; the fetch is deterministic
+    # (highest-ATK match under the cap). All summon in face-up Attack Position.
+    **{
+        name: (
+            Effect(
+                timing="trigger",
+                trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+                resolve=(SpecialSummonFromDeck(filt=filt),),
+            ),
+        )
+        for name, filt in {
+            "Mystic Tomato": CardFilter(card_kind="monster", attributes=frozenset({Attribute.DARK}), max_atk=1500),
+            "Giant Rat": CardFilter(card_kind="monster", attributes=frozenset({Attribute.EARTH}), max_atk=1500),
+            "Mother Grizzly": CardFilter(card_kind="monster", attributes=frozenset({Attribute.WATER}), max_atk=1500),
+            "Flying Kamakiri #1": CardFilter(card_kind="monster", attributes=frozenset({Attribute.WIND}), max_atk=1500),
+            "UFO Turtle": CardFilter(card_kind="monster", attributes=frozenset({Attribute.FIRE}), max_atk=1500),
+            "Shining Angel": CardFilter(card_kind="monster", attributes=frozenset({Attribute.LIGHT}), max_atk=1500),
+            "Masked Dragon": CardFilter(card_kind="monster", races=frozenset({"Dragon"}), max_atk=1500),
+            "Howling Insect": CardFilter(card_kind="monster", races=frozenset({"Insect"}), max_atk=1500),
+            "UFOroid": CardFilter(card_kind="monster", races=frozenset({"Machine"}), max_atk=1500),
+            "Warrior Lady of the Wasteland": CardFilter(
+                card_kind="monster", races=frozenset({"Warrior"}),
+                attributes=frozenset({Attribute.EARTH}), max_atk=1500,
+            ),
+            "Pyramid Turtle": CardFilter(card_kind="monster", races=frozenset({"Zombie"}), max_def=2000),
+        }.items()
+    },
     # Negate a monster effect: chain onto a monster-effect link and negate it, then
     # destroy that monster (NegatePreviousLink handles a monster on the Chain).
     "Divine Wrath": (  # discard 1; negate a monster effect + destroy that monster
