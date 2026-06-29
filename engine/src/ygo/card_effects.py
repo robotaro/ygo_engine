@@ -950,6 +950,46 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Tornado Bird": (  # return 2 Spell/Trap Cards on the field to their owners' hands
         _flip(target=TargetSpec(count=2, where="spell_trap_field"), resolve=(BounceTargetsToHand(),)),
     ),
+    # --- Batch 61: more clean Flip effects (existing primitives, no new mechanism) ---
+    "Bite Shoes": (  # change the battle position of 1 face-up monster
+        _flip(
+            target=TargetSpec(count=1, where="any_monster", face_up=True),
+            resolve=(ChangeTargetPosition(to="toggle"),),
+        ),
+    ),
+    "Gravitic Orb": (  # change the positions of all the opponent's face-up monsters
+        _flip(resolve=(ChangeAllPositions(side=OPPONENT, to="toggle"),)),
+    ),
+    "DUCKER Mobile Cannon": (  # add 1 Level 4 monster from your GY to your hand
+        _flip(
+            resolve=(
+                ReturnFromGraveyardToHand(CardFilter(card_kind="monster", min_level=4, max_level=4)),
+            ),
+        ),
+    ),
+    "Mask of Darkness": (  # add 1 Trap from your GY to your hand
+        _flip(resolve=(ReturnFromGraveyardToHand(CardFilter(card_kind="trap")),)),
+    ),
+    "Rafflesia Seduction": (  # take control of 1 face-up opponent monster until the End Phase
+        _flip(
+            target=TargetSpec(count=1, where="opponent_monsters", face_up=True),
+            resolve=(TakeControl(until_end_of_turn=True),),
+        ),
+    ),
+    "Jowls of Dark Demise": (  # take control of 1 opponent monster until the End Phase
+        _flip(
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(TakeControl(until_end_of_turn=True),),
+        ),
+    ),
+    "Dragon Manipulator": (  # take control of 1 face-up opponent Dragon until the End Phase
+        _flip(
+            target=TargetSpec(
+                count=1, where="opponent_monsters", face_up=True, races=frozenset({"Dragon"})
+            ),
+            resolve=(TakeControl(until_end_of_turn=True),),
+        ),
+    ),
     "Des Koala": (  # 400 damage to the opponent for each card in their hand
         _flip(resolve=(InflictDamage(OPPONENT, value=CountTimes(400, "opponent_hand")),)),
     ),

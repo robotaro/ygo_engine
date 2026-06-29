@@ -167,6 +167,14 @@ DECK = (
     + ["Hoshiningen"] * 2
     + ["Little Chimera"] * 2
     + ["Fairy King Truesdale"] * 2
+    # clean Flip effects (position / GY-recover / take-control)
+    + ["Bite Shoes"] * 2
+    + ["Gravitic Orb"] * 2
+    + ["DUCKER Mobile Cannon"] * 2
+    + ["Mask of Darkness"] * 2
+    + ["Rafflesia Seduction"] * 2
+    + ["Jowls of Dark Demise"] * 2
+    + ["Dragon Manipulator"] * 2
 )
 
 
