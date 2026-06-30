@@ -18,6 +18,7 @@ from .effects import (
     AttackRestriction,
     AttackTargetProtection,
     BanishAttackingDefensePositionMonsters,
+    BanishEquippedMonster,
     BanishEventMonster,
     BanishFaceDownThenDeckBanishIfFlip,
     BanishSelfAndEventMonster,
@@ -4991,5 +4992,37 @@ EFFECTS.update({
             discard_cost=1,
             resolve=(SpecialSummonFromDeckAtkAtMostBattleDamage(),),
         ),
+    ),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 81: deck-COMPLETION targets (each is the last unimplemented card in 2-3
+# GBA decks). A Ritual Spell, a Nomi Winged Beast, and a piercing Equip.
+EFFECTS.update({
+    # Black Magic Ritual — Ritual Summon "Magician of Black Chaos" (Tribute monsters
+    # totalling Level 8+). Structurally identical to Black Luster Ritual.
+    "Black Magic Ritual": (
+        Effect(timing="ritual", condition=_can_ritual_summon_for("Magician of Black Chaos")),
+    ),
+    # Big Bang Shot — Equip: +400 ATK, the equipped monster pierces, and when this card
+    # leaves the field it banishes the monster it was equipped to.
+    "Big Bang Shot": (
+        *_equip_effect(),
+        _on_sent_to_gy((BanishEquippedMonster(),)),
+    ),
+})
+RITUALS.update({
+    "Black Magic Ritual": "Magician of Black Chaos",
+})
+CONTINUOUS.update({
+    # Big Bang Shot — +400 ATK and grants piercing while attached (read by has_piercing).
+    "Big Bang Shot": (EquipMod(atk=400, grants_piercing=True),),
+})
+HAND_SUMMONS.update({
+    # Harpie Lady Sisters — cannot be Normal Summoned/Set; it has no self-Summon of its
+    # own (the condition never holds), so it only ever reaches the field via Elegant
+    # Egotist (which Special Summons it from the Deck — see Batch 75).
+    "Harpie Lady Sisters": HandSpecialSummon(
+        cannot_normal_summon=True, condition=lambda s, c: False
     ),
 })

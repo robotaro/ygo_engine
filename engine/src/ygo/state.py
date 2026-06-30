@@ -84,6 +84,10 @@ class CardInstance:
     set_on_turn: int | None = None
     # For an Equip card: the iid of the monster it is attached to.
     equipped_to: int | None = None
+    # The monster this Equip was attached to at the moment it was sent to the GY —
+    # captured by send_to_graveyard so a "when this leaves the field" parting effect can
+    # still find it (Big Bang Shot banishes it). Cleared whenever the card enters a zone.
+    last_equipped_to: int | None = None
     # A two-way bond (Call of the Haunted): if either partner leaves the field,
     # the other is destroyed. Set on both the card and the monster it summoned.
     linked_to: int | None = None
@@ -376,6 +380,7 @@ class GameState:
         inst.reset_turn_flags()
         inst.set_on_turn = None
         inst.equipped_to = None
+        inst.last_equipped_to = None
         inst.linked_to = None
         inst.control_reverts_to = None
         inst.control_until_end_of_turn = None
@@ -407,7 +412,9 @@ class GameState:
             del self.cards[iid]
             return
         inst.zone = Zone.GRAVEYARD
+        equipped = inst.equipped_to  # capture before flags clear (for an Equip's parting effect)
         self._clear_field_flags(inst)
+        inst.last_equipped_to = equipped
         inst.died_by_battle = by_battle and from_field
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine. Every
@@ -670,8 +677,11 @@ class GameState:
         return next((m for m in inst.card.continuous if isinstance(m, marker_type)), None)
 
     def has_piercing(self, iid: int) -> bool:
-        """Whether the monster deals piercing battle damage to a defender it breaks."""
-        return self._self_rider(iid, Piercing) is not None
+        """Whether the monster deals piercing battle damage to a defender it breaks —
+        from its own Piercing rider, or granted by a face-up Equip (Big Bang Shot)."""
+        if self._self_rider(iid, Piercing) is not None:
+            return True
+        return any(mod.grants_piercing for mod, _ in self._equip_mods_on(iid))
 
     def damage_step_bonus(self, iid: int, opposing_iid: int | None, *, is_attacker: bool, which: str) -> int:
         """The Damage-Step-only ATK/DEF swing ``iid`` gets in a battle against

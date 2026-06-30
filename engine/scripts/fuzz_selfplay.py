@@ -264,6 +264,13 @@ DECK = (
     + ["Numinous Healer"] * 2
     + ["Attack and Receive"] * 2
     + ["Damage Condenser"] * 2
+    # deck-completion: a Ritual, a Nomi Winged Beast, and a piercing Equip
+    + ["Black Magic Ritual"] * 2
+    + ["Magician of Black Chaos"] * 2
+    + ["Harpie Lady Sisters"] * 1
+    + ["Elegant Egotist"] * 2
+    + ["Harpie Lady"] * 2  # the Egotist condition + a Big Bang Shot host
+    + ["Big Bang Shot"] * 2
 )
 
 

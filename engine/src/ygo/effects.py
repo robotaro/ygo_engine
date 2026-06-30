@@ -60,6 +60,9 @@ class EquipMod:
     scaling: str | None = None  # None | "face_up_monsters" | "spell_trap" | "lp_megamorph"
     scale_atk: int = 0
     scale_defn: int = 0
+    # The equipped monster deals piercing battle damage to a Defense-Position monster it
+    # breaks (Big Bang Shot). Read by GameState.has_piercing off the attached Equip.
+    grants_piercing: bool = False
 
 
 @dataclass(frozen=True)
@@ -1011,6 +1014,23 @@ class BanishFaceDownThenDeckBanishIfFlip(Primitive):
         for pl in s.players:
             for did in [d for d in pl.deck if s.inst(d).card.name == name]:
                 s.banish(did)
+
+
+@dataclass(frozen=True)
+class BanishEquippedMonster(Primitive):
+    """Banish the monster this Equip Card was attached to when it left the field (Big
+    Bang Shot's parting effect). Read from the equip's ``last_equipped_to`` — captured by
+    ``send_to_graveyard`` before the field flags were cleared. A no-op if that monster has
+    itself already left the field (e.g. the equip was orphaned because the monster died)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        src = s.cards.get(ctx.source_iid)
+        if src is None:
+            return
+        iid = src.last_equipped_to
+        if iid is not None and iid in s.cards and s.inst(iid).zone is Zone.MONSTER:
+            s.banish(iid)
 
 
 @dataclass(frozen=True)
