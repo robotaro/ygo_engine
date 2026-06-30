@@ -1439,6 +1439,9 @@ def _battle_destroy(state: GameState, iid: int, destroyer_iid: int | None = None
         state.send_to_graveyard(iid, by_battle=True)
         if destroyer_iid is not None:
             state.battle_destroyed_by.append((destroyer_iid, iid))
+            killer = state.cards.get(destroyer_iid)
+            if killer is not None:
+                killer.destroyed_a_monster_by_battle_this_turn = True  # Insect Queen reads it
 
 
 def battle_damage_preview(state: GameState, attacker_iid: int, target_iid: int | None):

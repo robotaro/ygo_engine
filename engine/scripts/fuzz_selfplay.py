@@ -358,6 +358,9 @@ DECK = (
     # monster; exercises the new changed_to_defense trigger) and Invader of the Throne
     # (FLIP control swap; exercises state.swap_control + the flip-condition gate).
     + ["Dream Clown"] * 1 + ["Invader of the Throne"] * 1
+    # Batch 101: Insect Queen (Insect anthem via race_on_field, attack-Tribute cost, and
+    # the End-Phase Insect Token recursion on a battle kill). Insect bodies already in pool.
+    + ["Insect Queen"] * 1
 )
 
 

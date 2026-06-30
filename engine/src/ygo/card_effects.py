@@ -114,6 +114,7 @@ from .effects import (
     HalvesBattleDamageDealt,
     BurnDefenseMonsterOriginalAtk,
     SwapControlWithTarget,
+    SummonTokenIfDestroyedByBattle,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5623,6 +5624,38 @@ EFFECTS.update({
             condition=_not_battle_phase,
             target=TargetSpec(count=1, where="opponent_monsters"),
             resolve=(SwapControlWithTarget(),),
+        ),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 101: Insect Queen — a board-scaling Insect boss with three clauses, all
+# carried as continuous riders. Clears one more one-card-from-ready deck and anchors the
+# Insect package (Weevil's decks still also want Steel Scorpion).
+CONTINUOUS.update({
+    "Insect Queen": (
+        # Gains 200 ATK for each Insect monster on the field (both sides, itself included).
+        SelfStatMod(scaling="race_on_field", scale_atk=200, count_race="Insect"),
+        # Cannot declare an attack unless you Tribute 1 monster (reuses the Panther Warrior
+        # attack-Tribute cost wired in Batch 91).
+        AttackTributeCost(count=1),
+        # Once per turn during the End Phase, if it destroyed an opponent's monster by
+        # battle this turn, Special Summon 1 "Insect Monster Token" (Insect/EARTH/L1/100/100).
+        EndPhaseTrigger(
+            effect=Effect(
+                resolve=(
+                    SummonTokenIfDestroyedByBattle(
+                        token_name="Insect Monster Token",
+                        race="Insect",
+                        attribute=Attribute.EARTH,
+                        level=1,
+                        atk=100,
+                        defn=100,
+                    ),
+                ),
+            ),
+            whose="controller",
         ),
     ),
 })

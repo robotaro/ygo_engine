@@ -99,6 +99,9 @@ class CardInstance:
     attacked_this_turn: bool = False
     attacks_made_this_turn: int = 0  # how many attacks declared this turn (multi-attackers)
     position_changed_this_turn: bool = False
+    # True once this monster has destroyed an opponent's monster by battle this turn
+    # (Insect Queen's End-Phase token recursion reads it). A per-turn flag.
+    destroyed_a_monster_by_battle_this_turn: bool = False
     # The turn on which a Spell/Trap was Set face-down (it can't activate that turn).
     set_on_turn: int | None = None
     # For an Equip card: the iid of the monster it is attached to.
@@ -199,6 +202,7 @@ class CardInstance:
         self.attacked_this_turn = False
         self.attacks_made_this_turn = 0
         self.position_changed_this_turn = False
+        self.destroyed_a_monster_by_battle_this_turn = False
 
     @property
     def effects_active(self) -> bool:
@@ -809,6 +813,19 @@ class GameState:
                     if sid is not None
                     and self.cards[sid].equipped_to == monster_iid
                     and self.cards[sid].is_face_up
+                )
+                total += flat + per * count
+            elif mod.scaling == "race_on_field":
+                # Insect Queen: +scale per face-up monster of count_race anywhere on the
+                # field (both sides, including this card itself).
+                per = mod.scale_atk if which == "atk" else mod.scale_defn
+                count = sum(
+                    1
+                    for pl in self.players
+                    for i in pl.monster_zones
+                    if i is not None
+                    and self.cards[i].is_face_up
+                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
                 )
                 total += flat + per * count
             elif mod.scaling == "named_in_graveyards":

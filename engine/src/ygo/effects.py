@@ -2488,6 +2488,33 @@ class CreateToken(Primitive):
             tok.was_special_summoned = True  # a Token is Special Summoned (Fossil Dyna hits it)
 
 
+@dataclass(frozen=True)
+class SummonTokenIfDestroyedByBattle(Primitive):
+    """Insect Queen's End-Phase recursion: if this card destroyed an opponent's monster by
+    battle this turn, Special Summon 1 Token (built like CreateToken). A no-op otherwise."""
+
+    token_name: str = "Token"
+    race: str = ""
+    attribute: Attribute = Attribute.EARTH
+    level: int = 1
+    atk: int = 0
+    defn: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        src = ctx.state.cards.get(ctx.source_iid)
+        if src is None or not src.destroyed_a_monster_by_battle_this_turn:
+            return
+        CreateToken(
+            token_name=self.token_name,
+            race=self.race,
+            attribute=self.attribute,
+            level=self.level,
+            atk=self.atk,
+            defn=self.defn,
+            position=Position.FACE_UP_ATTACK,
+        ).execute(ctx)
+
+
 # --- Slice 9: take-control ---
 @dataclass(frozen=True)
 class TakeControl(Primitive):
