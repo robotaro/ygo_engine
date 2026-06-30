@@ -683,8 +683,10 @@ class Trigger:
     """
 
     # The game event this reacts to. Known kinds: "summon" (Normal/Flip/Special — see
-    # summon_kinds), "attack_declared", "battle_damage_inflicted", "sent_to_gy_from_field",
-    # "destroyed_by_battle".
+    # summon_kinds), "attack_declared", "attacked", "battle_damage_inflicted",
+    # "battles", "destroys_by_battle", "damage_taken", "sent_to_gy_from_field", and the
+    # destruction triggers "destroyed_by_battle" / "destroyed_by_effect" / "destroyed"
+    # (the unified battle-OR-effect one) — all three drained off the field→GY queue.
     kind: str
     by: str = OPPONENT
     subject: str | None = None
@@ -899,7 +901,7 @@ class DestroyAllMonsters(Primitive):
             )
         ]
         for iid in victims:
-            ctx.state.send_to_graveyard(iid)
+            ctx.state.send_to_graveyard(iid, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -916,7 +918,7 @@ class DestroyOwnMonstersHalfAtkBurn(Primitive):
         victims = [i for i in s.players[c].monster_zones if i is not None]
         total = sum(s.effective_attack(i) for i in victims if s.inst(i).is_face_up)
         for iid in victims:
-            s.send_to_graveyard(iid)
+            s.send_to_graveyard(iid, by_effect=True)
         if victims:
             s.players[c].life_points -= total // 2
 
@@ -938,7 +940,7 @@ class DestroyAllSpecialSummoned(Primitive):
             and ctx.state.inst(iid).was_special_summoned
         ]
         for iid in victims:
-            ctx.state.send_to_graveyard(iid)
+            ctx.state.send_to_graveyard(iid, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -948,7 +950,7 @@ class DestroyTargets(Primitive):
     def execute(self, ctx: EffectContext) -> None:
         for iid in list(ctx.targets):
             if iid in ctx.state.cards:
-                ctx.state.send_to_graveyard(iid)
+                ctx.state.send_to_graveyard(iid, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1093,7 +1095,7 @@ class DestroyEquipHostThenBurn(Primitive):
             return
         victim = host.controller  # whoever controls it NOW takes the damage
         atk = s.effective_attack(host.iid)
-        s.send_to_graveyard(host.iid)
+        s.send_to_graveyard(host.iid, by_effect=True)
         if atk > 0:
             s.players[victim].life_points -= atk
 
@@ -1115,7 +1117,7 @@ class CountdownSelfDestruct(Primitive):
         n = inst.counters.get(self.counter, 0) + 1
         inst.counters[self.counter] = n
         if n >= self.turns:
-            ctx.state.send_to_graveyard(ctx.source_iid)
+            ctx.state.send_to_graveyard(ctx.source_iid, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1212,7 +1214,7 @@ class DestroyAllOtherCards(Primitive):
         victims = s.field_cards(0) + s.field_cards(1)
         for iid in victims:
             if iid != ctx.source_iid and iid in s.cards:
-                s.send_to_graveyard(iid)
+                s.send_to_graveyard(iid, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1223,7 +1225,7 @@ class DestroyAllFieldSpells(Primitive):
         for player in ctx.state.players:
             fz = player.field_zone
             if fz is not None:
-                ctx.state.send_to_graveyard(fz)
+                ctx.state.send_to_graveyard(fz, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1240,7 +1242,7 @@ class DestroyAllSpellTraps(Primitive):
         for pl in players:
             victims += ctx.state.field_cards(pl, monsters=False)
         for iid in victims:
-            ctx.state.send_to_graveyard(iid)
+            ctx.state.send_to_graveyard(iid, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1257,7 +1259,7 @@ class DestroyLowestAtkOpponentMonster(Primitive):
         if not faceup:
             return
         victim = min(faceup, key=lambda i: ctx.state.inst(i).card.attack or 0)
-        ctx.state.send_to_graveyard(victim)
+        ctx.state.send_to_graveyard(victim, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1348,7 +1350,7 @@ class DestroyHighestDefOpponentMonster(Primitive):
             if iid is not None and ctx.state.inst(iid).is_face_up
         ]
         if faceup:
-            ctx.state.send_to_graveyard(max(faceup, key=ctx.state.effective_defense))
+            ctx.state.send_to_graveyard(max(faceup, key=ctx.state.effective_defense), by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1368,7 +1370,7 @@ class DestroyHighestAtkMonster(Primitive):
             if iid is not None and ctx.state.inst(iid).position is Position.FACE_UP_ATTACK
         ]
         if cands:
-            ctx.state.send_to_graveyard(max(cands, key=ctx.state.effective_attack))
+            ctx.state.send_to_graveyard(max(cands, key=ctx.state.effective_attack), by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1390,7 +1392,7 @@ class DestroyFaceUpMonstersWithDefAtMost(Primitive):
             and ctx.state.effective_defense(iid) <= limit
         ]
         for iid in victims:
-            ctx.state.send_to_graveyard(iid)
+            ctx.state.send_to_graveyard(iid, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1648,7 +1650,7 @@ class NegatePreviousLink(Primitive):
         if inst is None or inst.zone not in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD):
             return  # already gone, or not on the field
         if self.aftermath == "destroy":
-            ctx.state.send_to_graveyard(target.source_iid)
+            ctx.state.send_to_graveyard(target.source_iid, by_effect=True)
         elif self.aftermath == "bounce":
             ctx.state.return_to_hand(target.source_iid)
 
@@ -1665,7 +1667,7 @@ class DestroyAttackingAttackPositionMonsters(Primitive):
             if iid is not None and ctx.state.inst(iid).position is Position.FACE_UP_ATTACK
         ]
         for iid in victims:
-            ctx.state.send_to_graveyard(iid)
+            ctx.state.send_to_graveyard(iid, by_effect=True)
 
 
 @dataclass(frozen=True)

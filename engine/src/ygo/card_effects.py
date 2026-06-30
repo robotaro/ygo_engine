@@ -5060,3 +5060,44 @@ CONTINUOUS.update({
         ),
     ),
 })
+
+# Effects Batch 83: the "when this card is destroyed" bucket. The engine now stamps an
+# effect destruction (``died_by_effect``, set by every Destroy* primitive) the way it
+# already stamped a battle death, so a monster's field→GY trigger can key off HOW it
+# died: "destroyed_by_effect" (only a card effect) or the unified "destroyed" (battle OR
+# effect, but not a tribute/discard/mill send). Both fire from the same GY-queue drain
+# the recruiters use.
+EFFECTS.update({
+    # Babycerasaurus: "If this card is destroyed by a card effect and sent to the
+    # Graveyard: Special Summon 1 Level 4 or lower Dinosaur-Type monster from your Deck."
+    # A clean "destroyed_by_effect" SELF trigger — a battle death does NOT fire it.
+    "Babycerasaurus": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_effect", by=SELF),
+            resolve=(
+                SpecialSummonFromDeck(
+                    card_filter=CardFilter(
+                        card_kind="monster", races=frozenset({"Dinosaur"}), max_level=4
+                    )
+                ),
+            ),
+        ),
+    ),
+    # Granadora: gains 1000 LP on ANY Summon (Normal/Flip/Special), and on being
+    # destroyed and sent to the GY — by battle OR by a card effect — burns its controller
+    # 2000. The unified "destroyed" trigger covers both death causes; the summon half is a
+    # plain by-SELF summon trigger (no summon_kinds = any Summon).
+    "Granadora": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=SELF),
+            resolve=(GainLifePoints(SELF, 1000),),
+        ),
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed", by=SELF),
+            resolve=(InflictDamage(SELF, 2000),),
+        ),
+    ),
+})

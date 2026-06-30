@@ -1170,14 +1170,25 @@ class Engine:
 
     @classmethod
     def _find_gy_trigger(cls, inst):
-        """The card's "sent from field to GY" trigger effect (a battle-only one fires
-        only on a battle death), or None."""
+        """The card's field→GY trigger effect, matched against *how* it left the field:
+
+        - ``sent_to_gy_from_field`` — any send to the GY (Sangan, Black Pendant).
+        - ``destroyed_by_battle`` — only a battle death (Mystic Tomato & the recruiters).
+        - ``destroyed_by_effect`` — only an effect destruction (Babycerasaurus).
+        - ``destroyed`` — either destruction, battle OR effect (Granadora), but NOT a
+          non-destruction send (tribute, discard, mill, cost — both death flags False).
+
+        Returns the first matching effect, or None.
+        """
+        destroyed = inst.died_by_battle or inst.died_by_effect
         return next(
             (
                 e
                 for e in cls._trigger_effects(inst.card)
                 if e.trigger.kind == "sent_to_gy_from_field"
                 or (e.trigger.kind == "destroyed_by_battle" and inst.died_by_battle)
+                or (e.trigger.kind == "destroyed_by_effect" and inst.died_by_effect)
+                or (e.trigger.kind == "destroyed" and destroyed)
             ),
             None,
         )

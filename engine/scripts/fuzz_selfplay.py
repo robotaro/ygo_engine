@@ -273,6 +273,12 @@ DECK = (
     + ["Big Bang Shot"] * 2
     # Batch 82: Blast Sphere (attacked -> equip to attacker -> delayed Standby kill)
     + ["Blast Sphere"] * 2
+    # Batch 83: the "when destroyed" bucket -- Babycerasaurus (destroyed by effect ->
+    # recruit a Dinosaur) plus a Dinosaur for it to fetch, and Granadora (unified
+    # destroyed -> self-burn 2000). Sabersaurus is the recruit target.
+    + ["Babycerasaurus"] * 2
+    + ["Granadora"] * 2
+    + ["Sabersaurus"] * 2
 )
 
 

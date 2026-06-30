@@ -52,13 +52,21 @@ EXODIA_PIECES = frozenset(
 )
 
 
+# The field→Graveyard trigger kinds, all drained off the ``gy_from_field`` queue:
+# any send ("sent_to_gy_from_field"), and the destruction-only refinements that read the
+# stamped death cause — "destroyed_by_battle", "destroyed_by_effect", and the unified
+# "destroyed" (battle OR effect, but not a tribute/discard/mill send).
+_GY_TRIGGER_KINDS = frozenset(
+    {"sent_to_gy_from_field", "destroyed_by_battle", "destroyed_by_effect", "destroyed"}
+)
+
+
 def _has_gy_trigger(card: CardDef) -> bool:
-    """Whether a card carries a 'sent from the field to the Graveyard' trigger
-    (Black Pendant, Horn of the Unicorn) — so non-monsters with one get queued."""
+    """Whether a card carries a field→Graveyard trigger (Black Pendant's destroyed
+    burn, Horn of the Unicorn) — so non-monsters with one get queued to ``gy_from_field``
+    (monsters are always queued)."""
     return any(
-        e.timing == "trigger"
-        and e.trigger is not None
-        and e.trigger.kind == "sent_to_gy_from_field"
+        e.timing == "trigger" and e.trigger is not None and e.trigger.kind in _GY_TRIGGER_KINDS
         for e in card.effects
     )
 
@@ -125,6 +133,11 @@ class CardInstance:
     # recruit only when "destroyed by battle"). Stamped by send_to_graveyard, read
     # by the engine's "destroyed_by_battle" trigger while draining the GY queue.
     died_by_battle: bool = False
+    # True for a card destroyed *by a card effect* this trip (vs. a non-destruction send
+    # — tribute, discard, mill, cost). Stamped by send_to_graveyard(by_effect=True), which
+    # the Destroy* primitives pass; read by the "destroyed_by_effect" and unified
+    # "destroyed" triggers (Babycerasaurus, Granadora) while draining the GY queue.
+    died_by_effect: bool = False
     # True while this monster is face-up on the field having reached it via a Special
     # Summon (vs. Normal/Tribute/Flip Summon or Set). Stamped True in state.special_summon
     # (and on a Token), reset to False by place_monster (Normal Summon/Set) and on leaving
@@ -333,6 +346,7 @@ class GameState:
         inst.zone_index = index
         inst.position = position
         inst.died_by_battle = False  # a revived monster carries no stale battle-death flag
+        inst.died_by_effect = False  # nor a stale effect-destruction flag
         inst.was_special_summoned = False  # Normal Summon/Set; special_summon re-stamps True
         inst.was_tribute_summoned = False  # moves._summon re-stamps True for a Tribute Summon
 
@@ -397,6 +411,7 @@ class GameState:
         inst.perm_atk = 0  # permanent stat changes (Zombyra, Slate Warrior, a debuffed
         inst.perm_def = 0  # killer) don't outlive the field — a revived copy is back to base
         inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
+        inst.died_by_effect = False  # re-stamped by send_to_graveyard if an effect destruction
         inst.was_special_summoned = False  # re-stamped by special_summon on a fresh summon
         inst.was_tribute_summoned = False  # re-stamped by moves._summon on a fresh Tribute Summon
         inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
@@ -405,10 +420,13 @@ class GameState:
         inst.destroy_at_end_phase = None
         inst.position_locked_until = None  # a position lock doesn't outlive the field
 
-    def send_to_graveyard(self, iid: int, by_battle: bool = False) -> None:
+    def send_to_graveyard(self, iid: int, by_battle: bool = False, by_effect: bool = False) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``
         marks a battle destruction so a "destroyed by battle" trigger can tell it
-        apart from an effect destruction (Mystic Tomato recruits only on battle)."""
+        apart from an effect destruction (Mystic Tomato recruits only on battle);
+        ``by_effect`` marks a destruction *by a card effect* (the Destroy* primitives
+        pass it) so a "destroyed by a card effect" / unified "destroyed" trigger fires —
+        while a non-destruction send (tribute, discard, mill, cost) leaves both False."""
         inst = self.cards[iid]
         from_field = inst.zone in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD)
         self._remove_from_current_location(iid)
@@ -423,6 +441,7 @@ class GameState:
         self._clear_field_flags(inst)
         inst.last_equipped_to = equipped
         inst.died_by_battle = by_battle and from_field
+        inst.died_by_effect = by_effect and from_field
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine. Every
         # monster is queued (cheap; the engine skips those with no such trigger), plus
