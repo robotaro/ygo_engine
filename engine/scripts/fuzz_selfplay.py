@@ -368,6 +368,9 @@ DECK = (
     # Batch 103: Multiply (Tribute a face-up Kuriboh -> swarm Kuriboh Tokens) + a Kuriboh
     # to feed it. Exercises the new tribute_names cost filter and the token fill.
     + ["Multiply"] * 1 + ["Kuriboh"] * 1
+    # Batch 104: Cave Dragon (no Normal Summon while controlling a monster; cannot attack
+    # without another Dragon). Blue-Eyes already in pool gives it a Dragon ally.
+    + ["Cave Dragon"] * 1
 )
 
 

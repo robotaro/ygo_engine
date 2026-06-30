@@ -117,6 +117,8 @@ from .effects import (
     SummonTokenIfDestroyedByBattle,
     SameNameAnthem,
     DestroySelf,
+    NoNormalSummonWhileControllingMonster,
+    CannotAttackUnlessControlRace,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5724,5 +5726,18 @@ EFFECTS.update({
                 ),
             ),
         ),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 104: Cave Dragon — two reusable static restrictions. Clears one more
+# one-card-from-ready deck.
+CONTINUOUS.update({
+    "Cave Dragon": (
+        # Cannot be Normal Summoned/Set while you control a monster.
+        NoNormalSummonWhileControllingMonster(),
+        # Cannot declare an attack unless you control another Dragon-Type monster.
+        CannotAttackUnlessControlRace(race="Dragon"),
     ),
 })

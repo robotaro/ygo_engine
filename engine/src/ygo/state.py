@@ -24,6 +24,7 @@ from .effects import (
     BurnOnHandDiscard,
     OpponentMillToAttack,
     CannotBeSpecialSummoned,
+    CannotAttackUnlessControlRace,
     HalvesBattleDamageDealt,
     SameNameAnthem,
     NoBattleDamageWhileUmi,
@@ -1031,6 +1032,19 @@ class GameState:
         """Whether the battle damage this monster inflicts to the opponent is halved
         (Susa Soldier). Suppressed while its effect is inactive or negated (Skill Drain)."""
         return self._self_rider(iid, HalvesBattleDamageDealt) is not None
+
+    def attack_barred_needs_ally(self, iid: int) -> bool:
+        """Whether this monster is barred from declaring an attack because it carries a
+        CannotAttackUnlessControlRace rider and its controller controls no *other* monster
+        of that race (Cave Dragon needs a second Dragon). Suppressed under Skill Drain."""
+        mod = self._self_rider(iid, CannotAttackUnlessControlRace)
+        if mod is None:
+            return False
+        controller = self.cards[iid].controller
+        return not any(
+            i is not None and i != iid and self.cards[i].is_face_up and self.cards[i].card.race == mod.race
+            for i in self.players[controller].monster_zones
+        )
 
     def field_cards(
         self,

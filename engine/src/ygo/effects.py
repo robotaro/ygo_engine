@@ -360,6 +360,22 @@ class CannotBeSpecialSummoned:
 
 
 @dataclass(frozen=True)
+class NoNormalSummonWhileControllingMonster:
+    """A static ability: this card cannot be Normal Summoned or Set while its controller
+    already controls a monster (Cave Dragon). Read off ``card.continuous`` by the
+    Normal-Summon enumeration."""
+
+
+@dataclass(frozen=True)
+class CannotAttackUnlessControlRace:
+    """A face-up monster's continuous rider: it cannot declare an attack unless its
+    controller also controls *another* monster of ``race`` (Cave Dragon needs a second
+    Dragon). Read by ``GameState.attack_barred_needs_ally`` (suppressed under Skill Drain)."""
+
+    race: str = ""
+
+
+@dataclass(frozen=True)
 class ReturnsToHandAtEndPhase:
     """A static ability: a face-up copy returns to its owner's hand during the End Phase
     (Susa Soldier — the turn it is Normal Summoned or flipped face-up; since it always

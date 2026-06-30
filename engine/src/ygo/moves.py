@@ -16,7 +16,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import combinations
 
-from .effects import OPPONENT, AttackRestriction, EffectContext, card_matches_traits
+from .effects import (
+    OPPONENT,
+    AttackRestriction,
+    EffectContext,
+    NoNormalSummonWhileControllingMonster,
+    card_matches_traits,
+)
 from .enums import Phase, Position, SpellTrapProperty, Zone
 from .state import GameState
 
@@ -474,6 +480,10 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             card = state.inst(iid).card
             if not card.can_normal_summon:
                 continue
+            if controlled and any(
+                isinstance(m, NoNormalSummonWhileControllingMonster) for m in card.continuous
+            ):
+                continue  # Cave Dragon can't be Normal Summoned/Set while you control a monster
             if card.is_toon and not controls_toon_world(state, player):
                 continue  # a Toon monster needs your Toon World face-up to be Summoned
             can_set = not state.action_locked("set", player)  # Searchlightman bars Setting
@@ -1151,6 +1161,8 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
         mill = state.attack_deck_cost(player)
         if mill and len(state.players[player].deck) < mill:
             continue  # Gravekeeper's Servant: too few cards to mill -> cannot attack
+        if state.attack_barred_needs_ally(iid):
+            continue  # Cave Dragon: cannot attack unless you control another Dragon
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
             continue  # Messenger of Peace: too strong to declare an attack
         if level_cap is not None and (inst.card.level or 0) > level_cap:
