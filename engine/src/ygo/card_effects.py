@@ -106,6 +106,8 @@ from .effects import (
     NoBattleDamageWhileUmi,
     BanishInsteadOfGraveyard,
     BurnOnHandDiscard,
+    AcidTrapHole,
+    SearchCardToTopOfDeck,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5479,4 +5481,26 @@ EFFECTS.update({
     # Magical Thorn is a Continuous Trap: activating it just sets it face-up on the field,
     # where its BurnOnHandDiscard rider then watches every opponent discard.
     "Magical Thorn": _ACTIVATE_ONTO_FIELD,
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 96: the Weevil insect-trap pair — Acid Trap Hole and Drill Bug.
+# Together they flip Weevil's 4th Reshef deck (a two-blocker) to fully ready, and Acid
+# Trap Hole flips two more one-card-from-ready decks on its own.
+EFFECTS.update({
+    # Acid Trap Hole — a Normal Trap activated at will: target 1 face-down Defense-Position
+    # monster, flip it up, then destroy it if its DEF <= 2000, else set it back face-down.
+    "Acid Trap Hole": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            target=TargetSpec(count=1, where="any_monster", face_down=True),
+            resolve=(AcidTrapHole(),),
+        ),
+    ),
+    # Drill Bug — when it inflicts battle damage to the opponent, fetch 1 "Parasite
+    # Paracide" from your Deck, shuffle, and set it on top of your Deck (its Batch 88 combo
+    # piece: you then draw and bury it in the opponent's Deck).
+    "Drill Bug": (_on_battle_damage((SearchCardToTopOfDeck(name="Parasite Paracide"),)),),
 })

@@ -2519,6 +2519,47 @@ class AbsorbMonsterAsEquip(Primitive):
         s.cards[target].equipped_to = src
 
 
+@dataclass(frozen=True)
+class AcidTrapHole(Primitive):
+    """Acid Trap Hole: flip the targeted face-down Defense-Position monster face-up,
+    then destroy it if its DEF is ``threshold`` (2000) or less; otherwise set it
+    face-down again. (The forced flip does not fire the monster's Flip effect — a
+    documented simplification, consistent with the engine's other forced flips.)"""
+
+    threshold: int = 2000
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        target = ctx.targets[0] if ctx.targets else None
+        inst = s.cards.get(target) if target is not None else None
+        if inst is None or inst.zone is not Zone.MONSTER:
+            return
+        inst.position = Position.FACE_UP_DEFENSE  # flip it up to read its DEF
+        if s.effective_defense(target) <= self.threshold:
+            s.send_to_graveyard(target, by_effect=True)
+        else:
+            inst.position = Position.FACE_DOWN_DEFENSE  # too tough — set it back down
+
+
+@dataclass(frozen=True)
+class SearchCardToTopOfDeck(Primitive):
+    """Drill Bug: search a card named ``name`` from the controller's own Deck, shuffle
+    the Deck, then place that card on top (the end of the deck list, which ``draw``
+    pops). Does nothing if no copy is in the Deck."""
+
+    name: str = ""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        deck = s.players[ctx.controller].deck
+        eligible = [i for i in deck if s.inst(i).card.name == self.name]
+        s.rng.shuffle(deck)
+        if eligible:
+            pick = eligible[0]
+            deck.remove(pick)
+            deck.append(pick)  # the end of the list is the top of the deck
+
+
 # --------------------------------------------------------------------------- #
 #  Effect — a card ability
 # --------------------------------------------------------------------------- #

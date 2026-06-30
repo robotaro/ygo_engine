@@ -337,6 +337,10 @@ DECK = (
     # banished instead — exercises the floodgate redirect across the whole match);
     # Magical Thorn (burns the opponent on each hand discard).
     + ["Banisher of the Light"] * 1 + ["Magical Thorn"] * 1
+    # Batch 96: the Weevil insect-trap pair. Acid Trap Hole (flip a face-down DEF monster,
+    # destroy if DEF <= 2000); Drill Bug (on battle damage, set Parasite Paracide on top
+    # of the deck — pairs with the Parasite already in the fuzz pool).
+    + ["Acid Trap Hole"] * 1 + ["Drill Bug"] * 1
 )
 
 
