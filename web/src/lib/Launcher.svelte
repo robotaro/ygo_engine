@@ -99,7 +99,7 @@
 
       <div class="go">
         <input class="seed" placeholder="seed (optional)" bind:value={seed} />
-        <button class="start" onclick={() => startDuel()} disabled={!yourDeck || !oppDeck}>
+        <button class="start btn-primary" onclick={() => startDuel()} disabled={!yourDeck || !oppDeck}>
           Start Duel ▶
         </button>
       </div>
@@ -126,31 +126,36 @@
   .tabs {
     display: flex;
     gap: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
   .tabs button {
-    background: #222;
-    color: #bbb;
-    border: 1px solid #333;
+    background: transparent;
+    color: var(--muted);
+    border-color: transparent;
+  }
+  .tabs button:hover {
+    background: var(--surface-2);
+    color: var(--text);
   }
   .tabs button.active {
-    background: #b8923a;
-    color: #1a1a1a;
+    background: var(--surface-2);
+    color: var(--accent);
+    border-color: var(--line);
   }
   .play {
-    max-width: 640px;
+    max-width: 660px;
   }
   h2 {
-    color: #d9bf7a;
+    color: var(--text);
     margin: 6px 0;
   }
   .sub {
-    color: #999;
+    color: var(--muted);
     font-size: 13px;
     margin: 0 0 18px;
   }
   .full {
-    color: #8dff9e;
+    color: var(--success);
     font-weight: 700;
   }
   .picks {
@@ -161,50 +166,32 @@
   .pick {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
   }
   .lbl {
     font-size: 12px;
-    color: #bbb;
+    color: var(--muted);
     display: flex;
     align-items: center;
     gap: 8px;
   }
-  select,
-  input {
-    background: #222;
-    border: 1px solid #444;
-    color: #eee;
-    border-radius: 5px;
-    padding: 8px;
-    font-size: 14px;
-  }
   .info {
-    margin-top: 12px;
+    margin-top: 14px;
     font-size: 12px;
-    color: #9fd9a9;
+    color: var(--success);
   }
   .go {
-    margin-top: 22px;
+    margin-top: 24px;
     display: flex;
     gap: 10px;
     align-items: center;
   }
   .seed {
-    width: 150px;
+    width: 160px;
   }
   .start {
-    background: #2a8a4a;
-    color: #fff;
     font-size: 15px;
-    padding: 9px 20px;
-  }
-  .start:hover {
-    background: #36a85c;
-  }
-  button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    padding: 10px 22px;
   }
   .build {
     flex: 1;

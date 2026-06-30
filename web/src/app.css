@@ -1,4 +1,48 @@
-/* Minimal reset; the board owns its own styling in App.svelte. */
+/* ───────────────────────────────────────────────────────────────────────────
+   Design system — clean modern dark, single amber accent.
+   One palette, one radius scale, one set of control styles used everywhere.
+   Components should consume these tokens, not hard-code colours/radii.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* surfaces & lines */
+  --bg: #0e0f11;
+  --surface: #17191c; /* panels, cards */
+  --surface-2: #1d2024; /* raised: inputs, tiles, hover */
+  --surface-3: #25282d; /* extra raised */
+  --line: #2a2d31;
+  --line-strong: #3a3e44;
+
+  /* text */
+  --text: #e7e8ea;
+  --muted: #9aa0a6;
+  --faint: #6b7178;
+
+  /* the single brand accent */
+  --accent: #f0b429;
+  --accent-hover: #ffc340;
+  --accent-ink: #1a1400; /* text on the accent */
+
+  /* semantic status (not decoration) */
+  --success: #4ccb6e;
+  --success-dim: rgba(76, 203, 110, 0.14);
+  --danger: #ff6b6b;
+  --danger-dim: rgba(255, 107, 107, 0.14);
+  --warn: #f0b429;
+  --warn-dim: rgba(240, 180, 41, 0.12);
+
+  /* radius scale */
+  --r-sm: 6px;
+  --r: 8px; /* controls */
+  --r-lg: 10px; /* cards / panels */
+  --r-pill: 999px;
+
+  --focus: 0 0 0 2px rgba(240, 180, 41, 0.4);
+
+  font-family:
+    system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -7,6 +51,128 @@ body {
   margin: 0;
   padding: 0;
 }
+body {
+  background: var(--bg);
+  color: var(--text);
+}
 #app {
   width: 100%;
+}
+
+/* ── Controls: one consistent look for buttons & fields ───────────────────── */
+button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  padding: 8px 14px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.04s ease;
+}
+button:hover {
+  background: var(--surface-3);
+  border-color: var(--line-strong);
+}
+button:active {
+  transform: translateY(1px);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+button:active:disabled {
+  transform: none;
+}
+
+/* primary call-to-action (the one accent) */
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: transparent;
+}
+/* quiet secondary */
+.btn-ghost {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+.btn-ghost:hover {
+  background: var(--surface-2);
+}
+/* destructive */
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background: var(--danger-dim);
+}
+
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 9px 11px;
+}
+input::placeholder {
+  color: var(--faint);
+}
+input:not([type='checkbox']):not([type='radio']):hover,
+select:hover,
+textarea:hover {
+  border-color: var(--line-strong);
+}
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* custom dropdown chevron so native OS selects stop looking out of place */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa0a6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* one consistent focus ring */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-color: var(--accent);
+}
+
+/* scrollbars in the dark palette */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: var(--r-pill);
 }

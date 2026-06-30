@@ -194,10 +194,10 @@
     </div>
 
     <div class="actions">
-      <button class="savebtn" onclick={save} disabled={saving || restricted.length === 0}>
+      <button class="savebtn btn-primary" onclick={save} disabled={saving || restricted.length === 0}>
         {saving ? 'Saving…' : 'Save Banlist'}
       </button>
-      <button class="ghost" onclick={() => (limits = {})} disabled={restricted.length === 0}
+      <button class="btn-ghost" onclick={() => (limits = {})} disabled={restricted.length === 0}
         >Clear</button
       >
     </div>
@@ -215,9 +215,9 @@
   }
   .pool,
   .panel {
-    background: #14140f;
-    border: 1px solid #2c2c2c;
-    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -231,14 +231,6 @@
   .search {
     flex: 1;
   }
-  input,
-  select {
-    background: #222;
-    border: 1px solid #444;
-    color: #eee;
-    border-radius: 5px;
-    padding: 6px 8px;
-  }
   .list {
     overflow-y: auto;
     flex: 1;
@@ -247,7 +239,7 @@
     gap: 3px;
   }
   .hint {
-    color: #888;
+    color: var(--muted);
     padding: 16px;
     text-align: center;
   }
@@ -255,24 +247,24 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 3px 6px;
-    border-radius: 6px;
+    padding: 4px 6px;
+    border-radius: var(--r-sm);
     border: 1px solid transparent;
   }
   .crow:hover {
-    background: #1d1d24;
+    background: var(--surface-2);
   }
   .crow.restricted {
-    border-color: #4a3a1a;
-    background: rgba(255, 215, 106, 0.05);
+    border-color: var(--line);
+    background: var(--warn-dim);
   }
   .crow img,
   .noimg {
     width: 26px;
     height: 38px;
     object-fit: cover;
-    border-radius: 3px;
-    background: #2b2b33;
+    border-radius: var(--r-sm);
+    background: var(--surface-3);
     flex: none;
   }
   .cname {
@@ -284,7 +276,7 @@
   }
   .seg {
     display: flex;
-    gap: 2px;
+    gap: 3px;
     flex: none;
   }
   .sbtn {
@@ -293,34 +285,34 @@
     padding: 0;
     font-size: 12px;
     font-weight: 700;
-    background: #2a2a30;
-    color: #aaa;
-    border: 1px solid #3a3a45;
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--line);
   }
   .sbtn.on.s0 {
-    background: #b33; color: #fff;
+    background: var(--danger); color: #1a0c0c; border-color: transparent;
   }
   .sbtn.on.s1 {
-    background: #c87f2a; color: #1a1a1a;
+    background: #e0913a; color: #1a1400; border-color: transparent;
   }
   .sbtn.on.s2 {
-    background: #b8a23a; color: #1a1a1a;
+    background: var(--accent); color: var(--accent-ink); border-color: transparent;
   }
   .sbtn.on.s3 {
-    background: #3a6a3a; color: #fff;
+    background: var(--success); color: #0c1a0f; border-color: transparent;
   }
 
   .bname {
     font-size: 16px;
     font-weight: 700;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   .from {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: #bbb;
+    color: var(--muted);
     margin-bottom: 10px;
   }
   .from select {
@@ -328,19 +320,19 @@
   }
   .tally {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 8px;
     font-size: 12px;
     font-weight: 700;
   }
   .t.f {
-    color: #ff8a7a;
+    color: var(--danger);
   }
   .t.l {
-    color: #ffc06a;
+    color: #e0913a;
   }
   .t.s {
-    color: #ffe08a;
+    color: var(--accent);
   }
   .entries {
     overflow-y: auto;
@@ -359,20 +351,20 @@
   .badge {
     font-size: 10px;
     font-weight: 700;
-    border-radius: 4px;
-    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    padding: 2px 6px;
     flex: none;
     width: 62px;
     text-align: center;
   }
   .b0 {
-    background: rgba(255, 107, 107, 0.18); color: #ff8a7a;
+    background: var(--danger-dim); color: var(--danger);
   }
   .b1 {
-    background: rgba(255, 160, 60, 0.18); color: #ffc06a;
+    background: rgba(224, 145, 58, 0.18); color: #e0a05a;
   }
   .b2 {
-    background: rgba(255, 215, 106, 0.16); color: #ffe08a;
+    background: var(--warn-dim); color: var(--accent);
   }
   .en {
     flex: 1;
@@ -381,38 +373,23 @@
     white-space: nowrap;
   }
   .rm {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     padding: 0;
-    background: #333;
-    color: #ddd;
     font-size: 13px;
     line-height: 1;
   }
   .actions {
     display: flex;
     gap: 8px;
-    margin-top: 10px;
-  }
-  .savebtn {
-    background: #b8923a;
-    color: #1a1a1a;
-    font-weight: 700;
-  }
-  .ghost {
-    background: #333;
-    color: #ddd;
-  }
-  button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    margin-top: 12px;
   }
   .saved {
     margin-top: 8px;
     font-size: 11px;
-    color: #9fd9a9;
+    color: var(--success);
   }
   code {
-    color: #d9bf7a;
+    color: var(--accent);
   }
 </style>

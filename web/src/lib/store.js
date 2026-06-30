@@ -10,9 +10,26 @@ export const ritualPrompt = writable(null) // {prompt, required, freeZones, opti
 export const awaiting = writable(false) // true == engine is waiting on your move
 export const logs = writable([]) // narration lines
 export const result = writable(null) // {winner, youWin, reason} when the duel ends
-export const connected = writable(false)
+export const connected = writable(false) // WebSocket open (i.e. a duel is live)
+export const online = writable(false) // backend HTTP reachable (polled)
 
 let ws = null
+
+// Poll the backend so the header can show real server reachability, not just
+// whether a duel WebSocket happens to be open.
+let healthTimer = null
+export function startHealthMonitor() {
+  const ping = async () => {
+    try {
+      const r = await fetch('/api/health')
+      online.set(r.ok)
+    } catch {
+      online.set(false)
+    }
+  }
+  ping()
+  if (!healthTimer) healthTimer = setInterval(ping, 5000)
+}
 
 // Reset all live-game stores (used on a new game and when leaving to the menu).
 function resetGameStores() {

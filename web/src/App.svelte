@@ -17,9 +17,13 @@
     logs,
     result,
     connected,
+    online,
+    startHealthMonitor,
     leaveGame,
     sendIntent,
   } from './lib/store.js'
+
+  onMount(startHealthMonitor)
 
   let draggedIid = null
   let selectedAttacker = null
@@ -552,8 +556,10 @@
 
 <main>
   <header>
-    <h1>遊 ygo_engine</h1>
-    <div class="conn" class:on={$connected}>{$connected ? 'connected' : 'offline'}</div>
+    <h1>ygo_engine</h1>
+    <div class="conn" class:on={$connected || $online} class:live={$connected}>
+      {$connected ? 'in duel' : $online ? 'online' : 'offline'}
+    </div>
     {#if $board}
       <button class="menubtn" onclick={leaveGame}>⏎ Menu</button>
     {/if}
@@ -1025,16 +1031,23 @@
   h1 {
     font-size: 20px;
     margin: 0;
-    color: #d9bf7a;
+    color: var(--accent);
+    letter-spacing: 0.01em;
   }
   .conn {
     font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    background: #5a2a2a;
+    padding: 2px 9px;
+    border-radius: var(--r-pill);
+    background: var(--danger-dim);
+    color: var(--danger);
   }
   .conn.on {
-    background: #2a5a32;
+    background: var(--success-dim);
+    color: var(--success);
+  }
+  .conn.live {
+    background: var(--accent);
+    color: var(--accent-ink);
   }
   .menubtn {
     margin-left: auto;

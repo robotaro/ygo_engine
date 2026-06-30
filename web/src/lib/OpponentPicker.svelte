@@ -163,42 +163,39 @@
   .opp {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
   }
   .lbl {
     font-size: 12px;
-    color: #bbb;
+    color: var(--muted);
     display: flex;
     align-items: center;
     gap: 8px;
   }
   .rnd {
-    padding: 1px 7px;
-    font-size: 12px;
-    background: #333;
-    color: #eee;
+    padding: 2px 8px;
+    font-size: 13px;
   }
   .card {
     display: flex;
     align-items: center;
     gap: 12px;
     text-align: left;
-    background: #1a1a14;
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 8px 10px;
-    cursor: pointer;
-    color: #eee;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 9px 12px;
   }
   .card:hover {
-    border-color: #d9bf7a;
+    border-color: var(--accent);
+    background: var(--surface-2);
   }
   .face {
     width: 52px;
     height: 52px;
-    border-radius: 7px;
+    border-radius: var(--r-sm);
     overflow: hidden;
-    background: linear-gradient(160deg, #3a3a45, #22222a);
+    background: var(--surface-3);
     display: grid;
     place-items: center;
     flex: none;
@@ -210,7 +207,7 @@
   }
   .ini {
     font-weight: 800;
-    color: #d9bf7a;
+    color: var(--accent);
   }
   .meta {
     flex: 1;
@@ -222,25 +219,25 @@
   }
   .vr {
     font-size: 11px;
-    color: #c9a85a;
+    color: var(--muted);
   }
   .sub {
     font-size: 11px;
-    color: #999;
+    color: var(--muted);
   }
   .sub .bad {
-    color: #ff8a7a;
+    color: var(--danger);
   }
   .chg {
     font-size: 12px;
-    color: #d9bf7a;
+    color: var(--accent);
     flex: none;
   }
 
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.66);
     display: grid;
     place-items: center;
     z-index: 50;
@@ -248,12 +245,12 @@
   .modal {
     width: min(900px, 92vw);
     height: min(80vh, 720px);
-    background: #14140f;
-    border: 1px solid #3a3a3a;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
     display: flex;
     flex-direction: column;
-    padding: 14px;
+    padding: 16px;
   }
   .mhead {
     display: flex;
@@ -262,41 +259,34 @@
   }
   .mhead h3 {
     margin: 0;
-    color: #d9bf7a;
+    color: var(--text);
   }
   .x {
-    background: #333;
-    color: #eee;
+    padding: 6px 10px;
   }
   .mbar {
     display: flex;
     gap: 8px;
-    margin: 10px 0;
+    margin: 12px 0;
   }
   .search {
     flex: 1;
-  }
-  input,
-  select {
-    background: #222;
-    border: 1px solid #444;
-    color: #eee;
-    border-radius: 5px;
-    padding: 7px 8px;
   }
   .mbody {
     overflow-y: auto;
     flex: 1;
   }
   h4 {
-    color: #c9a85a;
-    font-size: 13px;
-    margin: 12px 0 6px;
-    border-bottom: 1px solid #2c2c2c;
-    padding-bottom: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 11px;
+    margin: 14px 0 8px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 4px;
   }
   .cnt {
-    color: #777;
+    color: var(--faint);
     font-weight: 400;
   }
   .grid {
@@ -305,34 +295,32 @@
     gap: 8px;
   }
   .tile {
-    background: #1d1d24;
-    border: 1px solid #333;
-    border-radius: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
     padding: 6px;
-    cursor: pointer;
-    color: #eee;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
   }
   .tile:hover {
-    border-color: #d9bf7a;
+    border-color: var(--accent);
   }
   .tile.sel {
-    border-color: #6cff9e;
-    box-shadow: 0 0 0 1px #6cff9e;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
   }
   .tile.illegal {
-    opacity: 0.6;
+    opacity: 0.55;
   }
   .tface {
     position: relative;
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     overflow: hidden;
-    background: linear-gradient(160deg, #3a3a45, #22222a);
+    background: var(--surface-3);
     display: grid;
     place-items: center;
   }
@@ -345,7 +333,7 @@
     position: absolute;
     top: 2px;
     right: 3px;
-    color: #ffd76a;
+    color: var(--warn);
     text-shadow: 0 0 3px #000;
   }
   .tn {
@@ -356,17 +344,13 @@
   }
   .tv {
     font-size: 9px;
-    color: #c9a85a;
+    color: var(--muted);
     text-align: center;
     line-height: 1.1;
   }
   .empty {
-    color: #888;
+    color: var(--muted);
     text-align: center;
     padding: 30px;
-  }
-  button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 </style>

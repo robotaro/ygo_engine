@@ -246,7 +246,7 @@
       {/if}
       <p class="dtext">{selected.text || '(no card text)'}</p>
       <button
-        class="addbtn"
+        class="addbtn btn-primary"
         disabled={copies(selected.name) >= MAX_COPIES}
         onclick={() => add(selected)}
       >
@@ -327,14 +327,14 @@
         {saving ? 'Saving…' : 'Save Deck'}
       </button>
       <button
-        class="play"
+        class="play btn-primary"
         onclick={saveAndPlay}
         disabled={saving || !validation?.legal}
         title={validation?.legal ? 'Save and duel with this deck' : 'Deck must be legal to play'}
       >
         Save &amp; Play ▶
       </button>
-      <button class="ghost" onclick={clearDeck} disabled={mainSize === 0 && extraSize === 0}
+      <button class="btn-ghost" onclick={clearDeck} disabled={mainSize === 0 && extraSize === 0}
         >Clear</button
       >
     </div>
@@ -353,9 +353,9 @@
   .pool,
   .detail,
   .deck {
-    background: #14140f;
-    border: 1px solid #2c2c2c;
-    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -370,20 +370,12 @@
   .search {
     flex: 1;
   }
-  input,
-  select {
-    background: #222;
-    border: 1px solid #444;
-    color: #eee;
-    border-radius: 5px;
-    padding: 6px 8px;
-  }
   .chk {
     font-size: 12px;
-    color: #bbb;
+    color: var(--muted);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     white-space: nowrap;
   }
   .grid {
@@ -395,7 +387,7 @@
     flex: 1;
   }
   .hint {
-    color: #888;
+    color: var(--muted);
     padding: 20px;
     grid-column: 1 / -1;
     text-align: center;
@@ -403,19 +395,19 @@
   .poolcard {
     position: relative;
     height: 122px;
-    border-radius: 7px;
-    border: 1px solid #3a3a45;
-    background: linear-gradient(160deg, #2b2b33, #1c1c22);
+    border-radius: var(--r);
+    border: 1px solid var(--line);
+    background: var(--surface-2);
     overflow: hidden;
     cursor: pointer;
-    color: #f3f3f3;
+    color: var(--text);
   }
   .poolcard:hover {
-    border-color: #d9bf7a;
+    border-color: var(--accent);
   }
   .poolcard.sel {
-    border-color: #6cff9e;
-    box-shadow: 0 0 0 1px #6cff9e;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
   }
   .poolcard img {
     position: absolute;
@@ -440,15 +432,15 @@
   }
   .st {
     font-size: 9px;
-    color: #ffcf8a;
+    color: var(--muted);
   }
   .owned {
     position: absolute;
     top: 3px;
     left: 3px;
     z-index: 2;
-    background: #b8923a;
-    color: #1a1a1a;
+    background: var(--accent);
+    color: var(--accent-ink);
     font-weight: 800;
     font-size: 11px;
     border-radius: 50%;
@@ -462,7 +454,7 @@
     top: 3px;
     right: 3px;
     z-index: 2;
-    color: #ff8a7a;
+    color: var(--danger);
     font-weight: 800;
     text-shadow: 0 0 3px #000;
     pointer-events: none;
@@ -472,23 +464,28 @@
     bottom: 3px;
     right: 3px;
     z-index: 3;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     padding: 0;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1;
-    border-radius: 5px;
-    background: rgba(184, 146, 58, 0.92);
-    color: #1a1a1a;
+    border-radius: var(--r-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
     opacity: 0;
     transition: opacity 0.12s;
   }
   .poolcard:hover .plus {
     opacity: 1;
   }
+  .plus:hover {
+    background: var(--accent-hover);
+  }
   .plus:disabled {
-    background: rgba(90, 90, 90, 0.85);
-    color: #ccc;
+    background: var(--surface-3);
+    color: var(--faint);
+    opacity: 1;
     cursor: not-allowed;
   }
 
@@ -496,10 +493,10 @@
   .dart {
     width: 100%;
     aspect-ratio: 59 / 86;
-    border-radius: 8px;
+    border-radius: var(--r);
     overflow: hidden;
-    border: 2px solid #4a4a55;
-    background: linear-gradient(160deg, #2b2b33, #1c1c22);
+    border: 1px solid var(--line-strong);
+    background: var(--surface-2);
     display: grid;
     place-items: center;
     flex: none;
@@ -517,54 +514,45 @@
   .detail h3 {
     margin: 10px 0 2px;
     font-size: 16px;
-    color: #ffe08a;
+    color: var(--text);
   }
   .dmeta {
     font-size: 12px;
-    color: #c4c4cc;
+    color: var(--muted);
   }
   .dstats {
     font-size: 13px;
     margin-top: 4px;
   }
   .dstats b {
-    color: #ffd9a0;
+    color: var(--text);
   }
   .dflag {
     margin-top: 8px;
     font-size: 11px;
-    color: #ffd76a;
-    background: rgba(255, 215, 106, 0.1);
-    border-radius: 5px;
-    padding: 4px 6px;
+    color: var(--warn);
+    background: var(--warn-dim);
+    border-radius: var(--r-sm);
+    padding: 5px 7px;
   }
   .dtext {
     margin-top: 8px;
     font-size: 12px;
     line-height: 1.5;
-    color: #dcdce4;
+    color: var(--text);
     white-space: pre-wrap;
     overflow-y: auto;
     flex: 1;
     min-height: 40px;
   }
-  .addbtn {
-    background: #b8923a;
-    color: #1a1a1a;
-    font-weight: 700;
-  }
-  .addbtn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
   .dempty {
     margin: auto;
     text-align: center;
-    color: #888;
+    color: var(--muted);
   }
   .tip {
     font-size: 11px;
-    color: #666;
+    color: var(--faint);
   }
 
   /* Deck panel */
@@ -579,7 +567,7 @@
     gap: 8px;
     margin-bottom: 8px;
     font-size: 12px;
-    color: #bbb;
+    color: var(--muted);
   }
   .fmtrow select {
     flex: 1;
@@ -587,15 +575,15 @@
   .ban {
     font-size: 10px;
     font-weight: 700;
-    color: #ffd76a;
-    background: rgba(255, 215, 106, 0.12);
-    border-radius: 4px;
-    padding: 0 5px;
+    color: var(--warn);
+    background: var(--warn-dim);
+    border-radius: var(--r-sm);
+    padding: 1px 6px;
     white-space: nowrap;
   }
   .ban.over {
-    color: #ff8a7a;
-    background: rgba(255, 107, 107, 0.16);
+    color: var(--danger);
+    background: var(--danger-dim);
   }
   .counts {
     display: flex;
@@ -604,35 +592,35 @@
   }
   .csize {
     font-size: 12px;
-    color: #9fd9a9;
+    color: var(--success);
   }
   .csize.bad {
-    color: #ff8a7a;
+    color: var(--danger);
   }
   .verdict {
     font-weight: 700;
-    padding: 5px 8px;
-    border-radius: 6px;
-    background: rgba(255, 107, 107, 0.15);
-    color: #ff9e8a;
+    padding: 6px 9px;
+    border-radius: var(--r-sm);
+    background: var(--danger-dim);
+    color: var(--danger);
     margin-bottom: 6px;
   }
   .verdict.ok {
-    background: rgba(108, 255, 158, 0.14);
-    color: #8dff9e;
+    background: var(--success-dim);
+    color: var(--success);
   }
   .verdict.empty {
     background: none;
-    color: #888;
+    color: var(--muted);
     font-weight: 400;
   }
   .err {
     font-size: 11px;
-    color: #ff9e8a;
+    color: var(--danger);
   }
   .warn {
     font-size: 11px;
-    color: #ffd76a;
+    color: var(--warn);
   }
   .decklists {
     overflow-y: auto;
@@ -641,11 +629,13 @@
     min-height: 60px;
   }
   h4 {
-    margin: 8px 0 4px;
-    font-size: 12px;
-    color: #d9bf7a;
-    border-bottom: 1px solid #2c2c2c;
-    padding-bottom: 2px;
+    margin: 10px 0 5px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 3px;
   }
   .row {
     display: flex;
@@ -655,7 +645,7 @@
     padding: 1px 0;
   }
   .x {
-    color: #ffcf8a;
+    color: var(--accent);
     font-weight: 700;
     width: 22px;
   }
@@ -663,7 +653,8 @@
     flex: 1;
     text-align: left;
     background: none;
-    color: #eee;
+    border: none;
+    color: var(--text);
     padding: 2px 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -671,46 +662,27 @@
     cursor: pointer;
   }
   .rn:hover {
-    color: #6cff9e;
+    background: none;
+    color: var(--accent);
   }
   .mini {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     padding: 0;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1;
-    background: #333;
-    color: #eee;
-  }
-  .mini:hover {
-    background: #555;
   }
   .deckactions {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
   }
-  .play {
-    background: #2a8a4a;
-    color: #fff;
-  }
-  .play:hover {
-    background: #36a85c;
-  }
-  .ghost {
-    background: #333;
-    color: #ddd;
-  }
-  button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
   .saved {
     margin-top: 8px;
     font-size: 11px;
-    color: #9fd9a9;
+    color: var(--success);
   }
   code {
-    color: #d9bf7a;
+    color: var(--accent);
   }
 </style>
