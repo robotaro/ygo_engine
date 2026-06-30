@@ -34,6 +34,7 @@
   let ritualChosen = [] // iids picked for a Ritual Tribute
   let unionSource = null // a Union monster picked, awaiting a host to equip to
   let preview = null // a card shown enlarged for reading (left-click)
+  let previewCtx = null // { where, zoneIndex } so the modal can offer that card's actions
   let ctx = null // right-click context menu: { x, y, items[] }
 
   // The Launcher (deck picker / builder) shows until a duel starts.
@@ -185,14 +186,16 @@
     }
     return null
   }
-  function enlarge(card) {
+  function enlarge(card, where = null, zoneIndex = null) {
     if (card && card.name != null) {
       preview = card
+      previewCtx = { where, zoneIndex }
       ctx = null
     }
   }
   function closeOverlays() {
     preview = null
+    previewCtx = null
     ctx = null
   }
 
@@ -210,7 +213,9 @@
       pendingTribute = { iid, zoneIndex, needed: opts.summon[0].length, chosen: [], mode: 'summon' }
     }
   }
-  function buildContext(card, where, zoneIndex) {
+  // The gameplay actions available for a card in a given place — shared by the
+  // right-click menu and the click-to-open card modal.
+  function cardActions(card, where, zoneIndex) {
     const items = []
     const iid = card?.iid
     if (yourTurn && card && card.name != null) {
@@ -241,7 +246,12 @@
         else if (opts?.set?.length) items.push({ label: 'Set', fn: () => onSet(iid) })
       }
     }
-    if (card && card.name != null) items.push({ label: 'Enlarge', fn: () => enlarge(card) })
+    return items
+  }
+  function buildContext(card, where, zoneIndex) {
+    const items = cardActions(card, where, zoneIndex)
+    if (card && card.name != null)
+      items.push({ label: 'Enlarge', fn: () => enlarge(card, where, zoneIndex) })
     return items
   }
   function openContext(e, card, where, zoneIndex) {
@@ -507,11 +517,11 @@
 
   // A Spell/Trap card may be a target (e.g. Mystical Space Typhoon hits either
   // player's), or — for your own Set Continuous Trap — something to activate.
-  function onClickOwnSpellTrap(iid) {
+  function onClickOwnSpellTrap(iid, zoneIndex) {
     if (yourTurn && $targetRequest) return chooseEngineTarget(iid)
     if (yourTurn && pendingTarget) return chooseTarget(iid)
-    // Activate / Unequip moved to the right-click menu (no accidental activation).
-    enlarge(findCard(iid))
+    // Open the card modal; its action buttons (Activate, …) live there now.
+    enlarge(findCard(iid), 'ownSpellTrap', zoneIndex)
   }
 
   function onClickOppSpellTrap(iid) {
@@ -727,7 +737,7 @@
               onclick={() => onClickOwnMonster(slot.iid)}
               oncontextmenu={(e) => openContext(e, slot, 'ownMonster')}
             >
-              <CardTile card={slot} faceDown={slot?.faceDown} defense={isDefense(slot)} small />
+              <CardTile card={slot} faceDown={slot?.faceDown} peek={slot?.faceDown} defense={isDefense(slot)} small />
               {#if slot.geminiUnlocked}<span class="badge gemini">★</span>{/if}
             </div>
           {:else}
@@ -782,10 +792,10 @@
               class:actionable={yourTurn && (canActivate(slot.iid) || canUnionUnequip(slot.iid))}
               class:targetable={targetCandidates.includes(slot.iid)}
               title={canUnionUnequip(slot.iid) ? 'Unequip this Union (Special Summon it back)' : null}
-              onclick={() => onClickOwnSpellTrap(slot.iid)}
+              onclick={() => onClickOwnSpellTrap(slot.iid, i)}
               oncontextmenu={(e) => openContext(e, slot, 'ownSpellTrap', i)}
             >
-              <CardTile card={slot} small />
+              <CardTile card={slot} faceDown={slot?.faceDown} peek={slot?.faceDown} small />
             </div>
           {:else}
             <div
@@ -982,13 +992,10 @@
 {/if}
 
 {#if preview}
-  <div
-    class="cardzoom"
-    role="presentation"
-    onclick={() => (preview = null)}
-    transition:fade={{ duration: 120 }}
-  >
-    <div class="zoombody" role="presentation" onclick={(e) => e.stopPropagation()}>
+  {@const actions = cardActions(preview, previewCtx?.where, previewCtx?.zoneIndex)}
+  <div class="cardzoom" role="presentation" onclick={closeOverlays} transition:fade={{ duration: 120 }}>
+    <div class="zoombody" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()}>
+      <button class="zoomx" aria-label="Close" onclick={closeOverlays}>✕</button>
       <div class="zoomart">
         <div class="zoomfallback">{preview.name}</div>
         {#if preview.imageId}
@@ -1011,7 +1018,19 @@
           {/if}
         </div>
         {#if preview.text}<p class="zoomtext">{preview.text}</p>{/if}
-        <button class="zoomclose" onclick={() => (preview = null)}>Close</button>
+        {#if actions.length}
+          <div class="zoomactions">
+            {#each actions as a}
+              <button
+                class="zoomaction"
+                onclick={() => {
+                  a.fn()
+                  closeOverlays()
+                }}>{a.label}</button
+              >
+            {/each}
+          </div>
+        {/if}
       </div>
     </div>
   </div>
@@ -1020,21 +1039,20 @@
 <style>
   :global(body) {
     margin: 0;
-    background: #14130f;
-    color: #eee;
-    font-family: system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
   }
+  /* Single centered column so the battlefield sits in the middle of the screen;
+     the duel log stacks below it. */
   main {
-    display: grid;
-    grid-template-columns: 1fr 280px;
-    grid-template-rows: auto 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
-    max-width: 1100px;
+    max-width: 940px;
     margin: 0 auto;
     padding: 12px;
   }
   header {
-    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1470,9 +1488,9 @@
     padding: 2px 8px;
   }
   .log {
-    background: #0f0f0c;
-    border: 1px solid #2c2c2c;
-    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -1481,13 +1499,13 @@
   .log h2 {
     font-size: 14px;
     margin: 0 0 8px;
-    color: #d9bf7a;
+    color: var(--muted);
   }
   .loglines {
     overflow-y: auto;
     font-size: 12px;
     line-height: 1.5;
-    flex: 1;
+    max-height: 160px;
   }
   .logline {
     white-space: pre-wrap;
@@ -1530,24 +1548,43 @@
     padding: 24px;
   }
   .zoombody {
+    position: relative;
     display: flex;
     gap: 20px;
-    background: #161620;
-    border: 1px solid #3a3a48;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
     padding: 18px;
-    max-width: 600px;
+    max-width: 620px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  .zoomx {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: var(--r);
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .zoomx:hover {
+    background: var(--surface-3);
+    color: var(--text);
   }
   .zoomart {
     position: relative;
     width: 232px;
     height: 338px;
     flex: none;
-    border-radius: 10px;
+    border-radius: var(--r);
     overflow: hidden;
-    border: 2px solid #4a4a55;
-    background: linear-gradient(160deg, #2b2b33, #1c1c22);
+    border: 1px solid var(--line-strong);
+    background: var(--surface-2);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1562,7 +1599,7 @@
   .zoomfallback {
     font-size: 16px;
     font-weight: 700;
-    color: #f3f3f3;
+    color: var(--text);
     text-align: center;
     padding: 12px;
   }
@@ -1570,15 +1607,16 @@
     display: flex;
     flex-direction: column;
     max-width: 300px;
+    padding-right: 26px;
   }
   .zoominfo h3 {
     margin: 2px 0 8px;
     font-size: 20px;
-    color: #ffe08a;
+    color: var(--accent);
   }
   .zoommeta {
     font-size: 12px;
-    color: #c4c4cc;
+    color: var(--muted);
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -1587,15 +1625,26 @@
   .zoomtext {
     font-size: 13px;
     line-height: 1.5;
-    color: #dcdce4;
+    color: var(--text);
     overflow-y: auto;
     flex: 1;
     white-space: pre-wrap;
     margin: 0;
   }
-  .zoomclose {
-    margin-top: 12px;
-    align-self: flex-start;
+  .zoomactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .zoomaction {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    font-weight: 700;
+  }
+  .zoomaction:hover {
+    background: var(--accent-hover);
   }
 
   /* Right-click context menu. */

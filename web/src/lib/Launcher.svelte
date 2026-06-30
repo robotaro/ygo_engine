@@ -125,6 +125,7 @@
   }
   .tabs {
     display: flex;
+    justify-content: center;
     gap: 6px;
     margin-bottom: 16px;
   }
@@ -143,7 +144,9 @@
     border-color: var(--line);
   }
   .play {
-    max-width: 660px;
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto;
   }
   h2 {
     color: var(--text);

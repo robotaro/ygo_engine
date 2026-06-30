@@ -1,7 +1,10 @@
 <script>
   import cardBack from '../assets/card_back.jpg'
 
-  let { card = null, faceDown = false, defense = false, small = false } = $props()
+  let { card = null, faceDown = false, defense = false, small = false, peek = false } = $props()
+
+  // `peek`: your own face-down cards (whose identity you know) flip up on hover.
+  let hovering = $state(false)
 
   const ATTR_COLORS = {
     DARK: '#6b3fa0',
@@ -16,7 +19,8 @@
   // A card shows its back when it's Set face-down, or when the server withheld
   // its identity (an opponent's face-down card arrives with no name).
   let dataHidden = $derived(card != null && card.name == null)
-  let showBack = $derived(faceDown || dataHidden)
+  let canReveal = $derived(peek && card != null && card.name != null)
+  let showBack = $derived((faceDown || dataHidden) && !(canReveal && hovering))
   let accent = $derived(card && card.attribute ? ATTR_COLORS[card.attribute] : '#4a4a55')
   let tributeCost = $derived(
     card && card.cardType === 'monster' && card.level
@@ -36,7 +40,14 @@
 {#if !card}
   <div class="tile empty" class:small></div>
 {:else}
-  <div class="tile" class:small>
+  <div
+    class="tile"
+    class:small
+    class:peeking={canReveal && hovering}
+    onmouseenter={() => (hovering = true)}
+    onmouseleave={() => (hovering = false)}
+    role="presentation"
+  >
     <div class="flip" style="transform: {transform}">
       <!-- Back face: the real card back, shown while the card is face-down. -->
       <div class="face back" title={card.name ?? 'Face-down card'}>
