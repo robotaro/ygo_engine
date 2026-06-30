@@ -333,6 +333,16 @@ class BurnOnHandDiscard:
 
 
 @dataclass(frozen=True)
+class OpponentMillToAttack:
+    """A face-up card's continuous rider: the controller's *opponent* must send
+    ``count`` card(s) from the top of their Deck to the GY to declare an attack
+    (Gravekeeper's Servant). Read by ``GameState.attack_deck_cost`` — an opponent who
+    cannot pay (empty Deck) cannot declare an attack."""
+
+    count: int = 1
+
+
+@dataclass(frozen=True)
 class SpecialSummonLock:
     """A face-up card's continuous lock on Special Summoning, read by every Special
     Summon route via ``GameState.special_summon_locked`` (a locked summon simply does
@@ -773,6 +783,7 @@ class Trigger:
     by: str = OPPONENT
     subject: str | None = None
     min_atk: int | None = None
+    max_atk: int | None = None  # an upper ATK gate (Eatgaboon destroys a Summon with ATK <= 500)
     # For a "summon" trigger: which Summon kinds it reacts to ("normal" | "flip" |
     # "special"). Empty = any Summon (Bottomless Trap Hole, Horn of Heaven); set it
     # to keep a card to its kinds (Trap Hole = Normal/Flip, Black Horn = Special).

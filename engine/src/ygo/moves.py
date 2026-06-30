@@ -997,6 +997,10 @@ def _trigger_matches(state, player, trigger, event) -> bool:
         mon = event.get("monster")
         if mon is None or (state.inst(mon).card.attack or 0) < trigger.min_atk:
             return False
+    if trigger.max_atk is not None:
+        mon = event.get("monster")
+        if mon is None or (state.inst(mon).card.attack or 0) > trigger.max_atk:
+            return False  # Eatgaboon only reacts to a Summon with ATK <= 500
     if trigger.target_self_control and not _attack_target_matches(state, player, trigger, event):
         return False
     if trigger.attacker_was_tribute_summoned:
@@ -1139,6 +1143,9 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
         tribute = state.attack_tribute_cost(iid)
         if tribute and len(state.attack_tribute_fodder(iid)) < tribute:
             continue  # Panther Warrior: no other monster to Tribute -> cannot attack
+        mill = state.attack_deck_cost(player)
+        if mill and len(state.players[player].deck) < mill:
+            continue  # Gravekeeper's Servant: too few cards to mill -> cannot attack
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
             continue  # Messenger of Peace: too strong to declare an attack
         if level_cap is not None and (inst.card.level or 0) > level_cap:

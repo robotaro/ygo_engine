@@ -22,6 +22,7 @@ from .effects import (
     AttackTributeCost,
     BanishInsteadOfGraveyard,
     BurnOnHandDiscard,
+    OpponentMillToAttack,
     NoBattleDamageWhileUmi,
     AttackTargetProtection,
     BattleIndestructible,
@@ -945,6 +946,15 @@ class GameState:
             i for i in self.players[inst.controller].monster_zones if i is not None and i != iid
         ]
         return sorted(others, key=lambda i: self.cards[i].card.attack or 0)
+
+    def attack_deck_cost(self, player: int) -> int:
+        """How many cards ``player`` must mill from the top of their own Deck to declare
+        an attack — imposed by each face-up Gravekeeper's Servant the opponent controls.
+        A player who cannot pay (too few cards in Deck) cannot declare an attack."""
+        opp = self.opponent_of(player)
+        return sum(
+            mod.count for _src, mod in self.active_markers(OpponentMillToAttack, players=(opp,))
+        )
 
     def field_cards(
         self,

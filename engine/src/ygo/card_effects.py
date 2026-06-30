@@ -108,6 +108,7 @@ from .effects import (
     BurnOnHandDiscard,
     AcidTrapHole,
     SearchCardToTopOfDeck,
+    OpponentMillToAttack,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5503,4 +5504,41 @@ EFFECTS.update({
     # Paracide" from your Deck, shuffle, and set it on top of your Deck (its Batch 88 combo
     # piece: you then draw and bury it in the opponent's Deck).
     "Drill Bug": (_on_battle_damage((SearchCardToTopOfDeck(name="Parasite Paracide"),)),),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 97: a clean summon/attack/flip trio — Eatgaboon (a Trap-Hole variant),
+# The Stern Mystic (a no-op reveal Flip), and Gravekeeper's Servant (an attack-mill tax).
+# Each clears one more one-card-from-ready deck.
+EFFECTS.update({
+    # Eatgaboon — when the opponent Normal/Flip Summons a monster with ATK <= 500, destroy
+    # it (the same response-trap shape as Trap Hole, with an upper ATK gate instead).
+    "Eatgaboon": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(
+                kind="summon",
+                by=OPPONENT,
+                subject="monster",
+                max_atk=500,
+                summon_kinds=frozenset({"normal", "flip"}),  # not Special Summons
+            ),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    # The Stern Mystic — FLIP: reveal all face-down cards, then return them to their
+    # original positions. That nets to no board change, so its Flip resolves to nothing
+    # (the information reveal isn't modelled); the Flip entry keeps the card functional.
+    "The Stern Mystic": (_flip(resolve=()),),
+    # Gravekeeper's Servant — a Continuous Spell: activating it sets it face-up, where its
+    # OpponentMillToAttack rider taxes the opponent 1 mill per attack declaration.
+    "Gravekeeper's Servant": _ACTIVATE_ONTO_FIELD,
+})
+
+CONTINUOUS.update({
+    # The opponent must send 1 card from the top of their Deck to the GY to declare an
+    # attack (an opponent who can't pay simply cannot attack).
+    "Gravekeeper's Servant": (OpponentMillToAttack(count=1),),
 })

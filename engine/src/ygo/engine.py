@@ -485,6 +485,14 @@ class Engine:
             for fodder in s.attack_tribute_fodder(attacker)[:tribute]:
                 self.log(f"  {s.players[tp].name} Tributes {s.inst(fodder).name} for {s.inst(attacker).name} to attack")
                 s.send_to_graveyard(fodder)
+        mill = s.attack_deck_cost(tp)
+        if mill:
+            # Gravekeeper's Servant: send the top card(s) of the attacker's Deck to the GY
+            # (enumeration already verified enough are there). Paid at declaration.
+            for _ in range(mill):
+                if s.players[tp].deck:
+                    s.send_to_graveyard(s.players[tp].deck[-1])
+            self.log(f"  {s.players[tp].name} sends {mill} card(s) from the top of their Deck (Gravekeeper's Servant)")
         self.log(f"  {s.players[tp].name} declares an attack with {s.inst(attacker).name}")
         self._changed()
 

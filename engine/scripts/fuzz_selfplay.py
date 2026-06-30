@@ -341,6 +341,11 @@ DECK = (
     # destroy if DEF <= 2000); Drill Bug (on battle damage, set Parasite Paracide on top
     # of the deck — pairs with the Parasite already in the fuzz pool).
     + ["Acid Trap Hole"] * 1 + ["Drill Bug"] * 1
+    # Batch 97: a summon/attack/flip trio. Eatgaboon (destroy an opponent's <=500-ATK
+    # Summon — Petit Moth gives it a target); The Stern Mystic (no-op reveal Flip);
+    # Gravekeeper's Servant (mill-tax on the opponent's every attack declaration).
+    + ["Eatgaboon"] * 1 + ["Petit Moth"] * 1 + ["The Stern Mystic"] * 1
+    + ["Gravekeeper's Servant"] * 1
 )
 
 
