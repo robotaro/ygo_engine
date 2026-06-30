@@ -221,6 +221,19 @@ class AttackLifeCost:
 
 
 @dataclass(frozen=True)
+class AttackTributeCost:
+    """A face-up monster's rider: its controller must Tribute ``count`` other monster(s)
+    they control to declare an attack with it (Panther Warrior = 1). The battle-phase
+    enumeration only offers its attack while the controller has that many OTHER monsters
+    to Tribute, and the engine pays the cost (Tributing the weakest others) at attack
+    declaration. Read off the monster's own ``continuous`` list via
+    ``GameState.attack_tribute_cost``; suppressed while its effect is inactive or negated
+    (Skill Drain) — then it attacks for free."""
+
+    count: int = 1
+
+
+@dataclass(frozen=True)
 class DamageStepBonus:
     """A face-up monster's rider: a temporary ATK/DEF swing that applies ONLY during the
     Damage Step of a qualifying battle (Cipher Soldier +2000 vs a Warrior, Etoile Cyber
@@ -232,7 +245,14 @@ class DamageStepBonus:
         monster being attacked), or "either" (it battles, on offence or defence).
       * ``vs_direct`` — only on a direct attack (no defending monster); otherwise a
         defending monster must be present, optionally narrowed by ``vs_race`` /
-        ``vs_attribute`` (the OTHER monster in the battle)."""
+        ``vs_attribute`` (the OTHER monster in the battle).
+      * ``half_opposing_atk`` — instead of a flat ``atk``, add half the opposing monster's
+        ATK during the Damage Step (Metalmorph: the equipped attacker gains ATK equal to
+        half its attack target's ATK). Only contributes with a defending monster present.
+
+    Carried on a monster's own ``continuous`` list, OR on an Equip card's ``continuous``
+    so the bonus rides onto the equipped monster (Metalmorph) — equip-sourced bonuses are
+    gated by the equip being face-up and un-negated, not by the host monster's effect."""
 
     atk: int = 0
     defn: int = 0
@@ -240,6 +260,7 @@ class DamageStepBonus:
     vs_direct: bool = False
     vs_race: str | None = None
     vs_attribute: "Attribute | None" = None
+    half_opposing_atk: bool = False
 
 
 @dataclass(frozen=True)
@@ -1243,6 +1264,24 @@ class PlantSelfInOpponentDeck(Primitive):
 
 
 @dataclass(frozen=True)
+class ShuffleHandIntoDeckThenDraw(Primitive):
+    """Magical Mallet: 'shuffle any number of cards from your hand into the Deck, then
+    draw that same number.' With no human to pick the number, the controller shuffles its
+    whole current hand back and redraws the same count — a full hand refresh. The
+    activated Magical Mallet is already out of the hand, so it isn't among the shuffled."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s, me = ctx.state, ctx.controller
+        hand = list(s.players[me].hand)
+        n = len(hand)
+        if n == 0:
+            return
+        for iid in hand:
+            s.return_to_deck(iid, to_top=False)  # shuffle it back in
+        s.draw(me, min(n, len(s.players[me].deck)))
+
+
+@dataclass(frozen=True)
 class LookAtTopReorderBestFirst(Primitive):
     """Look at the top ``count`` cards of the controller's Deck and place them back in any
     order (Big Eye). With no human to choose, the engine's beneficial default surfaces the
@@ -1698,6 +1737,19 @@ class SetEventAttackerAtkZero(Primitive):
         inst = s.cards.get(attacker) if attacker is not None else None
         if inst is not None and inst.zone is Zone.MONSTER:
             inst.temp_atk -= s.effective_attack(attacker)
+
+
+@dataclass(frozen=True)
+class ReturnEventAttackerToHand(Primitive):
+    """Wall of Illusion: return the attacking monster (read from the triggering event) to
+    its owner's hand. Fired from the attacked monster's own trigger, so the attacker comes
+    from the event rather than a chosen target."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        attacker = (ctx.event or {}).get("attacker")
+        if attacker is not None and attacker in ctx.state.cards:
+            if ctx.state.cards[attacker].zone is Zone.MONSTER:
+                ctx.state.return_to_hand(attacker)
 
 
 @dataclass(frozen=True)

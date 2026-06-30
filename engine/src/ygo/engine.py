@@ -478,6 +478,13 @@ class Engine:
         if cost:
             s.players[tp].life_points -= cost
             self.log(f"  {s.players[tp].name} pays {cost} LP for {s.inst(attacker).name} to attack")
+        tribute = s.attack_tribute_cost(attacker)
+        if tribute:
+            # Panther Warrior: Tribute the weakest other monsters to attack (enumeration
+            # already verified enough are available). Paid even if the attack is negated.
+            for fodder in s.attack_tribute_fodder(attacker)[:tribute]:
+                self.log(f"  {s.players[tp].name} Tributes {s.inst(fodder).name} for {s.inst(attacker).name} to attack")
+                s.send_to_graveyard(fodder)
         self.log(f"  {s.players[tp].name} declares an attack with {s.inst(attacker).name}")
         self._changed()
 

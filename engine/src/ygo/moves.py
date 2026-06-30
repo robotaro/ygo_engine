@@ -1118,6 +1118,9 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
         cost = state.attack_life_cost(iid)
         if cost and state.players[player].life_points <= cost:
             continue  # Dark Elf: cannot pay the LP cost required to declare an attack
+        tribute = state.attack_tribute_cost(iid)
+        if tribute and len(state.attack_tribute_fodder(iid)) < tribute:
+            continue  # Panther Warrior: no other monster to Tribute -> cannot attack
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
             continue  # Messenger of Peace: too strong to declare an attack
         if level_cap is not None and (inst.card.level or 0) > level_cap:

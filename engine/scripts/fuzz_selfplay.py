@@ -314,6 +314,11 @@ DECK = (
     # Batch 90: Solemn Judgment (negate a Summon OR a S/T activation, pay half LP) and
     # Tribe-Infecting Virus (discard 1, declare a Type, wipe it from the field).
     + ["Solemn Judgment"] * 2 + ["Tribe-Infecting Virus"] * 2
+    # Batch 91: Magical Mallet (hand refresh), Metalmorph (equip Trap: +300 + half target's
+    # ATK on attack), Wall of Illusion (bounce the attacker), Panther Warrior (Tribute to
+    # attack — exercises the attack-tribute cost across many Battle Phases).
+    + ["Magical Mallet"] * 1 + ["Metalmorph"] * 2
+    + ["Wall of Illusion"] * 2 + ["Panther Warrior"] * 2
 )
 
 

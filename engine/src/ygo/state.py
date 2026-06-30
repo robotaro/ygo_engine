@@ -19,6 +19,7 @@ from .cards import CardDef
 from .effects import (
     ActivationLock,
     AttackLifeCost,
+    AttackTributeCost,
     AttackTargetProtection,
     BattleIndestructible,
     CanAttackDirectly,
@@ -796,27 +797,50 @@ class GameState:
         battle ``iid`` is on; ``which`` is "atk"/"defn". Combat-only — never part of the
         monster's continuous stats. Suppressed while the effect is inactive or negated."""
         inst = self.cards.get(iid)
-        if inst is None or not inst.effects_active or self.monster_effects_negated(iid):
+        if inst is None:
             return 0
-        total = 0
-        for mod in inst.card.continuous:
-            if not isinstance(mod, DamageStepBonus):
-                continue
-            allowed = ("attacking", "either") if is_attacker else ("attacked", "either")
+        allowed = ("attacking", "either") if is_attacker else ("attacked", "either")
+
+        def _contribution(mod: DamageStepBonus) -> int:
             if mod.when not in allowed:
-                continue
+                return 0
             if mod.vs_direct:
                 if opposing_iid is not None:
-                    continue
+                    return 0
             else:
                 if opposing_iid is None:
-                    continue
+                    return 0
                 other = self.cards[opposing_iid].card
                 if mod.vs_race is not None and other.race != mod.vs_race:
-                    continue
+                    return 0
                 if mod.vs_attribute is not None and other.attribute != mod.vs_attribute:
+                    return 0
+            if mod.half_opposing_atk:
+                # Metalmorph: only an ATK swing, only with a defender present.
+                if which != "atk" or opposing_iid is None:
+                    return 0
+                return self.effective_attack(opposing_iid) // 2
+            return mod.atk if which == "atk" else mod.defn
+
+        total = 0
+        # The monster's OWN damage-step riders — suppressed while its effect is inactive
+        # or negated (Skill Drain).
+        if inst.effects_active and not self.monster_effects_negated(iid):
+            for mod in inst.card.continuous:
+                if isinstance(mod, DamageStepBonus):
+                    total += _contribution(mod)
+        # Equip-sourced riders (Metalmorph) ride onto the equipped monster, gated by the
+        # equip being face-up and un-negated — NOT by the host's effect state (so they
+        # persist under Skill Drain, which only negates monster effects).
+        for player in self.players:
+            for sid in player.spell_trap_zones:
+                if sid is None:
                     continue
-            total += mod.atk if which == "atk" else mod.defn
+                equip = self.cards[sid]
+                if equip.equipped_to == iid and equip.is_face_up and not self.effect_negated(sid):
+                    for mod in equip.card.continuous:
+                        if isinstance(mod, DamageStepBonus):
+                            total += _contribution(mod)
         return total
 
     def can_attack_directly(self, iid: int) -> bool:
@@ -840,6 +864,23 @@ class GameState:
         is inactive or negated (Skill Drain) — then it may attack for free."""
         mod = self._self_rider(iid, AttackLifeCost)
         return mod.amount if mod is not None else 0
+
+    def attack_tribute_cost(self, iid: int) -> int:
+        """How many other monsters the controller must Tribute to declare an attack with
+        this monster (Panther Warrior = 1), or 0 if none. Suppressed while its effect is
+        inactive or negated (Skill Drain) — then it may attack for free."""
+        mod = self._self_rider(iid, AttackTributeCost)
+        return mod.count if mod is not None else 0
+
+    def attack_tribute_fodder(self, iid: int) -> list[int]:
+        """The OTHER monsters the controller could Tribute to pay this monster's
+        attack-Tribute cost — every face-up/face-down monster they control except the
+        attacker itself, weakest (lowest ATK) first so the headless payer keeps its board."""
+        inst = self.cards[iid]
+        others = [
+            i for i in self.players[inst.controller].monster_zones if i is not None and i != iid
+        ]
+        return sorted(others, key=lambda i: self.cards[i].card.attack or 0)
 
     def field_cards(
         self,

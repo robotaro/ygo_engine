@@ -99,6 +99,9 @@ from .effects import (
     PlantSelfInOpponentDeck,
     LookAtTopReorderBestFirst,
     DestroyFaceUpMonstersOfDeclaredType,
+    ShuffleHandIntoDeckThenDraw,
+    AttackTributeCost,
+    ReturnEventAttackerToHand,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5296,4 +5299,42 @@ EFFECTS.update({
             resolve=(DestroyFaceUpMonstersOfDeclaredType(),),
         ),
     ),
+})
+
+# Effects Batch 91: utility + battle staples (each a blocker across several GBA decks).
+EFFECTS.update({
+    # Magical Mallet: "Shuffle any number of cards from your hand into the Deck, then draw
+    # that many." Headless = shuffle the whole hand back and redraw it (a full refresh).
+    "Magical Mallet": (Effect(resolve=(ShuffleHandIntoDeckThenDraw(),)),),
+    # Metalmorph (Normal Trap): equip to a face-up monster you control. +300 ATK/DEF
+    # (EquipMod, below) and — when it attacks — half its target's ATK during the Damage
+    # Step (the DamageStepBonus half_opposing_atk rider, below).
+    "Metalmorph": (
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="own_monsters", face_up=True),
+            resolve=(EquipToTarget(),),
+        ),
+    ),
+    # Wall of Illusion: "If this card is attacked, after damage calculation: return the
+    # attacker to the hand." A speed-1 trigger off the attacked-monster window.
+    "Wall of Illusion": (
+        Effect(
+            speed=1,
+            timing="trigger",
+            trigger=Trigger(kind="attacked", by=OPPONENT),
+            resolve=(ReturnEventAttackerToHand(),),
+        ),
+    ),
+})
+
+CONTINUOUS.update({
+    # Metalmorph's equipped boost + the attack-time damage-step rider (read off the equip).
+    "Metalmorph": (
+        EquipMod(atk=300, defn=300),
+        DamageStepBonus(when="attacking", half_opposing_atk=True),
+    ),
+    # Panther Warrior: "cannot declare an attack unless you Tribute 1 monster."
+    "Panther Warrior": (AttackTributeCost(count=1),),
 })
