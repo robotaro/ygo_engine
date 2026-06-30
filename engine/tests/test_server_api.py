@@ -76,6 +76,34 @@ def test_validate_under_format_flags_forbidden():
     assert any(r["name"] == "Raigeki" and r["cap"] == 0 and not r["ok"] for r in ocg["restricted"])
 
 
+def test_opponents_roster():
+    games = srv.opponent_roster()
+    assert len(games) == 8  # the eight GBA titles
+    total = sum(len(g["duelists"]) for g in games)
+    assert total == 154
+    # near-complete portrait coverage and resolvable ids
+    with_portrait = sum(1 for g in games for d in g["duelists"] if d["portrait"])
+    assert with_portrait >= 150
+    sample = games[0]["duelists"][0]
+    assert {"id", "name", "variant", "main", "extra", "legal", "portrait"} <= sample.keys()
+    assert srv.resolve_deck_id(sample["id"]) is not None
+
+
+def test_portrait_url_handles_accents_and_aliases():
+    assert srv.portrait_url("Téa Gardner") == "/portraits/tea_gardner.png"
+    assert srv.portrait_url("Keith Howard") == "/portraits/bandit_keith.png"
+    assert srv.portrait_url("Nobody McNothing") is None
+
+
+def test_opponents_legality_follows_format():
+    none = srv.opponent_roster(srv.resolve_banlist("none"))
+    ocg = srv.opponent_roster(srv.resolve_banlist("ocg_2008_03"))
+    legal_none = sum(1 for g in none for d in g["duelists"] if d["legal"])
+    legal_ocg = sum(1 for g in ocg for d in g["duelists"] if d["legal"])
+    # the era banlist forbids staples the GBA decks run, so fewer stay legal
+    assert legal_ocg < legal_none
+
+
 def test_save_custom_banlist_endpoint(tmp_path, monkeypatch):
     import ygo.paths as paths
 

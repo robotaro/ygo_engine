@@ -20,9 +20,11 @@ choose both decks; a deck *id* is its path relative to ``deck_blueprints/``.
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 import threading
+import unicodedata
 from collections import Counter
 from pathlib import Path
 
@@ -238,6 +240,96 @@ def cards(
     return {"count": len(hits), "cards": [card_to_dict(c) for c in hits]}
 
 
+# --------------------------------------------------------------------------- #
+#  Opponent roster (the 154 GBA enemy decks, with portraits)
+# --------------------------------------------------------------------------- #
+GBA_DIR = DECKS_DIR / "gba"
+PORTRAIT_DIR = GBA_DIR / "_portraits"
+GAME_TITLES = {
+    "eternal_duelist_soul": "The Eternal Duelist Soul",
+    "worldwide_edition": "Worldwide Edition",
+    "sacred_cards": "The Sacred Cards",
+    "reshef_of_destruction": "Reshef of Destruction",
+    "wct_2004": "WCT 2004",
+    "wct_2005": "WCT 2005: 7 Trials to Glory",
+    "wct_2006": "WCT 2006: Ultimate Masters",
+    "gx_duel_academy": "GX Duel Academy",
+}
+GAME_ORDER = [
+    "eternal_duelist_soul",
+    "worldwide_edition",
+    "sacred_cards",
+    "reshef_of_destruction",
+    "wct_2004",
+    "wct_2005",
+    "wct_2006",
+    "gx_duel_academy",
+]
+# Duelists whose portrait file isn't just a slug of their name.
+PORTRAIT_ALIASES = {"keith howard": "bandit_keith"}
+
+
+def _slug(text: str) -> str:
+    """Lowercase ascii slug (strips accents: 'Téa' -> 'tea')."""
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
+
+
+def portrait_url(name: str) -> str | None:
+    key = PORTRAIT_ALIASES.get(name.strip().lower(), _slug(name))
+    return f"/portraits/{key}.png" if (PORTRAIT_DIR / f"{key}.png").is_file() else None
+
+
+def _gba_index() -> dict[str, tuple[str, str]]:
+    """Map ``<game>/<file>.txt`` -> (clean duelist name, deck variant)."""
+    path = GBA_DIR / "_index.json"
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    out: dict[str, tuple[str, str]] = {}
+    for game, rows in data.items():
+        for name, variant, _main, _extra, fn in rows:
+            out[f"{game}/{fn}"] = (name, variant or "")
+    return out
+
+
+def opponent_roster(banlist: BanList | None = None) -> list[dict]:
+    """Every GBA enemy deck, grouped by game, with portraits + legality."""
+    index = _gba_index()
+    by_game: dict[str, list[dict]] = {}
+    for path in sorted(GBA_DIR.rglob("*.txt")):
+        rel = path.relative_to(DECKS_DIR)  # gba/<game>/<file>.txt
+        if len(rel.parts) < 3:
+            continue
+        game = rel.parts[1]
+        deck = load_decklist(path, REGISTRY)
+        name, variant = index.get(f"{game}/{path.name}", (path.stem.replace("_", " ").title(), ""))
+        by_game.setdefault(game, []).append(
+            {
+                "id": rel.as_posix(),
+                "name": name,
+                "variant": variant,
+                "main": deck.main_size,
+                "extra": deck.extra_size,
+                "legal": validate_deck(deck, banlist=banlist).is_legal,
+                "playablePct": round(deck_playability(deck).pct),
+                "portrait": portrait_url(name),
+            }
+        )
+    games = []
+    ordered = GAME_ORDER + [g for g in by_game if g not in GAME_ORDER]
+    for g in ordered:
+        if g in by_game:
+            roster = sorted(by_game[g], key=lambda d: (d["name"], d["variant"]))
+            games.append({"key": g, "title": GAME_TITLES.get(g, g), "duelists": roster})
+    return games
+
+
+@app.get("/api/opponents")
+def opponents(format: str | None = None) -> dict:
+    return {"games": opponent_roster(resolve_banlist(format) if format else None)}
+
+
 @app.post("/api/decks/validate")
 def validate(payload: dict) -> dict:
     deck = decklist_from_counts(
@@ -301,6 +393,10 @@ async def duel_ws(websocket: WebSocket) -> None:
 _cards_dir = ASSETS / "card_images" / "cards"
 if _cards_dir.is_dir():
     app.mount("/cards", StaticFiles(directory=str(_cards_dir)), name="cards")
+
+# Duelist portraits for the opponent picker.
+if PORTRAIT_DIR.is_dir():
+    app.mount("/portraits", StaticFiles(directory=str(PORTRAIT_DIR)), name="portraits")
 
 # Serve the built frontend if present (optional; dev uses the Vite server).
 _dist = REPO_ROOT / "web" / "dist"

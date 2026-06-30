@@ -2,6 +2,7 @@
   import { newGame } from './store.js'
   import DeckBuilder from './DeckBuilder.svelte'
   import BanlistEditor from './BanlistEditor.svelte'
+  import OpponentPicker from './OpponentPicker.svelte'
 
   let tab = $state('play') // 'play' | 'build' | 'banlist'
   let decks = $state([])
@@ -27,7 +28,7 @@
     const best = decks.find((d) => d.legal && d.playablePct === 100) || decks[0]
     if (selectAfter && decks.some((d) => d.id === selectAfter)) yourDeck = selectAfter
     else if (!yourDeck) yourDeck = best?.id || ''
-    if (!oppDeck) oppDeck = best?.id || ''
+    // oppDeck is chosen via the OpponentPicker (defaults itself to a legal duelist).
     loaded = true
   }
 
@@ -44,11 +45,6 @@
 
   function startDuel(yourId = yourDeck, oppId = oppDeck) {
     newGame(seed === '' ? undefined : Number(seed), yourId, oppId)
-  }
-
-  function randomOpponent() {
-    const pool = decks.filter((d) => d.legal && d.id !== yourDeck)
-    if (pool.length) oppDeck = pool[Math.floor(Math.random() * pool.length)].id
   }
 </script>
 
@@ -90,16 +86,7 @@
           </select>
         </label>
 
-        <label class="pick">
-          <span class="lbl">Opponent <button class="rnd" onclick={randomOpponent}>🎲</button></span>
-          <select bind:value={oppDeck}>
-            {#each decks as d (d.id)}
-              <option value={d.id}>
-                {d.legal ? '' : '⚠ '}{d.name} · {d.source} · {d.playablePct}%
-              </option>
-            {/each}
-          </select>
-        </label>
+        <OpponentPicker selected={oppDeck} {format} onSelect={(id) => (oppDeck = id)} />
       </div>
 
       {#if deckById(yourDeck)}
@@ -191,12 +178,6 @@
     border-radius: 5px;
     padding: 8px;
     font-size: 14px;
-  }
-  .rnd {
-    padding: 1px 7px;
-    font-size: 12px;
-    background: #333;
-    color: #eee;
   }
   .info {
     margin-top: 12px;
