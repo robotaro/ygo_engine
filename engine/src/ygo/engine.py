@@ -18,7 +18,9 @@ from .effects import (
     SELF,
     DefenseAfterAttack,
     DrawTrigger,
+    EndPhaseSummonSweep,
     EndPhaseTrigger,
+    GraveyardStandbyGainLife,
     GraveyardStandbyReturn,
     SpellCounterHolder,
     StandbyTrigger,
@@ -206,20 +208,21 @@ class Engine:
                     # path runs its own life-point / GY / draw checks, so it doesn't
                     # need the fixed-LP `fired` bookkeeping below.
                     self._fire_standby_trigger(inst, mod, tp)
-        self._fire_graveyard_standby_returns(tp)
+        self._fire_graveyard_standby_effects(tp)
         if fired:
             self._check_life_points()
             self._check_field_to_gy_triggers()
             self._changed()
 
-    def _fire_graveyard_standby_returns(self, tp: int) -> None:
-        """Sinister Serpent: during its owner's Standby Phase, a card in their Graveyard
-        carrying a ``GraveyardStandbyReturn`` marker adds itself back to the hand. At most
-        one returns per Standby Phase ("once per turn"); only the turn player's own GY is
-        scanned (the marker says "during YOUR Standby Phase, if this card is in YOUR GY")."""
+    def _fire_graveyard_standby_effects(self, tp: int) -> None:
+        """Graveyard-sourced Standby effects on the turn player's own GY: Sinister Serpent
+        (``GraveyardStandbyReturn`` — add one carrier back to the hand, once per turn) and
+        Darklord Marie (``GraveyardStandbyGainLife`` — gain LP per carrier). Only the turn
+        player's own GY is scanned ("during YOUR Standby Phase, if this card is in YOUR GY")."""
         s = self.state
         if self.result is not None:
             return
+        # Return-to-hand: at most one carrier per Standby Phase.
         for iid in list(s.players[tp].graveyard):
             inst = s.cards.get(iid)
             if inst is None or inst.owner != tp:
@@ -228,7 +231,17 @@ class Engine:
                 s.return_to_hand(iid)
                 self.log(f"  {s.players[tp].name} adds {inst.name} from the GY to their hand")
                 self._changed()
-                return  # one per turn
+                break  # one per turn
+        # Gain-life: each carrier grants its LP (Darklord Marie).
+        for iid in list(s.players[tp].graveyard):
+            inst = s.cards.get(iid)
+            if inst is None or inst.owner != tp:
+                continue
+            for mod in inst.card.continuous:
+                if isinstance(mod, GraveyardStandbyGainLife) and mod.amount:
+                    s.players[tp].life_points += mod.amount
+                    self.log(f"  {s.players[tp].name} gains {mod.amount} LP from {inst.name} (GY)")
+                    self._changed()
 
     def _standby_upkeep_order(self) -> list[int]:
         """Face-up cards that might carry a Standby upkeep, in a stable order
@@ -1096,6 +1109,42 @@ class Engine:
         self._changed()
         self._check_field_to_gy_triggers()
 
+    def _apply_end_phase_summon_sweep(self) -> None:
+        """Infinite Dismissal: while a face-up card carrying an ``EndPhaseSummonSweep``
+        floodgate is on the field, every monster Normal/Flip Summoned this turn (face-up,
+        summoned this turn, not Special Summoned) of Level <= the floodgate's cap is
+        destroyed during the End Phase — both players'. A negated floodgate (Royal Decree)
+        is skipped."""
+        s = self.state
+        caps = [
+            m.max_level
+            for pl in (0, 1)
+            for iid in s.field_cards(pl, face_up_only=True)
+            if not s.effect_negated(iid)
+            for m in s.inst(iid).card.continuous
+            if isinstance(m, EndPhaseSummonSweep)
+        ]
+        if not caps:
+            return
+        cap = max(caps)
+        victims = [
+            iid
+            for pl in (0, 1)
+            for iid in s.players[pl].monster_zones
+            if iid is not None
+            and s.inst(iid).is_face_up
+            and s.inst(iid).summoned_this_turn
+            and not s.inst(iid).was_special_summoned
+            and (s.inst(iid).card.level or 0) <= cap
+        ]
+        if not victims:
+            return
+        for iid in victims:
+            self.log(f"  {s.inst(iid).name} is destroyed (Infinite Dismissal)")
+            s.send_to_graveyard(iid)
+        self._changed()
+        self._check_field_to_gy_triggers()
+
     def _clear_temp_stats(self) -> None:
         """Wipe every monster's 'until the end of this turn' ATK/DEF deltas."""
         s = self.state
@@ -1112,6 +1161,8 @@ class Engine:
             self._return_spirits(tp)
         if self.result is None:
             self._destroy_end_phase_marked()
+        if self.result is None:
+            self._apply_end_phase_summon_sweep()
         if self.result is None:
             s = self.state
             for _ in range(_MAX_ACTIONS_PER_PHASE):

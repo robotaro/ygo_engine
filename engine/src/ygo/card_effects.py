@@ -57,11 +57,13 @@ from .effects import (
     DrawTrigger,
     Effect,
     EndBattlePhase,
+    EndPhaseSummonSweep,
     EndPhaseTrigger,
     EquipMod,
     EquipToTarget,
     FieldMod,
     GainLifePoints,
+    GraveyardStandbyGainLife,
     GraveyardStandbyReturn,
     HandSpecialSummon,
     InflictDamage,
@@ -90,6 +92,7 @@ from .effects import (
     SelfStatMod,
     RevealRandomHandCardSummonOrGY,
     RevealTopSummonRestToHand,
+    SetEventAttackerAtkZero,
     ShuffleFieldMonstersThenExcavate,
     SpecialSummonFromDeck,
     SpecialSummonFromExtraDeck,
@@ -4866,4 +4869,33 @@ CONTINUOUS.update({
             count_names=frozenset({"Dark Magician", "Magician of Black Chaos"}),
         ),
     ),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 78: deck-impact — a coin-toss attacker-neutering Trap, a GY-Standby LP
+# drip, and an End-Phase summon floodgate.
+EFFECTS.update({
+    # Fairy Box — reactive Trap: when the opponent's monster declares an attack, toss a
+    # coin; if you call it right, that monster's ATK becomes 0 for the battle. (Modelled
+    # as a one-shot reaction like the other attack-declaration Traps; the Continuous
+    # "pay 500 each Standby" upkeep is not modelled.)
+    "Fairy Box": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
+            resolve=(CoinFlip(win=(SetEventAttackerAtkZero(),)),),
+        ),
+    ),
+    # Infinite Dismissal — Continuous Trap: activate it onto the field; the End-Phase
+    # summon sweep lives in CONTINUOUS.
+    "Infinite Dismissal": _ACTIVATE_ONTO_FIELD,
+})
+CONTINUOUS.update({
+    # Darklord Marie — while in the Graveyard, gain 200 LP during each of your Standby
+    # Phases.
+    "Darklord Marie": (GraveyardStandbyGainLife(amount=200),),
+    # Infinite Dismissal — Level 3-or-lower monsters Normal/Flip Summoned this turn are
+    # destroyed in the End Phase.
+    "Infinite Dismissal": (EndPhaseSummonSweep(max_level=3),),
 })

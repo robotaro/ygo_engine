@@ -251,6 +251,10 @@ DECK = (
     + ["Dark Magician"] * 2
     + ["Giant Germ"] * 3
     + ["The Unhappy Maiden"] * 2
+    # coin attacker-zero Trap + GY-Standby LP drip + End-Phase summon floodgate
+    + ["Fairy Box"] * 2
+    + ["Darklord Marie"] * 2
+    + ["Infinite Dismissal"] * 2
 )
 
 

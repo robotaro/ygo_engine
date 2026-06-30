@@ -479,6 +479,27 @@ class GraveyardStandbyReturn:
 
 
 @dataclass(frozen=True)
+class GraveyardStandbyGainLife:
+    """A card that, while it sits in its owner's Graveyard, grants its owner ``amount`` LP
+    during each of their Standby Phases (Darklord Marie). Read off the card's
+    ``continuous`` list in the GY by the engine's Standby hook (one grant per copy per
+    Standby Phase); inert on the field. Sibling of GraveyardStandbyReturn."""
+
+    amount: int = 0
+
+
+@dataclass(frozen=True)
+class EndPhaseSummonSweep:
+    """A face-up floodgate (Infinite Dismissal): during the End Phase, every monster of
+    Level ``max_level`` or lower that was Normal/Flip Summoned this turn — face-up,
+    summoned this turn, and not Special Summoned — is destroyed (both players'). Read by
+    the engine's End-Phase hook off any face-up field card carrying it; suppressed while
+    that card's effect is negated (Royal Decree on the Trap)."""
+
+    max_level: int = 3
+
+
+@dataclass(frozen=True)
 class DrawTrigger:
     """A face-up card's reaction to its controller drawing (Slice 10).
 
@@ -1394,6 +1415,22 @@ class EndBattlePhase(Primitive):
 
     def execute(self, ctx: EffectContext) -> None:
         ctx.state.battle_phase_ended = True
+
+
+@dataclass(frozen=True)
+class SetEventAttackerAtkZero(Primitive):
+    """Fairy Box: the attacking monster's ATK becomes 0 for the battle — modelled by a
+    temporary delta that cancels its current effective ATK. Reads the attacker from the
+    triggering event; the combat step then reads the zeroed ATK at damage calculation.
+    (The temp delta wears off at the End Phase rather than the Battle Phase's end — a
+    harmless over-extension for a monster that has just been neutered in combat.)"""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        attacker = (ctx.event or {}).get("attacker")
+        inst = s.cards.get(attacker) if attacker is not None else None
+        if inst is not None and inst.zone is Zone.MONSTER:
+            inst.temp_atk -= s.effective_attack(attacker)
 
 
 @dataclass(frozen=True)
