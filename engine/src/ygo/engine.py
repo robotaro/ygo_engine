@@ -201,6 +201,8 @@ class Engine:
             inst = s.cards.get(iid)
             if inst is None or not inst.is_face_up or not inst.effects_active:
                 continue  # left the field, or a Gemini not yet Gemini Summoned
+            if s.effect_negated(iid):
+                continue  # Skill Drain (Cure Mermaid) / Imperial Order (Snatch Steal, Burning Land)
             for mod in inst.card.continuous:
                 if isinstance(mod, StandbyUpkeep) and self._apply_standby_upkeep(inst, mod, tp):
                     fired = True
@@ -792,6 +794,8 @@ class Engine:
             None,
         )
         if effect is not None:
+            if effect.condition is not None and not effect.condition(self.state, inst.controller):
+                return  # Mazera DeVille needs "Pandemonium" on the field
             self._trigger_effect(iid, effect, inst.controller)
 
     def _fire_battle_damage_trigger(self) -> None:

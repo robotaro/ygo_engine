@@ -390,6 +390,8 @@ class GameState:
         inst.counters = {}  # counters fall off when the card leaves the field
         inst.temp_atk = 0
         inst.temp_def = 0
+        inst.perm_atk = 0  # permanent stat changes (Zombyra, Slate Warrior, a debuffed
+        inst.perm_def = 0  # killer) don't outlive the field — a revived copy is back to base
         inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
         inst.was_special_summoned = False  # re-stamped by special_summon on a fresh summon
         inst.was_tribute_summoned = False  # re-stamped by moves._summon on a fresh Tribute Summon
@@ -457,13 +459,15 @@ class GameState:
 
     # ----- derived stats (the "layers": printed value + active modifiers) -----
     def _equip_mods_on(self, monster_iid: int):
-        """Yield (EquipMod, equip_controller) for every face-up Equip attached here."""
+        """Yield (EquipMod, equip_controller) for every face-up Equip attached here whose
+        own effect isn't negated — an Equip Spell goes inert under Imperial Order, matching
+        the Field/Equip suppression documented in ``_active_continuous_sources``."""
         for player in self.players:
             for sid in player.spell_trap_zones:
                 if sid is None:
                     continue
                 equip = self.cards[sid]
-                if equip.equipped_to == monster_iid and equip.is_face_up:
+                if equip.equipped_to == monster_iid and equip.is_face_up and not self.effect_negated(sid):
                     for mod in equip.card.continuous:
                         if isinstance(mod, EquipMod):  # an Equip may also carry non-stat passives
                             yield mod, equip.controller
