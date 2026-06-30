@@ -91,6 +91,23 @@ class Profile:
             if n:
                 self.collection[name] = self.collection.get(name, 0) + int(n)
 
+    def remove_cards(self, cards: dict[str, int] | Counter) -> None:
+        """Remove cards from the collection (e.g. when sold), pruning entries
+        that hit zero. Raises ValueError if you don't own enough of any card —
+        checked up front so the collection is never left half-mutated."""
+        for name, n in cards.items():
+            have = self.collection.get(name, 0)
+            if int(n) > have:
+                raise ValueError(f"Don't own {n}x {name} (have {have})")
+        for name, n in cards.items():
+            if int(n) <= 0:
+                continue
+            remaining = self.collection.get(name, 0) - int(n)
+            if remaining > 0:
+                self.collection[name] = remaining
+            else:
+                self.collection.pop(name, None)
+
     def total_cards(self) -> int:
         return sum(self.collection.values())
 

@@ -49,6 +49,7 @@ from ..deckbuild import (
 from ..decks import DeckList, load_decklist
 from ..enums import Attribute, CardType
 from ..packs import get_pack, list_packs, open_pack
+from .. import pricing
 from ..paths import ASSETS, DECKS_DIR, REPO_ROOT
 from ..profile import STARTER_DECK_ID, Profile, load_profile, new_profile, save_profile
 from .. import tournament as tour
@@ -77,6 +78,7 @@ RECORD_DIR = Path(os.environ.get("YGO_RECORD_DIR", REPO_ROOT / "replays"))
 #  Serialisation helpers (pure; unit-tested without HTTP)
 # --------------------------------------------------------------------------- #
 def card_to_dict(card: CardDef) -> dict:
+    price = pricing.price_detail(card, REGISTRY)
     return {
         "name": card.name,
         "cardType": card.card_type.value,
@@ -90,6 +92,10 @@ def card_to_dict(card: CardDef) -> dict:
         "imageId": card.image_id,
         "extraDeck": card.goes_in_extra_deck,
         "functional": is_functional(card),
+        "rarity": price["rarity"],
+        "value": price["value"],
+        "buy": price["buy"],
+        "sell": price["sell"],
     }
 
 
@@ -445,14 +451,15 @@ def packs() -> dict:
     profile = load_profile()
     by_game: dict[str, list[dict]] = {}
     for p in _all_packs():
+        price = pricing.pack_price(p, REGISTRY)
         by_game.setdefault(p.game, []).append(
             {
                 "id": p.id,
                 "name": p.name,
-                "price": p.price,
+                "price": price,
                 "cardsPerPack": p.cards_per_pack,
                 "distinct": p.distinct,
-                "affordable": profile.can_afford(p.price),
+                "affordable": profile.can_afford(price),
                 "art": pack_art_url(p),
             }
         )
@@ -471,12 +478,13 @@ def buy_pack(payload: dict) -> dict:
     pack = get_pack(payload.get("packId", ""), REGISTRY)
     if pack is None:
         raise HTTPException(status_code=404, detail="Unknown pack")
-    if not profile.can_afford(pack.price):
+    price = pricing.pack_price(pack, REGISTRY)
+    if not profile.can_afford(price):
         raise HTTPException(
             status_code=400,
-            detail=f"Not enough DP — need {pack.price}, have {profile.duelist_points}",
+            detail=f"Not enough DP — need {price}, have {profile.duelist_points}",
         )
-    profile.spend(pack.price)
+    profile.spend(price)
     pulled = open_pack(pack, random.Random())
     before = set(profile.collection)
     profile.add_cards(Counter(pulled))
@@ -491,8 +499,70 @@ def buy_pack(payload: dict) -> dict:
     return {
         "pack": pack.name,
         "pulled": cards,
-        "spent": pack.price,
+        "spent": price,
         "duelistPoints": profile.duelist_points,
+    }
+
+
+# --------------------------------------------------------------------------- #
+#  Single-card shop: buy specific cards, sell duplicates back
+# --------------------------------------------------------------------------- #
+def _shop_card(payload: dict) -> tuple[CardDef, int]:
+    """Resolve the {name, qty} of a buy/sell request, or raise 4xx."""
+    card = REGISTRY.get((payload.get("name") or "").strip())
+    if card is None:
+        raise HTTPException(status_code=404, detail="Unknown card")
+    qty = int(payload.get("qty", 1) or 1)
+    if qty < 1:
+        raise HTTPException(status_code=400, detail="Quantity must be at least 1")
+    return card, qty
+
+
+@app.post("/api/shop/buy")
+def shop_buy(payload: dict) -> dict:
+    """Buy a card outright (single-card shop) at its full value."""
+    profile = load_profile()
+    card, qty = _shop_card(payload)
+    unit = pricing.buy_value(card, REGISTRY)
+    cost = unit * qty
+    if not profile.can_afford(cost):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Not enough DP — need {cost}, have {profile.duelist_points}",
+        )
+    profile.spend(cost)
+    profile.add_cards({card.name: qty})
+    save_profile(profile)
+    return {
+        "card": card_to_dict(card),
+        "qty": qty,
+        "spent": cost,
+        "owned": profile.collection.get(card.name, 0),
+        "duelistPoints": profile.duelist_points,
+        "profile": profile_summary(profile),
+    }
+
+
+@app.post("/api/shop/sell")
+def shop_sell(payload: dict) -> dict:
+    """Sell duplicates back for DP (a fraction of the card's value)."""
+    profile = load_profile()
+    card, qty = _shop_card(payload)
+    if not profile.owns(card.name, qty):
+        have = profile.collection.get(card.name, 0)
+        raise HTTPException(status_code=400, detail=f"You only own {have}x {card.name}")
+    unit = pricing.sell_value(card, REGISTRY)
+    proceeds = unit * qty
+    profile.remove_cards({card.name: qty})
+    profile.earn(proceeds)
+    save_profile(profile)
+    return {
+        "card": card_to_dict(card),
+        "qty": qty,
+        "earned": proceeds,
+        "owned": profile.collection.get(card.name, 0),
+        "duelistPoints": profile.duelist_points,
+        "profile": profile_summary(profile),
     }
 
 
