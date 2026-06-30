@@ -33,3 +33,6 @@ assets/banlists/user/
 
 # OS
 .DS_Store
+
+# Player save file (profile, collection, DP)
+/profile/

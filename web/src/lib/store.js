@@ -12,6 +12,18 @@ export const logs = writable([]) // narration lines
 export const result = writable(null) // {winner, youWin, reason} when the duel ends
 export const connected = writable(false) // WebSocket open (i.e. a duel is live)
 export const online = writable(false) // backend HTTP reachable (polled)
+export const profile = writable(null) // {duelistPoints, collection..., decks, stats}
+
+// Pull the player's save (DP balance, collection size, decks) and broadcast it.
+// Call after anything that mutates the profile: pack opens, deck saves, duel end.
+export async function refreshProfile() {
+  try {
+    const r = await fetch('/api/profile')
+    if (r.ok) profile.set(await r.json())
+  } catch {
+    /* offline — leave the last known profile in place */
+  }
+}
 
 let ws = null
 
@@ -28,6 +40,7 @@ export function startHealthMonitor() {
     }
   }
   ping()
+  refreshProfile()
   if (!healthTimer) healthTimer = setInterval(ping, 5000)
 }
 
@@ -112,8 +125,9 @@ export function newGame(seed, deck, opp) {
         logs.update((l) => [...l, msg.message].slice(-300))
         break
       case 'result':
-        result.set(msg)
+        result.set(msg) // includes dpEarned + duelistPoints from the server
         awaiting.set(false)
+        refreshProfile() // DP was just awarded — update the header balance
         break
       default:
         break

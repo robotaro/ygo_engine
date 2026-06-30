@@ -363,12 +363,18 @@ def search_pool(
     min_atk: int | None = None,
     max_atk: int | None = None,
     functional_only: bool = False,
+    sort: str = "name",
+    order: str = "asc",
     limit: int | None = None,
 ) -> list[CardDef]:
     """Filter the card pool. ``text`` matches name or card text (case-insensitive).
 
-    All criteria are ANDed; ``None`` means "don't filter on this". Results are
-    sorted by card type then name for stable display.
+    All criteria are ANDed; ``None`` means "don't filter on this".
+
+    ``sort`` is one of ``name`` (default), ``attack``, ``defense`` or ``type``;
+    ``order`` is ``asc`` or ``desc``. The default ``name`` ordering interleaves
+    all card types so a limited result still surfaces Spells and Traps (sorting
+    by ``type`` first would bury them behind every Monster).
     """
     needle = text.lower() if text else None
 
@@ -393,7 +399,23 @@ def search_pool(
             return False
         return True
 
-    hits = sorted((c for c in registry if keep(c)), key=lambda c: (c.card_type.value, c.name))
+    hits = [c for c in registry if keep(c)]
+    reverse = order == "desc"
+    # Name-ascending first, so it's the stable tie-break under every other sort
+    # (Python's sort keeps equal-key order, even with reverse=True).
+    hits.sort(key=lambda c: c.name.lower())
+    if sort == "type":
+        rank = {"monster": 0, "spell": 1, "trap": 2}
+        hits.sort(key=lambda c: rank.get(c.card_type.value, 9), reverse=reverse)
+    elif sort in ("attack", "defense"):
+        # Numeric order, with Spells/Traps (no ATK/DEF) always pushed to the end
+        # regardless of direction.
+        hits.sort(
+            key=lambda c: ((getattr(c, sort) is None) != reverse, getattr(c, sort) or 0),
+            reverse=reverse,
+        )
+    elif reverse:  # sort == "name"
+        hits.reverse()
     return hits[:limit] if limit is not None else hits
 
 

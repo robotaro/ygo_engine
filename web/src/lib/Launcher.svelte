@@ -1,73 +1,72 @@
 <script>
-  import { newGame } from './store.js'
-  import DeckBuilder from './DeckBuilder.svelte'
+  import { newGame, profile } from './store.js'
+  import MyDecks from './MyDecks.svelte'
+  import Collection from './Collection.svelte'
   import BanlistEditor from './BanlistEditor.svelte'
   import OpponentPicker from './OpponentPicker.svelte'
 
-  // Initial tab is deep-linkable via ?tab=build|banlist (handy for screenshots).
-  let tab = $state(new URLSearchParams(location.search).get('tab') || 'play') // 'play' | 'build' | 'banlist'
-  let decks = $state([])
+  // Initial tab is deep-linkable via ?tab=decks|cards|banlist (handy for screenshots).
+  let tab = $state(new URLSearchParams(location.search).get('tab') || 'play') // play|decks|cards|banlist
   let formats = $state([])
   let format = $state('none') // active Forbidden/Limited list
   let yourDeck = $state('')
   let oppDeck = $state('')
   let seed = $state('')
-  let loaded = $state(false)
+
+  // "Your deck" is chosen from the decks you own (Starter + anything you built).
+  let myDecks = $derived($profile?.decks ?? [])
 
   async function loadFormats() {
     const res = await fetch('/api/formats')
     formats = (await res.json()).formats
   }
 
-  async function loadCatalog(selectAfter = null) {
-    const res = await fetch('/api/decks?format=' + encodeURIComponent(format))
-    const data = await res.json()
-    // Best decks first: legal, then most playable, then by name.
-    decks = data.decks.sort(
-      (a, b) => b.legal - a.legal || b.playablePct - a.playablePct || a.name.localeCompare(b.name),
-    )
-    const best = decks.find((d) => d.legal && d.playablePct === 100) || decks[0]
-    if (selectAfter && decks.some((d) => d.id === selectAfter)) yourDeck = selectAfter
-    else if (!yourDeck) yourDeck = best?.id || ''
-    // oppDeck is chosen via the OpponentPicker (defaults itself to a legal duelist).
-    loaded = true
-  }
-
   $effect(() => {
-    if (!loaded) {
-      loadFormats()
-      loadCatalog()
+    loadFormats()
+  })
+
+  // Default the deck picker to your active deck (the Starter to begin with).
+  $effect(() => {
+    if ((!yourDeck || !myDecks.some((d) => d.id === yourDeck)) && myDecks.length) {
+      const active = $profile?.activeDeck
+      yourDeck = active && myDecks.some((d) => d.id === active) ? active : myDecks[0].id
     }
   })
 
   function deckById(id) {
-    return decks.find((d) => d.id === id)
+    return myDecks.find((d) => d.id === id)
   }
 
   function startDuel(yourId = yourDeck, oppId = oppDeck) {
     newGame(seed === '' ? undefined : Number(seed), yourId, oppId)
+  }
+
+  // From My Decks / the builder: select the deck and jump to Play to pick a foe.
+  function pickAndPlay(id) {
+    yourDeck = id
+    tab = 'play'
   }
 </script>
 
 <div class="launcher">
   <div class="tabs">
     <button class:active={tab === 'play'} onclick={() => (tab = 'play')}>⚔ Play</button>
-    <button class:active={tab === 'build'} onclick={() => (tab = 'build')}>🛠 Build a Deck</button>
+    <button class:active={tab === 'decks'} onclick={() => (tab = 'decks')}>🗂 My Decks</button>
+    <button class:active={tab === 'cards'} onclick={() => (tab = 'cards')}>🃏 My Cards</button>
     <button class:active={tab === 'banlist'} onclick={() => (tab = 'banlist')}>⛔ Banned Cards</button>
   </div>
 
   {#if tab === 'play'}
     <div class="play">
-      <h2>Choose your decks</h2>
+      <h2>Choose your match</h2>
       <p class="sub">
-        {decks.length} decks available · those marked <span class="full">100%</span> play with every
-        effect working today.
+        Duel with one of <span class="full">your decks</span> — win to earn Duelist Points for packs.
       </p>
 
       <div class="picks">
         <label class="pick">
           <span class="lbl">Format (banned cards)</span>
-          <select bind:value={format} onchange={() => loadCatalog(yourDeck)}>
+          <select bind:value={format}>
             {#each formats as f (f.id)}
               <option value={f.id}>
                 {f.name}{f.restricted ? ` · ${f.restricted} restricted` : ''}
@@ -79,9 +78,9 @@
         <label class="pick">
           <span class="lbl">Your deck</span>
           <select bind:value={yourDeck}>
-            {#each decks as d (d.id)}
+            {#each myDecks as d (d.id)}
               <option value={d.id}>
-                {d.legal ? '' : '⚠ '}{d.name} · {d.source} · {d.playablePct}%
+                {d.legal ? '' : '⚠ '}{d.name.replace(/[-_]+/g, ' ')} · {d.playablePct}%
               </option>
             {/each}
           </select>
@@ -105,10 +104,10 @@
         </button>
       </div>
     </div>
-  {:else if tab === 'build'}
-    <div class="build">
-      <DeckBuilder onSaved={(id) => loadCatalog(id)} onPlay={(id) => startDuel(id, oppDeck)} />
-    </div>
+  {:else if tab === 'decks'}
+    <MyDecks onPlay={pickAndPlay} />
+  {:else if tab === 'cards'}
+    <Collection />
   {:else}
     <div class="build">
       <BanlistEditor onSaved={() => loadFormats()} />

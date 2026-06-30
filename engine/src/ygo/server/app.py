@@ -22,13 +22,14 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import random
 import re
 import threading
 import unicodedata
 from collections import Counter
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -47,7 +48,9 @@ from ..deckbuild import (
 )
 from ..decks import DeckList, load_decklist
 from ..enums import Attribute, CardType
+from ..packs import get_pack, list_packs, open_pack
 from ..paths import ASSETS, DECKS_DIR, REPO_ROOT
+from ..profile import STARTER_DECK_ID, Profile, load_profile, new_profile, save_profile
 from .session import GameSession
 
 app = FastAPI(title="ygo_engine")
@@ -221,6 +224,8 @@ def cards(
     type: str | None = None,
     attribute: str | None = None,
     functional: bool = False,
+    sort: str = "name",
+    order: str = "asc",
     limit: int = 120,
 ) -> dict:
     card_type = {"monster": CardType.MONSTER, "spell": CardType.SPELL, "trap": CardType.TRAP}.get(
@@ -229,13 +234,18 @@ def cards(
     attr = None
     if attribute and attribute.upper() in Attribute.__members__:
         attr = Attribute[attribute.upper()]
+    if sort not in ("name", "attack", "defense", "type"):
+        sort = "name"
+    order = "desc" if str(order).lower() == "desc" else "asc"
     hits = search_pool(
         REGISTRY,
         text=query or None,
         card_type=card_type,
         attribute=attr,
         functional_only=functional,
-        limit=max(1, min(limit, 500)),
+        sort=sort,
+        order=order,
+        limit=max(1, min(limit, 5000)),
     )
     return {"count": len(hits), "cards": [card_to_dict(c) for c in hits]}
 
@@ -330,6 +340,151 @@ def opponents(format: str | None = None) -> dict:
     return {"games": opponent_roster(resolve_banlist(format) if format else None)}
 
 
+# --------------------------------------------------------------------------- #
+#  Player profile: Duelist Points, card library (collection), and your decks
+# --------------------------------------------------------------------------- #
+# The pool-filtered pack catalogue is static (registry never changes), so build
+# it once; per-request we only re-read affordability from the profile.
+_PACK_CACHE: list | None = None
+
+
+def _all_packs() -> list:
+    global _PACK_CACHE
+    if _PACK_CACHE is None:
+        _PACK_CACHE = list_packs(REGISTRY)
+    return _PACK_CACHE
+
+
+def deck_summary(deck_id: str, profile: Profile, banlist: BanList | None = None) -> dict | None:
+    """Summarise one of the player's decks: sizes, legality, and ownership."""
+    path = resolve_deck_id(deck_id)
+    if path is None:
+        return None
+    deck = load_decklist(path, REGISTRY)
+    counts = Counter(c.name for c in (*deck.main, *deck.extra))
+    missing = profile.missing_for_deck(dict(counts))
+    return {
+        "id": deck_id,
+        "name": deck.name,
+        "main": deck.main_size,
+        "extra": deck.extra_size,
+        "legal": validate_deck(deck, banlist=banlist).is_legal,
+        "playablePct": round(deck_playability(deck).pct),
+        "owned": not missing,  # fully buildable from the collection
+        "missing": missing,
+        "isStarter": deck_id == STARTER_DECK_ID,
+    }
+
+
+def profile_summary(profile: Profile) -> dict:
+    decks = [deck_summary(d, profile) for d in profile.deck_ids()]
+    return {
+        "name": profile.name,
+        "duelistPoints": profile.duelist_points,
+        "stats": profile.stats,
+        "packsOpened": profile.packs_opened,
+        "collectionDistinct": len(profile.collection),
+        "collectionTotal": profile.total_cards(),
+        "activeDeck": profile.active_deck,
+        "decks": [d for d in decks if d is not None],
+    }
+
+
+@app.get("/api/profile")
+def get_profile() -> dict:
+    return profile_summary(load_profile())
+
+
+@app.post("/api/profile/reset")
+def reset_profile() -> dict:
+    """Start over with a fresh save (Starter Deck cards + starting DP)."""
+    profile = new_profile()
+    save_profile(profile)
+    return profile_summary(profile)
+
+
+@app.get("/api/collection")
+def collection(
+    query: str | None = None,
+    type: str | None = None,
+    sort: str = "name",
+    order: str = "asc",
+) -> dict:
+    """The cards you own, with counts — same shape as /api/cards plus ``owned``."""
+    profile = load_profile()
+    card_type = {"monster": CardType.MONSTER, "spell": CardType.SPELL, "trap": CardType.TRAP}.get(
+        (type or "").lower()
+    )
+    if sort not in ("name", "attack", "defense", "type"):
+        sort = "name"
+    order = "desc" if str(order).lower() == "desc" else "asc"
+    hits = search_pool(
+        REGISTRY, text=query or None, card_type=card_type, sort=sort, order=order, limit=5000
+    )
+    cards = [
+        {**card_to_dict(c), "owned": profile.collection[c.name]}
+        for c in hits
+        if c.name in profile.collection
+    ]
+    return {"count": len(cards), "cards": cards, "distinct": len(profile.collection)}
+
+
+@app.get("/api/packs")
+def packs() -> dict:
+    """The booster-pack shop, grouped by game, with prices and affordability."""
+    profile = load_profile()
+    by_game: dict[str, list[dict]] = {}
+    for p in _all_packs():
+        by_game.setdefault(p.game, []).append(
+            {
+                "id": p.id,
+                "name": p.name,
+                "price": p.price,
+                "cardsPerPack": p.cards_per_pack,
+                "distinct": p.distinct,
+                "affordable": profile.can_afford(p.price),
+            }
+        )
+    games = []
+    ordered = GAME_ORDER + [g for g in by_game if g not in GAME_ORDER]
+    for g in ordered:
+        if g in by_game:
+            games.append({"key": g, "title": GAME_TITLES.get(g, g), "packs": by_game[g]})
+    return {"games": games, "duelistPoints": profile.duelist_points}
+
+
+@app.post("/api/packs/open")
+def buy_pack(payload: dict) -> dict:
+    """Spend DP to open a pack; the pulled cards go into your library."""
+    profile = load_profile()
+    pack = get_pack(payload.get("packId", ""), REGISTRY)
+    if pack is None:
+        raise HTTPException(status_code=404, detail="Unknown pack")
+    if not profile.can_afford(pack.price):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Not enough DP — need {pack.price}, have {profile.duelist_points}",
+        )
+    profile.spend(pack.price)
+    pulled = open_pack(pack, random.Random())
+    before = set(profile.collection)
+    profile.add_cards(Counter(pulled))
+    profile.packs_opened += 1
+    save_profile(profile)
+    cards = []
+    for name in pulled:
+        card = REGISTRY.get(name)
+        entry = card_to_dict(card)
+        entry["isNew"] = name not in before
+        cards.append(entry)
+    return {
+        "pack": pack.name,
+        "pulled": cards,
+        "spent": pack.price,
+        "duelistPoints": profile.duelist_points,
+    }
+
+
 @app.post("/api/decks/validate")
 def validate(payload: dict) -> dict:
     deck = decklist_from_counts(
@@ -340,17 +495,63 @@ def validate(payload: dict) -> dict:
 
 @app.post("/api/decks")
 def save_deck(payload: dict) -> dict:
+    """Save one of *your* decks — buildable only from cards you own."""
+    profile = load_profile()
     name = (payload.get("name") or "Untitled").strip()
     slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_") or "deck"
     deck = decklist_from_counts(name, payload.get("main", {}), payload.get("extra", {}))
+    counts = Counter(c.name for c in (*deck.main, *deck.extra))
+    missing = profile.missing_for_deck(dict(counts))
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Your library is short on some cards", "missing": missing},
+        )
     user_dir = DECKS_DIR / "user"
     user_dir.mkdir(parents=True, exist_ok=True)
     path = user_dir / f"{slug}.txt"
     path.write_text(to_blueprint_text(deck), encoding="utf-8")
+    deck_id = path.relative_to(DECKS_DIR).as_posix()
+    if deck_id not in profile.decks:
+        profile.decks.append(deck_id)
+    profile.active_deck = deck_id
+    save_profile(profile)
     return {
-        "id": path.relative_to(DECKS_DIR).as_posix(),
+        "id": deck_id,
         "validation": validation_dict(deck, payload.get("format")),
     }
+
+
+@app.get("/api/decks/{deck_id:path}")
+def get_deck(deck_id: str) -> dict:
+    """One deck's card counts, for loading it into the builder to edit."""
+    path = resolve_deck_id(deck_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Unknown deck")
+    deck = load_decklist(path, REGISTRY)
+    return {
+        "id": deck_id,
+        "name": deck.name,
+        "main": dict(Counter(c.name for c in deck.main)),
+        "extra": dict(Counter(c.name for c in deck.extra)),
+    }
+
+
+@app.delete("/api/decks/{deck_id:path}")
+def delete_deck(deck_id: str) -> dict:
+    """Delete one of your built decks (only files under ``user/``)."""
+    path = resolve_deck_id(deck_id)
+    user_root = (DECKS_DIR / "user").resolve()
+    if path is None or user_root not in path.resolve().parents:
+        raise HTTPException(status_code=400, detail="Not a deletable deck")
+    path.unlink()
+    profile = load_profile()
+    if deck_id in profile.decks:
+        profile.decks.remove(deck_id)
+    if profile.active_deck == deck_id:
+        profile.active_deck = STARTER_DECK_ID
+    save_profile(profile)
+    return {"deleted": deck_id}
 
 
 # --------------------------------------------------------------------------- #
@@ -375,6 +576,12 @@ async def duel_ws(websocket: WebSocket) -> None:
         # Bridge the engine thread's blocking queue to the async socket.
         while True:
             message = await loop.run_in_executor(None, session.outbound.get)
+            if message.get("type") == "result":
+                # The duel is over — tally it and award Duelist Points.
+                profile = load_profile()
+                earned = profile.record_result(bool(message.get("youWin")))
+                save_profile(profile)
+                message = {**message, "dpEarned": earned, "duelistPoints": profile.duelist_points}
             await websocket.send_json(message)
 
     pump = asyncio.create_task(pump_outbound())

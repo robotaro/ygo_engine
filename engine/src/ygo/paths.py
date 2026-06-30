@@ -14,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 ASSETS = REPO_ROOT / "assets"
 CARD_DB_DIR = ASSETS / "card_databases"
 DECKS_DIR = ASSETS / "deck_blueprints"
+CARD_PACKS_DIR = ASSETS / "card_packs"
 BANLISTS_DIR = ASSETS / "banlists"
 MANUAL_DIR = ASSETS / "manual"
 

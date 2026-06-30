@@ -18,6 +18,7 @@
     result,
     connected,
     online,
+    profile,
     startHealthMonitor,
     leaveGame,
     sendIntent,
@@ -566,12 +567,17 @@
 
 </script>
 
-<main>
+<main class:wide={!$board}>
   <header>
     <h1>ygo_engine</h1>
     <div class="conn" class:on={$connected || $online} class:live={$connected}>
       {$connected ? 'in duel' : $online ? 'online' : 'offline'}
     </div>
+    {#if $profile}
+      <div class="dp" title="Duelist Points — earned from duels, spent on packs">
+        ◈ {$profile.duelistPoints.toLocaleString()} DP
+      </div>
+    {/if}
     {#if $board}
       <button class="menubtn" onclick={leaveGame}>⏎ Menu</button>
     {/if}
@@ -1052,6 +1058,11 @@
     margin: 0 auto;
     padding: 12px;
   }
+  /* The menus (deck builder etc.) want room for a 5-wide card grid; the duel
+     table stays at the narrower 940px. */
+  main.wide {
+    max-width: 1280px;
+  }
   header {
     display: flex;
     align-items: center;
@@ -1078,8 +1089,18 @@
     background: var(--accent);
     color: var(--accent-ink);
   }
-  .menubtn {
+  .dp {
     margin-left: auto;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 3px 11px;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--accent);
+    border: 1px solid var(--line);
+  }
+  .menubtn {
+    margin-left: 8px;
   }
   button {
     background: #b8923a;

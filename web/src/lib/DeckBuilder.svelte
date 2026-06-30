@@ -3,13 +3,20 @@
   // detail · your deck (with live v6.0 validation).
   //   click a card  -> inspect it (read its effect) in the detail panel
   //   '+' / dbl-clik -> add it to the deck
-  let { onPlay = null, onSaved = null } = $props()
+  // In `ownedOnly` mode the pool is your card library and copies are capped at
+  // how many you own; `loadId` loads an existing deck to edit.
+  let { onPlay = null, onSaved = null, ownedOnly = false, loadId = null } = $props()
 
   let name = $state('My Deck')
   let query = $state('')
   let typeFilter = $state('') // '' | monster | spell | trap
   let functionalOnly = $state(false) // off by default, or spells/traps vanish
+  // Sort is deep-linkable via ?sort=name|attack|defense|type & ?order=asc|desc.
+  let sortBy = $state(new URLSearchParams(location.search).get('sort') || 'name')
+  let sortDir = $state(new URLSearchParams(location.search).get('order') || 'asc')
   let results = $state([])
+  let visibleCount = $state(60) // how many of `results` are rendered (grows on scroll)
+  let gridEl = $state(null) // the scrollable pool grid
   let loading = $state(false)
   let selected = $state(null) // the card shown in the detail panel
 
@@ -21,11 +28,19 @@
   let validation = $state(null)
   let saving = $state(false)
   let savedId = $state(null)
+  let saveError = $state('')
 
   let formats = $state([]) // Forbidden/Limited lists to validate against
   let format = $state('none')
 
   const MAX_COPIES = 3
+
+  // How many copies of a card may be added: 3 normally, but never more than you
+  // own in owned-only mode.
+  function cap(card) {
+    if (!ownedOnly) return MAX_COPIES
+    return Math.min(MAX_COPIES, card?.owned ?? 0)
+  }
 
   let mainSize = $derived(Object.values(main).reduce((a, b) => a + b, 0))
   let extraSize = $derived(Object.values(extra).reduce((a, b) => a + b, 0))
@@ -51,7 +66,7 @@
   }
 
   function add(card) {
-    if (!card || copies(card.name) >= MAX_COPIES) return
+    if (!card || copies(card.name) >= cap(card)) return
     known = { ...known, [card.name]: card }
     if (card.extraDeck) extra = { ...extra, [card.name]: (extra[card.name] || 0) + 1 }
     else main = { ...main, [card.name]: (main[card.name] || 0) + 1 }
@@ -72,29 +87,72 @@
     savedId = null
   }
 
-  // -- card search (debounced) --
+  // -- load an existing deck to edit (owned-only editor passes a loadId) --
+  $effect(() => {
+    if (!loadId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [deck, col] = await Promise.all([
+          fetch('/api/decks/' + loadId).then((r) => r.json()),
+          fetch('/api/collection').then((r) => r.json()),
+        ])
+        if (cancelled) return
+        name = deck.name
+        main = { ...deck.main }
+        extra = { ...deck.extra }
+        known = Object.fromEntries(col.cards.map((c) => [c.name, c]))
+      } catch {
+        /* leave the editor empty if the deck can't be loaded */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  })
+
+  // -- card search (debounced). Fetches the whole matching pool (your library in
+  //    owned-only mode); the grid renders a window of it and grows on scroll. --
   $effect(() => {
     const q = query
     const t = typeFilter
     const f = functionalOnly
+    const s = sortBy
+    const o = sortDir
     loading = true
     const handle = setTimeout(async () => {
-      const params = new URLSearchParams({ limit: '150' })
+      const endpoint = ownedOnly ? '/api/collection' : '/api/cards'
+      const params = new URLSearchParams({ sort: s, order: o })
+      if (!ownedOnly) params.set('limit', '5000')
       if (q) params.set('query', q)
       if (t) params.set('type', t)
-      if (f) params.set('functional', 'true')
+      if (f && !ownedOnly) params.set('functional', 'true')
       try {
-        const res = await fetch(`/api/cards?${params}`)
-        const data = await res.json()
-        results = data.cards
+        const data = await (await fetch(`${endpoint}?${params}`)).json()
+        let cards = data.cards
+        if (f && ownedOnly) cards = cards.filter((c) => c.functional)
+        results = cards
       } catch {
         results = []
       } finally {
         loading = false
+        visibleCount = 60
+        gridEl?.scrollTo({ top: 0 })
       }
     }, 200)
     return () => clearTimeout(handle)
   })
+
+  // Reveal more cards as the grid is scrolled near the bottom.
+  function onPoolScroll(e) {
+    const el = e.currentTarget
+    if (
+      el.scrollTop + el.clientHeight >= el.scrollHeight - 500 &&
+      visibleCount < results.length
+    ) {
+      visibleCount = Math.min(visibleCount + 60, results.length)
+    }
+  }
 
   // -- live validation (debounced) whenever the deck, its name, or format changes --
   $effect(() => {
@@ -120,12 +178,27 @@
 
   async function save() {
     saving = true
+    saveError = ''
     try {
       const res = await fetch('/api/decks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, main: { ...main }, extra: { ...extra }, format }),
       })
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}))
+        const missing = e?.detail?.missing
+        if (missing) {
+          const names = Object.keys(missing)
+          saveError =
+            "Your library is short on: " +
+            names.slice(0, 4).join(', ') +
+            (names.length > 4 ? `, +${names.length - 4} more` : '')
+        } else {
+          saveError = 'Could not save this deck.'
+        }
+        return
+      }
       const data = await res.json()
       savedId = data.id
       onSaved?.(data.id)
@@ -168,17 +241,35 @@
         <option value="spell">Spells</option>
         <option value="trap">Traps</option>
       </select>
+      <select bind:value={sortBy} title="Sort by">
+        <option value="name">Name</option>
+        <option value="attack">ATK</option>
+        <option value="defense">DEF</option>
+        <option value="type">Type</option>
+      </select>
+      <button
+        class="dirbtn"
+        title={sortDir === 'asc' ? 'Ascending — click for descending' : 'Descending — click for ascending'}
+        onclick={() => (sortDir = sortDir === 'asc' ? 'desc' : 'asc')}
+      >
+        {sortDir === 'asc' ? '↑' : '↓'}
+      </button>
       <label class="chk" title="Only cards whose effect is implemented (hides most Spells/Traps for now)">
         <input type="checkbox" bind:checked={functionalOnly} /> implemented only
       </label>
     </div>
-    <div class="grid">
+    {#if !loading && results.length}
+      <div class="poolcount">
+        {Math.min(visibleCount, results.length)} of {results.length} cards
+      </div>
+    {/if}
+    <div class="grid" bind:this={gridEl} onscroll={onPoolScroll}>
       {#if loading}
         <div class="hint">Searching…</div>
       {:else if results.length === 0}
         <div class="hint">No cards match.</div>
       {:else}
-        {#each results as card (card.name)}
+        {#each results.slice(0, visibleCount) as card (card.name)}
           {@const n = copies(card.name)}
           <div
             class="poolcard"
@@ -210,7 +301,7 @@
               <button
                 class="plus"
                 title="Add to deck"
-                disabled={n >= MAX_COPIES}
+                disabled={n >= cap(card)}
                 onclick={(e) => {
                   e.stopPropagation()
                   add(card)
@@ -224,6 +315,7 @@
               {:else}
                 <div class="st">{card.subtype || card.cardType}</div>
               {/if}
+              {#if ownedOnly}<div class="st own">own {card.owned}</div>{/if}
             </div>
           </div>
         {/each}
@@ -254,10 +346,10 @@
       <p class="dtext">{selected.text || '(no card text)'}</p>
       <button
         class="addbtn btn-primary"
-        disabled={copies(selected.name) >= MAX_COPIES}
+        disabled={copies(selected.name) >= cap(selected)}
         onclick={() => add(selected)}
       >
-        ＋ Add to Deck ({copies(selected.name)}/{MAX_COPIES})
+        ＋ Add to Deck ({copies(selected.name)}/{cap(selected)})
       </button>
     {:else}
       <div class="dempty">
@@ -304,7 +396,7 @@
           {#if restrictedMap[cn]}
             <span class="ban" class:over={!restrictedMap[cn].ok}>{banLabel(restrictedMap[cn].cap)}</span>
           {/if}
-          <button class="mini" onclick={() => add(known[cn])} disabled={copies(cn) >= MAX_COPIES}
+          <button class="mini" onclick={() => add(known[cn])} disabled={copies(cn) >= cap(known[cn])}
             >+</button
           >
           <button class="mini" onclick={() => remove(cn, 'main')}>−</button>
@@ -345,6 +437,7 @@
         >Clear</button
       >
     </div>
+    {#if saveError}<div class="err">⚠ {saveError}</div>{/if}
     {#if savedId}<div class="saved">Saved as <code>{savedId}</code></div>{/if}
   </section>
 </div>
@@ -373,9 +466,11 @@
     gap: 8px;
     margin-bottom: 10px;
     align-items: center;
+    flex-wrap: wrap;
   }
   .search {
-    flex: 1;
+    flex: 1 1 160px;
+    min-width: 120px;
   }
   .chk {
     font-size: 12px;
@@ -384,6 +479,17 @@
     align-items: center;
     gap: 5px;
     white-space: nowrap;
+  }
+  .dirbtn {
+    padding: 8px 11px;
+    line-height: 1;
+    font-size: 14px;
+    flex: none;
+  }
+  .poolcount {
+    font-size: 11px;
+    color: var(--muted);
+    margin: 0 0 6px 2px;
   }
   /* minmax(0, 1fr) — NOT plain 1fr — so every column is exactly equal. Plain
      1fr keeps a min-content floor, letting long names/images widen some columns
