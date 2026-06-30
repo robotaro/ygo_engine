@@ -87,6 +87,7 @@ from .effects import (
     SafeAttacker,
     DebuffsAttackTargetAtk,
     DirectBattleDamageThisTurn,
+    ProtectControlledFromDestruction,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5897,6 +5898,30 @@ EFFECTS.update({
             timing="quick",
             condition=_dealt_direct_damage_this_turn,
             resolve=(GainLifePoints(SELF, value=DirectBattleDamageThisTurn()),),
+        ),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 115: White Hole — "When your opponent activates 'Dark Hole': monsters you
+# control cannot be destroyed by that Dark Hole's effect." A speed-2 quick Trap that chains
+# to the opponent's Dark Hole (gated by the chain top being "Dark Hole"); it resolves first
+# (LIFO) and shields its controller's monsters via a chain-scoped flag that DestroyAllMonsters
+# honours, so Dark Hole still wipes the opponent's board but not yours. Clears the last
+# blocker in Marik Ishtar's Eternal Duelist Soul deck.
+def _chain_top_is_dark_hole(state, controller):
+    card = _chain_top_card(state)
+    return card is not None and card.name == "Dark Hole"
+
+
+EFFECTS.update({
+    "White Hole": (
+        Effect(
+            speed=2,
+            timing="quick",
+            condition=_chain_top_is_dark_hole,
+            resolve=(ProtectControlledFromDestruction(),),
         ),
     ),
 })

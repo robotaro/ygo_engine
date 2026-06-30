@@ -260,6 +260,10 @@ class GameState:
     attack_negated: bool = False  # transient flag set while resolving an attack response
     attack_redirect: int | None = None  # a response set a new attack target (Call of the Earthbound)
     reflect_battle_damage: bool = False  # Dimension Wall: my battle damage hits the attacker
+    # Players whose monsters cannot be destroyed by an effect during the current chain
+    # (White Hole protects its controller's monsters from a chained "Dark Hole"). Set by
+    # ProtectControlledFromDestruction; cleared when the chain finishes resolving.
+    protected_from_destruction: set = field(default_factory=set)
     forced_attack_target: int | None = None  # Staunch Defender: attacks this turn must hit only this monster
     # Turn-scoped action locks: "kind:player" -> the last turn_count the lock is active
     # (inclusive). kinds: "special_summon"/"spell"/"trap"/"set" (Guard Dog, Sonic Jammer,

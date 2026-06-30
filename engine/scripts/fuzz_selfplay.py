@@ -410,6 +410,9 @@ DECK = (
     # this turn). Exercises the direct-damage record + the DirectBattleDamageThisTurn value
     # source via the conditional hand-spell activation path.
     + ["Sebek's Blessing"] * 2
+    # Batch 115: White Hole (chains to the opponent's Dark Hole, shielding your monsters)
+    # + Dark Hole itself, so the chain-scoped destruction-protection path is exercised.
+    + ["White Hole"] * 2 + ["Dark Hole"] * 2
 )
 
 

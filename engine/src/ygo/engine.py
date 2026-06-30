@@ -855,6 +855,7 @@ class Engine:
             ):
                 s.send_to_graveyard(link.source_iid)
         s.chain = []
+        s.protected_from_destruction = set()  # White Hole's shield lasts only its chain
         self._changed()
         self._check_field_to_gy_triggers()  # resolution may have sent trigger monsters to GY
         self._process_draw_triggers()  # resolution may have drawn cards (Pot of Greed)

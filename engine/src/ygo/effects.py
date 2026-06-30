@@ -1125,9 +1125,21 @@ class DestroyAllMonsters(Primitive):
                 and ctx.state.inst(iid).position is Position.FACE_UP_ATTACK
                 and ctx.state.inst(iid).card.is_vanilla
             )
+            # White Hole: a protected player's monsters survive this chain's destruction.
+            and ctx.state.inst(iid).controller not in ctx.state.protected_from_destruction
         ]
         for iid in victims:
             ctx.state.send_to_graveyard(iid, by_effect=True)
+
+
+@dataclass(frozen=True)
+class ProtectControlledFromDestruction(Primitive):
+    """Mark the effect controller's monsters as immune to effect-destruction for the rest of
+    this chain (White Hole, chained to the opponent's "Dark Hole", spares its controller's
+    board). Cleared by the engine when the chain finishes resolving."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.protected_from_destruction.add(ctx.controller)
 
 
 @dataclass(frozen=True)
