@@ -406,6 +406,10 @@ DECK = (
     # take no battle damage; after attacking a monster, that target loses 500 ATK). Exercises
     # the SafeAttacker combat guards and the post-combat target debuff.
     + ["Rocket Warrior"] * 2
+    # Batch 114: Sebek's Blessing (Quick-Play: gain LP equal to direct battle damage dealt
+    # this turn). Exercises the direct-damage record + the DirectBattleDamageThisTurn value
+    # source via the conditional hand-spell activation path.
+    + ["Sebek's Blessing"] * 2
 )
 
 

@@ -1550,6 +1550,8 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
 
     if action.target is None:
         _hit_defender(atk)
+        if state.battle_damage_dealt is not None:  # a direct hit that actually dealt damage
+            state.direct_damage_dealt_this_turn = state.battle_damage_dealt[1]  # for Sebek's Blessing
         return f"{attacker.name} attacks directly — {atk} damage"
 
     target = state.inst(action.target)

@@ -145,6 +145,7 @@ class Engine:
         s = self.state
         s.normal_summon_used = False
         s.forced_attack_target = None  # Staunch Defender's lock lasts only its turn
+        s.direct_damage_dealt_this_turn = 0  # Sebek's Blessing reads this turn's direct hits
         s.action_locks = {k: v for k, v in s.action_locks.items() if v >= s.turn_count}
         # Reset per-turn flags on BOTH players' monsters: "this turn" means the turn that
         # just started, so a monster summoned on the opponent's previous turn must not keep

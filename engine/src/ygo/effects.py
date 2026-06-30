@@ -967,6 +967,15 @@ class TargetAttack(ValueSource):
 
 
 @dataclass(frozen=True)
+class DirectBattleDamageThisTurn(ValueSource):
+    """The most recent battle damage the controller inflicted by a DIRECT attack this turn
+    (Sebek's Blessing gains that much LP). 0 if none yet; reset at the start of each turn."""
+
+    def value(self, ctx: EffectContext) -> int:
+        return ctx.state.direct_damage_dealt_this_turn
+
+
+@dataclass(frozen=True)
 class DestroyedByBattleAttack(ValueSource):
     """The original (printed) ATK of the monster this card just destroyed by battle —
     read from the ``destroyed`` iid on the triggering event (Guardian Angel Joan gains

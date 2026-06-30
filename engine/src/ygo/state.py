@@ -291,6 +291,10 @@ class GameState:
     # Receive, Damage Condenser). At most one player takes battle damage per attack. Reset
     # each _resolve_attack, drained by the engine after the attack.
     battle_damage_taken: tuple | None = None
+    # The most recent battle damage the turn player inflicted by a DIRECT attack this turn —
+    # read by Sebek's Blessing ("gain the same amount of LP"). Set in _resolve_attack on a
+    # direct hit that actually dealt damage; reset to 0 at the start of each turn.
+    direct_damage_dealt_this_turn: int = 0
     # (victim, amount) pairs of EFFECT damage (burn) dealt during the current chain, appended
     # by InflictDamage. Drained by the engine after a chain resolves to open a "when you take
     # damage" window (Numinous Healer / Attack and Receive — but NOT LP costs). Transient.

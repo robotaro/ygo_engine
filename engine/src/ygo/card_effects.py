@@ -86,6 +86,7 @@ from .effects import (
     DrawOnOpponentDraw,
     SafeAttacker,
     DebuffsAttackTargetAtk,
+    DirectBattleDamageThisTurn,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5875,4 +5876,27 @@ CONTINUOUS.update({"Appropriate": (DrawOnOpponentDraw(count=2),)})
 # (DebuffsAttackTargetAtk). Clears the last blocker in Joey's "possessed" Sacred Cards deck.
 CONTINUOUS.update({
     "Rocket Warrior": (SafeAttacker(), DebuffsAttackTargetAtk(amount=500)),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 114: Sebek's Blessing — "If your monster inflicts battle damage by a direct
+# attack: gain the same amount of LP." A Quick-Play gated on having dealt direct battle
+# damage this turn (state.direct_damage_dealt_this_turn, set in _resolve_attack on a direct
+# hit), gaining LP equal to that amount via the DirectBattleDamageThisTurn value source.
+# Activated from hand on your turn (typically Main Phase 2, after the direct attack). Clears
+# the last blocker in Seto Kaiba's Eternal Duelist Soul deck.
+def _dealt_direct_damage_this_turn(state, player):
+    return state.direct_damage_dealt_this_turn > 0
+
+
+EFFECTS.update({
+    "Sebek's Blessing": (
+        Effect(
+            speed=2,
+            timing="quick",
+            condition=_dealt_direct_damage_this_turn,
+            resolve=(GainLifePoints(SELF, value=DirectBattleDamageThisTurn()),),
+        ),
+    ),
 })
