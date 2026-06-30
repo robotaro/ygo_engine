@@ -112,6 +112,7 @@ from .effects import (
     ForceAttackTarget,
     RedirectAttackToTarget,
     ReflectBattleDamage,
+    ReverseStatChangesThisTurn,
     ReturnFromHandToDeck,
     ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
@@ -6199,4 +6200,17 @@ EFFECTS.update({
 })
 CONTINUOUS.update({
     "Dragon Capture Jar": (RacePositionLock(race="Dragon"),),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 129: Reverse Trap — "Until the End Phase, all effects that add or subtract ATK
+# or DEF are reversed (additions subtract, subtractions add; multiplications/halving are not
+# affected)." A quick Trap whose ReverseStatChangesThisTurn primitive stamps a turn-scoped
+# global flag (state.reverse_trap_until_turn); _effective_stat negates the summed additive
+# modifier layer while it is active, leaving the printed base and the Mirror Wall halving alone.
+EFFECTS.update({
+    "Reverse Trap": (
+        Effect(speed=2, timing="quick", resolve=(ReverseStatChangesThisTurn(),)),
+    ),
 })

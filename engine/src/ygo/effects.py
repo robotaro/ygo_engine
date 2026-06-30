@@ -2003,6 +2003,17 @@ class PreventBattleDestructionThisTurn(Primitive):
 
 
 @dataclass(frozen=True)
+class ReverseStatChangesThisTurn(Primitive):
+    """Reverse Trap: until the End Phase, every ATK/DEF increase or decrease on the field flips
+    sign (additions subtract, subtractions add). Stamps ``state.reverse_trap_until_turn`` with
+    the current turn so it lapses when the turn advances; multiplications (Mirror Wall's
+    halving) are unaffected because _effective_stat applies them after the reversal."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.reverse_trap_until_turn = ctx.state.turn_count
+
+
+@dataclass(frozen=True)
 class CoinFlip(Primitive):
     """Toss ``count`` coins (each 50/50 via the seeded RNG) and run the ``win`` branch's
     primitives if at least ``win_threshold`` come up heads, else the ``lose`` branch.

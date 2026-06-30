@@ -318,6 +318,10 @@ class GameState:
     # read by Sebek's Blessing ("gain the same amount of LP"). Set in _resolve_attack on a
     # direct hit that actually dealt damage; reset to 0 at the start of each turn.
     direct_damage_dealt_this_turn: int = 0
+    # Reverse Trap: holds the turn_count on which it was activated, so "until the End Phase,
+    # all ATK/DEF increases and decreases are reversed" lapses when the turn advances. Read by
+    # GameState.reverse_trap_active (folded into _effective_stat). None = inactive.
+    reverse_trap_until_turn: int | None = None
     # (victim, amount) pairs of EFFECT damage (burn) dealt during the current chain, appended
     # by InflictDamage. Drained by the engine after a chain resolves to open a "when you take
     # damage" window (Numinous Healer / Attack and Receive — but NOT LP costs). Transient.
@@ -1435,16 +1439,26 @@ class GameState:
         base = (inst.card.attack if which == "atk" else inst.card.defense) or 0
         temp = inst.temp_atk if which == "atk" else inst.temp_def
         perm = inst.perm_atk if which == "atk" else inst.perm_def
-        total = base + temp + perm
-        total += sum(self._mod_delta(mod, ctrl, which, iid) for mod, ctrl in self._equip_mods_on(iid))
-        total += self._field_delta(iid, which)
-        total += self._self_stat_delta(iid, which)
-        total += self._spell_counter_delta(iid, which)
-        result = max(0, total)
-        # Mirror Wall: an attacker it has caught keeps its ATK halved while the Wall is up.
+        # The sum of every additive ATK/DEF modifier (kept apart from ``base`` so Reverse Trap
+        # can flip its sign — it reverses increases/decreases, never the printed base).
+        mods = temp + perm
+        mods += sum(self._mod_delta(mod, ctrl, which, iid) for mod, ctrl in self._equip_mods_on(iid))
+        mods += self._field_delta(iid, which)
+        mods += self._self_stat_delta(iid, which)
+        mods += self._spell_counter_delta(iid, which)
+        if self.reverse_trap_active():
+            mods = -mods  # Reverse Trap: additions subtract and subtractions add this turn
+        result = max(0, base + mods)
+        # Mirror Wall: an attacker it has caught keeps its ATK halved while the Wall is up. A
+        # multiplication (halving), so it applies AFTER and is NOT reversed by Reverse Trap.
         if which == "atk" and inst.atk_halved_by_wall and self._attacker_halver_active(inst.controller):
             result //= 2
         return result
+
+    def reverse_trap_active(self) -> bool:
+        """Whether a Reverse Trap activated this turn is still reversing every ATK/DEF
+        increase/decrease (it lasts until this turn's End Phase)."""
+        return self.reverse_trap_until_turn == self.turn_count
 
     def _attacker_halver_active(self, player: int) -> bool:
         """Whether ``player``'s opponent controls a face-up, live Mirror Wall (HalvesAttackersAtk)

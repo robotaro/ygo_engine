@@ -453,6 +453,9 @@ DECK = (
     # Batch 128: Dragon Capture Jar (flip all Dragons to Defense + lock their position) —
     # exercises ChangeAllPositions(race) + the RacePositionLock floodgate.
     + ["Dragon Capture Jar"] * 2
+    # Batch 129: Reverse Trap (until End Phase, ATK/DEF increases/decreases reversed) —
+    # exercises the reverse_trap flag folded into _effective_stat.
+    + ["Reverse Trap"] * 2
 )
 
 
