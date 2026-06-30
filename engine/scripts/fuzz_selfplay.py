@@ -324,6 +324,10 @@ DECK = (
     # Elf battle-damage discard.
     + ["Toon World"] * 2 + ["Blue-Eyes Toon Dragon"] * 1
     + ["Toon Summoned Skull"] * 1 + ["Toon Gemini Elf"] * 2
+    # Batch 93: Relinquished + its Ritual Spell (exercises the Ritual summon and the absorb
+    # equip/stat-copy). Thousand-Eyes Restrict is a Fusion (extra deck) — covered by unit
+    # tests, not the main-deck fuzz.
+    + ["Relinquished"] * 1 + ["Black Illusion Ritual"] * 1
 )
 
 

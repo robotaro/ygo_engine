@@ -1079,7 +1079,19 @@ def _attack_floodgates(state: GameState, player: int) -> tuple[bool, int | None]
     source controller."""
     blanket = False
     caps: list[int] = []
-    for mod, ctrl in state.active_passives():
+    sources = list(state.active_passives())
+    # Monster-borne attack restrictions radiate too (Thousand-Eyes Restrict: no monster may
+    # attack while it's face-up) — active_passives only covers Field/Spell/Trap cards.
+    for ctrl, pl in enumerate(state.players):
+        for sid in pl.monster_zones:
+            if sid is None:
+                continue
+            inst = state.cards[sid]
+            if not inst.is_face_up or not inst.effects_active or state.monster_effects_negated(sid):
+                continue
+            for mod in inst.card.continuous:
+                sources.append((mod, ctrl))
+    for mod, ctrl in sources:
         if not isinstance(mod, AttackRestriction):
             continue
         restricted_side = state.opponent_of(ctrl) if mod.affects == "opponent" else None

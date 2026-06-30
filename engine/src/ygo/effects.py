@@ -2465,6 +2465,34 @@ class TakeControl(Primitive):
             monster.control_equip_iid = ctx.source_iid
 
 
+@dataclass(frozen=True)
+class AbsorbMonsterAsEquip(Primitive):
+    """Relinquished / Thousand-Eyes Restrict: equip the targeted opponent monster onto this
+    card (max 1). The monster leaves its zone and becomes an Equip in the source
+    controller's Spell/Trap zone; the source's ATK/DEF copy it via the ``absorbed_monster``
+    SelfStatMod, and ``_cleanup_equips`` sends it to its owner's GY when the source leaves.
+    A monster already absorbed is released to its owner's GY first."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        src = ctx.source_iid
+        taker = s.cards[src].controller
+        target = ctx.targets[0] if ctx.targets else None
+        monster = s.cards.get(target) if target is not None else None
+        if monster is None or monster.zone is not Zone.MONSTER or monster.controller == taker:
+            return
+        # Max 1: release any monster already equipped to this card.
+        for pl in s.players:
+            for sid in list(pl.spell_trap_zones):
+                if sid is not None and s.cards[sid].equipped_to == src and s.cards[sid].card.is_monster:
+                    s.send_to_graveyard(sid)
+        index = s.first_empty_spell_trap_zone(taker)
+        if index is None:
+            return  # no room to hold the absorbed monster — the effect fizzles
+        s.place_spell_trap(target, taker, index, Position.FACE_UP_ATTACK)
+        s.cards[target].equipped_to = src
+
+
 # --------------------------------------------------------------------------- #
 #  Effect — a card ability
 # --------------------------------------------------------------------------- #

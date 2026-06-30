@@ -596,8 +596,13 @@ class GameState:
             if fz is not None and self.cards[fz].is_face_up and not self.effect_negated(fz):
                 yield self.cards[fz], idx
             for sid in player.spell_trap_zones:
-                if sid is not None and self.cards[sid].is_face_up and not self.effect_negated(sid):
-                    yield self.cards[sid], idx
+                if sid is None:
+                    continue
+                inst = self.cards[sid]
+                # A monster absorbed as an Equip (Relinquished / Thousand-Eyes Restrict)
+                # sits in a Spell/Trap Zone but radiates none of its own passives.
+                if inst.is_face_up and not inst.card.is_monster and not self.effect_negated(sid):
+                    yield inst, idx
 
     def active_passives(self):
         """Yield (modifier, controller) for every passive on a face-up field card —
@@ -735,6 +740,16 @@ class GameState:
                     if self.cards[i].card.name in mod.count_names
                 )
                 total += flat + per * count
+            elif mod.scaling == "absorbed_monster":
+                # Relinquished / Thousand-Eyes Restrict: this card's ATK/DEF become equal
+                # to the monster it has absorbed (equipped to it, sitting in a S/T zone).
+                for pl in self.players:
+                    for sid in pl.spell_trap_zones:
+                        if sid is None:
+                            continue
+                        eq = self.cards[sid]
+                        if eq.equipped_to == monster_iid and eq.card.is_monster:
+                            total += (eq.card.attack or 0) if which == "atk" else (eq.card.defense or 0)
             elif mod.scaling == "opponent_field_and_gy_race":
                 # Buster Blader: +500 ATK for every Dragon-Type the OPPONENT controls
                 # (face-up) AND every Dragon-Type in the opponent's Graveyard.

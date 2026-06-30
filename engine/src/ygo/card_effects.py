@@ -102,6 +102,7 @@ from .effects import (
     ShuffleHandIntoDeckThenDraw,
     AttackTributeCost,
     ReturnEventAttackerToHand,
+    AbsorbMonsterAsEquip,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5379,5 +5380,53 @@ EFFECTS.update({
     # discard 1 random card from their hand."
     "Toon Gemini Elf": (
         _on_battle_damage((DiscardFromHand(OPPONENT, count=1, random=True),)),
+    ),
+})
+
+
+# Effects Batch 93: the Ritual-absorb cluster — Relinquished + Thousand-Eyes Restrict.
+# Their signature is the absorb: once per turn, equip an opponent's monster onto this card
+# (it leaves their field), and this card's ATK/DEF become equal to it. Relinquished is
+# Ritual Summoned (Black Illusion Ritual); Thousand-Eyes Restrict is Fusion Summoned
+# ("Relinquished" + "Thousand-Eyes Idol") and additionally locks the board.
+# DEFERRED (documented): the printed "if this card would be destroyed by battle, destroy
+# the equipped monster instead" battle-replacement, and TER's "cannot change battle
+# position" half of its lock. TER's attack-lock is modeled as a both-sides blanket that
+# also stops TER itself (a 0-ATK floodgate) — a minor simplification of "OTHER monsters".
+RITUALS.update({"Black Illusion Ritual": "Relinquished"})
+
+FUSIONS.update({"Thousand-Eyes Restrict": ("Relinquished", "Thousand-Eyes Idol")})
+
+EFFECTS.update({
+    # Black Illusion Ritual: the Ritual Spell that summons Relinquished.
+    "Black Illusion Ritual": (
+        Effect(timing="ritual", condition=_can_ritual_summon_for("Relinquished")),
+    ),
+    # The absorb — once per turn, target a monster the opponent controls and equip it.
+    "Relinquished": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(AbsorbMonsterAsEquip(),),
+        ),
+    ),
+    "Thousand-Eyes Restrict": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(AbsorbMonsterAsEquip(),),
+        ),
+    ),
+})
+
+CONTINUOUS.update({
+    # ATK/DEF become equal to the absorbed monster (base 0/0 + the absorbed stats).
+    "Relinquished": (SelfStatMod(scaling="absorbed_monster"),),
+    # TER copies too, and locks the board: no monster may declare an attack while it's out.
+    "Thousand-Eyes Restrict": (
+        SelfStatMod(scaling="absorbed_monster"),
+        AttackRestriction(all_cannot_attack=True, affects="both"),
     ),
 })
