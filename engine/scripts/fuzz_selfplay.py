@@ -354,6 +354,10 @@ DECK = (
     + ["Curse of the Masked Beast"] * 1 + ["The Masked Beast"] * 1
     + ["Shinato's Ark"] * 1 + ["Shinato, King of a Higher Plane"] * 1
     + ["Blue-Eyes White Dragon"] * 1
+    # Batch 100: position & flip control. Dream Clown (switch to Defense -> destroy a
+    # monster; exercises the new changed_to_defense trigger) and Invader of the Throne
+    # (FLIP control swap; exercises state.swap_control + the flip-condition gate).
+    + ["Dream Clown"] * 1 + ["Invader of the Throne"] * 1
 )
 
 

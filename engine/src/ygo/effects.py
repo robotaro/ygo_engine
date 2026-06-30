@@ -2525,6 +2525,24 @@ class TakeControl(Primitive):
 
 
 @dataclass(frozen=True)
+class SwapControlWithTarget(Primitive):
+    """Invader of the Throne: switch control of the targeted opponent monster *with this
+    card* — each moves to the other player's side (a permanent swap). A no-op if either
+    monster has left the field, or the target is already on the source's side."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        src = s.cards.get(ctx.source_iid)
+        target = ctx.targets[0] if ctx.targets else None
+        tmon = s.cards.get(target) if target is not None else None
+        if src is None or src.zone is not Zone.MONSTER:
+            return
+        if tmon is None or tmon.zone is not Zone.MONSTER or tmon.controller == src.controller:
+            return
+        s.swap_control(ctx.source_iid, target)
+
+
+@dataclass(frozen=True)
 class AbsorbMonsterAsEquip(Primitive):
     """Relinquished / Thousand-Eyes Restrict: equip the targeted opponent monster onto this
     card (max 1). The monster leaves its zone and becomes an Equip in the source

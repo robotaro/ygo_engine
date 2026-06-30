@@ -113,6 +113,7 @@ from .effects import (
     ReturnsToHandAtEndPhase,
     HalvesBattleDamageDealt,
     BurnDefenseMonsterOriginalAtk,
+    SwapControlWithTarget,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -140,7 +141,7 @@ from .effects import (
     UnionMod,
     SpellTrapProperty,
 )
-from .enums import Attribute, Position
+from .enums import Attribute, Phase, Position
 
 # A bare "activate it onto the field" effect: Field/Continuous Spells have no
 # resolution of their own — placing them face-up is what turns on their layer.
@@ -5587,6 +5588,41 @@ EFFECTS.update({
             timing="trigger",
             trigger=Trigger(kind="destroys_by_battle", by=SELF),
             resolve=(BurnDefenseMonsterOriginalAtk(),),
+        ),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 100: position & flip control — Dream Clown and Invader of the Throne.
+# Built on two new engine seams: a "changed_to_defense" Trigger fired when a monster is
+# manually switched from Attack to face-up Defense, and state.swap_control (a deadlock-free
+# permanent control exchange). Each card clears one more one-card-from-ready deck.
+def _not_battle_phase(state, controller) -> bool:
+    """Invader of the Throne's FLIP cannot be activated during the Battle Phase."""
+    return state.phase is not Phase.BATTLE
+
+
+EFFECTS.update({
+    # Dream Clown — when switched from Attack to face-up Defense Position, destroy 1
+    # monster the opponent controls.
+    "Dream Clown": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="changed_to_defense", by=SELF),
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+    # Invader of the Throne — FLIP: switch control of 1 opponent monster with this card
+    # (not during the Battle Phase, so a flip in combat does nothing).
+    "Invader of the Throne": (
+        Effect(
+            speed=1,
+            timing="flip",
+            condition=_not_battle_phase,
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(SwapControlWithTarget(),),
         ),
     ),
 })

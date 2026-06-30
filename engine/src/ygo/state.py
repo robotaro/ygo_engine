@@ -428,6 +428,24 @@ class GameState:
         inst.zone_index = index
         inst.reset_turn_flags()
 
+    def swap_control(self, a: int, b: int) -> None:
+        """Exchange control of two on-field monsters (Creature Swap, Invader of the
+        Throne): each takes the other's Monster Zone on the opposite player's side, a
+        permanent swap (ownership unchanged, positions kept). Both are pulled out first
+        so a full board on either side cannot deadlock the placement."""
+        ia, ib = self.cards[a], self.cards[b]
+        pa, za = ia.controller, ia.zone_index
+        pb, zb = ib.controller, ib.zone_index
+        self._remove_from_current_location(a)
+        self._remove_from_current_location(b)
+        for iid, player, index in ((a, pb, zb), (b, pa, za)):
+            inst = self.cards[iid]
+            self.players[player].monster_zones[index] = iid
+            inst.controller = player
+            inst.zone = Zone.MONSTER
+            inst.zone_index = index
+            inst.reset_turn_flags()
+
     def _clear_field_flags(self, inst: "CardInstance") -> None:
         """Reset the per-instance bookkeeping a card carries while on the field."""
         inst.controller = inst.owner

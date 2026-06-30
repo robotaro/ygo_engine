@@ -35,6 +35,7 @@ from .moves import (
     ActivateMonsterEffect,
     ActivateSpell,
     ChainLink,
+    ChangePosition,
     DeclareAttack,
     FlipSummon,
     NormalSummon,
@@ -437,6 +438,15 @@ class Engine:
                 # the Flip Effect (Man-Eater Bug) + any "when Summoned" trigger resolve.
                 self._check_field_to_gy_triggers()
                 self._check_life_points()
+            elif isinstance(choice, ChangePosition):
+                self.log(f"  {s.players[tp].name} {apply(s, choice)}")
+                self._changed()
+                # A manual switch from Attack to face-up Defense fires a "changed to
+                # Defense" Trigger (Dream Clown destroys an opponent's monster).
+                if s.cards[choice.iid].position is Position.FACE_UP_DEFENSE:
+                    self._emit_trigger(choice.iid, "changed_to_defense", SELF)
+                    self._check_field_to_gy_triggers()
+                self._check_life_points()
             else:
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._check_life_points()
@@ -573,8 +583,11 @@ class Engine:
         # Flip Effects resolve after damage (even if the monster was destroyed in battle).
         if flip_pending is not None and self.result is None:
             iid, controller, effect = flip_pending
-            self._trigger_effect(iid, effect, controller)
-            self._check_life_points()
+            # A Flip Effect gated by a condition (Invader of the Throne — not during the
+            # Battle Phase) does not fire when the flip happened in battle.
+            if effect.condition is None or effect.condition(s, controller):
+                self._trigger_effect(iid, effect, controller)
+                self._check_life_points()
 
         # "When this card inflicts battle damage to your opponent" (Don Zaloog,
         # Airknight Parshath) — fired after combat from the state's transient record.
@@ -850,8 +863,11 @@ class Engine:
         if inst is None:
             return
         effect = self._flip_effect(inst.card)
-        if effect is not None:
-            self._trigger_effect(iid, effect, inst.controller)
+        if effect is None:
+            return
+        if effect.condition is not None and not effect.condition(self.state, inst.controller):
+            return  # Invader of the Throne: its FLIP can't activate during the Battle Phase
+        self._trigger_effect(iid, effect, inst.controller)
 
     def _trigger_summon_effect(self, iid: int, summon_kind: str) -> None:
         """Fire a monster's own "when (Normal) Summoned" Trigger Effect — its
