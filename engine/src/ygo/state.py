@@ -734,6 +734,25 @@ class GameState:
                     if self.cards[i].card.name in mod.count_names
                 )
                 total += flat + per * count
+            elif mod.scaling == "opponent_field_and_gy_race":
+                # Buster Blader: +500 ATK for every Dragon-Type the OPPONENT controls
+                # (face-up) AND every Dragon-Type in the opponent's Graveyard.
+                per = mod.scale_atk if which == "atk" else mod.scale_defn
+                opp = self.players[self.opponent_of(inst.controller)]
+                field = sum(
+                    1
+                    for i in opp.monster_zones
+                    if i is not None
+                    and self.cards[i].is_face_up
+                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+                )
+                gy = sum(
+                    1
+                    for i in opp.graveyard
+                    if self.cards[i].card.is_monster
+                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+                )
+                total += flat + per * (field + gy)
             else:
                 total += flat
         return total

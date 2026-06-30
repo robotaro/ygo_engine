@@ -106,7 +106,10 @@ class SelfStatMod:
         the source monster (Maha Vailo: +500 ATK for each Equip Card equipped to it).
       * ``"named_in_graveyards"`` adds them per card in EITHER player's Graveyard whose
         exact name is in ``count_names`` (Dark Magician Girl: +300 ATK for each "Dark
-        Magician" or "Magician of Black Chaos" in the GYs)."""
+        Magician" or "Magician of Black Chaos" in the GYs).
+      * ``"opponent_field_and_gy_race"`` adds them per ``count_race`` monster the OPPONENT
+        controls face-up PLUS each in the opponent's Graveyard (Buster Blader: +500 ATK for
+        every Dragon the opponent controls or has in their GY)."""
 
     atk: int = 0
     defn: int = 0
@@ -1202,6 +1205,29 @@ class PlantSelfInOpponentDeck(Primitive):
         if ctx.source_iid in ctx.state.cards:
             opp = ctx.state.opponent_of(ctx.controller)
             ctx.state.send_to_player_deck(ctx.source_iid, opp, shuffle=True, planted=True)
+
+
+@dataclass(frozen=True)
+class LookAtTopReorderBestFirst(Primitive):
+    """Look at the top ``count`` cards of the controller's Deck and place them back in any
+    order (Big Eye). With no human to choose, the engine's beneficial default surfaces the
+    highest-ATK monster among them to the top so it's drawn next. A no-op if the Deck is
+    empty or none of the peeked cards is a monster (the order is already 'as good')."""
+
+    count: int = 5
+
+    def execute(self, ctx: EffectContext) -> None:
+        deck = ctx.state.players[ctx.controller].deck  # top of deck == end of the list
+        if not deck:
+            return
+        n = min(self.count, len(deck))
+        window = deck[len(deck) - n:]
+        monsters = [i for i in window if ctx.state.inst(i).card.is_monster]
+        if not monsters:
+            return
+        best = max(monsters, key=lambda i: ctx.state.inst(i).card.attack or 0)
+        deck.remove(best)
+        deck.append(best)  # move to the top — the controller's next draw
 
 
 @dataclass(frozen=True)

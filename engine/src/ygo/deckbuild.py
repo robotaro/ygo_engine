@@ -300,15 +300,32 @@ def _needs_logic(card: CardDef) -> bool:
     return True  # every Spell/Trap does something
 
 
+# Cards whose behaviour lives in the engine kernel rather than the effect tables, so
+# they play correctly despite carrying no EFFECTS/CONTINUOUS entry. The five "Forbidden
+# One" pieces win the Duel via GameState.exodia_winner (state.EXODIA_PIECES); only the
+# head carries effect text (the limbs are vanilla and already count), but we list all
+# five so the source of truth is explicit.
+_KERNEL_IMPLEMENTED = frozenset(
+    {
+        "Exodia the Forbidden One",
+        "Right Arm of the Forbidden One",
+        "Left Arm of the Forbidden One",
+        "Right Leg of the Forbidden One",
+        "Left Leg of the Forbidden One",
+    }
+)
+
+
 def _has_logic(card: CardDef) -> bool:
     return bool(card.effects or card.continuous or card.hand_summon)
 
 
 def is_functional(card: CardDef) -> bool:
-    """True if the card plays correctly today: a vanilla monster, or a card whose
-    effect is implemented. A non-vanilla card with no implemented effect is not —
-    it currently sits on the board doing nothing."""
-    return not _needs_logic(card) or _has_logic(card)
+    """True if the card plays correctly today: a vanilla monster, a card whose effect is
+    implemented, or one whose behaviour is handled by the engine kernel (Exodia's win
+    condition). A non-vanilla card with no implemented effect is not — it currently sits
+    on the board doing nothing."""
+    return not _needs_logic(card) or _has_logic(card) or card.name in _KERNEL_IMPLEMENTED
 
 
 @dataclass

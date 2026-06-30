@@ -97,6 +97,7 @@ from .effects import (
     ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
     PlantSelfInOpponentDeck,
+    LookAtTopReorderBestFirst,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5217,6 +5218,45 @@ EFFECTS.update({
                 SpecialSummonSelf(position=Position.FACE_UP_DEFENSE),
                 InflictDamage(SELF, 1000),
             ),
+        ),
+    ),
+})
+
+# Effects Batch 89: the Exodia package — the single highest-leverage deck-coverage move.
+# Exodia itself needs NO effect entry: the five "Forbidden One" pieces win via the engine
+# kernel (state.exodia_winner / engine._check_exodia), so deckbuild._KERNEL_IMPLEMENTED now
+# counts the head as functional (it was a false negative). These three companion cards are
+# the real builds — each is a blocker alongside Exodia in the GBA Exodia-stall decks:
+EFFECTS.update({
+    # Big Eye: "FLIP: Look at up to 5 cards from the top of your Deck, then place them on
+    # the top in any order." Headless, the engine surfaces the best monster to the top.
+    "Big Eye": (_flip(resolve=(LookAtTopReorderBestFirst(count=5),)),),
+    # Backup Soldier (Normal Trap): "While there are 5+ monsters in your GY: add up to 3
+    # non-Effect Monsters with <=1500 ATK from your GY to your hand." Manually activated
+    # (speed-2 ignition), gated on the GY count.
+    "Backup Soldier": (
+        Effect(
+            speed=2,
+            timing="ignition",
+            condition=lambda s, c: sum(
+                1 for i in s.players[c].graveyard if s.inst(i).card.is_monster
+            )
+            >= 5,
+            resolve=(
+                ReturnFromGraveyardToHand(
+                    CardFilter(card_kind="normal_monster", max_atk=1500), count=3
+                ),
+            ),
+        ),
+    ),
+})
+
+# Buster Blader: continuous self-boost — "Gains 500 ATK for each Dragon monster your
+# opponent controls or is in their GY" (ATK only). New SelfStatMod scaling mode.
+CONTINUOUS.update({
+    "Buster Blader": (
+        SelfStatMod(
+            scaling="opponent_field_and_gy_race", scale_atk=500, count_race="Dragon"
         ),
     ),
 })

@@ -303,6 +303,14 @@ DECK = (
     # it, it Special Summons onto their field and burns them 1000 (exercises the plant +
     # ownership transfer + the timing="drawn" ambush across many self-play draws).
     + ["Parasite Paracide"] * 2
+    # Batch 89: the Exodia package. The five pieces exercise the kernel win check; Big Eye
+    # (Flip deck-reorder), Backup Soldier (GY recover, gated on 5+ GY monsters), and Buster
+    # Blader (scales off the opponent's Dragons — fed by Blue-Eyes already in the deck).
+    + ["Exodia the Forbidden One", "Right Arm of the Forbidden One",
+       "Left Arm of the Forbidden One", "Right Leg of the Forbidden One",
+       "Left Leg of the Forbidden One"]
+    + ["Big Eye"] * 1 + ["Backup Soldier"] * 1 + ["Buster Blader"] * 1
+    + ["Koumori Dragon"] * 2  # a vanilla Dragon so Buster Blader's scaling actually fires
 )
 
 
