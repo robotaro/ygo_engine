@@ -104,6 +104,8 @@ from .effects import (
     ReturnEventAttackerToHand,
     AbsorbMonsterAsEquip,
     NoBattleDamageWhileUmi,
+    BanishInsteadOfGraveyard,
+    BurnOnHandDiscard,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5457,4 +5459,24 @@ CONTINUOUS.update({
     "The Legendary Fisherman": (
         AttackTargetProtection(self_only=True, requires_face_up_umi=True),
     ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 95: the Graveyard / discard punishers — Banisher of the Light and
+# Magical Thorn. Both are state-level replacements/triggers read by send_to_graveyard:
+# Banisher redirects every send-to-GY into a banish; Magical Thorn burns the opponent
+# whenever one of their hand cards is discarded. Each clears two one-card-from-ready decks.
+CONTINUOUS.update({
+    # Banisher of the Light — any card (either player's) sent to the GY is banished instead.
+    "Banisher of the Light": (BanishInsteadOfGraveyard(),),
+    # Magical Thorn — when an opponent's hand card is discarded to the GY, burn them 500
+    # for each (a Continuous Trap: it must be face-up to apply).
+    "Magical Thorn": (BurnOnHandDiscard(amount=500),),
+})
+
+EFFECTS.update({
+    # Magical Thorn is a Continuous Trap: activating it just sets it face-up on the field,
+    # where its BurnOnHandDiscard rider then watches every opponent discard.
+    "Magical Thorn": _ACTIVATE_ONTO_FIELD,
 })

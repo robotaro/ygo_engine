@@ -317,6 +317,22 @@ class NoBattleDamageWhileUmi:
 
 
 @dataclass(frozen=True)
+class BanishInsteadOfGraveyard:
+    """A face-up card's continuous replacement: while it is live, any card (either
+    player's) that would be sent to the Graveyard is banished instead (Banisher of the
+    Light). Read by ``GameState.send_to_graveyard``, which redirects to ``banish``."""
+
+
+@dataclass(frozen=True)
+class BurnOnHandDiscard:
+    """A face-up card's continuous rider: whenever an *opponent's* card is discarded
+    from their hand to the Graveyard, inflict ``amount`` damage to that opponent for
+    each card discarded (Magical Thorn). Read by ``GameState.send_to_graveyard``."""
+
+    amount: int = 500
+
+
+@dataclass(frozen=True)
 class SpecialSummonLock:
     """A face-up card's continuous lock on Special Summoning, read by every Special
     Summon route via ``GameState.special_summon_locked`` (a locked summon simply does

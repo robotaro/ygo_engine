@@ -20,6 +20,8 @@ from .effects import (
     ActivationLock,
     AttackLifeCost,
     AttackTributeCost,
+    BanishInsteadOfGraveyard,
+    BurnOnHandDiscard,
     NoBattleDamageWhileUmi,
     AttackTargetProtection,
     BattleIndestructible,
@@ -491,7 +493,14 @@ class GameState:
         pass it) so a "destroyed by a card effect" / unified "destroyed" trigger fires —
         while a non-destruction send (tribute, discard, mill, cost) leaves both False."""
         inst = self.cards[iid]
+        # Banisher of the Light: any card that would reach the GY is banished instead.
+        # A Token never rests anywhere, so it follows its normal "removed from game" path.
+        if not inst.card.is_token and self._graveyard_redirected_to_banish():
+            self.banish(iid)
+            return
         from_field = inst.zone in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD)
+        from_hand = inst.zone == Zone.HAND  # a hand card reaching the GY *is* a discard
+        owner = inst.owner
         self._remove_from_current_location(iid)
         if inst.card.is_token:
             # A Token that leaves the field is removed from the game — it never rests
@@ -511,6 +520,25 @@ class GameState:
         # any Spell/Trap that actually carries one (Black Pendant, Horn of the Unicorn).
         if from_field and (inst.card.is_monster or _has_gy_trigger(inst.card)):
             self.gy_from_field.append(iid)
+        # Magical Thorn: a card discarded from a hand burns its owner for each opponent's
+        # face-up Magical Thorn (the trigger belongs to the discarder's opponent).
+        if from_hand:
+            self._burn_for_hand_discard(owner)
+
+    def _graveyard_redirected_to_banish(self) -> bool:
+        """Whether a live Banisher of the Light (either side) is redirecting every
+        send-to-Graveyard into a banish."""
+        for _src, _mod in self.active_markers(BanishInsteadOfGraveyard):
+            return True
+        return False
+
+    def _burn_for_hand_discard(self, discarder: int) -> None:
+        """Pay out Magical Thorn: every face-up ``BurnOnHandDiscard`` the *opponent* of
+        ``discarder`` controls inflicts its damage on ``discarder`` for this one
+        discarded card (callers fire once per card, so the per-card total is exact)."""
+        opp = self.opponent_of(discarder)
+        for _src, mod in self.active_markers(BurnOnHandDiscard, players=(opp,)):
+            self.players[discarder].life_points -= mod.amount
 
     def banish(self, iid: int) -> None:
         """Remove a card from play to its *owner's* banished pile, clearing field

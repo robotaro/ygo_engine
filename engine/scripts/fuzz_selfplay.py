@@ -333,6 +333,10 @@ DECK = (
     # Umi) + a couple of WATER bodies to exercise the boost and the Umi-gated riders.
     + ["A Legendary Ocean"] * 2 + ["Tornado Wall"] * 1
     + ["The Legendary Fisherman"] * 1 + ["7 Colored Fish"] * 2
+    # Batch 95: the GY/discard punishers. Banisher of the Light (every send-to-GY is
+    # banished instead — exercises the floodgate redirect across the whole match);
+    # Magical Thorn (burns the opponent on each hand discard).
+    + ["Banisher of the Light"] * 1 + ["Magical Thorn"] * 1
 )
 
 
