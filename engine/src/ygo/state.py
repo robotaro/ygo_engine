@@ -167,6 +167,11 @@ class CardInstance:
     # trip. Stamped by send_to_graveyard; read by Shinato's "destroyed a Defense-Position
     # monster by battle" burn (its original ATK), which fires just after combat.
     died_in_defense: bool = False
+    # The turn number on which this card was destroyed by battle (GameState.turn_count at
+    # the time), or None. Stamped by send_to_graveyard alongside ``died_by_battle`` and
+    # carried in the Graveyard, so an effect can tell a *this-turn* battle death from an
+    # older one (The Forgiving Maiden returns a monster destroyed by battle this turn).
+    died_on_turn: int | None = None
     # True while this monster is face-up on the field having reached it via a Special
     # Summon (vs. Normal/Tribute/Flip Summon or Set). Stamped True in state.special_summon
     # (and on a Token), reset to False by place_monster (Normal Summon/Set) and on leaving
@@ -405,6 +410,7 @@ class GameState:
         inst.died_by_battle = False  # a revived monster carries no stale battle-death flag
         inst.died_by_effect = False  # nor a stale effect-destruction flag
         inst.died_in_defense = False  # nor a stale Defense-death flag
+        inst.died_on_turn = None  # nor a stale battle-death turn stamp
         inst.was_special_summoned = False  # Normal Summon/Set; special_summon re-stamps True
         inst.was_tribute_summoned = False  # moves._summon re-stamps True for a Tribute Summon
 
@@ -492,6 +498,7 @@ class GameState:
         inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
         inst.died_by_effect = False  # re-stamped by send_to_graveyard if an effect destruction
         inst.died_in_defense = False  # re-stamped by send_to_graveyard for a Defense battle death
+        inst.died_on_turn = None  # re-stamped by send_to_graveyard on a battle death
         inst.was_special_summoned = False  # re-stamped by special_summon on a fresh summon
         inst.was_tribute_summoned = False  # re-stamped by moves._summon on a fresh Tribute Summon
         inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
@@ -569,6 +576,7 @@ class GameState:
         inst.died_by_battle = by_battle and from_field
         inst.died_by_effect = by_effect and from_field
         inst.died_in_defense = by_battle and from_field and was_defense
+        inst.died_on_turn = self.turn_count if (by_battle and from_field) else None
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine. Every
         # monster is queued (cheap; the engine skips those with no such trigger), plus

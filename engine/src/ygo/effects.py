@@ -2494,6 +2494,24 @@ class ReturnFromGraveyardToHand(Primitive):
 
 
 @dataclass(frozen=True)
+class ReturnOwnBattleDeadToHand(Primitive):
+    """Return to the hand 1 of the controller's OWN monsters that was destroyed by battle
+    *this turn* (The Forgiving Maiden). Reads the per-instance battle-death stamps the GY
+    carries — ``died_by_battle`` with ``died_on_turn`` equal to the current turn — so an
+    older battle death (or an effect destruction) is never recovered. Deterministic
+    first-eligible pick, like ReturnFromGraveyardToHand; a no-op if there is none (the
+    activation condition normally guarantees one)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        for iid in list(s.players[ctx.controller].graveyard):
+            inst = s.inst(iid)
+            if inst.card.is_monster and inst.died_by_battle and inst.died_on_turn == s.turn_count:
+                s.return_to_hand(iid)
+                return
+
+
+@dataclass(frozen=True)
 class ReturnFromGraveyardToDeck(Primitive):
     """Return up to ``count`` matching cards from the controller's Graveyard to the
     Deck, then shuffle (Ray of Hope returns 2 LIGHT monsters; Volcanic Recharge up to

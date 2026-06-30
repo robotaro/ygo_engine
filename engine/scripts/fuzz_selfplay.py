@@ -432,6 +432,9 @@ DECK = (
     # Batch 121: Crass Clown (changed Defense->Attack -> bounce an opponent monster) — the
     # new "changed_to_attack" position-change trigger fired from the main loop.
     + ["Crass Clown"] * 2
+    # Batch 122: The Forgiving Maiden (Tribute self -> return a monster destroyed by battle
+    # this turn) — exercises the send-to-GY self-Tribute cost + the died_on_turn stamp.
+    + ["The Forgiving Maiden"] * 2
 )
 
 

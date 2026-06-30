@@ -102,6 +102,7 @@ from .effects import (
     ReturnAllSpellTrapsToHand,
     ReturnFromGraveyardToDeck,
     ReturnFromGraveyardToHand,
+    ReturnOwnBattleDeadToHand,
     ForceAttackTarget,
     RedirectAttackToTarget,
     ReflectBattleDamage,
@@ -6039,6 +6040,37 @@ EFFECTS.update({
             trigger=Trigger(kind="changed_to_attack", by=SELF),
             target=TargetSpec(count=1, where="opponent_monsters"),
             resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 122: The Forgiving Maiden — "Tribute this face-up card to return to your hand
+# 1 of your monsters destroyed as a result of battle during this turn." An ignition effect
+# whose self-Tribute reuses the standard "send this card to the GY" cost idiom (Exiled Force);
+# the payload recovers a monster the new per-instance battle-death turn stamp (state.died_on_turn)
+# marks as having died by battle THIS turn. The recover-from-GY engine catches an older battle
+# death. Gated by a condition so it is only offered when such a monster exists. Shared blocker
+# of Tea Gardner (with Kiseitai) and T.A. Gardner WWE (with Lady Assailant of Flames).
+def _owns_battle_dead_this_turn(state, controller) -> bool:
+    return any(
+        state.inst(iid).card.is_monster
+        and state.inst(iid).died_by_battle
+        and state.inst(iid).died_on_turn == state.turn_count
+        for iid in state.players[controller].graveyard
+    )
+
+
+EFFECTS.update({
+    "The Forgiving Maiden": (
+        Effect(
+            timing="ignition",
+            send_to_gy_cost=1,
+            send_to_gy_filter=CardFilter(names=frozenset({"The Forgiving Maiden"})),
+            send_to_gy_face_up=True,
+            condition=_owns_battle_dead_this_turn,
+            resolve=(ReturnOwnBattleDeadToHand(),),
         ),
     ),
 })
