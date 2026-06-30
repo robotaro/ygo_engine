@@ -10,6 +10,7 @@ export const ritualPrompt = writable(null) // {prompt, required, freeZones, opti
 export const awaiting = writable(false) // true == engine is waiting on your move
 export const logs = writable([]) // narration lines
 export const result = writable(null) // {winner, youWin, reason} when the duel ends
+export const battleFx = writable(null) // transient combat cue {attacker, target, destroyed[], damage[]}
 export const connected = writable(false) // WebSocket open (i.e. a duel is live)
 export const online = writable(false) // backend HTTP reachable (polled)
 export const profile = writable(null) // {duelistPoints, collection..., decks, stats}
@@ -156,6 +157,9 @@ export function newGame(seed, deck, opp) {
           legal.set(msg.legal)
         }
         awaiting.set(true)
+        break
+      case 'fx':
+        battleFx.set(msg.fx) // App.svelte plays the attack animation, then the next state lands
         break
       case 'log':
         logs.update((l) => [...l, msg.message].slice(-300))

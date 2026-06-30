@@ -285,6 +285,7 @@ class GameSession:
             log=self._on_log,
             on_change=self._push_state,
             pacer=lambda: time.sleep(0.7),  # let resolution steps breathe in the UI
+            fx=self._push_fx,
         )
         self._push_state()
         try:
@@ -325,6 +326,16 @@ class GameSession:
     def _push_state(self) -> None:
         if self.state is not None:
             self.send({"type": "state", "state": state_to_dict(self.state, self.human_player)})
+
+    def _push_fx(self, payload: dict) -> None:
+        """Forward a transient animation cue to the client. Card iids are global,
+        but seat-indexed damage is remapped to the human's you/opp perspective."""
+        fx = dict(payload)
+        dmg = fx.get("damage")
+        if isinstance(dmg, (list, tuple)) and len(dmg) == 2:
+            h = self.human_player
+            fx["damage"] = {"you": dmg[h], "opp": dmg[1 - h]}
+        self.send({"type": "fx", "fx": fx})
 
     def send(self, message: dict) -> None:
         self.outbound.put(message)

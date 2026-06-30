@@ -20,6 +20,7 @@
     online,
     profile,
     tournamentOutcome,
+    battleFx,
     startHealthMonitor,
     leaveGame,
     startTournamentDuel,
@@ -27,6 +28,10 @@
   } from './lib/store.js'
 
   onMount(startHealthMonitor)
+
+  // Floating "-1200" damage numbers spawned during combat (see playBattleFx).
+  let damageFloaters = []
+  let floaterSeq = 0
 
   let draggedIid = null
   let selectedAttacker = null
@@ -458,7 +463,6 @@
       selectedAttacker != null &&
       validTargets.includes(iid)
     ) {
-      lunge(selectedAttacker, iid)
       sendIntent({ kind: 'attack', attacker: selectedAttacker, target: iid })
       selectedAttacker = null
       return
@@ -469,25 +473,30 @@
   function onDirectAttack() {
     if (!yourTurn || phase !== 'battle_phase' || selectedAttacker == null) return
     if (validTargets.includes(null)) {
-      lunge(selectedAttacker, null)
       sendIntent({ kind: 'attack', attacker: selectedAttacker, target: null })
       selectedAttacker = null
     }
   }
 
-  // The attacker lunges toward its target (a monster, or the opponent on a
-  // direct attack) and recoils, while the engine resolves the battle.
-  function lunge(attackerIid, targetIid) {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-    const aEl = document.querySelector(`.slot.mon.own[data-iid="${attackerIid}"]`)
+  // ----- Combat animation. Driven by the server's "fx" event so it plays for
+  // BOTH players' attacks (the bump used to fire on your click only). The event
+  // arrives, we bump + flash + float the damage, then ~0.7s later the resolved
+  // board lands and the dead monster dissolves away (the `dissolve` transition).
+  const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+  // The attacker charges its target (a monster, or the foe's bar on a direct
+  // attack) and recoils. Works from either side of the field.
+  function bump(attackerIid, targetIid) {
+    const aEl = document.querySelector(`.slot.mon[data-iid="${attackerIid}"]`)
     if (!aEl || !aEl.animate) return
+    const mine = !!aEl.closest('.mat.you')
     const tEl =
       targetIid != null
         ? document.querySelector(`.slot.mon[data-iid="${targetIid}"]`)
-        : document.querySelector('.playerbar.opp')
+        : document.querySelector(mine ? '.playerbar.opp' : '.playerbar.you')
     const a = aEl.getBoundingClientRect()
     let dx = 0
-    let dy = -44
+    let dy = mine ? -44 : 44
     if (tEl) {
       const t = tEl.getBoundingClientRect()
       dx = t.left + t.width / 2 - (a.left + a.width / 2)
@@ -504,6 +513,51 @@
       { duration: 440, easing: 'cubic-bezier(.34, 1.15, .5, 1)' },
     )
     anim.onfinish = anim.oncancel = () => (aEl.style.zIndex = '')
+  }
+
+  // A red flash + shake on the thing that got hit.
+  function flashHit(el) {
+    if (!el) return
+    el.classList.remove('fxhit')
+    void el.offsetWidth // restart the animation if it's already mid-flight
+    el.classList.add('fxhit')
+    setTimeout(() => el.classList.remove('fxhit'), 360)
+  }
+
+  // A "-1200" that rises and fades from a screen point.
+  function floatDamage(amount, anchorEl) {
+    if (!anchorEl || amount <= 0) return
+    const r = anchorEl.getBoundingClientRect()
+    const id = floaterSeq++
+    damageFloaters = [...damageFloaters, { id, text: `-${amount}`, x: r.left + r.width / 2, y: r.top + r.height / 2 }]
+    setTimeout(() => (damageFloaters = damageFloaters.filter((f) => f.id !== id)), 1000)
+  }
+
+  function playBattleFx(fx) {
+    if (reduceMotion()) return
+    bump(fx.attacker, fx.target)
+    // Impact lands ~40% into the bump.
+    setTimeout(() => {
+      if (fx.target != null) flashHit(document.querySelector(`.slot.mon[data-iid="${fx.target}"]`))
+      const dmg = fx.damage || {}
+      if (dmg.opp > 0) floatDamage(dmg.opp, document.querySelector('.playerbar.opp'))
+      if (dmg.you > 0) floatDamage(dmg.you, document.querySelector('.playerbar.you'))
+    }, 175)
+  }
+
+  onMount(() => battleFx.subscribe((fx) => fx && playBattleFx(fx)))
+
+  // A destroyed monster brightens, shrinks and sinks away (plays on its slot's
+  // `out:` whenever a card leaves a monster zone — battle or effect).
+  function dissolve(node, { duration = 600 }) {
+    return {
+      duration,
+      easing: cubicOut,
+      css: (t) => {
+        const u = 1 - t // 0 at the start of the out, 1 at the end
+        return `opacity:${t}; transform: scale(${0.5 + 0.5 * t}) translateY(${u * 12}px) rotate(${u * 8}deg); filter: brightness(${1 + u * 1.8}) blur(${u * 1.4}px);`
+      },
+    }
   }
 
   // A Graveyard card may be a target (Monster Reborn picks either GY; Call of
@@ -655,7 +709,7 @@
             </div>
           {/if}
         </div>
-        {#each opp.monsterZones as slot}
+        {#each opp.monsterZones as slot, i (i)}
           <div
             class="slot mon"
             data-iid={slot?.iid}
@@ -665,7 +719,13 @@
             onclick={() => slot && onClickOppMonster(slot.iid)}
             oncontextmenu={(e) => slot && openContext(e, slot, 'opp')}
           >
-            <CardTile card={slot} faceDown={slot?.faceDown} defense={isDefense(slot)} small />
+            {#if slot}
+              <div class="cardlayer" out:dissolve|local>
+                <CardTile card={slot} faceDown={slot?.faceDown} defense={isDefense(slot)} small />
+              </div>
+            {:else}
+              <CardTile card={null} small />
+            {/if}
           </div>
         {/each}
         <div
@@ -719,45 +779,49 @@
         >
           <CardTile card={you.fieldZone} small />
         </div>
-        {#each you.monsterZones as slot, i}
-          {#if slot}
-            <div
-              class="slot mon own"
-              data-iid={slot.iid}
-              class:selected={selectedAttacker === slot.iid || unionSource === slot.iid}
-              class:tribute={pendingTribute?.chosen.includes(slot.iid)}
-              class:targetable={targetCandidates.includes(slot.iid) || unionHosts.includes(slot.iid)}
-              class:actionable={yourTurn &&
-                (attackTargets(slot.iid) ||
-                  canFlip(slot.iid) ||
-                  canGeminiSummon(slot.iid) ||
-                  canUnionEquip(slot.iid) ||
-                  unionHosts.includes(slot.iid) ||
-                  canChangePos(slot.iid) ||
-                  pendingTribute ||
-                  pendingTarget ||
-                  $targetRequest)}
-              title={canGeminiSummon(slot.iid)
-                ? 'Gemini Summon — unlock this monster’s effect'
-                : canUnionEquip(slot.iid)
-                  ? 'Union — click, then click a host to equip'
-                  : null}
-              onclick={() => onClickOwnMonster(slot.iid)}
-              oncontextmenu={(e) => openContext(e, slot, 'ownMonster')}
-            >
-              <CardTile card={slot} faceDown={slot?.faceDown} peek={slot?.faceDown} defense={isDefense(slot)} small />
+        {#each you.monsterZones as slot, i (i)}
+          <!-- One persistent slot per zone, so a dying monster's dissolve (an
+               absolute overlay) never adds a grid cell mid-transition. -->
+          <div
+            class="slot mon"
+            class:own={!!slot}
+            class:drop={!slot}
+            class:armed={!slot && draggingMonster}
+            data-iid={slot?.iid}
+            class:selected={slot && (selectedAttacker === slot.iid || unionSource === slot.iid)}
+            class:tribute={slot && pendingTribute?.chosen.includes(slot.iid)}
+            class:targetable={slot &&
+              (targetCandidates.includes(slot.iid) || unionHosts.includes(slot.iid))}
+            class:actionable={slot &&
+              yourTurn &&
+              (attackTargets(slot.iid) ||
+                canFlip(slot.iid) ||
+                canGeminiSummon(slot.iid) ||
+                canUnionEquip(slot.iid) ||
+                unionHosts.includes(slot.iid) ||
+                canChangePos(slot.iid) ||
+                pendingTribute ||
+                pendingTarget ||
+                $targetRequest)}
+            title={slot && canGeminiSummon(slot.iid)
+              ? 'Gemini Summon — unlock this monster’s effect'
+              : slot && canUnionEquip(slot.iid)
+                ? 'Union — click, then click a host to equip'
+                : null}
+            onclick={() => slot && onClickOwnMonster(slot.iid)}
+            oncontextmenu={(e) => slot && openContext(e, slot, 'ownMonster')}
+            ondragover={(e) => !slot && e.preventDefault()}
+            ondrop={(e) => !slot && onDropSummon(e, i)}
+          >
+            {#if slot}
+              <div class="cardlayer" out:dissolve|local>
+                <CardTile card={slot} faceDown={slot?.faceDown} peek={slot?.faceDown} defense={isDefense(slot)} small />
+              </div>
               {#if slot.geminiUnlocked}<span class="badge gemini">★</span>{/if}
-            </div>
-          {:else}
-            <div
-              class="slot mon drop"
-              class:armed={draggingMonster}
-              ondragover={(e) => e.preventDefault()}
-              ondrop={(e) => onDropSummon(e, i)}
-            >
+            {:else}
               <CardTile card={null} small />
-            </div>
-          {/if}
+            {/if}
+          </div>
         {/each}
         <div class="slot pile gy" class:targetable={youGyTargetable} onclick={() => toggleGy('you')}>
           {#if you.graveyard.length}
@@ -899,6 +963,11 @@
         {/each}
       </div>
     </div>
+
+    <!-- Floating combat-damage numbers (fixed to the viewport). -->
+    {#each damageFloaters as f (f.id)}
+      <div class="dmgfloat" style="left:{f.x}px; top:{f.y}px">{f.text}</div>
+    {/each}
 
     <aside class="log">
       <h2>Duel Log</h2>
@@ -1239,6 +1308,58 @@
   }
   .slot.mon {
     position: relative;
+  }
+  /* The card sits in an absolute layer so its death `dissolve` overlays the slot
+     (which keeps its grid cell) instead of collapsing the row. */
+  .cardlayer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Impact feedback on the monster that got hit: a red flash + a quick shake. */
+  .slot.fxhit {
+    animation: fxshake 0.34s ease;
+  }
+  .slot.fxhit::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 8px;
+    background: radial-gradient(circle, rgba(255, 70, 50, 0.85), rgba(255, 70, 50, 0) 70%);
+    animation: fxflash 0.34s ease forwards;
+    pointer-events: none;
+    z-index: 6;
+  }
+  @keyframes fxshake {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-3px, 2px); }
+    45% { transform: translate(3px, -2px); }
+    70% { transform: translate(-2px, 1px); }
+  }
+  @keyframes fxflash {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  .dmgfloat {
+    position: fixed;
+    z-index: 60;
+    transform: translate(-50%, -50%);
+    font-size: 26px;
+    font-weight: 900;
+    color: #ff5a44;
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 2px 2px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    animation: dmgrise 1s cubic-bezier(0.2, 0.7, 0.25, 1) forwards;
+  }
+  @keyframes dmgrise {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+    18% { opacity: 1; transform: translate(-50%, -95%) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -165%) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slot.fxhit, .slot.fxhit::after, .dmgfloat { animation: none; }
   }
   .badge.gemini {
     position: absolute;

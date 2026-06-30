@@ -82,6 +82,7 @@ class Engine:
         log: Callable[[str], None] | None = None,
         on_change: Callable[[], None] | None = None,
         pacer: Callable[[], None] | None = None,
+        fx: Callable[[dict], None] | None = None,
     ):
         self.state = state
         self.agents = agents
@@ -91,6 +92,7 @@ class Engine:
         self._log = log
         self._on_change = on_change
         self._pacer = pacer
+        self._fx = fx
         self._processing_gy = False  # re-entrancy guard for "sent to GY" triggers
 
     def log(self, message: str) -> None:
@@ -101,6 +103,12 @@ class Engine:
         """Notify observers (e.g. the web server) that the state advanced."""
         if self._on_change is not None:
             self._on_change()
+
+    def fx(self, payload: dict) -> None:
+        """Emit a transient animation cue (e.g. an attack) to observers. Unlike
+        _changed, this carries event detail the snapshot can't (who hit whom)."""
+        if self._fx is not None:
+            self._fx(payload)
 
     def _pace(self) -> None:
         """Dramatic pause at a resolution step (no-op when running headless)."""
@@ -602,8 +610,26 @@ class Engine:
         if self.result is not None:
             return
 
+        # Snapshot the field and life so we can tell the UI exactly what this
+        # attack did (who was destroyed, who took how much damage) — detail a
+        # plain board snapshot can't convey.
+        lp_before = [p.life_points for p in s.players]
+        field_before = {iid for p in s.players for iid in p.monster_zones if iid is not None}
         self.log(f"  {s.players[tp].name}: {apply(s, DeclareAttack(attacker, target))}")
         self._check_life_points()
+        field_after = {iid for p in s.players for iid in p.monster_zones if iid is not None}
+        # FX first (attacker/target still on the client's board), then pace, then
+        # push the resolved board: the UI bumps + flashes, *then* the dead card leaves.
+        self.fx(
+            {
+                "kind": "attack",
+                "attacker": attacker,
+                "target": target,
+                "destroyed": sorted(field_before - field_after),
+                "damage": [lp_before[i] - s.players[i].life_points for i in range(len(s.players))],
+            }
+        )
+        self._pace()
         self._changed()
         self._check_field_to_gy_triggers()  # combat may have sent a trigger monster to GY
 
