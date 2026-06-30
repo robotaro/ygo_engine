@@ -441,6 +441,9 @@ DECK = (
     # Batch 124: Kiseitai (attacked -> equip to attacker; gain half its ATK each opponent
     # Standby) — exercises EquipSelfToAttacker + the HalfEquippedHostAtk value source.
     + ["Kiseitai"] * 2
+    # Batch 125: Sword of Dragon's Soul (equip a Warrior +700; destroy a battled Dragon at
+    # end of Battle Phase) — exercises the DestroysBattledDragon rider + end-of-BP destroy.
+    + ["Sword of Dragon's Soul"] * 2
 )
 
 

@@ -300,6 +300,10 @@ class GameState:
     # (D.D. Warrior Lady's mutual banish). None on a direct attack. Reset each
     # _resolve_attack, drained by the engine after the attack.
     battle_pair: tuple | None = None
+    # Monster iids queued to be destroyed at the END of the current Battle Phase (Sword of
+    # Dragon's Soul: a Dragon the equipped Warrior battled but did not destroy in combat).
+    # The engine marks them post-combat and drains+destroys the set when the Battle Phase ends.
+    destroy_at_battle_phase_end: set = field(default_factory=set)
     # Transient (victim_player, amount) of the battle damage the attack just dealt — for
     # the engine's "when you take battle damage" Trap window (Numinous Healer, Attack and
     # Receive, Damage Condenser). At most one player takes battle damage per attack. Reset

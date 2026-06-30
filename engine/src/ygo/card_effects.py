@@ -41,6 +41,7 @@ from .effects import (
     DamageStepBonus,
     DebuffBattleDestroyer,
     DefenseAfterAttack,
+    DestroysBattledDragon,
     DestroyedByBattleAttack,
     DestroyEquipHostThenBurn,
     DestroyAllFieldSpells,
@@ -6115,4 +6116,18 @@ CONTINUOUS.update({
             requires_equipped=True,
         ),
     ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 125: Sword of Dragon's Soul — "Equip only to a Warrior monster. It gains 700
+# ATK. After damage calculation, if the equipped monster battled a Dragon: destroy that monster
+# at the end of the Battle Phase." The standard Warrior-only equip (_equip_effect + EquipMod
+# 700) plus the new DestroysBattledDragon rider, which the engine reads post-combat off the
+# face-up Equip and drains at the end of the Battle Phase. Last blocker of Joey Wheeler (EDS).
+EFFECTS.update({
+    "Sword of Dragon's Soul": _equip_effect(races=("Warrior",)),
+})
+CONTINUOUS.update({
+    "Sword of Dragon's Soul": (EquipMod(atk=700), DestroysBattledDragon(race="Dragon")),
 })

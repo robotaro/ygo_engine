@@ -250,6 +250,17 @@ class DebuffsAttackTargetAtk:
 
 
 @dataclass(frozen=True)
+class DestroysBattledDragon:
+    """An Equip card's rider (Sword of Dragon's Soul): after the equipped monster battles a
+    ``race`` monster (default Dragon), that monster is destroyed at the end of the Battle
+    Phase. The engine reads this off the face-up Equip post-combat (from ``state.battle_pair``)
+    and, when the equipped host fought a ``race`` foe that survived combat, queues the foe in
+    ``state.destroy_at_battle_phase_end`` for destruction when the Battle Phase ends."""
+
+    race: str = "Dragon"
+
+
+@dataclass(frozen=True)
 class LocksAttachedMonster:
     """A face-up card (a Continuous Trap attached to a monster via ``equipped_to``) that locks
     the monster it points at: ``no_attack`` bars it from declaring an attack, ``no_position``

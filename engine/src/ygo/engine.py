@@ -18,6 +18,7 @@ from .effects import (
     OPPONENT,
     SELF,
     DefenseAfterAttack,
+    DestroysBattledDragon,
     DrawAgainOnDraw,
     DrawOnOpponentDraw,
     DrawTrigger,
@@ -493,6 +494,7 @@ class Engine:
                 self.log(f"  {s.players[tp].name}: {apply(s, choice)}")
                 self._check_life_points()
                 self._changed()
+        self._destroy_battled_dragons_at_end_of_battle_phase()  # Sword of Dragon's Soul
         self._wipe_spell_counters_after_battle()  # Mythical Beast Cerberus
 
     def _declare_attack(self, action: DeclareAttack, tp: int) -> None:
@@ -623,6 +625,11 @@ class Engine:
         # Rocket Warrior: after it attacks a monster, that target loses ATK (read from
         # battle_pair before _fire_battles_trigger clears it).
         self._apply_attacker_target_debuff()
+
+        # Sword of Dragon's Soul: queue a Dragon the equipped Warrior battled (and didn't
+        # destroy in combat) for destruction at the end of the Battle Phase. Also reads
+        # battle_pair before _fire_battles_trigger clears it.
+        self._mark_sword_battled_dragon()
 
         # "When this card battles an opponent's monster" (D.D. Warrior Lady's mutual
         # banish) — fired from the recorded combatant pair, regardless of who survived.
@@ -1064,6 +1071,38 @@ class Engine:
             self.log(f"  {target.name} loses {amount} ATK ({s.cards[attacker_iid].name})")
             self._changed()
 
+    def _mark_sword_battled_dragon(self) -> None:
+        """Sword of Dragon's Soul: after the equipped Warrior battles a Dragon that survives
+        combat, queue that Dragon for destruction at the end of the Battle Phase. Read from
+        ``battle_pair`` (either combatant may be the equipped host) before ``_fire_battles_trigger``
+        clears it; a Dragon already destroyed in combat (off the field) is skipped."""
+        s = self.state
+        pair = s.battle_pair
+        if pair is None or self.result is not None:
+            return
+        for player in s.players:
+            for sid in player.spell_trap_zones:
+                if sid is None:
+                    continue
+                equip = s.cards[sid]
+                host = equip.equipped_to
+                if host is None or not equip.is_face_up or s.effect_negated(sid):
+                    continue
+                marker = next(
+                    (m for m in equip.card.continuous if isinstance(m, DestroysBattledDragon)), None
+                )
+                if marker is None:
+                    continue
+                if host == pair[0]:
+                    foe = pair[1]
+                elif host == pair[1]:
+                    foe = pair[0]
+                else:
+                    continue
+                foe_inst = s.cards.get(foe)
+                if foe_inst is not None and foe_inst.zone is Zone.MONSTER and foe_inst.card.race == marker.race:
+                    s.destroy_at_battle_phase_end.add(foe)
+
     def _fire_battles_trigger(self) -> None:
         """Fire a monster's "when this card battles an opponent's monster" SELF Trigger
         after damage calculation (D.D. Warrior Lady's mutual banish), from the transient
@@ -1314,6 +1353,19 @@ class Engine:
             if holder.wipe_after_battle and inst.attacked_this_turn and inst.counters.get("spell"):
                 inst.counters["spell"] = 0
                 self._changed()
+
+    def _destroy_battled_dragons_at_end_of_battle_phase(self) -> None:
+        """End of the Battle Phase: destroy every monster queued by Sword of Dragon's Soul
+        (a Dragon the equipped Warrior battled but didn't destroy in combat) that is still on
+        the field, then clear the queue."""
+        s = self.state
+        queued, s.destroy_at_battle_phase_end = s.destroy_at_battle_phase_end, set()
+        for iid in queued:
+            inst = s.cards.get(iid)
+            if inst is not None and inst.zone is Zone.MONSTER:
+                self.log(f"  {inst.name} is destroyed (Sword of Dragon's Soul)")
+                s.send_to_graveyard(iid, by_effect=True)
+        self._check_field_to_gy_triggers()
 
     def _reconcile_field(self) -> None:
         """Destroy orphaned Equips and broken Call-of-the-Haunted bonds, return loaned
