@@ -343,6 +343,16 @@ class OpponentMillToAttack:
 
 
 @dataclass(frozen=True)
+class SameNameAnthem:
+    """A face-up card's continuous rider: while it is live, every monster on the field
+    (either side) that shares its name with at least one *other* face-up monster gains
+    ``atk``/``defn`` (Aqua Chorus). Read by ``GameState._field_delta``."""
+
+    atk: int = 0
+    defn: int = 0
+
+
+@dataclass(frozen=True)
 class CannotBeSpecialSummoned:
     """A static ability carried on the card: it can never be Special Summoned (Susa
     Soldier). Read off ``card.continuous`` by ``GameState.special_summon`` — checked
@@ -1107,6 +1117,15 @@ class DestroyTargets(Primitive):
         for iid in list(ctx.targets):
             if iid in ctx.state.cards:
                 ctx.state.send_to_graveyard(iid, by_effect=True)
+
+
+@dataclass(frozen=True)
+class DestroySelf(Primitive):
+    """Destroy the source card (Nuvia the Wicked self-destructs when Normal Summoned)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        if ctx.source_iid in ctx.state.cards:
+            ctx.state.send_to_graveyard(ctx.source_iid, by_effect=True)
 
 
 @dataclass(frozen=True)

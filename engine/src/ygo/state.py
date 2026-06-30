@@ -25,6 +25,7 @@ from .effects import (
     OpponentMillToAttack,
     CannotBeSpecialSummoned,
     HalvesBattleDamageDealt,
+    SameNameAnthem,
     NoBattleDamageWhileUmi,
     AttackTargetProtection,
     BattleIndestructible,
@@ -733,6 +734,19 @@ class GameState:
                     if mod.source_in_defense and src.position is not Position.FACE_UP_DEFENSE:
                         continue  # Fairy King Truesdale only radiates while it's in Defense
                     total += mod.atk if which == "atk" else mod.defn
+        # Aqua Chorus: a monster sharing its name with another face-up monster (either
+        # side) gains the anthem's value, once per active Aqua Chorus.
+        name = monster.card.name
+        if any(
+            i is not None
+            and i != monster_iid
+            and self.cards[i].is_face_up
+            and self.cards[i].card.name == name
+            for pl in self.players
+            for i in pl.monster_zones
+        ):
+            for _src, mod in self.active_markers(SameNameAnthem):
+                total += mod.atk if which == "atk" else mod.defn
         return total
 
     def _self_mod_active(self, mod, controller: int) -> bool:
@@ -826,6 +840,16 @@ class GameState:
                     if i is not None
                     and self.cards[i].is_face_up
                     and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+                )
+                total += flat + per * count
+            elif mod.scaling == "opponent_monsters":
+                # Nuvia the Wicked: -scale per face-up monster the OPPONENT controls (none ->
+                # no change, which also covers the "if your opponent controls any" wording).
+                per = mod.scale_atk if which == "atk" else mod.scale_defn
+                opp = self.opponent_of(inst.controller)
+                count = sum(
+                    1 for i in self.players[opp].monster_zones
+                    if i is not None and self.cards[i].is_face_up
                 )
                 total += flat + per * count
             elif mod.scaling == "named_in_graveyards":

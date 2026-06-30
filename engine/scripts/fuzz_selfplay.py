@@ -361,6 +361,10 @@ DECK = (
     # Batch 101: Insect Queen (Insect anthem via race_on_field, attack-Tribute cost, and
     # the End-Phase Insect Token recursion on a battle kill). Insect bodies already in pool.
     + ["Insect Queen"] * 1
+    # Batch 102: board-conditional stat cards. Nuvia the Wicked (self-destruct on Normal
+    # Summon; -200 ATK per opponent monster) and Aqua Chorus (same-name +500; the doubled
+    # Petit Moth / other duplicates in the pool give it pairs to boost).
+    + ["Nuvia the Wicked"] * 1 + ["Aqua Chorus"] * 1
 )
 
 

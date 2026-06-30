@@ -115,6 +115,8 @@ from .effects import (
     BurnDefenseMonsterOriginalAtk,
     SwapControlWithTarget,
     SummonTokenIfDestroyedByBattle,
+    SameNameAnthem,
+    DestroySelf,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5658,4 +5660,30 @@ CONTINUOUS.update({
             whose="controller",
         ),
     ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 102: board-conditional stat cards — Nuvia the Wicked and Aqua Chorus.
+# Each clears one more one-card-from-ready deck.
+EFFECTS.update({
+    # Nuvia the Wicked — if Normal Summoned, destroy itself (a downside that makes it a
+    # Set/Flip-only body). Its ATK-loss per opponent monster lives in CONTINUOUS below.
+    "Nuvia the Wicked": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=SELF, subject="monster", summon_kinds=frozenset({"normal"})),
+            resolve=(DestroySelf(),),
+        ),
+    ),
+    # Aqua Chorus — a Continuous Trap: activating it just sets it face-up, where its
+    # SameNameAnthem rider boosts every same-named pair on the field.
+    "Aqua Chorus": _ACTIVATE_ONTO_FIELD,
+})
+
+CONTINUOUS.update({
+    # Nuvia the Wicked loses 200 ATK for each monster the opponent controls.
+    "Nuvia the Wicked": (SelfStatMod(scaling="opponent_monsters", scale_atk=-200),),
+    # Aqua Chorus: monsters sharing a name with another face-up monster gain 500 ATK/DEF.
+    "Aqua Chorus": (SameNameAnthem(atk=500, defn=500),),
 })
