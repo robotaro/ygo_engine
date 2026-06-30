@@ -459,10 +459,15 @@ class Engine:
             elif isinstance(choice, ChangePosition):
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._changed()
-                # A manual switch from Attack to face-up Defense fires a "changed to
-                # Defense" Trigger (Dream Clown destroys an opponent's monster).
+                # A manual switch fires a position-change Trigger: to face-up Defense
+                # (Dream Clown destroys an opponent's monster) or from Defense to Attack
+                # (Crass Clown bounces one). A face-up ChangePosition only ever toggles
+                # between the two, so the new position identifies the transition.
                 if s.cards[choice.iid].position is Position.FACE_UP_DEFENSE:
                     self._emit_trigger(choice.iid, "changed_to_defense", SELF)
+                    self._check_field_to_gy_triggers()
+                elif s.cards[choice.iid].position is Position.FACE_UP_ATTACK:
+                    self._emit_trigger(choice.iid, "changed_to_attack", SELF)
                     self._check_field_to_gy_triggers()
                 self._check_life_points()
             else:

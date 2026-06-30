@@ -429,6 +429,9 @@ DECK = (
     # Batch 120: House of Adhesive Tape (destroy an opponent's Normal/Flip Summon with DEF
     # <= 500) — exercises the new Trigger.max_def gate in the summon response window.
     + ["House of Adhesive Tape"] * 2
+    # Batch 121: Crass Clown (changed Defense->Attack -> bounce an opponent monster) — the
+    # new "changed_to_attack" position-change trigger fired from the main loop.
+    + ["Crass Clown"] * 2
 )
 
 

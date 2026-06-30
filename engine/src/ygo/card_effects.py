@@ -6024,3 +6024,21 @@ EFFECTS.update({
         ),
     ),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 121: Crass Clown — when it is changed from Defense to Attack Position, bounce
+# 1 opponent monster. The mirror of Dream Clown (changed_to_defense -> destroy): a new
+# "changed_to_attack" trigger fired by the engine after a manual ChangePosition that lands in
+# Attack (a face-up toggle only ever moves between the two positions). With Spellbinding
+# Circle (Batch 119) this flips the Lumis & Umbra deck.
+EFFECTS.update({
+    "Crass Clown": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="changed_to_attack", by=SELF),
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(BounceTargetsToHand(),),
+        ),
+    ),
+})
