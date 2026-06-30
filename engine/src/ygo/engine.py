@@ -139,9 +139,14 @@ class Engine:
         s.normal_summon_used = False
         s.forced_attack_target = None  # Staunch Defender's lock lasts only its turn
         s.action_locks = {k: v for k, v in s.action_locks.items() if v >= s.turn_count}
-        for iid in s.players[tp].monster_zones:
-            if iid is not None:
-                s.inst(iid).reset_turn_flags()
+        # Reset per-turn flags on BOTH players' monsters: "this turn" means the turn that
+        # just started, so a monster summoned on the opponent's previous turn must not keep
+        # a stale `summoned_this_turn` (else Infinite Dismissal's both-sides End-Phase sweep
+        # would destroy it as if summoned this turn). Mirrors ygopro's RESET_SELF/OPPO_TURN.
+        for pl in (tp, s.opponent_of(tp)):
+            for iid in s.players[pl].monster_zones:
+                if iid is not None:
+                    s.inst(iid).reset_turn_flags()
 
     def _run_phase(self, phase: Phase, tp: int) -> None:
         if phase is Phase.DRAW:
@@ -445,6 +450,12 @@ class Engine:
             return
 
         if s.attack_negated:
+            # A negated attack still CONSUMES the attack (no replay) — unlike a target
+            # that merely left the field, which grants an attack replay. _resolve_attack
+            # (skipped here) is where attacks_made is normally counted, so count it now.
+            neg = s.cards.get(attacker)
+            if neg is not None and neg.zone is Zone.MONSTER:
+                neg.attacks_made_this_turn += 1
             self.log("  the attack is negated")
             self._changed()
             return

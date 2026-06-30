@@ -399,6 +399,7 @@ class GameState:
         inst.effect_activated_on_turn = None  # a revived card may use its once/turn again
         inst.attack_disabled_on_turn = None
         inst.destroy_at_end_phase = None
+        inst.position_locked_until = None  # a position lock doesn't outlive the field
 
     def send_to_graveyard(self, iid: int, by_battle: bool = False) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``
