@@ -9,6 +9,7 @@ export default defineConfig({
       '/ws': { target: 'ws://localhost:8000', ws: true },
       '/api': 'http://localhost:8000',
       '/cards': 'http://localhost:8000',
+      '/portraits': 'http://localhost:8000',
     },
   },
 })
