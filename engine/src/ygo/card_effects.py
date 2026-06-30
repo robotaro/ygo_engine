@@ -5687,3 +5687,42 @@ CONTINUOUS.update({
     # Aqua Chorus: monsters sharing a name with another face-up monster gain 500 ATK/DEF.
     "Aqua Chorus": (SameNameAnthem(atk=500, defn=500),),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 103: Multiply — the Kuriboh token-swarm Quick-Play. Adds a reusable
+# tribute_names cost filter (Tribute fodder restricted by exact name). Clears one more
+# one-card-from-ready deck.
+def _controls_face_up_kuriboh(state, controller) -> bool:
+    return any(
+        i is not None and state.cards[i].is_face_up and state.cards[i].card.name == "Kuriboh"
+        for i in state.players[controller].monster_zones
+    )
+
+
+EFFECTS.update({
+    # Multiply — Tribute 1 face-up "Kuriboh"; Special Summon as many "Kuriboh Tokens"
+    # (Fiend/DARK/L1/300/200) as possible in Defense Position. CreateToken fills every
+    # empty Monster Zone (the Tribute frees one first).
+    "Multiply": (
+        Effect(
+            speed=2,
+            timing="quick",
+            condition=_controls_face_up_kuriboh,
+            tribute_cost=1,
+            tribute_names=frozenset({"Kuriboh"}),
+            resolve=(
+                CreateToken(
+                    token_name="Kuriboh Token",
+                    race="Fiend",
+                    attribute=Attribute.DARK,
+                    level=1,
+                    atk=300,
+                    defn=200,
+                    count=5,
+                    position=Position.FACE_UP_DEFENSE,
+                ),
+            ),
+        ),
+    ),
+})

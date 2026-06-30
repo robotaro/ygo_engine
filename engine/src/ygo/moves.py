@@ -197,11 +197,13 @@ def discard_fodder(state: GameState, controller: int, source_iid: int) -> list[i
     return [i for i in state.players[controller].hand if i != source_iid]
 
 
-def tribute_fodder(state: GameState, controller: int, races=frozenset(), attrs=frozenset()) -> list[int]:
+def tribute_fodder(
+    state: GameState, controller: int, races=frozenset(), attrs=frozenset(), names=frozenset()
+) -> list[int]:
     """Monsters ``controller`` may Tribute to pay a cost — those they control,
-    narrowed by an optional race / attribute restriction (Spiritual Fire Art needs
-    a FIRE monster, Icarus Attack a Winged Beast). Face-down monsters qualify too
-    (you know your own Set monster's stats)."""
+    narrowed by an optional race / attribute / name restriction (Spiritual Fire Art
+    needs a FIRE monster, Icarus Attack a Winged Beast, Multiply a "Kuriboh"). Face-down
+    monsters qualify too (you know your own Set monster's stats)."""
     out: list[int] = []
     for iid in state.players[controller].monster_zones:
         if iid is None:
@@ -210,6 +212,8 @@ def tribute_fodder(state: GameState, controller: int, races=frozenset(), attrs=f
         if races and card.race not in races:
             continue
         if attrs and card.attribute not in attrs:
+            continue
+        if names and card.name not in names:
             continue
         out.append(iid)
     return out
@@ -313,12 +317,13 @@ def pay_tribute_cost(
     races=frozenset(),
     attrs=frozenset(),
     chosen=None,
+    names=frozenset(),
 ) -> list[int]:
     """Tribute ``count`` of ``controller``'s monsters as a cost. ``chosen`` names the
     monsters (player's pick); without it, the first eligible ones are taken. The
     picks are recorded on the source card (``tributed_iids``) before they go to the
     Graveyard, so the payload can read their printed stats. Returns the iids."""
-    fodder = tribute_fodder(state, controller, races, attrs)
+    fodder = tribute_fodder(state, controller, races, attrs, names)
     picks = _pick(fodder, count, chosen)
     state.inst(source_iid).tributed_iids = list(picks)
     for iid in picks:
@@ -342,9 +347,9 @@ _FODDER_COSTS = (
     (
         "tribute",
         "tribute_cost",
-        lambda st, c, src, e: tribute_fodder(st, c, e.tribute_races, e.tribute_attributes),
+        lambda st, c, src, e: tribute_fodder(st, c, e.tribute_races, e.tribute_attributes, e.tribute_names),
         lambda st, c, src, n, ch, e: pay_tribute_cost(
-            st, c, src, n, e.tribute_races, e.tribute_attributes, ch
+            st, c, src, n, e.tribute_races, e.tribute_attributes, ch, e.tribute_names
         ),
         "Tributes {names}",
     ),

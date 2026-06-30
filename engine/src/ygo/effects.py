@@ -2704,6 +2704,7 @@ class Effect:
     tribute_cost: int = 0
     tribute_races: frozenset = frozenset()
     tribute_attributes: frozenset = frozenset()
+    tribute_names: frozenset = frozenset()  # restrict the Tribute fodder by exact name (Multiply: "Kuriboh")
     # Activation cost: remove this many counters of ``counter_type`` from the source
     # card (Royal Magical Library removes 3 Spell Counters to draw).
     counter_cost: int = 0

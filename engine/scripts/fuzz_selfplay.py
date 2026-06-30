@@ -365,6 +365,9 @@ DECK = (
     # Summon; -200 ATK per opponent monster) and Aqua Chorus (same-name +500; the doubled
     # Petit Moth / other duplicates in the pool give it pairs to boost).
     + ["Nuvia the Wicked"] * 1 + ["Aqua Chorus"] * 1
+    # Batch 103: Multiply (Tribute a face-up Kuriboh -> swarm Kuriboh Tokens) + a Kuriboh
+    # to feed it. Exercises the new tribute_names cost filter and the token fill.
+    + ["Multiply"] * 1 + ["Kuriboh"] * 1
 )
 
 
