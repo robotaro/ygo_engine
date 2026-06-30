@@ -32,6 +32,7 @@ from .effects import (
     BattleIndestructible,
     CanAttackDirectly,
     CardEffectNegation,
+    DestroyAttachedEquips,
     EquipMod,
     FieldMod,
     DamageStepBonus,
@@ -1155,6 +1156,17 @@ class GameState:
             if mod.whose == "opponent" and src.controller != player:
                 return True
         return False
+
+    def destroys_attached_equips(self, iid: int) -> bool:
+        """Whether the monster ``iid`` destroys any Equip Card equipped to it (Gearfried
+        the Iron Knight). False while it is face-down, its effect is inactive, or it is
+        negated (Skill Drain) — then equips attach normally."""
+        inst = self.cards.get(iid)
+        if inst is None or not inst.is_face_up or not inst.effects_active:
+            return False
+        if self.monster_effects_negated(iid):
+            return False
+        return any(isinstance(m, DestroyAttachedEquips) for m in inst.card.continuous)
 
     def action_locked(self, kind: str, player: int) -> bool:
         """Whether a turn-scoped lock currently forbids ``player`` from ``kind``

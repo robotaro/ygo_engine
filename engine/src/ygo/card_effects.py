@@ -82,6 +82,7 @@ from .effects import (
     ScaleSelfAtkTemporary,
     MultiAttacker,
     NoHandLimit,
+    DestroyAttachedEquips,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5840,3 +5841,14 @@ EFFECTS.update({
 # the last blocker in both Yami Marik GBA decks.
 EFFECTS.update({"Infinite Cards": _ACTIVATE_ONTO_FIELD})
 CONTINUOUS.update({"Infinite Cards": (NoHandLimit(whose="both"),)})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 111: Gearfried the Iron Knight — destroy any Equip Card equipped to it.
+# A continuous rider enforced at the equip chokepoint (effects.EquipToTarget): an Equip
+# Spell may still target Gearfried and resolve, but it is destroyed instead of attaching.
+# Clears the last blocker in Joey Wheeler's Worldwide deck. (Union-equip and equip-monster-
+# from-GY paths are a deferred edge — the pool's Gearfried decks run only Equip Spells.)
+CONTINUOUS.update({
+    "Gearfried the Iron Knight": (DestroyAttachedEquips(),),
+})

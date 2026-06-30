@@ -224,6 +224,15 @@ class NoHandLimit:
 
 
 @dataclass(frozen=True)
+class DestroyAttachedEquips:
+    """A face-up monster's rider: any Equip Card that would become equipped to it is
+    destroyed instead (Gearfried the Iron Knight — "if either player equips an Equip Card
+    to this card: destroy it"). Enforced at the equip chokepoint (EquipToTarget): the Equip
+    resolves, then goes straight to the GY rather than attaching. Suppressed while the
+    monster's effect is inactive/negated."""
+
+
+@dataclass(frozen=True)
 class MultiAttacker:
     """A face-up monster's rider: it may declare up to ``times`` attacks each Battle
     Phase (Hayabusa Knight, Mataza the Zapper, Twinheaded Beast all = 2). Read by the
@@ -2042,7 +2051,10 @@ class EquipToTarget(Primitive):
         from .enums import Zone
 
         if target is not None and target in ctx.state.cards and ctx.state.inst(target).zone is Zone.MONSTER:
-            equip.equipped_to = target
+            if ctx.state.destroys_attached_equips(target):
+                ctx.state.send_to_graveyard(ctx.source_iid)  # Gearfried: the Equip is destroyed
+            else:
+                equip.equipped_to = target
         else:
             ctx.state.send_to_graveyard(ctx.source_iid)  # nothing to equip -> to the GY
 

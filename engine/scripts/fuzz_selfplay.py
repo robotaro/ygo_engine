@@ -394,6 +394,10 @@ DECK = (
     # for both players (NoHandLimit floodgate). Exercises the discard-suppression path; the
     # extra draw engine (Pot of Greed, Card Destruction) keeps hands above 6 to trigger it.
     + ["Infinite Cards"] * 2
+    # Batch 111: Gearfried the Iron Knight (destroys Equip Cards equipped to it) + Equip
+    # Spells for it to eat at the EquipToTarget chokepoint (Mage Power / Big Bang Shot are
+    # already in the deck above; add a couple more equip hosts/targets).
+    + ["Gearfried the Iron Knight"] * 2 + ["Sword of Dark Destruction"] * 2
 )
 
 
