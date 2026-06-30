@@ -47,6 +47,7 @@ from .effects import (
     DestroyHighestAtkMonster,
     DestroyHighestDefOpponentMonster,
     DestroyLowestAtkOpponentMonster,
+    DestroyOwnMonstersHalfAtkBurn,
     DestroyTargets,
     DiscardFromHand,
     DiscardHandThenBurn,
@@ -84,6 +85,7 @@ from .effects import (
     SearchMonsterToHand,
     SelfStatMod,
     RevealRandomHandCardSummonOrGY,
+    RevealTopSummonRestToHand,
     SpecialSummonFromDeck,
     SpecialSummonFromGraveyard,
     SpecialSummonFromHand,
@@ -4706,4 +4708,43 @@ CONTINUOUS.update({
     # Megamorph — ATK becomes double the equipped monster's original ATK while your LP
     # is below your opponent's, or half while it is above (read in effective_attack).
     "Megamorph": (EquipMod(scaling="lp_megamorph"),),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 74: deck-impact win conditions & toolbox flips. Exodia the Forbidden
+# One is a kernel-level alternate win condition (assemble all five pieces in hand) —
+# handled by GameState.exodia_winner / Engine._check_exodia, so the pieces need no card
+# entry here. Cyber Jar floods both boards from a Flip; Maha Vailo scales with its own
+# Equips; Time Wizard is a once/turn coin toss.
+EFFECTS.update({
+    # Cyber Jar — FLIP: destroy every monster on the field, then both players reveal the
+    # top 5 of their Decks, Special Summon all revealed Level 4-or-lower monsters and add
+    # the rest to their hands.
+    "Cyber Jar": (
+        _flip(
+            resolve=(
+                DestroyAllMonsters(),
+                RevealTopSummonRestToHand(count=5, max_level=4, side=None),
+            ),
+        ),
+    ),
+    # Time Wizard — once/turn: toss a coin. Right -> destroy every monster the opponent
+    # controls; wrong -> destroy every monster you control and take half their total ATK.
+    "Time Wizard": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            resolve=(
+                CoinFlip(
+                    win=(DestroyAllMonsters(side=OPPONENT),),
+                    lose=(DestroyOwnMonstersHalfAtkBurn(),),
+                ),
+            ),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    # Maha Vailo — gains 500 ATK for each Equip Card equipped to it (its own boost is on
+    # top of whatever ATK the Equips themselves grant).
+    "Maha Vailo": (SelfStatMod(scaling="equips_on_self", scale_atk=500),),
 })

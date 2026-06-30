@@ -98,11 +98,14 @@ class SelfStatMod:
         narrowed by ``count_attribute`` / ``count_race`` / ``count_name_contains``
         (Amazoness Paladin +100 per "Amazoness", Botanical Lion +300 per Plant, Hunter Owl
         +500 per WIND). The source counts itself when it matches the filter, unless
-        ``count_exclude_self`` is set (Dragon Master Knight counts only OTHER Dragons)."""
+        ``count_exclude_self`` is set (Dragon Master Knight counts only OTHER Dragons).
+      * ``"equips_on_self"`` adds ``scale_atk``/``scale_defn`` per Equip Card attached to
+        the source monster (Maha Vailo: +500 ATK for each Equip Card equipped to it)."""
 
     atk: int = 0
     defn: int = 0
     # None | "face_up_attr_monsters" | "graveyard_monsters" | "controlled_monsters"
+    #      | "equips_on_self"
     scaling: str | None = None
     scale_atk: int = 0
     scale_defn: int = 0
@@ -834,6 +837,25 @@ class DestroyAllMonsters(Primitive):
         ]
         for iid in victims:
             ctx.state.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
+class DestroyOwnMonstersHalfAtkBurn(Primitive):
+    """Time Wizard's wrong call: destroy as many monsters its controller controls as
+    possible, and if any were destroyed, the controller takes damage equal to half the
+    combined ATK those monsters had while face-up on the field (face-down monsters
+    contribute 0). The total is read before the destruction, off each monster's
+    effective ATK."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        c = ctx.controller
+        victims = [i for i in s.players[c].monster_zones if i is not None]
+        total = sum(s.effective_attack(i) for i in victims if s.inst(i).is_face_up)
+        for iid in victims:
+            s.send_to_graveyard(iid)
+        if victims:
+            s.players[c].life_points -= total // 2
 
 
 @dataclass(frozen=True)
@@ -1757,6 +1779,45 @@ class SpecialSummonFromHand(Primitive):
             return
         iid = max(eligible, key=lambda i: ctx.state.inst(i).card.attack or 0)
         ctx.state.special_summon(iid, ctx.controller, self.position)
+
+
+@dataclass(frozen=True)
+class RevealTopSummonRestToHand(Primitive):
+    """Cyber Jar's flood: each affected player reveals the top ``count`` cards of their
+    Deck; every revealed monster of Level ``max_level`` or lower that can be freely
+    Special Summoned is Special Summoned (face-up Attack Position), and every other
+    revealed card — non-monsters, higher-Level or non-freely-summonable monsters, or a
+    monster a Special Summon lock / a full board turns away — is added to the hand.
+
+    ``side``: None = both players (Cyber Jar), else SELF / OPPONENT. The "top" is the
+    end of the deck list (where draws come from). A deck with fewer than ``count`` cards
+    reveals as many as it has."""
+
+    count: int = 5
+    max_level: int = 4
+    side: str | None = None
+    position: Position = Position.FACE_UP_ATTACK
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        players = (0, 1) if self.side is None else (ctx.side(self.side),)
+        for pl in players:
+            deck = s.players[pl].deck
+            revealed = list(deck[-min(self.count, len(deck)) :]) if deck else []
+            for iid in revealed:
+                card = s.inst(iid).card
+                summoned = (
+                    card.is_monster
+                    and (card.level or 0) <= self.max_level
+                    and card.can_normal_summon
+                    and not card.is_spirit
+                    and s.special_summon(iid, pl, self.position)
+                )
+                if not summoned and s.inst(iid).zone is Zone.DECK:
+                    deck.remove(iid)
+                    s.players[pl].hand.append(iid)
+                    s.inst(iid).zone = Zone.HAND
+                    s.inst(iid).position = None
 
 
 @dataclass(frozen=True)

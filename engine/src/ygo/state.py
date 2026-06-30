@@ -37,6 +37,19 @@ STARTING_LIFE_POINTS = 8000
 MAX_MONSTER_ZONES = 5
 MAX_SPELL_TRAP_ZONES = 5
 
+# Holding all five of these in hand at once wins the Duel (Exodia the Forbidden One) —
+# checked by GameState.exodia_winner after every hand change. A genuine alternate win
+# condition, so it lives in the kernel rather than as a card effect.
+EXODIA_PIECES = frozenset(
+    {
+        "Exodia the Forbidden One",
+        "Right Arm of the Forbidden One",
+        "Left Arm of the Forbidden One",
+        "Right Leg of the Forbidden One",
+        "Left Leg of the Forbidden One",
+    }
+)
+
 
 def _has_gy_trigger(card: CardDef) -> bool:
     """Whether a card carries a 'sent from the field to the Graveyard' trigger
@@ -583,6 +596,17 @@ class GameState:
                     and (mod.count_name_contains is None or mod.count_name_contains in self.cards[i].card.name)
                 )
                 total += flat + per * count
+            elif mod.scaling == "equips_on_self":
+                per = mod.scale_atk if which == "atk" else mod.scale_defn
+                count = sum(
+                    1
+                    for pl in self.players
+                    for sid in pl.spell_trap_zones
+                    if sid is not None
+                    and self.cards[sid].equipped_to == monster_iid
+                    and self.cards[sid].is_face_up
+                )
+                total += flat + per * count
             else:
                 total += flat
         return total
@@ -916,6 +940,16 @@ class GameState:
 
     def effective_defense(self, iid: int) -> int:
         return self._effective_stat(iid, "def")
+
+    def exodia_winner(self) -> int | None:
+        """The player holding all five "Forbidden One" pieces in hand wins the Duel
+        (Exodia). Returns that player's index, or None if neither holds the full set.
+        The engine re-checks this after any hand change (a draw, a search to hand)."""
+        for pl in (0, 1):
+            held = {self.cards[i].card.name for i in self.players[pl].hand}
+            if EXODIA_PIECES <= held:
+                return pl
+        return None
 
     def spawn_on_field(
         self, card: CardDef, player: int, index: int, position: Position, owner: int | None = None

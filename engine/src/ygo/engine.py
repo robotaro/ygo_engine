@@ -163,6 +163,7 @@ class Engine:
             return
         self.log(f"{s.players[tp].name} draws {s.inst(drawn[0]).name}")
         self._process_draw_triggers()
+        self._check_exodia()
         self._changed()
 
     def _process_draw_triggers(self) -> None:
@@ -645,6 +646,7 @@ class Engine:
                 continue
             resolve_effect(s, link.effect, link.source_iid, link.targets, link.event)
             self._check_life_points()
+            self._check_exodia()  # a search/draw effect may have completed an Exodia hand
             # "Each time a Spell Card resolves, place 1 Spell Counter" (Royal Magical
             # Library, Mythical Beast Cerberus) — one per resolved Spell link.
             spell = s.cards.get(link.source_iid)
@@ -1054,3 +1056,12 @@ class Engine:
             if s.players[p].life_points <= 0:
                 self.result = DuelResult(s.opponent_of(p), f"{s.players[p].name} reached 0 LP")
                 return
+
+    def _check_exodia(self) -> None:
+        """End the Duel if a player has assembled all five Forbidden One pieces in hand.
+        Called after any hand change (a draw, a card added to hand by an effect)."""
+        if self.result is not None:
+            return
+        winner = self.state.exodia_winner()
+        if winner is not None:
+            self.result = DuelResult(winner, f"{self.state.players[winner].name} assembled Exodia")

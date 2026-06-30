@@ -227,6 +227,15 @@ DECK = (
     + ["Zombyra the Dark"] * 2
     + ["Megamorph"] * 2
     + ["Nimble Momonga"] * 3
+    # deck-impact win conditions + toolbox flips
+    + ["Cyber Jar"] * 2
+    + ["Time Wizard"] * 2
+    + ["Maha Vailo"] * 2
+    + ["Exodia the Forbidden One"]
+    + ["Right Arm of the Forbidden One"]
+    + ["Left Arm of the Forbidden One"]
+    + ["Right Leg of the Forbidden One"]
+    + ["Left Leg of the Forbidden One"]
 )
 
 
