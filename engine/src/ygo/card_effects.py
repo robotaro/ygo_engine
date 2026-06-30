@@ -84,6 +84,8 @@ from .effects import (
     NoHandLimit,
     DestroyAttachedEquips,
     DrawOnOpponentDraw,
+    SafeAttacker,
+    DebuffsAttackTargetAtk,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5863,3 +5865,14 @@ CONTINUOUS.update({
 # activating draw itself isn't retro-caught). Clears the last blocker in Seeker's deck.
 EFFECTS.update({"Appropriate": (Effect(speed=2, timing="ignition"),)})
 CONTINUOUS.update({"Appropriate": (DrawOnOpponentDraw(count=2),)})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 113: Rocket Warrior — attack with impunity + weaken the target. During your
+# Battle Phase it cannot be destroyed by battle and you take no battle damage from battles
+# involving it (SafeAttacker, gated to its controller's own Battle Phase = when it attacks),
+# and after it attacks a monster that target loses 500 ATK until end of turn
+# (DebuffsAttackTargetAtk). Clears the last blocker in Joey's "possessed" Sacred Cards deck.
+CONTINUOUS.update({
+    "Rocket Warrior": (SafeAttacker(), DebuffsAttackTargetAtk(amount=500)),
+})

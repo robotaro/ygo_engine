@@ -402,6 +402,10 @@ DECK = (
     # out-of-Draw-Phase draw engines already in the deck (Pot of Greed, Card Destruction)
     # to fire it across the draw-event loop.
     + ["Appropriate"] * 2
+    # Batch 113: Rocket Warrior (during your Battle Phase: can't be destroyed by battle +
+    # take no battle damage; after attacking a monster, that target loses 500 ATK). Exercises
+    # the SafeAttacker combat guards and the post-combat target debuff.
+    + ["Rocket Warrior"] * 2
 )
 
 

@@ -1569,7 +1569,8 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
             return f"{prefix}{attacker.name} ({atk}) destroys {target.name} ({other}) — {atk - other} damage"
         if atk < other:
             _battle_destroy(state, attacker.iid, target.iid)
-            _take_battle_damage(me, other - atk)
+            if not state.attacker_takes_no_self_battle_damage(action.attacker):
+                _take_battle_damage(me, other - atk)
             return f"{prefix}{attacker.name} ({atk}) is destroyed by {target.name} ({other}) — {other - atk} damage to attacker"
         _battle_destroy(state, attacker.iid, target.iid)
         _battle_destroy(state, target.iid, attacker.iid)
@@ -1588,6 +1589,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
             return f"{prefix}{attacker.name} ({atk}) pierces {target.name} (DEF {dfn}) — {dmg} damage"
         return f"{prefix}{attacker.name} ({atk}) destroys defending {target.name} (DEF {dfn})"
     if atk < dfn:
-        _take_battle_damage(me, dfn - atk)
+        if not state.attacker_takes_no_self_battle_damage(action.attacker):
+            _take_battle_damage(me, dfn - atk)
         return f"{prefix}{attacker.name} ({atk}) bounces off {target.name} (DEF {dfn}) — {dfn - atk} damage to attacker"
     return f"{prefix}{attacker.name} ({atk}) cannot break {target.name} (DEF {dfn})"

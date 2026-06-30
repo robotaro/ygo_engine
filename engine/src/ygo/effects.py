@@ -233,6 +233,23 @@ class DestroyAttachedEquips:
 
 
 @dataclass(frozen=True)
+class SafeAttacker:
+    """Rocket Warrior: during its controller's Battle Phase, this monster cannot be destroyed
+    by battle and its controller takes no battle damage from battles involving it — the
+    "attack with impunity" package (it is only ever in a battle during its own Battle Phase,
+    i.e. when it attacks). Read by the combat step; suppressed while inactive/negated."""
+
+
+@dataclass(frozen=True)
+class DebuffsAttackTargetAtk:
+    """Rocket Warrior: after it attacks a monster, that attack target loses ``amount`` ATK
+    until the end of the turn. Applied by the engine after combat from ``battle_pair``, so it
+    only fires when this monster is the ATTACKER. Suppressed while inactive/negated."""
+
+    amount: int = 500
+
+
+@dataclass(frozen=True)
 class MultiAttacker:
     """A face-up monster's rider: it may declare up to ``times`` attacks each Battle
     Phase (Hayabusa Knight, Mataza the Zapper, Twinheaded Beast all = 2). Read by the

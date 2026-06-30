@@ -614,6 +614,10 @@ class Engine:
         # Joan, Hydrogeddon) — fired from the (destroyer, destroyed) pairs combat recorded.
         self._fire_destroys_by_battle_trigger()
 
+        # Rocket Warrior: after it attacks a monster, that target loses ATK (read from
+        # battle_pair before _fire_battles_trigger clears it).
+        self._apply_attacker_target_debuff()
+
         # "When this card battles an opponent's monster" (D.D. Warrior Lady's mutual
         # banish) — fired from the recorded combatant pair, regardless of who survived.
         self._fire_battles_trigger()
@@ -1035,6 +1039,23 @@ class Engine:
                 destroyer_iid, "destroys_by_battle", SELF,
                 {"destroyer": destroyer_iid, "destroyed": destroyed_iid},
             )
+
+    def _apply_attacker_target_debuff(self) -> None:
+        """Rocket Warrior: after it attacks a monster, that attack target loses ATK until the
+        end of the turn. Read from ``battle_pair`` = (attacker, target); applies only when the
+        attacker carries the rider, and only to a target still on the field (a destroyed one
+        makes it moot). Fires before ``_fire_battles_trigger`` clears ``battle_pair``."""
+        s = self.state
+        pair = s.battle_pair
+        if pair is None or self.result is not None:
+            return
+        attacker_iid, target_iid = pair
+        amount = s.attacker_target_debuff(attacker_iid)
+        target = s.cards.get(target_iid)
+        if amount and target is not None and target.zone is Zone.MONSTER:
+            target.temp_atk -= amount
+            self.log(f"  {target.name} loses {amount} ATK ({s.cards[attacker_iid].name})")
+            self._changed()
 
     def _fire_battles_trigger(self) -> None:
         """Fire a monster's "when this card battles an opponent's monster" SELF Trigger

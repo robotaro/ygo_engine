@@ -32,9 +32,11 @@ from .effects import (
     BattleIndestructible,
     CanAttackDirectly,
     CardEffectNegation,
+    DebuffsAttackTargetAtk,
     DestroyAttachedEquips,
     EquipMod,
     FieldMod,
+    SafeAttacker,
     DamageStepBonus,
     MultiAttacker,
     NoHandLimit,
@@ -1006,8 +1008,36 @@ class GameState:
         return True
 
     def is_battle_indestructible(self, iid: int) -> bool:
-        """Whether the monster cannot be destroyed by battle (a BattleIndestructible rider)."""
-        return self._self_rider(iid, BattleIndestructible) is not None
+        """Whether the monster cannot be destroyed by battle — an unconditional
+        BattleIndestructible rider (Marshmallon), or a SafeAttacker (Rocket Warrior) during
+        its controller's own Battle Phase (when it is the attacker)."""
+        if self._self_rider(iid, BattleIndestructible) is not None:
+            return True
+        return self._safe_attacker_active(iid)
+
+    def _safe_attacker_active(self, iid: int) -> bool:
+        """Whether ``iid``'s SafeAttacker rider is live right now: its controller's Battle
+        Phase (so it covers the monster only while attacking, not while it defends on the
+        opponent's turn). False for an iid no longer in play — combat may destroy a token
+        attacker before this is read."""
+        inst = self.cards.get(iid)
+        if inst is None or self._self_rider(iid, SafeAttacker) is None:
+            return False
+        return self.turn_player == inst.controller and self.phase is Phase.BATTLE
+
+    def attacker_takes_no_self_battle_damage(self, iid: int) -> bool:
+        """Whether the controller of attacking monster ``iid`` takes no battle damage from a
+        battle involving it (Rocket Warrior, during its own Battle Phase)."""
+        return self._safe_attacker_active(iid)
+
+    def attacker_target_debuff(self, iid: int) -> int:
+        """How much ATK the monster that ``iid`` just attacked loses until the end of the
+        turn (Rocket Warrior = 500), or 0 if ``iid`` has no such rider or is no longer in
+        play (a token attacker may have been destroyed in the battle)."""
+        if iid not in self.cards:
+            return 0
+        rider = self._self_rider(iid, DebuffsAttackTargetAtk)
+        return rider.amount if rider is not None else 0
 
     def max_attacks(self, iid: int) -> int:
         """How many attacks the monster may declare this Battle Phase — 2+ for a
