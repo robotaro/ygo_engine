@@ -426,6 +426,9 @@ DECK = (
     # change position; destroyed with its target). Exercises the attached-lock gates + the
     # orphan-equip cleanup on a Trap.
     + ["Spellbinding Circle"] * 2
+    # Batch 120: House of Adhesive Tape (destroy an opponent's Normal/Flip Summon with DEF
+    # <= 500) — exercises the new Trigger.max_def gate in the summon response window.
+    + ["House of Adhesive Tape"] * 2
 )
 
 

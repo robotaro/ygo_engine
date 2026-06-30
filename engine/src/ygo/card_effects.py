@@ -6001,3 +6001,26 @@ EFFECTS.update({
 CONTINUOUS.update({
     "Spellbinding Circle": (LocksAttachedMonster(no_attack=True, no_position=True),),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 120: House of Adhesive Tape — Trap Hole's mirror image: when your opponent
+# Normal/Flip Summons a monster with DEF 500 or less, destroy it. Reuses the summon-response
+# Trigger, gated by a new max_def threshold (added to Trigger). With Spellbinding Circle
+# (Batch 119) this flips Yugi Muto's Reshef deck.
+EFFECTS.update({
+    "House of Adhesive Tape": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(
+                kind="summon",
+                by=OPPONENT,
+                subject="monster",
+                max_def=500,
+                summon_kinds=frozenset({"normal", "flip"}),  # not Special Summons
+            ),
+            resolve=(DestroyTargets(),),
+        ),
+    ),
+})

@@ -1018,6 +1018,10 @@ def _trigger_matches(state, player, trigger, event) -> bool:
         mon = event.get("monster")
         if mon is None or (state.inst(mon).card.attack or 0) > trigger.max_atk:
             return False  # Eatgaboon only reacts to a Summon with ATK <= 500
+    if trigger.max_def is not None:
+        mon = event.get("monster")
+        if mon is None or (state.inst(mon).card.defense or 0) > trigger.max_def:
+            return False  # House of Adhesive Tape only reacts to a Summon with DEF <= 500
     if trigger.target_self_control and not _attack_target_matches(state, player, trigger, event):
         return False
     if trigger.attacker_was_tribute_summoned:

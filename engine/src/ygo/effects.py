@@ -923,6 +923,7 @@ class Trigger:
     subject: str | None = None
     min_atk: int | None = None
     max_atk: int | None = None  # an upper ATK gate (Eatgaboon destroys a Summon with ATK <= 500)
+    max_def: int | None = None  # an upper DEF gate (House of Adhesive Tape: DEF <= 500)
     # For a "summon" trigger: which Summon kinds it reacts to ("normal" | "flip" |
     # "special"). Empty = any Summon (Bottomless Trap Hole, Horn of Heaven); set it
     # to keep a card to its kinds (Trap Hole = Normal/Flip, Black Horn = Special).
