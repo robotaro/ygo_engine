@@ -255,6 +255,11 @@ DECK = (
     + ["Fairy Box"] * 2
     + ["Darklord Marie"] * 2
     + ["Infinite Dismissal"] * 2
+    # pay-LP-to-attack + face-down banisher + Nomi banish-SS with a phase-gated debuff
+    + ["Dark Elf"] * 2
+    + ["Nobleman of Crossout"] * 2
+    + ["Soul of Purity and Light"] * 2
+    + ["Mystical Elf"] * 2  # LIGHT fodder for Soul of Purity + a Set target for Nobleman
 )
 
 

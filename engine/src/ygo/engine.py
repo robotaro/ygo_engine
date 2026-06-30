@@ -419,6 +419,12 @@ class Engine:
         # Mark at declaration (not only in _resolve_attack) so a *negated* attack — which
         # returns before resolving — still counts as this monster having attacked.
         s.inst(attacker).attacked_this_turn = True
+        # Dark Elf: pay the LP cost required to attack (enumeration already verified it is
+        # payable). Paid at declaration, even if the attack is later negated.
+        cost = s.attack_life_cost(attacker)
+        if cost:
+            s.players[tp].life_points -= cost
+            self.log(f"  {s.players[tp].name} pays {cost} LP for {s.inst(attacker).name} to attack")
         self.log(f"  {s.players[tp].name} declares an attack with {s.inst(attacker).name}")
         self._changed()
 

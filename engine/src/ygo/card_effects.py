@@ -14,10 +14,12 @@ from .effects import (
     SELF,
     ActivationLock,
     ApplyActionLock,
+    AttackLifeCost,
     AttackRestriction,
     AttackTargetProtection,
     BanishAttackingDefensePositionMonsters,
     BanishEventMonster,
+    BanishFaceDownThenDeckBanishIfFlip,
     BanishSelfAndEventMonster,
     BanishTargets,
     ChangeAllPositions,
@@ -4898,4 +4900,44 @@ CONTINUOUS.update({
     # Infinite Dismissal — Level 3-or-lower monsters Normal/Flip Summoned this turn are
     # destroyed in the End Phase.
     "Infinite Dismissal": (EndPhaseSummonSweep(max_level=3),),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 79: deck-impact — a pay-LP-to-attack monster, a face-down banisher, and a
+# Nomi banish-Summon with a Battle-Phase-only enemy debuff.
+EFFECTS.update({
+    # Nobleman of Crossout — target 1 face-down monster; destroy and banish it, then, if
+    # it was a Flip monster, each player banishes every card with that monster's name from
+    # their Main Deck. (A face-down monster never flips, so no Flip Effect fires on removal.)
+    "Nobleman of Crossout": (
+        Effect(
+            timing="ignition",
+            target=TargetSpec(where="any_monster", count=1, face_down=True),
+            resolve=(BanishFaceDownThenDeckBanishIfFlip(),),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    # Dark Elf — its controller must pay 1000 LP to declare an attack with it.
+    "Dark Elf": (AttackLifeCost(amount=1000),),
+    # Soul of Purity and Light — every monster the opponent controls loses 300 ATK, but
+    # only during the opponent's Battle Phase.
+    "Soul of Purity and Light": (
+        FieldMod(atk=-300, side="opponent", only_opponent_battle_phase=True),
+    ),
+})
+HAND_SUMMONS.update({
+    # Soul of Purity and Light — cannot be Normal Summoned or Set; Special Summon it from
+    # the hand by banishing 2 LIGHT monsters from your Graveyard.
+    "Soul of Purity and Light": HandSpecialSummon(
+        cannot_normal_summon=True,
+        banish_costs=(
+            SummonCost(
+                count=2,
+                card_filter=CardFilter(
+                    card_kind="monster", attributes=frozenset({Attribute.LIGHT})
+                ),
+            ),
+        ),
+    ),
 })

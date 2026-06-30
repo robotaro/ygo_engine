@@ -203,6 +203,18 @@ class MultiAttacker:
 
 
 @dataclass(frozen=True)
+class AttackLifeCost:
+    """A face-up monster's rider: its controller must pay ``amount`` Life Points to
+    declare an attack with it (Dark Elf pays 1000 each time it attacks). The battle-phase
+    enumeration only offers its attacks while the controller can pay (LP stays above 0
+    after paying), and the engine deducts the cost at attack declaration. Read off the
+    monster's own ``continuous`` list via ``GameState.attack_life_cost``; suppressed
+    while its effect is inactive or negated (Skill Drain) — then it attacks for free."""
+
+    amount: int = 0
+
+
+@dataclass(frozen=True)
 class DamageStepBonus:
     """A face-up monster's rider: a temporary ATK/DEF swing that applies ONLY during the
     Damage Step of a qualifying battle (Cipher Soldier +2000 vs a Warrior, Etoile Cyber
@@ -353,6 +365,10 @@ class FieldMod:
     # For a MONSTER-borne anthem only: dormant unless the source monster is itself in
     # face-up Defense Position (Fairy King Truesdale). Ignored for Spell/Field sources.
     source_in_defense: bool = False
+    # Dormant except during the source controller's OPPONENT's Battle Phase — Soul of
+    # Purity and Light's "opponent's monsters lose 300 ATK during their Battle Phase only"
+    # (pair it with side="opponent").
+    only_opponent_battle_phase: bool = False
 
 
 @dataclass(frozen=True)
@@ -534,6 +550,7 @@ class TargetSpec:
     races: frozenset = frozenset()
     attributes: frozenset = frozenset()
     face_up: bool = False  # restrict to face-up monsters (e.g. Soul Taker)
+    face_down: bool = False  # restrict to face-down monsters (Nobleman of Crossout)
     defense_position: bool = False  # restrict to Defense Position monsters (Shield Crush)
     attack_position: bool = False  # restrict to face-up Attack Position monsters (Cyber Gymnast)
     exclude_attacker: bool = False  # drop the declared attacker (Magical Arm Shield's "except")
@@ -967,6 +984,33 @@ class BanishEventMonster(Primitive):
         iid = (ctx.event or {}).get("destroyed")
         if iid is not None and iid in ctx.state.cards:
             ctx.state.banish(iid)
+
+
+@dataclass(frozen=True)
+class BanishFaceDownThenDeckBanishIfFlip(Primitive):
+    """Nobleman of Crossout: destroy the targeted face-down monster and banish it (a
+    face-down monster never flips, so no Flip Effect fires); then, if that monster was
+    a Flip monster, each player reveals their Main Deck and banishes every card in it
+    sharing the destroyed monster's name. The brief "destroy → Graveyard → banish" step
+    is modelled as a direct banish (the end state is identical — the monster is banished —
+    and a face-down monster's on-destroy / sent-to-GY triggers are a minor approximation)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        if not ctx.targets:
+            return
+        iid = ctx.targets[0]
+        if iid not in s.cards:
+            return
+        inst = s.inst(iid)
+        name = inst.card.name
+        is_flip = inst.card.is_flip
+        s.banish(iid)
+        if not is_flip:
+            return
+        for pl in s.players:
+            for did in [d for d in pl.deck if s.inst(d).card.name == name]:
+                s.banish(did)
 
 
 @dataclass(frozen=True)

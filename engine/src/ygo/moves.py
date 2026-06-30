@@ -627,6 +627,7 @@ def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
         spec.races
         or spec.attributes
         or spec.face_up
+        or spec.face_down
         or spec.defense_position
         or spec.attack_position
         or spec.card_kind
@@ -656,6 +657,8 @@ def _filter_targets(state: GameState, iids: list[int], spec) -> list[int]:
         if spec.normal_only and not card.is_vanilla:
             continue
         if spec.face_up and not inst.is_face_up:
+            continue
+        if spec.face_down and inst.is_face_up:
             continue
         if spec.defense_position and inst.position not in (
             Position.FACE_UP_DEFENSE,
@@ -1088,6 +1091,9 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
             continue  # used up its attack(s) this Battle Phase (2+ for a MultiAttacker)
         if inst.attack_disabled_on_turn == state.turn_count:
             continue  # an effect this turn barred this monster from attacking
+        cost = state.attack_life_cost(iid)
+        if cost and state.players[player].life_points <= cost:
+            continue  # Dark Elf: cannot pay the LP cost required to declare an attack
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
             continue  # Messenger of Peace: too strong to declare an attack
         if level_cap is not None and (inst.card.level or 0) > level_cap:

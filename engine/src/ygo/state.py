@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from .cards import CardDef
 from .effects import (
     ActivationLock,
+    AttackLifeCost,
     AttackTargetProtection,
     BattleIndestructible,
     CanAttackDirectly,
@@ -514,6 +515,10 @@ class GameState:
             return False
         if mod.side == "opponent" and monster.controller == controller:
             return False
+        if mod.only_opponent_battle_phase and not (
+            self.phase is Phase.BATTLE and self.turn_player != controller
+        ):
+            return False  # Soul of Purity and Light: only during the opponent's Battle Phase
         return True
 
     def _field_delta(self, monster_iid: int, which: str) -> int:
@@ -706,6 +711,13 @@ class GameState:
         face-up MultiAttacker (Hayabusa Knight), else 1."""
         mod = self._self_rider(iid, MultiAttacker)
         return mod.times if mod is not None else 1
+
+    def attack_life_cost(self, iid: int) -> int:
+        """The Life Points the controller must pay to declare an attack with this
+        monster (Dark Elf = 1000), or 0 if none. Suppressed while the monster's effect
+        is inactive or negated (Skill Drain) — then it may attack for free."""
+        mod = self._self_rider(iid, AttackLifeCost)
+        return mod.amount if mod is not None else 0
 
     def field_cards(
         self,
