@@ -83,6 +83,7 @@ from .effects import (
     MultiAttacker,
     NoHandLimit,
     DestroyAttachedEquips,
+    DrawOnOpponentDraw,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5852,3 +5853,13 @@ CONTINUOUS.update({"Infinite Cards": (NoHandLimit(whose="both"),)})
 CONTINUOUS.update({
     "Gearfried the Iron Knight": (DestroyAttachedEquips(),),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 112: Appropriate — each time your opponent draws outside a Draw Phase,
+# draw 2. Modelled like Solemn Wishes (a Continuous Trap: Set it, then it stays face-up
+# and reacts) plus the DrawOnOpponentDraw marker the engine's draw-event loop reads. The
+# "activate only when..." timing gate is approximated by the continuous response (the
+# activating draw itself isn't retro-caught). Clears the last blocker in Seeker's deck.
+EFFECTS.update({"Appropriate": (Effect(speed=2, timing="ignition"),)})
+CONTINUOUS.update({"Appropriate": (DrawOnOpponentDraw(count=2),)})

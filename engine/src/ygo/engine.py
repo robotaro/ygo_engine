@@ -19,6 +19,7 @@ from .effects import (
     SELF,
     DefenseAfterAttack,
     DrawAgainOnDraw,
+    DrawOnOpponentDraw,
     DrawTrigger,
     EndPhaseSummonSweep,
     EndPhaseTrigger,
@@ -197,8 +198,24 @@ class Engine:
                     self.log(f"  {s.players[player].name} gains {mod.gain_life} LP from {inst.name}")
             self._fire_drawn_card_triggers(player, drawn)
             self._fire_draw_again_triggers(player, drawn)
+            self._fire_opponent_draw_responses(player)
         # Solemn Wishes' LP gain may feed a "when you gain Life Points" trigger (Fire Princess).
         self._fire_life_gain_window()
+
+    def _fire_opponent_draw_responses(self, drawer: int) -> None:
+        """Appropriate: when ``drawer`` draws OUTSIDE a Draw Phase, each opponent controlling
+        a face-up DrawOnOpponentDraw immediately draws its ``count``. The responder's draw
+        queues its own pending event, so ``_process_draw_triggers``' loop chains any further
+        responses (mutual Appropriates ping-pong until a deck runs out — a real interaction,
+        bounded by deck size)."""
+        s = self.state
+        if s.phase is Phase.DRAW:
+            return  # the normal draw-for-turn never triggers it
+        responder = s.opponent_of(drawer)
+        for inst, mod in s.active_markers(DrawOnOpponentDraw, (responder,)):
+            drew = s.draw(responder, mod.count)
+            if drew:
+                self.log(f"  {s.players[responder].name} draws {len(drew)} from {inst.name}")
 
     def _fire_draw_again_triggers(self, player: int, drawn: tuple) -> None:
         """For each face-up DrawAgainOnDraw the drawer controls (Heart of the Underdog,

@@ -698,6 +698,16 @@ class DrawTrigger:
 
 
 @dataclass(frozen=True)
+class DrawOnOpponentDraw:
+    """Appropriate: each time the OPPONENT draws a card(s) *outside a Draw Phase*, the
+    controller immediately draws ``count`` cards. Read by the engine's draw-event loop
+    (the controller's draw queues its own event, so chained Appropriates resolve in turn);
+    suppressed while the card's effect is negated (Royal Decree)."""
+
+    count: int = 2
+
+
+@dataclass(frozen=True)
 class TargetSpec:
     """What an effect targets, chosen by the controller at activation.
 

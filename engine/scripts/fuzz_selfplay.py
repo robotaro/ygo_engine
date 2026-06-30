@@ -398,6 +398,10 @@ DECK = (
     # Spells for it to eat at the EquipToTarget chokepoint (Mage Power / Big Bang Shot are
     # already in the deck above; add a couple more equip hosts/targets).
     + ["Gearfried the Iron Knight"] * 2 + ["Sword of Dark Destruction"] * 2
+    # Batch 112: Appropriate (draw 2 when the opponent draws outside a Draw Phase) + the
+    # out-of-Draw-Phase draw engines already in the deck (Pot of Greed, Card Destruction)
+    # to fire it across the draw-event loop.
+    + ["Appropriate"] * 2
 )
 
 
