@@ -81,6 +81,7 @@ class Profile:
     stats: dict[str, int] = field(default_factory=lambda: {"wins": 0, "losses": 0, "duels": 0})
     packs_opened: int = 0
     tournament: dict | None = None  # active tournament run (see tournament.py), or None
+    pending_reward: dict | None = None  # an unclaimed win reward, e.g. {"game": ...}
 
     # -- collection helpers ------------------------------------------------- #
     def owns(self, card_name: str, count: int = 1) -> bool:
@@ -141,15 +142,19 @@ class Profile:
     def earn(self, amount: int) -> None:
         self.duelist_points += max(0, int(amount))
 
-    def record_result(self, won: bool) -> int:
-        """Tally a duel and award DP. Returns the DP earned."""
+    def record_result(self, won: bool, *, dp: int | None = None) -> int:
+        """Tally a duel and award DP. Returns the DP awarded.
+
+        ``dp`` overrides the default win/loss amount — pass ``dp=0`` to skip the
+        award (e.g. when a win grants a booster-pack pick instead of DP).
+        """
         self.stats["duels"] = self.stats.get("duels", 0) + 1
         if won:
             self.stats["wins"] = self.stats.get("wins", 0) + 1
-            reward = WIN_DP
+            reward = WIN_DP if dp is None else dp
         else:
             self.stats["losses"] = self.stats.get("losses", 0) + 1
-            reward = LOSS_DP
+            reward = LOSS_DP if dp is None else dp
         self.earn(reward)
         return reward
 
@@ -164,6 +169,7 @@ class Profile:
             "stats": self.stats,
             "packs_opened": self.packs_opened,
             "tournament": self.tournament,
+            "pending_reward": self.pending_reward,
         }
 
     @classmethod
@@ -177,6 +183,7 @@ class Profile:
             stats=dict(obj.get("stats", {"wins": 0, "losses": 0, "duels": 0})),
             packs_opened=int(obj.get("packs_opened", 0)),
             tournament=obj.get("tournament"),
+            pending_reward=obj.get("pending_reward"),
         )
 
 

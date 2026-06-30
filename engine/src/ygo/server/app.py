@@ -394,6 +394,7 @@ def profile_summary(profile: Profile) -> dict:
         "collectionTotal": profile.total_cards(),
         "activeDeck": profile.active_deck,
         "decks": [d for d in decks if d is not None],
+        "pendingReward": profile.pending_reward,
     }
 
 
@@ -561,6 +562,77 @@ def shop_sell(payload: dict) -> dict:
         "qty": qty,
         "earned": proceeds,
         "owned": profile.collection.get(card.name, 0),
+        "duelistPoints": profile.duelist_points,
+        "profile": profile_summary(profile),
+    }
+
+
+# --------------------------------------------------------------------------- #
+#  Win rewards: a free booster pack chosen from the opponent's game (GBA-style)
+# --------------------------------------------------------------------------- #
+def opponent_game(opp_id: str | None) -> str | None:
+    """The GBA game an opponent deck belongs to. Deck ids look like
+    ``gba/<game>/<duelist>.txt``; returns ``<game>`` or None for non-GBA decks."""
+    parts = (opp_id or "").split("/")
+    return parts[1] if len(parts) >= 3 and parts[0] == "gba" else None
+
+
+def packs_for_game(game: str | None) -> list:
+    return [p for p in _all_packs() if p.game == game] if game else []
+
+
+def reward_pack_dict(pack) -> dict:
+    return {
+        "id": pack.id,
+        "name": pack.name,
+        "cardsPerPack": pack.cards_per_pack,
+        "distinct": pack.distinct,
+        "art": pack_art_url(pack),
+    }
+
+
+@app.get("/api/rewards")
+def rewards() -> dict:
+    """The booster packs offered for an unclaimed win reward (opponent's game)."""
+    profile = load_profile()
+    reward = profile.pending_reward
+    if not reward:
+        return {"pending": False, "packs": []}
+    game = reward.get("game")
+    return {
+        "pending": True,
+        "game": game,
+        "gameTitle": GAME_TITLES.get(game, game),
+        "packs": [reward_pack_dict(p) for p in packs_for_game(game)],
+    }
+
+
+@app.post("/api/rewards/claim")
+def claim_reward(payload: dict) -> dict:
+    """Open the chosen reward pack for free and clear the pending reward."""
+    profile = load_profile()
+    reward = profile.pending_reward
+    if not reward:
+        raise HTTPException(status_code=400, detail="No reward to claim")
+    pack = get_pack(payload.get("packId", ""), REGISTRY)
+    game = reward.get("game")
+    if pack is None or (game and pack.game != game):
+        raise HTTPException(status_code=400, detail="That pack isn't one of your reward choices")
+    pulled = open_pack(pack, random.Random())
+    before = set(profile.collection)
+    profile.add_cards(Counter(pulled))
+    profile.packs_opened += 1
+    profile.pending_reward = None
+    save_profile(profile)
+    cards = []
+    for name in pulled:
+        card = REGISTRY.get(name)
+        entry = card_to_dict(card)
+        entry["isNew"] = name not in before
+        cards.append(entry)
+    return {
+        "pack": pack.name,
+        "pulled": cards,
         "duelistPoints": profile.duelist_points,
         "profile": profile_summary(profile),
     }
@@ -745,8 +817,9 @@ def delete_deck(deck_id: str) -> dict:
 async def duel_ws(websocket: WebSocket) -> None:
     await websocket.accept()
     seed = int(websocket.query_params.get("seed", "0"))
+    opp_id = websocket.query_params.get("opp")
     your_deck = resolve_deck_id(websocket.query_params.get("deck")) or DECK_A
-    opp_deck = resolve_deck_id(websocket.query_params.get("opp")) or DECK_B
+    opp_deck = resolve_deck_id(opp_id) or DECK_B
 
     session = GameSession(
         deck_a=your_deck, deck_b=opp_deck, seed=seed, human_player=0, record_dir=RECORD_DIR
@@ -761,11 +834,24 @@ async def duel_ws(websocket: WebSocket) -> None:
         while True:
             message = await loop.run_in_executor(None, session.outbound.get)
             if message.get("type") == "result":
-                # The duel is over — tally it and award Duelist Points.
+                # The duel is over — tally it. A win grants a free booster-pack
+                # pick from the opponent's game (GBA-style) instead of flat DP;
+                # a loss still pays the small consolation DP.
                 profile = load_profile()
-                earned = profile.record_result(bool(message.get("youWin")))
+                won = bool(message.get("youWin"))
+                game = opponent_game(opp_id)
+                if won and packs_for_game(game):
+                    earned = profile.record_result(True, dp=0)
+                    profile.pending_reward = {"game": game}
+                else:
+                    earned = profile.record_result(won)
                 save_profile(profile)
-                message = {**message, "dpEarned": earned, "duelistPoints": profile.duelist_points}
+                message = {
+                    **message,
+                    "dpEarned": earned,
+                    "duelistPoints": profile.duelist_points,
+                    "pendingReward": profile.pending_reward,
+                }
             await websocket.send_json(message)
 
     pump = asyncio.create_task(pump_outbound())
