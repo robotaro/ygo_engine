@@ -112,6 +112,7 @@ from .effects import (
     CannotBeSpecialSummoned,
     ReturnsToHandAtEndPhase,
     HalvesBattleDamageDealt,
+    BurnDefenseMonsterOriginalAtk,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5558,5 +5559,34 @@ CONTINUOUS.update({
         CannotBeSpecialSummoned(),
         ReturnsToHandAtEndPhase(),
         HalvesBattleDamageDealt(),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 99: a Ritual pair + their boss. Curse of the Masked Beast and Shinato's
+# Ark are Ritual Spells (mirroring the Black Illusion Ritual wiring of Batch 93); Shinato,
+# King of a Higher Plane gets its Defense-Position battle burn so it is functional too.
+# The two Ritual Spells each clear one more one-card-from-ready deck.
+RITUALS.update({
+    "Curse of the Masked Beast": "The Masked Beast",
+    "Shinato's Ark": "Shinato, King of a Higher Plane",
+})
+
+EFFECTS.update({
+    "Curse of the Masked Beast": (
+        Effect(timing="ritual", condition=_can_ritual_summon_for("The Masked Beast")),
+    ),
+    "Shinato's Ark": (
+        Effect(timing="ritual", condition=_can_ritual_summon_for("Shinato, King of a Higher Plane")),
+    ),
+    # Shinato — when it destroys a Defense-Position monster by battle, burn the opponent
+    # for that monster's original ATK.
+    "Shinato, King of a Higher Plane": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroys_by_battle", by=SELF),
+            resolve=(BurnDefenseMonsterOriginalAtk(),),
+        ),
     ),
 })

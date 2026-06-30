@@ -2593,6 +2593,23 @@ class SearchCardToTopOfDeck(Primitive):
             deck.append(pick)  # the end of the list is the top of the deck
 
 
+@dataclass(frozen=True)
+class BurnDefenseMonsterOriginalAtk(Primitive):
+    """Shinato, King of a Higher Plane: when this card destroys a Defense-Position
+    monster by battle, inflict damage to the opponent equal to that monster's original
+    (printed) ATK. Reads the triggering event's ``destroyed`` iid; a no-op when the
+    destroyed monster was not in Defense Position (ordinary battle damage already applied)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        iid = (ctx.event or {}).get("destroyed")
+        inst = s.cards.get(iid) if iid is not None else None
+        if inst is None or not inst.died_in_defense:
+            return
+        opp = s.opponent_of(ctx.controller)
+        s.players[opp].life_points -= inst.card.attack or 0
+
+
 # --------------------------------------------------------------------------- #
 #  Effect — a card ability
 # --------------------------------------------------------------------------- #

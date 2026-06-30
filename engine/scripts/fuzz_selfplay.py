@@ -348,6 +348,12 @@ DECK = (
     + ["Gravekeeper's Servant"] * 1
     # Batch 98: Susa Soldier (cannot be SS; End-Phase self-bounce; halved battle damage).
     + ["Susa Soldier"] * 2
+    # Batch 99: a Ritual pair + their boss. The Ritual Spells + their monsters + Level-8
+    # Tribute fodder (Blue-Eyes) so the Ritual Summons can actually fire; Shinato's
+    # Defense-Position battle burn exercises the new died_in_defense flag.
+    + ["Curse of the Masked Beast"] * 1 + ["The Masked Beast"] * 1
+    + ["Shinato's Ark"] * 1 + ["Shinato, King of a Higher Plane"] * 1
+    + ["Blue-Eyes White Dragon"] * 1
 )
 
 

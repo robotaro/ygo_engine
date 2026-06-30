@@ -149,6 +149,10 @@ class CardInstance:
     # the Destroy* primitives pass; read by the "destroyed_by_effect" and unified
     # "destroyed" triggers (Babycerasaurus, Granadora) while draining the GY queue.
     died_by_effect: bool = False
+    # True for a card that was in Defense Position when it was destroyed by battle this
+    # trip. Stamped by send_to_graveyard; read by Shinato's "destroyed a Defense-Position
+    # monster by battle" burn (its original ATK), which fires just after combat.
+    died_in_defense: bool = False
     # True while this monster is face-up on the field having reached it via a Special
     # Summon (vs. Normal/Tribute/Flip Summon or Set). Stamped True in state.special_summon
     # (and on a Token), reset to False by place_monster (Normal Summon/Set) and on leaving
@@ -377,6 +381,7 @@ class GameState:
         inst.position = position
         inst.died_by_battle = False  # a revived monster carries no stale battle-death flag
         inst.died_by_effect = False  # nor a stale effect-destruction flag
+        inst.died_in_defense = False  # nor a stale Defense-death flag
         inst.was_special_summoned = False  # Normal Summon/Set; special_summon re-stamps True
         inst.was_tribute_summoned = False  # moves._summon re-stamps True for a Tribute Summon
 
@@ -444,6 +449,7 @@ class GameState:
         inst.perm_def = 0  # killer) don't outlive the field — a revived copy is back to base
         inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
         inst.died_by_effect = False  # re-stamped by send_to_graveyard if an effect destruction
+        inst.died_in_defense = False  # re-stamped by send_to_graveyard for a Defense battle death
         inst.was_special_summoned = False  # re-stamped by special_summon on a fresh summon
         inst.was_tribute_summoned = False  # re-stamped by moves._summon on a fresh Tribute Summon
         inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
@@ -505,6 +511,7 @@ class GameState:
             return
         from_field = inst.zone in (Zone.MONSTER, Zone.SPELL_TRAP, Zone.FIELD)
         from_hand = inst.zone == Zone.HAND  # a hand card reaching the GY *is* a discard
+        was_defense = inst.position in (Position.FACE_UP_DEFENSE, Position.FACE_DOWN_DEFENSE)
         owner = inst.owner
         self._remove_from_current_location(iid)
         if inst.card.is_token:
@@ -519,6 +526,7 @@ class GameState:
         inst.last_equipped_to = equipped
         inst.died_by_battle = by_battle and from_field
         inst.died_by_effect = by_effect and from_field
+        inst.died_in_defense = by_battle and from_field and was_defense
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine. Every
         # monster is queued (cheap; the engine skips those with no such trigger), plus
