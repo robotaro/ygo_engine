@@ -490,6 +490,20 @@ class EndPhaseTrigger:
 
 
 @dataclass(frozen=True)
+class LifeGainTrigger:
+    """A face-up card that fires a full Effect each time its controller GAINS Life Points
+    (Fire Princess: "Each time you gain Life Points, inflict 500 damage to your opponent").
+    The engine's "when you gain Life Points" window drains every recorded gain (state.
+    gain_life_points is the one sink) and fires ``effect`` once per gain event as the
+    *source controller's* effect, so its payload directions read relative to the controller
+    (``InflictDamage(OPPONENT)`` burns the controller's opponent). Mandatory; suppressed
+    while the source's effects are negated (Skill Drain) — the ``active_markers`` scan
+    handles the face-up / effects-active / negation gating."""
+
+    effect: "Effect"
+
+
+@dataclass(frozen=True)
 class GraveyardStandbyReturn:
     """A card that, during its owner's Standby Phase while it sits in their Graveyard,
     may add itself back to the hand (Sinister Serpent). Read directly off the card's
@@ -1502,7 +1516,7 @@ class GainLifePoints(Primitive):
 
     def execute(self, ctx: EffectContext) -> None:
         amount = self.value.value(ctx) if self.value is not None else self.amount
-        ctx.state.players[ctx.side(self.player)].life_points += amount
+        ctx.state.gain_life_points(ctx.side(self.player), amount)
 
 
 @dataclass(frozen=True)

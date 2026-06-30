@@ -63,6 +63,7 @@ from .effects import (
     EndBattlePhase,
     EndPhaseSummonSweep,
     EndPhaseTrigger,
+    LifeGainTrigger,
     EquipMod,
     EquipSelfToAttacker,
     EquipToTarget,
@@ -5099,5 +5100,20 @@ EFFECTS.update({
             trigger=Trigger(kind="destroyed", by=SELF),
             resolve=(InflictDamage(SELF, 2000),),
         ),
+    ),
+})
+
+# Effects Batch 84: "when you gain Life Points" (ROADMAP #3, TIMING_RECOVER). state.
+# gain_life_points is now the single LP-gain sink (every healing path — the GainLifePoints
+# primitive, the Standby/draw-trigger upkeep markers — routes through it), recording each
+# gain so the engine's life-gain window can react. Fire Princess is the sole pre-Synchro
+# consumer, but the window is reusable for any future "each time you gain LP" card.
+CONTINUOUS.update({
+    # Fire Princess: "Each time you gain Life Points, inflict 500 damage to your opponent."
+    # A face-up continuous trigger (LifeGainTrigger) fired once per gain event as the
+    # controller's effect, so it pairs with the classic LP engines — Solemn Wishes (gain
+    # on draw), Cure Mermaid (Standby gain), Numinous Healer, any healing Spell.
+    "Fire Princess": (
+        LifeGainTrigger(Effect(resolve=(InflictDamage(OPPONENT, 500),))),
     ),
 })

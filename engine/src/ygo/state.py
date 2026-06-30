@@ -260,6 +260,11 @@ class GameState:
     # by InflictDamage. Drained by the engine after a chain resolves to open a "when you take
     # damage" window (Numinous Healer / Attack and Receive — but NOT LP costs). Transient.
     effect_damage_pending: list = field(default_factory=list)
+    # (player, amount) pairs of LIFE-POINT GAINS, appended by state.gain_life_points (the one
+    # sink every healing path routes through). Drained by the engine's "when you gain Life
+    # Points" window (Fire Princess) after a chain, a draw-trigger sweep, or the Standby
+    # upkeep. Transient.
+    lp_gain_pending: list = field(default_factory=list)
     # Set by an effect to end the current Battle Phase immediately (The Unhappy Maiden);
     # read and reset by the engine's Battle-Phase loop.
     battle_phase_ended: bool = False
@@ -419,6 +424,18 @@ class GameState:
         inst.attack_disabled_on_turn = None
         inst.destroy_at_end_phase = None
         inst.position_locked_until = None  # a position lock doesn't outlive the field
+
+    def gain_life_points(self, player: int, amount: int) -> None:
+        """The single Life-Point GAIN sink (ygopro's Duel.Recover): add ``amount`` to
+        ``player``'s Life Points and record the gain so the engine's "when you gain Life
+        Points" window (Fire Princess) can react to it. A gain of 0 or less is a no-op and
+        records nothing — you cannot "gain" non-positive LP. Every healing path (the
+        GainLifePoints primitive, the Standby/draw-trigger upkeep markers) routes through
+        here so the window sees them all."""
+        if amount <= 0:
+            return
+        self.players[player].life_points += amount
+        self.lp_gain_pending.append((player, amount))
 
     def send_to_graveyard(self, iid: int, by_battle: bool = False, by_effect: bool = False) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``

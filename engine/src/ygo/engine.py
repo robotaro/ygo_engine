@@ -23,6 +23,7 @@ from .effects import (
     EndPhaseTrigger,
     GraveyardStandbyGainLife,
     GraveyardStandbyReturn,
+    LifeGainTrigger,
     SpellCounterHolder,
     StandbyTrigger,
     StandbyUpkeep,
@@ -186,8 +187,10 @@ class Engine:
             player = s.pending_draws.pop(0)
             for inst, mod in s.active_markers(DrawTrigger, (player,)):
                 if mod.gain_life:
-                    s.players[player].life_points += mod.gain_life
+                    s.gain_life_points(player, mod.gain_life)
                     self.log(f"  {s.players[player].name} gains {mod.gain_life} LP from {inst.name}")
+        # Solemn Wishes' LP gain may feed a "when you gain Life Points" trigger (Fire Princess).
+        self._fire_life_gain_window()
 
     # ------------------------------------------------------------------ #
     def _standby_phase(self, tp: int) -> None:
@@ -217,6 +220,9 @@ class Engine:
                     # need the fixed-LP `fired` bookkeeping below.
                     self._fire_standby_trigger(inst, mod, tp)
         self._fire_graveyard_standby_effects(tp)
+        # Standby healing (Cure Mermaid, a GY gainer) may feed a "when you gain Life
+        # Points" trigger (Fire Princess).
+        self._fire_life_gain_window()
         if fired:
             self._check_life_points()
             self._check_field_to_gy_triggers()
@@ -247,7 +253,7 @@ class Engine:
                 continue
             for mod in inst.card.continuous:
                 if isinstance(mod, GraveyardStandbyGainLife) and mod.amount:
-                    s.players[tp].life_points += mod.amount
+                    s.gain_life_points(tp, mod.amount)
                     self.log(f"  {s.players[tp].name} gains {mod.amount} LP from {inst.name} (GY)")
                     self._changed()
 
@@ -283,9 +289,8 @@ class Engine:
                 s.send_to_graveyard(inst.iid)
             return True
         if mod.gain_life:
-            player = s.players[beneficiary]
-            player.life_points += mod.gain_life
-            self.log(f"  {player.name} gains {mod.gain_life} LP from {name}")
+            s.gain_life_points(beneficiary, mod.gain_life)
+            self.log(f"  {s.players[beneficiary].name} gains {mod.gain_life} LP from {name}")
             return True
         if mod.burn_life:
             victim = s.players[tp]  # the active player takes the damage
@@ -698,8 +703,10 @@ class Engine:
 
         self._resolve_chain()
         # Effect damage dealt while the chain resolved opens a "when you take damage"
-        # window for the victim (Numinous Healer, Attack and Receive).
+        # window for the victim (Numinous Healer, Attack and Receive); Life Points gained
+        # open a "when you gain Life Points" window for the gainer (Fire Princess).
         self._fire_effect_damage_window()
+        self._fire_life_gain_window()
 
     def _offer_response(self, player: int, event: dict | None, last_speed: int):
         """Ask ``player`` to activate a fast-enough effect, or pass. Returns a link or None."""
@@ -877,6 +884,27 @@ class Engine:
             link = self._offer_response(victim, event, last_speed=1)
             if link is not None:
                 self._run_chain([link])
+
+    def _fire_life_gain_window(self) -> None:
+        """Drain every recorded Life-Point gain and fire each gaining player's face-up
+        ``LifeGainTrigger`` once per gain event (Fire Princess: "each time you gain LP,
+        burn the opponent 500"). state.gain_life_points is the one sink every healing path
+        feeds, so this catches gains from chains, draw triggers (Solemn Wishes) and the
+        Standby upkeep (Cure Mermaid) alike. Drained first, so the trigger's own burn — a
+        nested chain — sees an empty queue and can't recurse; the burn is damage, not a
+        gain, so it never re-opens this window."""
+        s = self.state
+        pending = s.lp_gain_pending
+        s.lp_gain_pending = []
+        if not pending or self.result is not None:
+            return
+        for player, _amount in pending:
+            if self.result is not None:
+                return
+            for inst, mod in s.active_markers(LifeGainTrigger, (player,)):
+                self._trigger_effect(inst.iid, mod.effect, inst.controller)
+                if self.result is not None:
+                    return
 
     def _fire_destroys_by_battle_trigger(self) -> None:
         """Fire each monster's "when this card destroys a monster by battle" SELF Trigger

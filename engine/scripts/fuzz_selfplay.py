@@ -279,6 +279,12 @@ DECK = (
     + ["Babycerasaurus"] * 2
     + ["Granadora"] * 2
     + ["Sabersaurus"] * 2
+    # Batch 84: Fire Princess ("each time you gain LP, burn 500") + its LP-gain partners
+    # (Solemn Wishes gains on draw, Cure Mermaid each Standby) so the life-gain window is
+    # exercised end-to-end.
+    + ["Fire Princess"] * 2
+    + ["Solemn Wishes"] * 1
+    + ["Cure Mermaid"] * 1
 )
 
 
