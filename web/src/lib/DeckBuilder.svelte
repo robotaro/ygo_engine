@@ -394,9 +394,11 @@
     grid-column: 1 / -1;
     text-align: center;
   }
+  /* Plain block (NOT flex) so the fixed-height image area below can't be
+     shrunk away — a flex child keeps flex-shrink:1 even with an explicit
+     height, which collapsed the thumbnails to nothing. */
   .poolcard {
-    display: flex;
-    flex-direction: column;
+    display: block;
     border-radius: var(--r);
     border: 1px solid var(--line);
     background: var(--surface-2);
@@ -420,10 +422,9 @@
     background: var(--surface-3);
   }
   .thumb img {
-    position: absolute;
-    inset: 0;
+    display: block;
     width: 100%;
-    height: 100%;
+    height: 150px;
     object-fit: contain;
   }
   /* name + stats live in a strip BELOW the card, never over the art */

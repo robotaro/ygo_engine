@@ -318,6 +318,7 @@
     position: relative;
     width: 100%;
     height: 96px;
+    flex: none;
     border-radius: var(--r-sm);
     overflow: hidden;
     background: var(--surface-3);
