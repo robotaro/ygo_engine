@@ -142,6 +142,27 @@ def test_blast_sphere_equips_to_a_monster_you_own_if_the_opponent_attacks_with_i
     assert s.players[B].life_points == 8000 - 2500  # the controller (B) takes the burn
 
 
+def test_blast_sphere_burn_follows_control_of_the_equipped_monster():
+    # GBA combo (Change of Heart / give-away): the explosion damages whoever CONTROLS the
+    # equipped monster when it explodes — read at Standby resolution, not at equip time.
+    # Push that monster to the other side first and the burn follows it there.
+    s = _fresh()
+    attacker = _spawn(s, "Summoned Skull", B, 0)  # 2500 ATK, B's monster
+    blast = _spawn(s, "Blast Sphere", A, 0, Position.FACE_DOWN_DEFENSE)
+    eng = Engine(s, [Agent(), Agent()])
+    _attack(s, eng, attacker.iid, blast.iid)
+    assert blast.equipped_to == attacker.iid
+    # Control of the about-to-explode monster is handed to A before the Standby Phase.
+    idx = s.first_empty_monster_zone(A)
+    s.move_control(attacker.iid, A, idx)
+    assert attacker.controller == A
+    s.phase = Phase.STANDBY
+    eng._standby_phase(B)
+    assert attacker.zone is Zone.GRAVEYARD          # still destroyed
+    assert s.players[A].life_points == 8000 - 2500  # the NEW controller (A) eats the burn
+    assert s.players[B].life_points == 8000          # the original controller is spared
+
+
 def test_blast_sphere_is_discarded_if_the_host_leaves_before_the_standby():
     s = _fresh()
     attacker = _spawn(s, "Summoned Skull", B, 0)

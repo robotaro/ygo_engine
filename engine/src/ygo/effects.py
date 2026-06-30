@@ -1066,9 +1066,12 @@ class EquipSelfToAttacker(Primitive):
 class DestroyEquipHostThenBurn(Primitive):
     """Blast Sphere's delayed payoff (fired on its controller's opponent's next Standby
     Phase via a ``requires_equipped`` StandbyTrigger): destroy the monster this card is
-    equipped to and, if it did, inflict damage to that monster's controller equal to its
-    ATK on the field. A no-op if the host has already left the field (Blast Sphere would
-    then be an orphaned equip, already cleaned up)."""
+    equipped to and, if it did, inflict damage equal to its ATK on the field. The damage
+    hits whoever CONTROLS the equipped monster at the moment it explodes — read here at
+    resolution time, not captured at equip time. This is the GBA-era behaviour and lets
+    the classic combo work: hand the about-to-explode monster to the enemy first (Change
+    of Heart / a give-away) and *they* take the burn. A no-op if the host has already left
+    the field (Blast Sphere would then be an orphaned equip, already cleaned up)."""
 
     def execute(self, ctx: EffectContext) -> None:
         s = ctx.state
@@ -1078,7 +1081,7 @@ class DestroyEquipHostThenBurn(Primitive):
         host = s.cards.get(src.equipped_to)
         if host is None or host.zone is not Zone.MONSTER:
             return
-        victim = host.controller
+        victim = host.controller  # whoever controls it NOW takes the damage
         atk = s.effective_attack(host.iid)
         s.send_to_graveyard(host.iid)
         if atk > 0:
