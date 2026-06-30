@@ -450,6 +450,9 @@ DECK = (
     # Batch 127: Waboku (no battle damage + your monsters indestructible by battle this turn)
     # — exercises PreventBattleDestructionThisTurn + the turn-scoped indestructible flag.
     + ["Waboku"] * 2
+    # Batch 128: Dragon Capture Jar (flip all Dragons to Defense + lock their position) —
+    # exercises ChangeAllPositions(race) + the RacePositionLock floodgate.
+    + ["Dragon Capture Jar"] * 2
 )
 
 

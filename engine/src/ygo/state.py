@@ -43,6 +43,7 @@ from .effects import (
     MultiAttacker,
     NoHandLimit,
     Piercing,
+    RacePositionLock,
     SelfStatMod,
     SpecialSummonLock,
     SpellCounterHolder,
@@ -1245,8 +1246,16 @@ class GameState:
         return self._attached_lock(iid, "attack")
 
     def monster_position_locked(self, iid: int) -> bool:
-        """Whether monster ``iid`` cannot change its battle position for the same reason."""
-        return self._attached_lock(iid, "position")
+        """Whether monster ``iid`` cannot change its battle position — an attached lock
+        (Spellbinding Circle) or a race floodgate (Dragon Capture Jar locks every Dragon)."""
+        if self._attached_lock(iid, "position"):
+            return True
+        inst = self.cards.get(iid)
+        if inst is not None:
+            for _src, mod in self.active_markers(RacePositionLock):
+                if inst.card.race == mod.race:
+                    return True
+        return False
 
     def destroys_attached_equips(self, iid: int) -> bool:
         """Whether the monster ``iid`` destroys any Equip Card equipped to it (Gearfried

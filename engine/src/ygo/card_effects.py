@@ -108,6 +108,7 @@ from .effects import (
     ReturnFromGraveyardToDeck,
     ReturnFromGraveyardToHand,
     ReturnOwnBattleDeadToHand,
+    RacePositionLock,
     ForceAttackTarget,
     RedirectAttackToTarget,
     ReflectBattleDamage,
@@ -6178,4 +6179,24 @@ EFFECTS.update({
             resolve=(PreventBattleDamageThisTurn(), PreventBattleDestructionThisTurn()),
         ),
     ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 128: Dragon Capture Jar — "Change all face-up Dragon-Type monsters on the field
+# to Defense Position, also they cannot change their battle positions." A Continuous Trap: its
+# activation flips every face-up Dragon (both sides) to Defense via ChangeAllPositions(race=
+# "Dragon"); while it stays face-up the new RacePositionLock(race="Dragon") floodgate bars any
+# Dragon from changing position (read by GameState.monster_position_locked).
+EFFECTS.update({
+    "Dragon Capture Jar": (
+        Effect(
+            speed=2,
+            timing="quick",
+            resolve=(ChangeAllPositions(side=None, to="defense", race="Dragon"),),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    "Dragon Capture Jar": (RacePositionLock(race="Dragon"),),
 })

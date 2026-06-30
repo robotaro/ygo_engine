@@ -274,6 +274,17 @@ class LocksAttachedMonster:
 
 
 @dataclass(frozen=True)
+class RacePositionLock:
+    """A face-up floodgate (Dragon Capture Jar, a Continuous Trap) that bars every face-up
+    monster of ``race`` on EITHER side from changing its battle position while this card stays
+    face-up. Read by GameState.monster_position_locked; suppressed while the card is face-down
+    or negated (Royal Decree). The one-shot "flip all ``race`` monsters to Defense" on
+    activation is a separate ChangeAllPositions(race=...) in the card's EFFECTS."""
+
+    race: str = "Dragon"
+
+
+@dataclass(frozen=True)
 class HalvesAttackersAtk:
     """A face-up card's rider: every opponent monster that declares an attack while this card
     is face-up has its ATK halved for as long as this card stays on the field (Mirror Wall).
@@ -1892,6 +1903,7 @@ class ChangeAllPositions(Primitive):
     to: str = "defense"
     min_level: int | None = None
     max_level: int | None = None
+    race: str | None = None  # restrict to a single race (Dragon Capture Jar -> Dragon)
 
     def execute(self, ctx: EffectContext) -> None:
         players = (0, 1) if self.side is None else (ctx.side(self.side),)
@@ -1901,6 +1913,8 @@ class ChangeAllPositions(Primitive):
                     continue
                 inst = ctx.state.inst(iid)
                 if not inst.is_face_up:
+                    continue
+                if self.race is not None and inst.card.race != self.race:
                     continue
                 lvl = inst.card.level or 0
                 if self.min_level is not None and lvl < self.min_level:
