@@ -728,6 +728,12 @@ class Trigger:
     # (Damage Condenser is battle-only; Numinous Healer / Attack and Receive fire on any
     # LP damage). Checked against the event's ``damage_kind``.
     battle_only: bool = False
+    # For a "damage_step" trigger activated by the player ABOUT TO TAKE the battle damage
+    # (Nutrient Z), regardless of whose turn it is. ``to_victim`` requires the event's
+    # ``victim`` to be the activating player; ``min_battle_damage`` gates on the previewed
+    # ``incoming_damage`` (Nutrient Z needs 2000+).
+    to_victim: bool = False
+    min_battle_damage: int | None = None
 
 
 # --------------------------------------------------------------------------- #

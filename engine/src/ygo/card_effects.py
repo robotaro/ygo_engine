@@ -5149,3 +5149,24 @@ EFFECTS.update({
         ),
     ),
 })
+
+# Effects Batch 86: Nutrient Z (deck-impact #19) — a PRE-damage replacement. The engine's
+# damage-step window now previews the incoming battle damage (battle_damage_preview), so a
+# Set Trap can react to its amount before it lands. Nutrient Z gains 4000 LP *first* when
+# its controller is about to take 2000+ battle damage, then the (unchanged) damage applies
+# — and the gain itself feeds the Batch 84 life-gain window (Fire Princess).
+EFFECTS.update({
+    # "During damage calculation, when you are about to take 2000 or more battle damage:
+    # Gain 4000 LP first." A Set Normal Trap (speed 2) offered to the player about to take
+    # the damage (to_victim) when the previewed amount is 2000+ (min_battle_damage).
+    "Nutrient Z": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(
+                kind="damage_step", by=SELF, to_victim=True, min_battle_damage=2000
+            ),
+            resolve=(GainLifePoints(SELF, 4000),),
+        ),
+    ),
+})

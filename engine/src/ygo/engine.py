@@ -40,6 +40,7 @@ from .moves import (
     SetSpellTrap,
     SpecialSummonFromHand,
     apply,
+    battle_damage_preview,
     can_ritual_summon,
     controls_toon_world,
     legal_actions,
@@ -1034,34 +1035,48 @@ class Engine:
         )
 
     def _fire_damage_step_window(self, tp: int, attacker_iid: int, target_iid) -> None:
-        """At the start of the Damage Step, let the attacked player discard a hand monster
-        whose quick effect prevents the battle damage from this attack (Kuriboh). Offered
-        whenever ``tp``'s monster attacks — the activating player is the one being attacked
-        (``tp``'s opponent), matching "if your opponent's monster attacks". Discarding the
-        card is the activation cost; its effect then resolves on a fresh Chain (setting the
-        per-battle immunity ``_take_battle_damage`` reads). At most one is taken per attack
-        (a second copy would be wasted — the first zeroes the whole battle's damage)."""
+        """At the start of the Damage Step, before battle damage is calculated, run the two
+        battle-damage responses:
+
+        1. Kuriboh — the attacked player (``tp``'s opponent, matching "if your opponent's
+           monster attacks") may discard a hand monster whose quick effect zeroes the
+           damage from this battle. Discarding it is the cost; its effect resolves on a
+           fresh Chain (setting the per-battle immunity ``_take_battle_damage`` reads).
+        2. Nutrient Z — whichever player is about to take 2000+ battle damage (attacker OR
+           defender, via ``battle_damage_preview``) may activate a Set Trap that reacts to
+           it. Offered through the normal Set-Trap response path with the previewed amount
+           on the event. Computed after Kuriboh, so a Kuriboh'd-away hit (preview = None)
+           offers nothing."""
         s = self.state
         if self.result is not None:
             return
-        victim = s.opponent_of(tp)
+        # 1. Kuriboh (hand discard by the attacked player).
+        defender = s.opponent_of(tp)
         event = {"kind": "damage_step", "player": tp, "attacker": attacker_iid, "target": target_iid}
-        options = [
+        hand_options = [
             ActivateSpell(iid)
-            for iid in s.players[victim].hand
+            for iid in s.players[defender].hand
             if self._damage_step_effect(s.inst(iid).card) is not None
         ]
-        if not options:
+        if hand_options:
+            chosen = self.agents[defender].respond(s, hand_options, event)
+            if chosen is not None:
+                effect = self._damage_step_effect(s.inst(chosen.iid).card)
+                if effect is not None:
+                    self.log(f"  {s.players[defender].name} discards {s.inst(chosen.iid).name}")
+                    s.send_to_graveyard(chosen.iid)  # the discard — the activation cost
+                    self._trigger_effect(chosen.iid, effect, defender, event)
+        if self.result is not None:
             return
-        chosen = self.agents[victim].respond(s, options, event)
-        if chosen is None:
+        # 2. Nutrient Z (Set Trap by whoever is about to take 2000+ battle damage).
+        preview = battle_damage_preview(s, attacker_iid, target_iid)
+        if preview is None:
             return
-        effect = self._damage_step_effect(s.inst(chosen.iid).card)
-        if effect is None:
-            return
-        self.log(f"  {s.players[victim].name} discards {s.inst(chosen.iid).name}")
-        s.send_to_graveyard(chosen.iid)  # the discard — Kuriboh's activation cost
-        self._trigger_effect(chosen.iid, effect, victim, event)
+        victim, amount = preview
+        dmg_event = {**event, "victim": victim, "incoming_damage": amount}
+        link = self._offer_response(victim, dmg_event, last_speed=1)
+        if link is not None:
+            self._run_chain([link])
 
     def _switch_attacker_to_defense_after_attack(self, attacker_iid: int) -> None:
         """A monster carrying a ``DefenseAfterAttack`` rider (Spear Dragon, the Goblin

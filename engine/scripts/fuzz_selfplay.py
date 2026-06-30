@@ -290,6 +290,9 @@ DECK = (
     # rest of the turn).
     + ["Kuriboh"] * 2
     + ["Winged Kuriboh"] * 2
+    # Batch 86: Nutrient Z (Set Trap — gain 4000 before taking 2000+ battle damage), which
+    # exercises the battle-damage preview run at every attack.
+    + ["Nutrient Z"] * 2
 )
 
 

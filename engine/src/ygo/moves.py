@@ -981,6 +981,10 @@ def _trigger_matches(state, player, trigger, event) -> bool:
             return False
     if trigger.battle_only and event.get("damage_kind") != "battle":
         return False  # Damage Condenser reacts only to battle damage, not effect damage
+    if trigger.to_victim and event.get("victim") != player:
+        return False  # Nutrient Z: only the player about to take the damage may activate it
+    if trigger.min_battle_damage is not None and event.get("incoming_damage", 0) < trigger.min_battle_damage:
+        return False  # Nutrient Z needs 2000+ incoming battle damage
     return True
 
 
@@ -1373,6 +1377,56 @@ def _battle_destroy(state: GameState, iid: int, destroyer_iid: int | None = None
         state.send_to_graveyard(iid, by_battle=True)
         if destroyer_iid is not None:
             state.battle_destroyed_by.append((destroyer_iid, iid))
+
+
+def battle_damage_preview(state: GameState, attacker_iid: int, target_iid: int | None):
+    """Read-only: the battle damage this attack WOULD deal, as ``(victim_player, amount)``,
+    or None if nobody takes battle damage. Mirrors ``_resolve_attack``'s damage branches
+    exactly (ATK vs ATK, ATK vs DEF with no damage on a clean break unless the attacker
+    pierces, direct attack), including Dimension Wall reflection and the take-no-battle-
+    damage immunity. Used by the engine's damage-step window so a "when you are about to
+    take N battle damage" card (Nutrient Z) can react *before* the damage is applied. Kept
+    in lockstep with ``_resolve_attack`` — a cross-check test asserts they agree."""
+    attacker = state.inst(attacker_iid)
+    me = attacker.controller
+    opp = state.opponent_of(me)
+    atk = state.effective_attack(attacker_iid) + state.damage_step_bonus(
+        attacker_iid, target_iid, is_attacker=True, which="atk"
+    )
+
+    def _hit_defender(amount: int):
+        # The defending player takes it, unless Dimension Wall reflects it to the attacker.
+        return (me if state.reflect_battle_damage else opp, amount)
+
+    if target_iid is None:
+        victim, amount = _hit_defender(atk)  # direct attack
+    else:
+        target = state.inst(target_iid)
+        if target.position is Position.FACE_UP_ATTACK:
+            other = state.effective_attack(target_iid) + state.damage_step_bonus(
+                target_iid, attacker_iid, is_attacker=False, which="atk"
+            )
+            if atk > other:
+                victim, amount = _hit_defender(atk - other)
+            elif atk < other:
+                victim, amount = me, other - atk  # the attacker's monster loses
+            else:
+                return None  # mutual destruction, no battle damage
+        else:  # face-up or face-down Defense Position -> ATK vs DEF
+            dfn = state.effective_defense(target_iid) + state.damage_step_bonus(
+                target_iid, attacker_iid, is_attacker=False, which="defn"
+            )
+            if atk > dfn:
+                if not state.has_piercing(attacker_iid):
+                    return None  # clean break, no damage
+                victim, amount = _hit_defender(atk - dfn)
+            elif atk < dfn:
+                victim, amount = me, dfn - atk  # the attacker bounces off
+            else:
+                return None
+    if amount <= 0 or state.takes_no_battle_damage(victim):
+        return None
+    return (victim, amount)
 
 
 def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
