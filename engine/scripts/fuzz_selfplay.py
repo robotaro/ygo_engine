@@ -371,6 +371,9 @@ DECK = (
     # Batch 104: Cave Dragon (no Normal Summon while controlling a monster; cannot attack
     # without another Dragon). Blue-Eyes already in pool gives it a Dragon ally.
     + ["Cave Dragon"] * 1
+    # Batch 105: Cyber Harpie Lady (name treated as "Harpie Lady") + Harpie's Pet Dragon
+    # (counts "Harpie Lady" on the field) to exercise the name-alias in card_matches_traits.
+    + ["Cyber Harpie Lady"] * 1 + ["Harpie's Pet Dragon"] * 1
 )
 
 

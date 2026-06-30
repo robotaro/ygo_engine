@@ -360,6 +360,15 @@ class CannotBeSpecialSummoned:
 
 
 @dataclass(frozen=True)
+class NameTreatedAs:
+    """A static ability: this card's name is always also treated as ``name`` (Cyber
+    Harpie Lady is treated as "Harpie Lady"). Read by ``card_matches_traits`` so every
+    name check — exact ``names`` and substring ``name_contains`` — sees the alias too."""
+
+    name: str = ""
+
+
+@dataclass(frozen=True)
 class NoNormalSummonWhileControllingMonster:
     """A static ability: this card cannot be Normal Summoned or Set while its controller
     already controls a monster (Cave Dragon). Read off ``card.continuous`` by the
@@ -719,10 +728,15 @@ def card_matches_traits(
     constraints (empty/None = no constraint). The single source of truth for these
     trait checks, shared by ``CardFilter.matches`` and the move layer's target filter so
     the two can never drift. (Card-kind and position checks stay with each caller.)"""
-    if names and card.name not in names:
-        return False
-    if name_contains and not any(s in card.name for s in name_contains):
-        return False
+    if names or name_contains:
+        # A card treated as another name (Cyber Harpie Lady -> "Harpie Lady") matches under
+        # either name, for both exact and substring checks.
+        card_names = {card.name}
+        card_names.update(m.name for m in card.continuous if isinstance(m, NameTreatedAs))
+        if names and card_names.isdisjoint(names):
+            return False
+        if name_contains and not any(s in n for n in card_names for s in name_contains):
+            return False
     if races and card.race not in races:
         return False
     if attributes and card.attribute not in attributes:

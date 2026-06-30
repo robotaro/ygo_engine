@@ -119,6 +119,7 @@ from .effects import (
     DestroySelf,
     NoNormalSummonWhileControllingMonster,
     CannotAttackUnlessControlRace,
+    NameTreatedAs,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5740,4 +5741,14 @@ CONTINUOUS.update({
         # Cannot declare an attack unless you control another Dragon-Type monster.
         CannotAttackUnlessControlRace(race="Dragon"),
     ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 105: Cyber Harpie Lady — its name is always treated as "Harpie Lady", so
+# Harpie support (Cyber Shield's equip, Elegant Egotist, Harpie's Pet Dragon's count) sees
+# it as one. Modelled as a NameTreatedAs rider read by card_matches_traits. Clears one more
+# one-card-from-ready deck (Mai Valentine's Harpie deck).
+CONTINUOUS.update({
+    "Cyber Harpie Lady": (NameTreatedAs(name="Harpie Lady"),),
 })
