@@ -697,6 +697,9 @@ class Engine:
             responder = s.opponent_of(responder)
 
         self._resolve_chain()
+        # Effect damage dealt while the chain resolved opens a "when you take damage"
+        # window for the victim (Numinous Healer, Attack and Receive).
+        self._fire_effect_damage_window()
 
     def _offer_response(self, player: int, event: dict | None, last_speed: int):
         """Ask ``player`` to activate a fast-enough effect, or pass. Returns a link or None."""
@@ -844,10 +847,36 @@ class Engine:
         victim, amount = rec
         if amount <= 0:
             return
-        event = {"kind": "battle_damage_taken", "player": victim, "amount": amount}
+        event = {"kind": "damage_taken", "player": victim, "amount": amount, "damage_kind": "battle"}
         link = self._offer_response(victim, event, last_speed=1)
         if link is not None:
             self._run_chain([link])
+
+    def _fire_effect_damage_window(self) -> None:
+        """After a chain resolves, open a "when you take damage" window for each player who
+        took EFFECT damage during it (Numinous Healer, Attack and Receive). Battle damage
+        uses the separate post-combat window; LP costs (Toon World, pay-to-negate) are
+        excluded at the InflictDamage source via ``is_cost`` and so never open a window. The
+        responding trap may itself deal damage, which opens a further window when its chain
+        resolves — bounded because each Set Trap activates at most once."""
+        s = self.state
+        pending = s.effect_damage_pending
+        s.effect_damage_pending = []
+        if not pending or self.result is not None:
+            return
+        totals: dict[int, int] = {}
+        for victim, amount in pending:
+            totals[victim] = totals.get(victim, 0) + amount
+        for victim in (s.turn_player, s.opponent_of(s.turn_player)):
+            if self.result is not None:
+                return
+            amount = totals.get(victim, 0)
+            if amount <= 0:
+                continue
+            event = {"kind": "damage_taken", "player": victim, "amount": amount, "damage_kind": "effect"}
+            link = self._offer_response(victim, event, last_speed=1)
+            if link is not None:
+                self._run_chain([link])
 
     def _fire_destroys_by_battle_trigger(self) -> None:
         """Fire each monster's "when this card destroys a monster by battle" SELF Trigger

@@ -243,6 +243,10 @@ class GameState:
     # Receive, Damage Condenser). At most one player takes battle damage per attack. Reset
     # each _resolve_attack, drained by the engine after the attack.
     battle_damage_taken: tuple | None = None
+    # (victim, amount) pairs of EFFECT damage (burn) dealt during the current chain, appended
+    # by InflictDamage. Drained by the engine after a chain resolves to open a "when you take
+    # damage" window (Numinous Healer / Attack and Receive — but NOT LP costs). Transient.
+    effect_damage_pending: list = field(default_factory=list)
     # Set by an effect to end the current Battle Phase immediately (The Unhappy Maiden);
     # read and reset by the engine's Battle-Phase loop.
     battle_phase_ended: bool = False

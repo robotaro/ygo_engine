@@ -708,6 +708,10 @@ class Trigger:
     # For an "attack_declared" trigger: require the declaring attacker to have been
     # Tribute Summoned (Blast Held by a Tribute).
     attacker_was_tribute_summoned: bool = False
+    # For a "damage_taken" trigger: only react to BATTLE damage, not effect damage
+    # (Damage Condenser is battle-only; Numinous Healer / Attack and Receive fire on any
+    # LP damage). Checked against the event's ``damage_kind``.
+    battle_only: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -1471,10 +1475,18 @@ class InflictDamage(Primitive):
     player: str = OPPONENT
     amount: int = 0
     value: ValueSource | None = None
+    # True = this is an LP COST (Toon World, pay-to-negate), NOT "damage" — so it must not
+    # open a "when you take damage" window (Numinous Healer / Attack and Receive).
+    is_cost: bool = False
 
     def execute(self, ctx: EffectContext) -> None:
         amount = self.value.value(ctx) if self.value is not None else self.amount
-        ctx.state.players[ctx.side(self.player)].life_points -= amount
+        victim = ctx.side(self.player)
+        ctx.state.players[victim].life_points -= amount
+        if not self.is_cost and amount > 0:
+            # Record effect damage so the engine can open a post-chain "when you take
+            # damage" window for the victim. Battle damage uses a separate record.
+            ctx.state.effect_damage_pending.append((victim, amount))
 
 
 @dataclass(frozen=True)

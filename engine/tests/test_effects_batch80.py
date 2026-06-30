@@ -64,7 +64,7 @@ def _in_deck(s, name, player):
 
 
 def _dmg_event(victim, amount):
-    return {"kind": "battle_damage_taken", "player": victim, "amount": amount}
+    return {"kind": "damage_taken", "player": victim, "amount": amount, "damage_kind": "battle"}
 
 
 class _Activator(Agent):

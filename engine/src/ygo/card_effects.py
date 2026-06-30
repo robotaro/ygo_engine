@@ -762,7 +762,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             speed=3,
             timing="quick",
             condition=_all_conditions(_lp_above(1000), _chain_top_is_trap),
-            resolve=(InflictDamage(SELF, 1000), NegatePreviousLink()),
+            resolve=(InflictDamage(SELF, 1000, is_cost=True), NegatePreviousLink()),
         ),
     ),
     "Dark Bribe": (  # opponent draws 1; negate a Spell/Trap + destroy it
@@ -1167,7 +1167,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             speed=3,
             timing="quick",
             condition=_all_conditions(_lp_above(500), _chain_top_is_spell),
-            resolve=(InflictDamage(SELF, 500), NegatePreviousLink(aftermath="bounce")),
+            resolve=(InflictDamage(SELF, 500, is_cost=True), NegatePreviousLink(aftermath="bounce")),
         ),
     ),
     # --- Effects Batch 3: fixed burn / heal Normal Spells ---
@@ -2171,7 +2171,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     # While it's face-up it enables your Toon monsters (the engine checks for it by
     # name); if it leaves the field, your Toon monsters are destroyed.
     "Toon World": (
-        Effect(timing="ignition", condition=_lp_above(1000), resolve=(InflictDamage(SELF, 1000),)),
+        Effect(timing="ignition", condition=_lp_above(1000), resolve=(InflictDamage(SELF, 1000, is_cost=True),)),
     ),
     # Cure Mermaid is an Effect Monster with no activated ability — only the
     # continuous Standby recovery below — so it needs no EFFECTS entry.
@@ -4953,14 +4953,14 @@ HAND_SUMMONS.update({
 # (Effect-damage activation — Numinous Healer/Attack and Receive also trigger off burn —
 # is not yet modelled; only battle damage opens the window.)
 EFFECTS.update({
-    # Numinous Healer — when you take damage: gain 1000 LP, plus 500 more for each
-    # "Numinous Healer" already in your Graveyard (this copy is still on the chain, not yet
-    # in the GY, so it counts only earlier copies).
+    # Numinous Healer — when you take damage (battle OR effect): gain 1000 LP, plus 500 more
+    # for each "Numinous Healer" already in your Graveyard (this copy is still on the chain,
+    # not yet in the GY, so it counts only earlier copies).
     "Numinous Healer": (
         Effect(
             speed=2,
             timing="trigger",
-            trigger=Trigger(kind="battle_damage_taken", by=SELF),
+            trigger=Trigger(kind="damage_taken", by=SELF),
             resolve=(
                 GainLifePoints(SELF, 1000),
                 GainLifePoints(
@@ -4974,12 +4974,12 @@ EFFECTS.update({
             ),
         ),
     ),
-    # Attack and Receive — when you take damage: inflict 700 damage to your opponent.
+    # Attack and Receive — when you take damage (battle OR effect): inflict 700 to your opponent.
     "Attack and Receive": (
         Effect(
             speed=2,
             timing="trigger",
-            trigger=Trigger(kind="battle_damage_taken", by=SELF),
+            trigger=Trigger(kind="damage_taken", by=SELF),
             resolve=(InflictDamage(OPPONENT, 700),),
         ),
     ),
@@ -4990,7 +4990,7 @@ EFFECTS.update({
         Effect(
             speed=2,
             timing="trigger",
-            trigger=Trigger(kind="battle_damage_taken", by=SELF),
+            trigger=Trigger(kind="damage_taken", by=SELF, battle_only=True),
             discard_cost=1,
             resolve=(SpecialSummonFromDeckAtkAtMostBattleDamage(),),
         ),

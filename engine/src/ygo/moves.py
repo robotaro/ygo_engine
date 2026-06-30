@@ -979,6 +979,8 @@ def _trigger_matches(state, player, trigger, event) -> bool:
         atkr = event.get("attacker")
         if atkr is None or atkr not in state.cards or not state.inst(atkr).was_tribute_summoned:
             return False
+    if trigger.battle_only and event.get("damage_kind") != "battle":
+        return False  # Damage Condenser reacts only to battle damage, not effect damage
     return True
 
 
