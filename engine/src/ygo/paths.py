@@ -14,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 ASSETS = REPO_ROOT / "assets"
 CARD_DB_DIR = ASSETS / "card_databases"
 DECKS_DIR = ASSETS / "deck_blueprints"
+BANLISTS_DIR = ASSETS / "banlists"
 MANUAL_DIR = ASSETS / "manual"
 
 # The V6.0-legal card pool: the OCG up to the pre-Synchro cutoff (2008-03-14),

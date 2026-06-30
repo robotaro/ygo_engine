@@ -22,10 +22,29 @@
   let saving = $state(false)
   let savedId = $state(null)
 
+  let formats = $state([]) // Forbidden/Limited lists to validate against
+  let format = $state('none')
+
   const MAX_COPIES = 3
 
   let mainSize = $derived(Object.values(main).reduce((a, b) => a + b, 0))
   let extraSize = $derived(Object.values(extra).reduce((a, b) => a + b, 0))
+  // name -> {cap,count,ok} for cards the active banlist restricts (inline flags)
+  let restrictedMap = $derived(
+    Object.fromEntries((validation?.restricted || []).map((r) => [r.name, r])),
+  )
+
+  // Load the available formats once.
+  $effect(() => {
+    fetch('/api/formats')
+      .then((r) => r.json())
+      .then((d) => (formats = d.formats))
+      .catch(() => {})
+  })
+
+  function banLabel(cap) {
+    return cap === 0 ? 'Forbidden' : cap === 1 ? 'Limit 1' : 'Semi 2'
+  }
 
   function copies(cardName) {
     return (main[cardName] || 0) + (extra[cardName] || 0)
@@ -77,9 +96,9 @@
     return () => clearTimeout(handle)
   })
 
-  // -- live validation (debounced) whenever the deck or its name changes --
+  // -- live validation (debounced) whenever the deck, its name, or format changes --
   $effect(() => {
-    const payload = { name, main: { ...main }, extra: { ...extra } }
+    const payload = { name, main: { ...main }, extra: { ...extra }, format }
     if (mainSize === 0 && extraSize === 0) {
       validation = null
       return
@@ -105,7 +124,7 @@
       const res = await fetch('/api/decks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, main: { ...main }, extra: { ...extra } }),
+        body: JSON.stringify({ name, main: { ...main }, extra: { ...extra }, format }),
       })
       const data = await res.json()
       savedId = data.id
@@ -245,6 +264,15 @@
   <section class="deck">
     <input class="deckname" bind:value={name} />
 
+    <label class="fmtrow">
+      <span>Format</span>
+      <select bind:value={format}>
+        {#each formats as f (f.id)}
+          <option value={f.id}>{f.name}{f.restricted ? ` (${f.restricted})` : ''}</option>
+        {/each}
+      </select>
+    </label>
+
     <div class="counts">
       <span class="csize" class:bad={mainSize < 40 || mainSize > 60}>Main {mainSize}/40–60</span>
       <span class="csize" class:bad={extraSize > 15}>Extra {extraSize}/15</span>
@@ -266,6 +294,9 @@
         <div class="row">
           <span class="x">{count}×</span>
           <button class="rn" onclick={() => (selected = known[cn])}>{cn}</button>
+          {#if restrictedMap[cn]}
+            <span class="ban" class:over={!restrictedMap[cn].ok}>{banLabel(restrictedMap[cn].cap)}</span>
+          {/if}
           <button class="mini" onclick={() => add(known[cn])} disabled={copies(cn) >= MAX_COPIES}
             >+</button
           >
@@ -279,6 +310,9 @@
           <div class="row">
             <span class="x">{count}×</span>
             <button class="rn" onclick={() => (selected = known[cn])}>{cn}</button>
+            {#if restrictedMap[cn]}
+              <span class="ban" class:over={!restrictedMap[cn].ok}>{banLabel(restrictedMap[cn].cap)}</span>
+            {/if}
             <button class="mini" onclick={() => add(known[cn])} disabled={copies(cn) >= MAX_COPIES}
               >+</button
             >
@@ -538,6 +572,30 @@
     font-size: 16px;
     font-weight: 700;
     margin-bottom: 8px;
+  }
+  .fmtrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #bbb;
+  }
+  .fmtrow select {
+    flex: 1;
+  }
+  .ban {
+    font-size: 10px;
+    font-weight: 700;
+    color: #ffd76a;
+    background: rgba(255, 215, 106, 0.12);
+    border-radius: 4px;
+    padding: 0 5px;
+    white-space: nowrap;
+  }
+  .ban.over {
+    color: #ff8a7a;
+    background: rgba(255, 107, 107, 0.16);
   }
   .counts {
     display: flex;

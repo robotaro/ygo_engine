@@ -51,3 +51,39 @@ def test_validate_endpoint_logic():
     bad = srv.validation_dict(srv.decklist_from_counts("Bad", {"Not A Card": 3}, {}))
     assert bad["legal"] is False
     assert any("Not A Card" in e for e in bad["errors"])
+
+
+def test_formats_endpoint():
+    fmts = srv.formats()["formats"]
+    ids = [f["id"] for f in fmts]
+    assert ids[0] == "none"
+    assert "ocg_2008_03" in ids
+
+
+def test_validate_under_format_flags_forbidden():
+    # A 40-card vanilla base that is legal with no banlist...
+    vanillas = [c.name for c in srv.REGISTRY if c.is_vanilla and not c.goes_in_extra_deck][:20]
+    main = {name: 2 for name in vanillas}
+    main[vanillas[0]] = 1
+    main["Raigeki"] = 1  # Forbidden under OCG 2008
+
+    none = srv.validate({"name": "t", "main": main, "extra": {}})
+    ocg = srv.validate({"name": "t", "main": main, "extra": {}, "format": "ocg_2008_03"})
+
+    assert none["legal"] is True  # no banlist -> Raigeki is fine
+    assert ocg["legal"] is False  # Forbidden under the preset
+    assert ocg["format"]["id"] == "ocg_2008_03"
+    assert any(r["name"] == "Raigeki" and r["cap"] == 0 and not r["ok"] for r in ocg["restricted"])
+
+
+def test_save_custom_banlist_endpoint(tmp_path, monkeypatch):
+    import ygo.paths as paths
+
+    monkeypatch.setattr(paths, "BANLISTS_DIR", tmp_path)
+    res = srv.save_custom_banlist(
+        {"name": "House", "limits": {"Pot of Greed": 0, "Sangan": 1, "Kuriboh": 3}}
+    )
+    assert res["id"] == "user/house"
+    assert res["restricted"] == 2  # Kuriboh:3 (unlimited) dropped
+    got = srv.get_banlist(id="user/house")
+    assert got["limits"] == {"Pot of Greed": 0, "Sangan": 1}

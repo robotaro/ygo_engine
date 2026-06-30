@@ -23,6 +23,7 @@ import asyncio
 import os
 import re
 import threading
+from collections import Counter
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -30,7 +31,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from ..cards import CardDef, CardRegistry
-from ..deckbuild import deck_playability, is_functional, search_pool, to_blueprint_text, validate_deck
+from ..deckbuild import (
+    MAX_COPIES,
+    BanList,
+    deck_playability,
+    is_functional,
+    list_banlists,
+    load_banlist,
+    save_banlist,
+    search_pool,
+    to_blueprint_text,
+    validate_deck,
+)
 from ..decks import DeckList, load_decklist
 from ..enums import Attribute, CardType
 from ..paths import ASSETS, DECKS_DIR, REPO_ROOT
@@ -87,12 +99,20 @@ def resolve_deck_id(deck_id: str | None) -> Path | None:
     return candidate if candidate.is_file() else None
 
 
-def deck_catalog() -> list[dict]:
+def resolve_banlist(format_id: str | None) -> BanList:
+    """Resolve a ?format= id to a BanList; unknown/empty falls back to no restrictions."""
+    try:
+        return load_banlist(format_id)
+    except (FileNotFoundError, ValueError):
+        return load_banlist(None)
+
+
+def deck_catalog(banlist: BanList | None = None) -> list[dict]:
     """Summarise every bundled blueprint: legality + how playable it is today."""
     out = []
     for path in sorted(DECKS_DIR.rglob("*.txt")):
         deck = load_decklist(path, REGISTRY)
-        report = validate_deck(deck)
+        report = validate_deck(deck, banlist=banlist)
         play = deck_playability(deck)
         rel = path.relative_to(DECKS_DIR)
         out.append(
@@ -123,8 +143,20 @@ def decklist_from_counts(name: str, main: dict, extra: dict) -> DeckList:
     return deck
 
 
-def validation_dict(deck: DeckList) -> dict:
-    report = validate_deck(deck)
+def restricted_in_deck(deck: DeckList, banlist: BanList) -> list[dict]:
+    """Per-card detail for every deck card the banlist restricts (for inline UI)."""
+    counts = Counter(c.name for c in (*deck.main, *deck.extra))
+    out = []
+    for name, n in sorted(counts.items()):
+        cap = banlist.limit_for(name)
+        if cap < MAX_COPIES:
+            out.append({"name": name, "cap": cap, "count": n, "ok": n <= cap})
+    return out
+
+
+def validation_dict(deck: DeckList, format_id: str | None = None) -> dict:
+    banlist = resolve_banlist(format_id)
+    report = validate_deck(deck, banlist=banlist)
     play = deck_playability(deck)
     return {
         "deckName": report.deck_name,
@@ -135,6 +167,8 @@ def validation_dict(deck: DeckList) -> dict:
         "warnings": [i.message for i in report.warnings],
         "playablePct": round(play.pct),
         "nonfunctional": play.nonfunctional,
+        "format": {"id": format_id or "none", "name": banlist.name},
+        "restricted": restricted_in_deck(deck, banlist),
     }
 
 
@@ -147,8 +181,36 @@ def health() -> dict:
 
 
 @app.get("/api/decks")
-def list_decks() -> dict:
-    return {"decks": deck_catalog()}
+def list_decks(format: str | None = None) -> dict:
+    return {"decks": deck_catalog(resolve_banlist(format) if format else None)}
+
+
+@app.get("/api/formats")
+def formats() -> dict:
+    """Every selectable Forbidden/Limited list: bundled presets + custom lists."""
+    return {"formats": list_banlists()}
+
+
+@app.get("/api/banlist")
+def get_banlist(id: str) -> dict:
+    """Full per-card limits for one banlist, for the custom-list editor."""
+    try:
+        bl = load_banlist(id)
+    except (FileNotFoundError, ValueError):
+        return {"id": id, "name": "No Restrictions", "limits": {}}
+    return {"id": id, "name": bl.name, "limits": dict(bl.limits)}
+
+
+@app.post("/api/banlists")
+def save_custom_banlist(payload: dict) -> dict:
+    """Save a custom Forbidden/Limited list to assets/banlists/user/."""
+    name = (payload.get("name") or "Custom List").strip()
+    slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_") or "custom"
+    raw_limits = payload.get("limits") or {}
+    # keep only real restrictions (0/1/2); 3 == unlimited, so drop it
+    limits = {n: int(c) for n, c in raw_limits.items() if int(c) in (0, 1, 2)}
+    path = save_banlist(BanList(name=name, limits=limits), slug)
+    return {"id": path.relative_to(path.parents[1]).with_suffix("").as_posix(), "name": name, "restricted": len(limits)}
 
 
 @app.get("/api/cards")
@@ -181,7 +243,7 @@ def validate(payload: dict) -> dict:
     deck = decklist_from_counts(
         payload.get("name", "Untitled"), payload.get("main", {}), payload.get("extra", {})
     )
-    return validation_dict(deck)
+    return validation_dict(deck, payload.get("format"))
 
 
 @app.post("/api/decks")
@@ -193,7 +255,10 @@ def save_deck(payload: dict) -> dict:
     user_dir.mkdir(parents=True, exist_ok=True)
     path = user_dir / f"{slug}.txt"
     path.write_text(to_blueprint_text(deck), encoding="utf-8")
-    return {"id": path.relative_to(DECKS_DIR).as_posix(), "validation": validation_dict(deck)}
+    return {
+        "id": path.relative_to(DECKS_DIR).as_posix(),
+        "validation": validation_dict(deck, payload.get("format")),
+    }
 
 
 # --------------------------------------------------------------------------- #

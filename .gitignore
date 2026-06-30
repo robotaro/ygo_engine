@@ -28,5 +28,8 @@ replays/
 # Decks saved from the in-browser deck builder
 assets/deck_blueprints/user/
 
+# Custom Forbidden/Limited lists saved from the deck builder
+assets/banlists/user/
+
 # OS
 .DS_Store

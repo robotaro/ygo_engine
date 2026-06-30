@@ -1,16 +1,24 @@
 <script>
   import { newGame } from './store.js'
   import DeckBuilder from './DeckBuilder.svelte'
+  import BanlistEditor from './BanlistEditor.svelte'
 
-  let tab = $state('play') // 'play' | 'build'
+  let tab = $state('play') // 'play' | 'build' | 'banlist'
   let decks = $state([])
+  let formats = $state([])
+  let format = $state('none') // active Forbidden/Limited list
   let yourDeck = $state('')
   let oppDeck = $state('')
   let seed = $state('')
   let loaded = $state(false)
 
+  async function loadFormats() {
+    const res = await fetch('/api/formats')
+    formats = (await res.json()).formats
+  }
+
   async function loadCatalog(selectAfter = null) {
-    const res = await fetch('/api/decks')
+    const res = await fetch('/api/decks?format=' + encodeURIComponent(format))
     const data = await res.json()
     // Best decks first: legal, then most playable, then by name.
     decks = data.decks.sort(
@@ -24,7 +32,10 @@
   }
 
   $effect(() => {
-    if (!loaded) loadCatalog()
+    if (!loaded) {
+      loadFormats()
+      loadCatalog()
+    }
   })
 
   function deckById(id) {
@@ -45,6 +56,7 @@
   <div class="tabs">
     <button class:active={tab === 'play'} onclick={() => (tab = 'play')}>⚔ Play</button>
     <button class:active={tab === 'build'} onclick={() => (tab = 'build')}>🛠 Build a Deck</button>
+    <button class:active={tab === 'banlist'} onclick={() => (tab = 'banlist')}>⛔ Banned Cards</button>
   </div>
 
   {#if tab === 'play'}
@@ -56,6 +68,17 @@
       </p>
 
       <div class="picks">
+        <label class="pick">
+          <span class="lbl">Format (banned cards)</span>
+          <select bind:value={format} onchange={() => loadCatalog(yourDeck)}>
+            {#each formats as f (f.id)}
+              <option value={f.id}>
+                {f.name}{f.restricted ? ` · ${f.restricted} restricted` : ''}
+              </option>
+            {/each}
+          </select>
+        </label>
+
         <label class="pick">
           <span class="lbl">Your deck</span>
           <select bind:value={yourDeck}>
@@ -94,9 +117,13 @@
         </button>
       </div>
     </div>
-  {:else}
+  {:else if tab === 'build'}
     <div class="build">
       <DeckBuilder onSaved={(id) => loadCatalog(id)} onPlay={(id) => startDuel(id, oppDeck)} />
+    </div>
+  {:else}
+    <div class="build">
+      <BanlistEditor onSaved={() => loadFormats()} />
     </div>
   {/if}
 </div>
