@@ -444,6 +444,9 @@ DECK = (
     # Batch 125: Sword of Dragon's Soul (equip a Warrior +700; destroy a battled Dragon at
     # end of Battle Phase) — exercises the DestroysBattledDragon rider + end-of-BP destroy.
     + ["Sword of Dragon's Soul"] * 2
+    # Batch 126: Two-Pronged Attack (destroy 2 of your monsters + 1 of the opponent's) —
+    # exercises the DestroyOwnMonsters primitive alongside a targeted destroy.
+    + ["Two-Pronged Attack"] * 2
 )
 
 

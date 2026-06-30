@@ -1249,6 +1249,23 @@ class DestroyOwnMonstersHalfAtkBurn(Primitive):
 
 
 @dataclass(frozen=True)
+class DestroyOwnMonsters(Primitive):
+    """Destroy ``count`` monsters the controller controls (Two-Pronged Attack destroys 2 of
+    your own alongside 1 of the opponent's). Deterministic — the lowest-ATK ones first, as
+    interactive choice is a deferred enhancement (cf. SearchFromDeck) — and capped at however
+    many they actually control."""
+
+    count: int = 2
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        mine = [i for i in s.players[ctx.controller].monster_zones if i is not None]
+        mine.sort(key=lambda i: s.effective_attack(i))
+        for iid in mine[: self.count]:
+            s.send_to_graveyard(iid, by_effect=True)
+
+
+@dataclass(frozen=True)
 class DestroyAllSpecialSummoned(Primitive):
     """Destroy every face-up Special-Summoned monster on the field, both sides (Fossil
     Dyna Pachycephalo's flip, Jowgen the Spiritualist, Special Hurricane). Reads the

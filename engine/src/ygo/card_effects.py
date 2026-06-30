@@ -54,6 +54,7 @@ from .effects import (
     DestroyHighestAtkMonster,
     DestroyHighestDefOpponentMonster,
     DestroyLowestAtkOpponentMonster,
+    DestroyOwnMonsters,
     DestroyOwnMonstersHalfAtkBurn,
     DestroyTargets,
     DiscardFromHand,
@@ -6130,4 +6131,32 @@ EFFECTS.update({
 })
 CONTINUOUS.update({
     "Sword of Dragon's Soul": (EquipMod(atk=700), DestroysBattledDragon(race="Dragon")),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Yugi Starter Deck push (Batches 126-132): the 7 cards that flip ygored/Starter-Deck-Yugi
+# (and ygoprodeck/ninja_dice_deck) to fully playable.
+# --------------------------------------------------------------------------- #
+# Effects Batch 126: Two-Pronged Attack — "Select and destroy 2 of your monsters and 1 of your
+# opponent's." A Normal Trap: the player picks the opponent's monster (TargetSpec); the new
+# DestroyOwnMonsters(2) primitive pays the self-destruction. Gated so it's only offered with at
+# least 2 monsters of your own and 1 of the opponent's to hit.
+def _can_two_pronged_attack(state, controller) -> bool:
+    opp = state.opponent_of(controller)
+    mine = sum(1 for i in state.players[controller].monster_zones if i is not None)
+    theirs = sum(1 for i in state.players[opp].monster_zones if i is not None)
+    return mine >= 2 and theirs >= 1
+
+
+EFFECTS.update({
+    "Two-Pronged Attack": (
+        Effect(
+            speed=2,
+            timing="quick",
+            condition=_can_two_pronged_attack,
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(DestroyOwnMonsters(count=2), DestroyTargets()),
+        ),
+    ),
 })
