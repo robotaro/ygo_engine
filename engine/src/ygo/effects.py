@@ -1656,6 +1656,24 @@ class ModifyAllStatsTemporary(Primitive):
 
 
 @dataclass(frozen=True)
+class RollDieModifyAllStats(Primitive):
+    """Roll a six-sided die and apply ``result × per_pip`` ATK/DEF to every face-up monster
+    on a ``side`` until the End Phase — Skull Dice (the opponent's monsters lose 100 × roll)
+    and Graceful Dice (your monsters gain 100 × roll). Delegates the swing to
+    ModifyAllStatsTemporary, so it rides the same temp-stat layer (cleared in the End Phase)."""
+
+    side: str | None = None  # None = both, else SELF / OPPONENT
+    per_pip_atk: int = 0
+    per_pip_def: int = 0
+
+    def execute(self, ctx: EffectContext) -> None:
+        roll = ctx.state.rng.randint(1, 6)
+        ModifyAllStatsTemporary(
+            side=self.side, atk=roll * self.per_pip_atk, defn=roll * self.per_pip_def
+        ).execute(ctx)
+
+
+@dataclass(frozen=True)
 class ModifySelfPermanentStats(Primitive):
     """Permanently change the effect source's own ATK/DEF for as long as it stays on the
     field (Slate Warrior's FLIP "+500", Zombyra's "loses 200 each time it destroys")."""

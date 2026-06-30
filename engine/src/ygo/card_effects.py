@@ -88,6 +88,7 @@ from .effects import (
     DebuffsAttackTargetAtk,
     DirectBattleDamageThisTurn,
     ProtectControlledFromDestruction,
+    RollDieModifyAllStats,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5922,6 +5923,29 @@ EFFECTS.update({
             timing="quick",
             condition=_chain_top_is_dark_hole,
             resolve=(ProtectControlledFromDestruction(),),
+        ),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 116: dice-roll stat swings. New RollDieModifyAllStats primitive (roll 1-6,
+# apply result×100 to a side until the End Phase, riding the temp-stat layer). Skull Dice
+# weakens the opponent's monsters; Graceful Dice pumps yours. Flips Joey Wheeler's WCT2005
+# deck (needed both) and unblocks half of his Eternal Duelist Soul deck.
+EFFECTS.update({
+    "Skull Dice": (
+        Effect(
+            speed=2,
+            timing="quick",
+            resolve=(RollDieModifyAllStats(side=OPPONENT, per_pip_atk=-100, per_pip_def=-100),),
+        ),
+    ),
+    "Graceful Dice": (
+        Effect(
+            speed=2,
+            timing="quick",
+            resolve=(RollDieModifyAllStats(side=SELF, per_pip_atk=100, per_pip_def=100),),
         ),
     ),
 })

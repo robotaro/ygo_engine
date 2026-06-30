@@ -413,6 +413,9 @@ DECK = (
     # Batch 115: White Hole (chains to the opponent's Dark Hole, shielding your monsters)
     # + Dark Hole itself, so the chain-scoped destruction-protection path is exercised.
     + ["White Hole"] * 2 + ["Dark Hole"] * 2
+    # Batch 116: dice-roll stat swings — Skull Dice (weaken opponent) + Graceful Dice (pump
+    # your own), via the new RollDieModifyAllStats primitive over the temp-stat layer.
+    + ["Skull Dice"] * 2 + ["Graceful Dice"] * 2
 )
 
 
