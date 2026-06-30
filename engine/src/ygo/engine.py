@@ -827,6 +827,23 @@ class Engine:
                 return  # Mazera DeVille needs "Pandemonium" on the field
             self._trigger_effect(iid, effect, inst.controller)
 
+    def _emit_trigger(self, iid: int, kind: str, by: str, event: dict | None = None) -> None:
+        """The shared tail of every monster-trigger firer: find the source's single matching
+        ``timing="trigger"`` Effect of (``kind``, ``by``), apply its activation ``condition``,
+        and put it on a fresh Chain as its controller's effect. Each caller keeps its own
+        *structural* guard (still a live face-up monster? effects active? not negated?);
+        centralising the find + condition + fire here means no caller can skip the condition
+        check — the class of bug the audit found in ``_trigger_summon_effect`` (Mazera)."""
+        inst = self.state.cards.get(iid)
+        if inst is None:
+            return
+        effect = next(self._trigger_effects(inst.card, kind=kind, by=by), None)
+        if effect is None:
+            return
+        if effect.condition is not None and not effect.condition(self.state, inst.controller):
+            return
+        self._trigger_effect(iid, effect, inst.controller, event)
+
     def _fire_battle_damage_trigger(self) -> None:
         """Fire a monster's "when it inflicts battle damage to your opponent" SELF
         Trigger (Don Zaloog, Vampire Lady, Airknight Parshath) — read from the state's
@@ -841,11 +858,7 @@ class Engine:
         inst = s.cards.get(dealer_iid)
         if inst is None or inst.zone is not Zone.MONSTER or not inst.is_face_up:
             return
-        effect = next(
-            self._trigger_effects(inst.card, kind="battle_damage_inflicted", by=SELF), None
-        )
-        if effect is not None:
-            self._trigger_effect(dealer_iid, effect, inst.controller, {"amount": amount})
+        self._emit_trigger(dealer_iid, "battle_damage_inflicted", SELF, {"amount": amount})
 
     def _fire_damage_taken_window(self) -> None:
         """Open a response window for the player who just took battle damage, letting them
@@ -933,15 +946,8 @@ class Engine:
                 continue
             if not inst.effects_active:
                 continue  # a Gemini not yet Gemini Summoned has no effect
-            effect = next(self._trigger_effects(inst.card, kind="destroys_by_battle", by=SELF), None)
-            if effect is None:
-                continue
-            if effect.condition is not None and not effect.condition(s, inst.controller):
-                continue
-            self._trigger_effect(
-                destroyer_iid,
-                effect,
-                inst.controller,
+            self._emit_trigger(
+                destroyer_iid, "destroys_by_battle", SELF,
                 {"destroyer": destroyer_iid, "destroyed": destroyed_iid},
             )
 
@@ -967,12 +973,7 @@ class Engine:
                 continue
             if s.monster_effects_negated(me_iid):
                 continue  # Skill Drain on a survivor; a GY carrier is never negated
-            effect = next(self._trigger_effects(inst.card, kind="battles", by=SELF), None)
-            if effect is None:
-                continue
-            if effect.condition is not None and not effect.condition(s, inst.controller):
-                continue
-            self._trigger_effect(me_iid, effect, inst.controller, {"foe": foe_iid})
+            self._emit_trigger(me_iid, "battles", SELF, {"foe": foe_iid})
 
     def _fire_attack_declared_trigger(self, attacker_iid: int) -> None:
         """Fire the attacking monster's OWN "when this card declares an attack" Trigger
@@ -989,11 +990,8 @@ class Engine:
             or not inst.effects_active
         ):
             return
-        effect = next(self._trigger_effects(inst.card, kind="attack_declared", by=SELF), None)
-        if effect is not None:
-            if effect.condition is not None and not effect.condition(s, inst.controller):
-                return  # Gravekeeper's Assailant needs "Necrovalley" on the field
-            self._trigger_effect(attacker_iid, effect, inst.controller, {"attacker": attacker_iid})
+        # condition (e.g. Gravekeeper's Assailant needs "Necrovalley") checked in _emit_trigger
+        self._emit_trigger(attacker_iid, "attack_declared", SELF, {"attacker": attacker_iid})
 
     def _fire_attacked_trigger(self, target_iid: int, attacker_iid: int) -> None:
         """Fire the ATTACKED monster's OWN "when this card is attacked" Trigger
@@ -1011,13 +1009,8 @@ class Engine:
             return
         if s.monster_effects_negated(target_iid):
             return
-        effect = next(self._trigger_effects(inst.card, kind="attacked", by=OPPONENT), None)
-        if effect is None:
-            return
-        if effect.condition is not None and not effect.condition(s, inst.controller):
-            return
-        self._trigger_effect(
-            target_iid, effect, inst.controller,
+        self._emit_trigger(
+            target_iid, "attacked", OPPONENT,
             {"attacker": attacker_iid, "target": target_iid},
         )
 
