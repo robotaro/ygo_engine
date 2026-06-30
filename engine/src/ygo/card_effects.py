@@ -5949,3 +5949,17 @@ EFFECTS.update({
         ),
     ),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 117: Toon Mermaid — a Level-4 Toon that Special Summons itself from the hand
+# (no Tributes) while you control Toon World, and pays 500 LP to attack. All the shared Toon
+# rules (Toon World requirement, can't-attack-the-turn-summoned, direct attack, destroyed
+# with Toon World) are already enforced by the engine (Batch 92); this just adds the per-card
+# SS-from-hand and the attack cost. Half of both Pegasus decks (the other half is Mirror Wall).
+HAND_SUMMONS.update({
+    "Toon Mermaid": HandSpecialSummon(cannot_normal_summon=True, condition=_controls_toon_world),
+})
+CONTINUOUS.update({
+    "Toon Mermaid": (AttackLifeCost(amount=500),),
+})

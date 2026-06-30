@@ -416,6 +416,9 @@ DECK = (
     # Batch 116: dice-roll stat swings — Skull Dice (weaken opponent) + Graceful Dice (pump
     # your own), via the new RollDieModifyAllStats primitive over the temp-stat layer.
     + ["Skull Dice"] * 2 + ["Graceful Dice"] * 2
+    # Batch 117: Toon Mermaid (SS from hand while controlling Toon World; pay 500 to attack).
+    # Toon World enables it, so the Toon SS-from-hand + attack-cost paths actually fire.
+    + ["Toon Mermaid"] * 2 + ["Toon World"] * 2
 )
 
 
