@@ -260,6 +260,10 @@ DECK = (
     + ["Nobleman of Crossout"] * 2
     + ["Soul of Purity and Light"] * 2
     + ["Mystical Elf"] * 2  # LIGHT fodder for Soul of Purity + a Set target for Nobleman
+    # "when you take battle damage" reactive Traps
+    + ["Numinous Healer"] * 2
+    + ["Attack and Receive"] * 2
+    + ["Damage Condenser"] * 2
 )
 
 

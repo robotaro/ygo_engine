@@ -489,6 +489,11 @@ class Engine:
         # banish) — fired from the recorded combatant pair, regardless of who survived.
         self._fire_battles_trigger()
 
+        # "When you take battle damage" — the player who took the combat damage may now
+        # activate a Set Trap that reacts to it (Numinous Healer, Attack and Receive,
+        # Damage Condenser).
+        self._fire_damage_taken_window()
+
         # Spear Dragon / Goblin Attack Force: switch the attacker to Defense once its
         # attack has resolved (and lock its position if the rider says so).
         self._switch_attacker_to_defense_after_attack(attacker)
@@ -787,6 +792,26 @@ class Engine:
         )
         if effect is not None:
             self._trigger_effect(dealer_iid, effect, inst.controller, {"amount": amount})
+
+    def _fire_damage_taken_window(self) -> None:
+        """Open a response window for the player who just took battle damage, letting them
+        activate a Set Trap that triggers on it (Numinous Healer, Attack and Receive,
+        Damage Condenser). Unlike ``_response_window`` (which always offers the *opponent*
+        of the acting player), this targets the victim specifically — the victim may be the
+        attacker, when their monster lost the battle. Read from the transient
+        ``battle_damage_taken`` record; the event carries the damage ``amount``."""
+        s = self.state
+        rec = s.battle_damage_taken
+        s.battle_damage_taken = None
+        if rec is None or self.result is not None:
+            return
+        victim, amount = rec
+        if amount <= 0:
+            return
+        event = {"kind": "battle_damage_taken", "player": victim, "amount": amount}
+        link = self._offer_response(victim, event, last_speed=1)
+        if link is not None:
+            self._run_chain([link])
 
     def _fire_destroys_by_battle_trigger(self) -> None:
         """Fire each monster's "when this card destroys a monster by battle" SELF Trigger

@@ -97,6 +97,7 @@ from .effects import (
     SetEventAttackerAtkZero,
     ShuffleFieldMonstersThenExcavate,
     SpecialSummonFromDeck,
+    SpecialSummonFromDeckAtkAtMostBattleDamage,
     SpecialSummonFromExtraDeck,
     SpecialSummonFromGraveyard,
     SpecialSummonFromHand,
@@ -4938,6 +4939,57 @@ HAND_SUMMONS.update({
                     card_kind="monster", attributes=frozenset({Attribute.LIGHT})
                 ),
             ),
+        ),
+    ),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 80: "when you take battle damage" reactive Traps. A new post-combat
+# response window (engine._fire_damage_taken_window) lets the player who took battle
+# damage activate a Set Trap triggered on it; the event carries the damage amount.
+# (Effect-damage activation — Numinous Healer/Attack and Receive also trigger off burn —
+# is not yet modelled; only battle damage opens the window.)
+EFFECTS.update({
+    # Numinous Healer — when you take damage: gain 1000 LP, plus 500 more for each
+    # "Numinous Healer" already in your Graveyard (this copy is still on the chain, not yet
+    # in the GY, so it counts only earlier copies).
+    "Numinous Healer": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="battle_damage_taken", by=SELF),
+            resolve=(
+                GainLifePoints(SELF, 1000),
+                GainLifePoints(
+                    SELF,
+                    value=CountTimes(
+                        per=500,
+                        pool="own_graveyard",
+                        card_filter=CardFilter(names=frozenset({"Numinous Healer"})),
+                    ),
+                ),
+            ),
+        ),
+    ),
+    # Attack and Receive — when you take damage: inflict 700 damage to your opponent.
+    "Attack and Receive": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="battle_damage_taken", by=SELF),
+            resolve=(InflictDamage(OPPONENT, 700),),
+        ),
+    ),
+    # Damage Condenser — when you take battle damage: discard 1 card, then Special Summon 1
+    # monster from your Deck with ATK <= the battle damage you took, in face-up Attack
+    # Position (deterministic highest-ATK eligible pick).
+    "Damage Condenser": (
+        Effect(
+            speed=2,
+            timing="trigger",
+            trigger=Trigger(kind="battle_damage_taken", by=SELF),
+            discard_cost=1,
+            resolve=(SpecialSummonFromDeckAtkAtMostBattleDamage(),),
         ),
     ),
 })

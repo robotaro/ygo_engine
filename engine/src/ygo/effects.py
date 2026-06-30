@@ -1705,6 +1705,34 @@ class SpecialSummonFromDeck(Primitive):
 
 
 @dataclass(frozen=True)
+class SpecialSummonFromDeckAtkAtMostBattleDamage(Primitive):
+    """Damage Condenser: Special Summon 1 monster from the controller's Deck whose ATK is
+    at most the battle damage they just took (read off the triggering event's ``amount``),
+    in face-up Attack Position. Deterministic highest-ATK eligible pick (like
+    SpecialSummonFromDeck), respecting Special-Summon locks; no eligible monster, no free
+    zone, or no event amount -> nothing happens. The Deck is shuffled afterwards."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        cap = (ctx.event or {}).get("amount")
+        if cap is None:
+            return
+        controller = ctx.controller
+        deck = s.players[controller].deck
+        eligible = [
+            i
+            for i in deck
+            if s.inst(i).card.is_monster
+            and (s.inst(i).card.attack or 0) <= cap
+            and not s.special_summon_locked(controller, s.inst(i).card)
+        ]
+        if eligible:
+            pick = max(eligible, key=lambda i: s.inst(i).card.attack or 0)
+            s.special_summon(pick, controller, Position.FACE_UP_ATTACK)
+        s.rng.shuffle(deck)
+
+
+@dataclass(frozen=True)
 class SpecialSummonFromExtraDeck(Primitive):
     """Special Summon 1 monster from the controller's Extra Deck (Cyber-Stein → a Fusion
     Monster in Attack Position, after paying its 5000 LP cost). ``fusion_only`` limits the

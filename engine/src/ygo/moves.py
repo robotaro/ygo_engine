@@ -1386,14 +1386,21 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     state.battle_damage_dealt = None  # reset; set below when the attacker damages opp
     state.battle_destroyed_by = []  # reset; appended below for each combat death
     state.battle_pair = None  # reset; set below once a defending monster is in the battle
+    state.battle_damage_taken = None  # reset; set below for whichever player takes damage
+
+    def _take_battle_damage(player_idx: int, amount: int) -> None:
+        # Apply battle damage and record (victim, amount) for the engine's
+        # "when you take battle damage" Trap window.
+        state.players[player_idx].life_points -= amount
+        state.battle_damage_taken = (player_idx, amount)
 
     def _hit_defender(amount: int) -> None:
         # Battle damage to the defending player — redirected to the attacker by Dimension
         # Wall (then it's not "damage inflicted to the opponent", so no dealer trigger).
         if state.reflect_battle_damage:
-            state.players[me].life_points -= amount
+            _take_battle_damage(me, amount)
         else:
-            state.players[opp].life_points -= amount
+            _take_battle_damage(opp, amount)
             state.battle_damage_dealt = (action.attacker, amount)
 
     if action.target is None:
@@ -1417,7 +1424,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
             return f"{prefix}{attacker.name} ({atk}) destroys {target.name} ({other}) — {atk - other} damage"
         if atk < other:
             _battle_destroy(state, attacker.iid, target.iid)
-            state.players[me].life_points -= other - atk
+            _take_battle_damage(me, other - atk)
             return f"{prefix}{attacker.name} ({atk}) is destroyed by {target.name} ({other}) — {other - atk} damage to attacker"
         _battle_destroy(state, attacker.iid, target.iid)
         _battle_destroy(state, target.iid, attacker.iid)
@@ -1436,6 +1443,6 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
             return f"{prefix}{attacker.name} ({atk}) pierces {target.name} (DEF {dfn}) — {dmg} damage"
         return f"{prefix}{attacker.name} ({atk}) destroys defending {target.name} (DEF {dfn})"
     if atk < dfn:
-        state.players[me].life_points -= dfn - atk
+        _take_battle_damage(me, dfn - atk)
         return f"{prefix}{attacker.name} ({atk}) bounces off {target.name} (DEF {dfn}) — {dfn - atk} damage to attacker"
     return f"{prefix}{attacker.name} ({atk}) cannot break {target.name} (DEF {dfn})"

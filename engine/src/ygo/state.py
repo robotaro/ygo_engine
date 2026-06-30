@@ -234,6 +234,11 @@ class GameState:
     # (D.D. Warrior Lady's mutual banish). None on a direct attack. Reset each
     # _resolve_attack, drained by the engine after the attack.
     battle_pair: tuple | None = None
+    # Transient (victim_player, amount) of the battle damage the attack just dealt — for
+    # the engine's "when you take battle damage" Trap window (Numinous Healer, Attack and
+    # Receive, Damage Condenser). At most one player takes battle damage per attack. Reset
+    # each _resolve_attack, drained by the engine after the attack.
+    battle_damage_taken: tuple | None = None
     # Set by an effect to end the current Battle Phase immediately (The Unhappy Maiden);
     # read and reset by the engine's Battle-Phase loop.
     battle_phase_ended: bool = False
