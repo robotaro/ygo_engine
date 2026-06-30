@@ -123,6 +123,22 @@ def state_to_dict(state: GameState, viewer: int) -> dict:
     }
 
 
+def full_snapshot(state: GameState) -> dict:
+    """An omniscient, no-redaction view of the whole board — both hands and all
+    face-down cards visible. Not for a live opponent; this is for replay timelines
+    and debugging, where nothing should be hidden."""
+    return {
+        "turnPlayer": state.turn_player,
+        "turnCount": state.turn_count,
+        "phase": state.phase.value,
+        "players": [_player_view(state, p, is_viewer=True) for p in (0, 1)],
+        "chain": [
+            {"controller": link.controller, "name": state.inst(link.source_iid).name}
+            for link in state.chain
+        ],
+    }
+
+
 # --------------------------------------------------------------------------- #
 #  Legal actions -> client (so the UI can highlight affordances)
 # --------------------------------------------------------------------------- #

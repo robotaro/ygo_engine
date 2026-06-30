@@ -22,5 +22,11 @@ assets/card_images/cards/
 # `engine/scripts/build_card_db.py --download`). The curated CSV is committed.
 assets/card_databases/card_db_ocg_pre_synchro_v6.json
 
+# Recorded duels (replay logs saved by the web server)
+replays/
+
+# Decks saved from the in-browser deck builder
+assets/deck_blueprints/user/
+
 # OS
 .DS_Store

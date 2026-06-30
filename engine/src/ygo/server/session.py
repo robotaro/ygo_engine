@@ -22,6 +22,7 @@ from ..agents import Agent, GreedyAgent
 from ..engine import Engine
 from ..enums import Zone
 from ..moves import Action, Pass
+from ..replay import RecordingAgent, Replay
 from ..serialize import legal_to_dict, match_intent, state_to_dict
 from ..setup import new_duel
 from ..state import GameState
@@ -245,11 +246,20 @@ class HumanAgent(Agent):
 
 
 class GameSession:
-    def __init__(self, *, deck_a: Path, deck_b: Path, seed: int = 0, human_player: int = 0):
+    def __init__(
+        self,
+        *,
+        deck_a: Path,
+        deck_b: Path,
+        seed: int = 0,
+        human_player: int = 0,
+        record_dir: Path | None = None,
+    ):
         self.deck_a = deck_a
         self.deck_b = deck_b
         self.seed = seed
         self.human_player = human_player
+        self.record_dir = record_dir
         self.outbound: queue.Queue = queue.Queue()
         self.inbound: queue.Queue = queue.Queue()
         self.state: GameState | None = None
@@ -266,10 +276,12 @@ class GameSession:
 
         agents: list[Agent] = [GreedyAgent(), GreedyAgent()]
         agents[self.human_player] = HumanAgent(self, self.human_player)
+        # Wrap every seat so the whole battle can be saved and replayed later.
+        recorders = [RecordingAgent(a) for a in agents] if self.record_dir else None
 
         self.engine = Engine(
             self.state,
-            agents,
+            recorders or agents,
             log=self._on_log,
             on_change=self._push_state,
             pacer=lambda: time.sleep(0.7),  # let resolution steps breathe in the UI
@@ -279,6 +291,8 @@ class GameSession:
             result = self.engine.run()
         except EngineAborted:
             return
+        if recorders is not None:
+            self._save_replay(recorders, tuple(names), result)
         self.send(
             {
                 "type": "result",
@@ -287,6 +301,22 @@ class GameSession:
                 "youWin": result.winner == self.human_player,
             }
         )
+
+    def _save_replay(self, recorders, names, result) -> None:
+        replay = Replay(
+            deck_a=str(self.deck_a),
+            deck_b=str(self.deck_b),
+            names=names,
+            seed=self.seed,
+            decisions=[r.log for r in recorders],
+            result={"winner": result.winner, "reason": result.reason},
+        )
+        path = self.record_dir / f"duel_seed{self.seed}_{int(time.time())}.json"
+        try:
+            replay.save(path)
+            self._on_log(f"(replay saved: {path.name})")
+        except OSError:
+            pass  # never let a logging failure break the duel
 
     # ----- engine -> client -----
     def _on_log(self, message: str) -> None:

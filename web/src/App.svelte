@@ -5,6 +5,7 @@
   import { tweened } from 'svelte/motion'
   import { cubicOut } from 'svelte/easing'
   import CardTile from './lib/CardTile.svelte'
+  import Launcher from './lib/Launcher.svelte'
   import {
     board,
     legal,
@@ -16,7 +17,7 @@
     logs,
     result,
     connected,
-    newGame,
+    leaveGame,
     sendIntent,
   } from './lib/store.js'
 
@@ -25,14 +26,13 @@
   let pendingTribute = null // {iid, zoneIndex, needed, chosen[], mode}
   let pendingTarget = null // {iid, zoneIndex, candidates[], needed, chosen[]}
   let targetChosen = [] // accumulating clicks for an engine-driven target prompt
-  let seedInput = ''
   let openGy = null // which Graveyard's contents are expanded ('you' | 'opp')
   let ritualChosen = [] // iids picked for a Ritual Tribute
   let unionSource = null // a Union monster picked, awaiting a host to equip to
   let preview = null // a card shown enlarged for reading (left-click)
   let ctx = null // right-click context menu: { x, y, items[] }
 
-  onMount(() => newGame())
+  // The Launcher (deck picker / builder) shows until a duel starts.
 
   // reactive views
   $: you = $board?.you
@@ -548,22 +548,19 @@
     sendIntent({ kind: 'pass' })
   }
 
-  function startGame() {
-    const seed = seedInput.trim() === '' ? undefined : Number(seedInput)
-    newGame(seed)
-  }
 </script>
 
 <main>
   <header>
     <h1>遊 ygo_engine</h1>
     <div class="conn" class:on={$connected}>{$connected ? 'connected' : 'offline'}</div>
-    <input placeholder="seed (optional)" bind:value={seedInput} />
-    <button onclick={startGame}>New Duel</button>
+    {#if $board}
+      <button class="menubtn" onclick={leaveGame}>⏎ Menu</button>
+    {/if}
   </header>
 
   {#if !$board}
-    <div class="placeholder">Connecting to the duel server…</div>
+    <Launcher />
   {:else}
     <div class="table">
       <!-- Opponent -->
@@ -938,7 +935,7 @@
       <div class="resultcard" class:win={$result.youWin}>
         <h2>{$result.youWin ? 'You Win!' : $result.winner == null ? 'Draw' : 'You Lose'}</h2>
         <p>{$result.reason}</p>
-        <button onclick={startGame}>Play Again</button>
+        <button onclick={leaveGame}>Back to Menu</button>
       </div>
     </div>
   {/if}
@@ -1039,14 +1036,8 @@
   .conn.on {
     background: #2a5a32;
   }
-  header input {
+  .menubtn {
     margin-left: auto;
-    width: 120px;
-    padding: 5px;
-    background: #222;
-    border: 1px solid #444;
-    color: #eee;
-    border-radius: 5px;
   }
   button {
     background: #b8923a;
@@ -1059,12 +1050,6 @@
   }
   button:hover {
     background: #d9bf7a;
-  }
-  .placeholder {
-    grid-column: 1/-1;
-    padding: 40px;
-    text-align: center;
-    color: #888;
   }
   .table {
     background: radial-gradient(circle at center, #1f3a2a, #142016);

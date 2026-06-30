@@ -14,12 +14,8 @@ export const connected = writable(false)
 
 let ws = null
 
-export function newGame(seed) {
-  if (seed === undefined) seed = Math.floor(Math.random() * 1_000_000)
-  if (ws) {
-    ws.close()
-    ws = null
-  }
+// Reset all live-game stores (used on a new game and when leaving to the menu).
+function resetGameStores() {
   logs.set([])
   result.set(null)
   awaiting.set(false)
@@ -29,9 +25,33 @@ export function newGame(seed) {
   targetRequest.set(null)
   choosePrompt.set(null)
   ritualPrompt.set(null)
+}
+
+// Close any duel and return to the launcher (board === null shows the menu).
+export function leaveGame() {
+  if (ws) {
+    ws.close()
+    ws = null
+  }
+  resetGameStores()
+  connected.set(false)
+}
+
+export function newGame(seed, deck, opp) {
+  if (seed === undefined || seed === '' || seed == null) {
+    seed = Math.floor(Math.random() * 1_000_000)
+  }
+  if (ws) {
+    ws.close()
+    ws = null
+  }
+  resetGameStores()
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-  ws = new WebSocket(`${proto}://${location.host}/ws?seed=${seed}`)
+  let q = `seed=${seed}`
+  if (deck) q += `&deck=${encodeURIComponent(deck)}`
+  if (opp) q += `&opp=${encodeURIComponent(opp)}`
+  ws = new WebSocket(`${proto}://${location.host}/ws?${q}`)
   ws.onopen = () => connected.set(true)
   ws.onclose = () => connected.set(false)
   ws.onmessage = (event) => {
