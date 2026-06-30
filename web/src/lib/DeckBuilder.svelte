@@ -411,7 +411,9 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 1px var(--accent);
   }
-  /* the image area keeps the real card aspect ratio so nothing is cropped */
+  /* the image drives the tile height (in-flow, with the card's aspect ratio) so
+     the whole card is visible and never cropped; the box keeps shape if the
+     image is missing */
   .thumb {
     position: relative;
     width: 100%;
@@ -419,10 +421,9 @@
     background: var(--surface-3);
   }
   .thumb img {
-    position: absolute;
-    inset: 0;
+    display: block;
     width: 100%;
-    height: 100%;
+    aspect-ratio: 59 / 86;
     object-fit: contain;
   }
   /* name + stats live in a strip BELOW the card, never over the art */
