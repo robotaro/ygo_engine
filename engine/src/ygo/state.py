@@ -142,6 +142,10 @@ class CardInstance:
     # expires once turn_count passes it; read by the position-change action enumeration.
     position_locked_until: int | None = None
 
+    # The turn_count whose End Phase this monster is to be destroyed in (Limiter Removal
+    # marks the Machines it doubled). Cleared when the card leaves the field.
+    destroy_at_end_phase: int | None = None
+
     @property
     def name(self) -> str:
         return self.card.name
@@ -378,6 +382,7 @@ class GameState:
         inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
         inst.effect_activated_on_turn = None  # a revived card may use its once/turn again
         inst.attack_disabled_on_turn = None
+        inst.destroy_at_end_phase = None
 
     def send_to_graveyard(self, iid: int, by_battle: bool = False) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``

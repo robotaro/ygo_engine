@@ -1610,6 +1610,97 @@ class SpecialSummonFromDeck(Primitive):
 
 
 @dataclass(frozen=True)
+class SpecialSummonFromExtraDeck(Primitive):
+    """Special Summon 1 monster from the controller's Extra Deck (Cyber-Stein → a Fusion
+    Monster in Attack Position, after paying its 5000 LP cost). ``fusion_only`` limits the
+    pick to Fusion Monsters. Deterministic — the highest-ATK eligible monster — since
+    primitives have no agent to ask. No eligible monster or no free Monster Zone -> nothing
+    happens (the LP cost is paid up front regardless, as an activation cost)."""
+
+    position: Position = Position.FACE_UP_ATTACK
+    fusion_only: bool = True
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        extra = s.players[ctx.controller].extra_deck
+        eligible = [
+            i
+            for i in extra
+            if s.inst(i).card.is_monster
+            and (not self.fusion_only or s.inst(i).card.is_fusion)
+        ]
+        if not eligible:
+            return
+        pick = max(eligible, key=lambda i: s.inst(i).card.attack or 0)
+        s.special_summon(pick, ctx.controller, self.position)
+
+
+@dataclass(frozen=True)
+class ShuffleFieldMonstersThenExcavate(Primitive):
+    """Morphing Jar #2's flip: shuffle every monster on the field into its owner's Deck
+    (a Token ceases to exist instead), counting per player how many of THEIR monsters went
+    into the Main Deck. Then each player excavates from the top of their Deck until they
+    have excavated that many monsters (or the Deck runs out); each excavated Level
+    ``max_level``-or-lower monster that can be freely summoned is Special Summoned in
+    face-down Defense Position, and every other excavated card (non-monsters, higher-Level
+    or non-summonable monsters) is sent to the Graveyard."""
+
+    max_level: int = 4
+    position: Position = Position.FACE_DOWN_DEFENSE
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        counts = {0: 0, 1: 0}
+        field_monsters = [
+            iid for pl in (0, 1) for iid in s.players[pl].monster_zones if iid is not None
+        ]
+        for iid in field_monsters:
+            inst = s.inst(iid)
+            if inst.card.is_token:
+                s.send_to_graveyard(iid)  # a Token never reaches the Deck
+            else:
+                counts[inst.owner] += 1
+                s.return_to_deck(iid, to_top=False)  # shuffles the owner's Deck
+        for pl in (0, 1):
+            seen = 0
+            while seen < counts[pl] and s.players[pl].deck:
+                iid = s.players[pl].deck[-1]  # peek the top
+                card = s.inst(iid).card
+                if not card.is_monster:
+                    s.send_to_graveyard(iid)
+                    continue
+                seen += 1
+                if (
+                    (card.level or 0) <= self.max_level
+                    and card.can_normal_summon
+                    and not card.is_spirit
+                ):
+                    if not s.special_summon(iid, pl, self.position):
+                        s.send_to_graveyard(iid)  # no free zone -> GY (still in Deck)
+                else:
+                    s.send_to_graveyard(iid)
+
+
+@dataclass(frozen=True)
+class DoubleControlledRaceAtkThenEndPhaseDestroy(Primitive):
+    """Limiter Removal: double the ATK of every face-up monster of ``race`` the controller
+    controls until the end of the turn (a temporary boost equal to the monster's current
+    effective ATK), and mark each so the engine destroys it during this turn's End Phase."""
+
+    race: str = "Machine"
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        for iid in s.players[ctx.controller].monster_zones:
+            if iid is None:
+                continue
+            inst = s.inst(iid)
+            if inst.is_face_up and inst.card.race == self.race:
+                inst.temp_atk += s.effective_attack(iid)  # +current ATK = doubled
+                inst.destroy_at_end_phase = s.turn_count
+
+
+@dataclass(frozen=True)
 class MillFromDeck(Primitive):
     """Send the top ``count`` cards of a player's Deck to their Graveyard (Needle
     Worm decks the opponent; ``player`` is SELF or OPPONENT). The "top" is the end

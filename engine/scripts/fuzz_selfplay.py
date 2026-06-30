@@ -242,6 +242,10 @@ DECK = (
     + ["Elegant Egotist"] * 2
     + ["Harpie Lady"] * 2
     + ["Harpie Lady Sisters"] * 2
+    # Extra-Deck cheat + board-reset flood + Machine ATK-doubler
+    + ["Cyber-Stein"] * 2
+    + ["Morphing Jar #2"] * 2
+    + ["Limiter Removal"] * 2
 )
 
 

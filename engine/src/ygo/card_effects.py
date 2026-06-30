@@ -52,6 +52,7 @@ from .effects import (
     DestroyTargets,
     DiscardFromHand,
     DiscardHandThenBurn,
+    DoubleControlledRaceAtkThenEndPhaseDestroy,
     Draw,
     DrawTrigger,
     Effect,
@@ -88,7 +89,9 @@ from .effects import (
     SelfStatMod,
     RevealRandomHandCardSummonOrGY,
     RevealTopSummonRestToHand,
+    ShuffleFieldMonstersThenExcavate,
     SpecialSummonFromDeck,
+    SpecialSummonFromExtraDeck,
     SpecialSummonFromGraveyard,
     SpecialSummonFromHand,
     SpecialSummonLock,
@@ -4791,4 +4794,32 @@ CONTINUOUS.update({
     # Sinister Serpent — during your Standby Phase, if it is in your GY, add it back to
     # your hand. Read off the card in the GY by the engine's Standby hook.
     "Sinister Serpent": (GraveyardStandbyReturn(),),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 76: deck-impact toolbox — an Extra-Deck cheat, a board-reset flood, and
+# the Machine ATK-doubler.
+EFFECTS.update({
+    # Cyber-Stein — pay 5000 LP: Special Summon 1 Fusion Monster from your Extra Deck in
+    # Attack Position (deterministic highest-ATK Fusion).
+    "Cyber-Stein": (
+        Effect(
+            timing="ignition",
+            life_cost=5000,
+            resolve=(SpecialSummonFromExtraDeck(),),
+        ),
+    ),
+    # Morphing Jar #2 — FLIP: shuffle all monsters on the field into the Decks, then each
+    # player excavates until they reveal as many monsters as they shuffled in, Special
+    # Summoning the Level 4-or-lower ones face-down and sending the rest to the GY.
+    "Morphing Jar #2": (_flip(resolve=(ShuffleFieldMonstersThenExcavate(),)),),
+    # Limiter Removal — Quick-Play: double the ATK of every Machine you control until end
+    # of turn, then destroy those monsters in the End Phase.
+    "Limiter Removal": (
+        Effect(
+            speed=2,
+            timing="quick",
+            resolve=(DoubleControlledRaceAtkThenEndPhaseDestroy(race="Machine"),),
+        ),
+    ),
 })

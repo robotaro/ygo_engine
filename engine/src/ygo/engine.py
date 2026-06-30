@@ -1077,6 +1077,24 @@ class Engine:
             self._changed()
             self._check_field_to_gy_triggers()  # orphaned Equips on the bounced Spirit
 
+    def _destroy_end_phase_marked(self) -> None:
+        """Destroy every monster marked to die in this turn's End Phase (Limiter Removal
+        destroys the Machines it doubled). The mark stores the turn it was set on, so it
+        only fires in that same turn's End Phase."""
+        s = self.state
+        victims = [
+            iid
+            for iid, inst in s.cards.items()
+            if inst.zone is Zone.MONSTER and inst.destroy_at_end_phase == s.turn_count
+        ]
+        if not victims:
+            return
+        for iid in victims:
+            self.log(f"  {s.inst(iid).name} is destroyed (End Phase)")
+            s.send_to_graveyard(iid)
+        self._changed()
+        self._check_field_to_gy_triggers()
+
     def _clear_temp_stats(self) -> None:
         """Wipe every monster's 'until the end of this turn' ATK/DEF deltas."""
         s = self.state
@@ -1091,6 +1109,8 @@ class Engine:
             self._fire_end_phase_triggers(tp)
         if self.result is None:
             self._return_spirits(tp)
+        if self.result is None:
+            self._destroy_end_phase_marked()
         if self.result is None:
             s = self.state
             for _ in range(_MAX_ACTIONS_PER_PHASE):
