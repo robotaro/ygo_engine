@@ -1071,7 +1071,13 @@ class DestroyEquipHostThenBurn(Primitive):
     resolution time, not captured at equip time. This is the GBA-era behaviour and lets
     the classic combo work: hand the about-to-explode monster to the enemy first (Change
     of Heart / a give-away) and *they* take the burn. A no-op if the host has already left
-    the field (Blast Sphere would then be an orphaned equip, already cleaned up)."""
+    the field (Blast Sphere would then be an orphaned equip, already cleaned up).
+
+    DELIBERATE, USER-ENDORSED DIVERGENCE: ygopro-core's official script damages a FIXED
+    player (``Duel.Damage(1-tp,...)`` = Blast Sphere's controller's opponent) regardless of
+    any control change. We intentionally follow the GBA ROM instead (control-follows-the-
+    monster) for more interesting play — this is lore-accurate to the game this engine
+    recreates, not a bug. Do NOT "fix" it to match the modern C++ ruling."""
 
     def execute(self, ctx: EffectContext) -> None:
         s = ctx.state
