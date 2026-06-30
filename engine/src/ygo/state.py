@@ -236,7 +236,7 @@ class GameState:
     # Whirlwind Weasel, Searchlightman). Auto-expires by turn; pruned in engine._begin_turn.
     action_locks: dict = field(default_factory=dict)
     gy_from_field: list = field(default_factory=list)  # monsters just sent field->GY (trigger queue)
-    pending_draws: list = field(default_factory=list)  # players who just drew (draw-trigger queue)
+    pending_draws: list = field(default_factory=list)  # (player, drawn_iids) per draw event — the draw-trigger queue
     # Monsters just Summoned — (iid, summoner, kind) the engine drains to open the
     # opponent's response window + fire the monster's own "when Summoned" trigger (and,
     # for "flip", its Flip Effect). Special Summons are queued by the special_summon
@@ -324,8 +324,8 @@ class GameState:
             self.cards[iid].zone = Zone.HAND
             self.cards[iid].position = None
             drawn.append(iid)
-        if drawn:  # "when you draw a card(s)" fires once per draw, for the engine to process
-            self.pending_draws.append(player)
+        if drawn:  # "when you draw a card(s)" fires once per draw event, for the engine to process
+            self.pending_draws.append((player, tuple(drawn)))
         return drawn
 
     # ----- card movement (used by the move/effect layer) -----

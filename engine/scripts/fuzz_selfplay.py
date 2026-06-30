@@ -293,6 +293,12 @@ DECK = (
     # Batch 86: Nutrient Z (Set Trap — gain 4000 before taking 2000+ battle damage), which
     # exercises the battle-damage preview run at every attack.
     + ["Nutrient Z"] * 2
+    # Batch 87: draw-again engines — Heart of the Underdog (draw a Normal Monster -> draw
+    # again) and Tethys (draw a Fairy -> draw again), plus a Fairy to feed Tethys. Celtic
+    # Guardian / Mystical Elf already in the deck are the Normal-Monster fuel for Heart.
+    + ["Heart of the Underdog"] * 1
+    + ["Tethys, Goddess of Light"] * 1
+    + ["Dunames Dark Witch"] * 2
 )
 
 

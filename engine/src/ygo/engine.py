@@ -18,6 +18,7 @@ from .effects import (
     OPPONENT,
     SELF,
     DefenseAfterAttack,
+    DrawAgainOnDraw,
     DrawTrigger,
     EndPhaseSummonSweep,
     EndPhaseTrigger,
@@ -178,20 +179,36 @@ class Engine:
         self._changed()
 
     def _process_draw_triggers(self) -> None:
-        """Solemn Wishes: pay each queued draw out to its drawer's face-up cards.
-
-        Unlike the gy_from_field / summon_events drain this needs no re-entrancy guard:
-        a draw trigger only gains Life Points, so draining one can't itself queue a draw.
+        """Drain each queued draw event to its drawer's face-up "when you draw" cards:
+        Solemn Wishes (gain LP per draw) and the draw-again engines (Heart of the Underdog,
+        Tethys — draw 1 more on drawing a matching monster). A draw-again itself queues a
+        new event, so the ``while`` loop chains it; the loop terminates because each draw
+        empties the deck by one.
         """
         s = self.state
         while s.pending_draws:
-            player = s.pending_draws.pop(0)
+            player, drawn = s.pending_draws.pop(0)
             for inst, mod in s.active_markers(DrawTrigger, (player,)):
                 if mod.gain_life:
                     s.gain_life_points(player, mod.gain_life)
                     self.log(f"  {s.players[player].name} gains {mod.gain_life} LP from {inst.name}")
+            self._fire_draw_again_triggers(player, drawn)
         # Solemn Wishes' LP gain may feed a "when you gain Life Points" trigger (Fire Princess).
         self._fire_life_gain_window()
+
+    def _fire_draw_again_triggers(self, player: int, drawn: tuple) -> None:
+        """For each face-up DrawAgainOnDraw the drawer controls (Heart of the Underdog,
+        Tethys), if any card just drawn matches its filter, draw 1 more card — the extra
+        draw queues its own event, so the caller's loop chains a run of matches. Heart is
+        gated to the Draw Phase; the optional reveal is treated as taken (headless)."""
+        s = self.state
+        for _inst, mod in s.active_markers(DrawAgainOnDraw, (player,)):
+            if mod.draw_phase_only and s.phase is not Phase.DRAW:
+                continue
+            if any(mod.card_filter.matches(s.inst(i).card) for i in drawn if i in s.cards):
+                more = s.draw(player, 1)
+                if more:
+                    self.log(f"  {s.players[player].name} draws 1 more ({s.inst(more[0]).name})")
 
     # ------------------------------------------------------------------ #
     def _standby_phase(self, tp: int) -> None:

@@ -58,6 +58,7 @@ from .effects import (
     DiscardHandThenBurn,
     DoubleControlledRaceAtkThenEndPhaseDestroy,
     Draw,
+    DrawAgainOnDraw,
     DrawTrigger,
     Effect,
     EndBattlePhase,
@@ -5168,5 +5169,22 @@ EFFECTS.update({
             ),
             resolve=(GainLifePoints(SELF, 4000),),
         ),
+    ),
+})
+
+# Effects Batch 87: "when you draw" draw-again engines (ROADMAP #3, TIMING_DRAW). draw()
+# now records WHICH cards each draw event produced; the engine, after every draw, draws 1
+# more if a face-up DrawAgainOnDraw card the drawer controls matches a just-drawn card. The
+# extra draw is a fresh event, so a run of matches chains (bounded by the deck).
+CONTINUOUS.update({
+    # Heart of the Underdog (Continuous Spell): "During your Draw Phase, when you draw a
+    # Normal Monster(s): You can reveal it; draw 1 more card." Draw-Phase-only, vanilla.
+    "Heart of the Underdog": (
+        DrawAgainOnDraw(CardFilter(card_kind="normal_monster"), draw_phase_only=True),
+    ),
+    # Tethys, Goddess of Light: "When you draw a Fairy monster(s) ...: draw 1 card." Any
+    # draw (must be face-up on the field, which the active-markers scan already requires).
+    "Tethys, Goddess of Light": (
+        DrawAgainOnDraw(CardFilter(card_kind="monster", races=frozenset({"Fairy"}))),
     ),
 })

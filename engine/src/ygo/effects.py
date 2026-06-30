@@ -677,6 +677,20 @@ class CardFilter:
 
 
 @dataclass(frozen=True)
+class DrawAgainOnDraw:
+    """A face-up card's "when you draw a [matching] card(s): draw 1 more" reaction
+    (Heart of the Underdog — draw a Normal Monster in your Draw Phase; Tethys, Goddess
+    of Light — draw a Fairy monster). The engine, after each of the controller's draw
+    events, draws 1 extra card if any card just drawn matches ``card_filter``; that extra
+    draw is itself a new event, so a run of matches chains (bounded by the deck). The
+    optional reveal is treated as taken (headless). ``draw_phase_only`` limits it to the
+    Draw Phase (Heart of the Underdog)."""
+
+    card_filter: CardFilter = CardFilter()
+    draw_phase_only: bool = False
+
+
+@dataclass(frozen=True)
 class SummonCost:
     """One sub-cost of a self-Special-Summon paid by banishing from the controller's
     Graveyard: banish ``count`` GY monsters matching ``card_filter``. A monster with
