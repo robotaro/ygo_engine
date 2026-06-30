@@ -378,10 +378,11 @@ class Engine:
 
     def _battle_phase(self, tp: int) -> None:
         s = self.state
+        s.battle_phase_ended = False
         if s.turn_count == 1:  # the player going first gets no Battle Phase
             return
         for _ in range(_MAX_ACTIONS_PER_PHASE):
-            if self.result is not None:
+            if self.result is not None or s.battle_phase_ended:
                 return
             menu = legal_actions(s, tp) + [Pass()]
             choice = self.agents[tp].decide(s, menu)

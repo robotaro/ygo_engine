@@ -56,6 +56,7 @@ from .effects import (
     Draw,
     DrawTrigger,
     Effect,
+    EndBattlePhase,
     EndPhaseTrigger,
     EquipMod,
     EquipToTarget,
@@ -4820,6 +4821,49 @@ EFFECTS.update({
             speed=2,
             timing="quick",
             resolve=(DoubleControlledRaceAtkThenEndPhaseDestroy(race="Machine"),),
+        ),
+    ),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 77: deck-impact — a both-GY stat anthem, a battle-recruiter, and a
+# Battle-Phase-ender.
+EFFECTS.update({
+    # Giant Germ — destroyed by battle & sent to the GY: inflict 500 damage, then Special
+    # Summon as many "Giant Germ" as possible from the Deck in face-up Attack Position.
+    "Giant Germ": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(
+                InflictDamage(OPPONENT, 500),
+                SpecialSummonFromDeck(
+                    card_filter=CardFilter(
+                        card_kind="monster", name_contains=frozenset({"Giant Germ"})
+                    ),
+                    count=2,
+                ),
+            ),
+        ),
+    ),
+    # The Unhappy Maiden — when sent to the GY as a result of battle, the Battle Phase
+    # ends immediately.
+    "The Unhappy Maiden": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed_by_battle", by=SELF),
+            resolve=(EndBattlePhase(),),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    # Dark Magician Girl — gains 300 ATK for each "Dark Magician" or "Magician of Black
+    # Chaos" in either Graveyard.
+    "Dark Magician Girl": (
+        SelfStatMod(
+            scaling="named_in_graveyards",
+            scale_atk=300,
+            count_names=frozenset({"Dark Magician", "Magician of Black Chaos"}),
         ),
     ),
 })

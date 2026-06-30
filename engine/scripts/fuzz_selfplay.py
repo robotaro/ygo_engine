@@ -246,6 +246,11 @@ DECK = (
     + ["Cyber-Stein"] * 2
     + ["Morphing Jar #2"] * 2
     + ["Limiter Removal"] * 2
+    # both-GY stat anthem + battle-recruiter + Battle-Phase-ender
+    + ["Dark Magician Girl"] * 2
+    + ["Dark Magician"] * 2
+    + ["Giant Germ"] * 3
+    + ["The Unhappy Maiden"] * 2
 )
 
 

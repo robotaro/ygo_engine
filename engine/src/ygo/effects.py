@@ -100,18 +100,22 @@ class SelfStatMod:
         +500 per WIND). The source counts itself when it matches the filter, unless
         ``count_exclude_self`` is set (Dragon Master Knight counts only OTHER Dragons).
       * ``"equips_on_self"`` adds ``scale_atk``/``scale_defn`` per Equip Card attached to
-        the source monster (Maha Vailo: +500 ATK for each Equip Card equipped to it)."""
+        the source monster (Maha Vailo: +500 ATK for each Equip Card equipped to it).
+      * ``"named_in_graveyards"`` adds them per card in EITHER player's Graveyard whose
+        exact name is in ``count_names`` (Dark Magician Girl: +300 ATK for each "Dark
+        Magician" or "Magician of Black Chaos" in the GYs)."""
 
     atk: int = 0
     defn: int = 0
     # None | "face_up_attr_monsters" | "graveyard_monsters" | "controlled_monsters"
-    #      | "equips_on_self"
+    #      | "equips_on_self" | "named_in_graveyards"
     scaling: str | None = None
     scale_atk: int = 0
     scale_defn: int = 0
     count_attribute: "Attribute | None" = None
     count_race: str | None = None
     count_name_contains: str | None = None
+    count_names: frozenset = frozenset()
     count_exclude_self: bool = False
     # Optional activation gates — the whole modifier contributes 0 unless ALL set gates
     # hold for the controller: control a face-up monster named like this (Boot-Up Soldier
@@ -1380,6 +1384,16 @@ class NegateAttack(Primitive):
 
     def execute(self, ctx: EffectContext) -> None:
         ctx.state.attack_negated = True
+
+
+@dataclass(frozen=True)
+class EndBattlePhase(Primitive):
+    """End the current Battle Phase immediately (The Unhappy Maiden, when sent to the GY
+    by battle). Sets ``state.battle_phase_ended``, which the engine's Battle-Phase loop
+    reads to stop offering further attacks this turn."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.battle_phase_ended = True
 
 
 @dataclass(frozen=True)

@@ -233,6 +233,9 @@ class GameState:
     # (D.D. Warrior Lady's mutual banish). None on a direct attack. Reset each
     # _resolve_attack, drained by the engine after the attack.
     battle_pair: tuple | None = None
+    # Set by an effect to end the current Battle Phase immediately (The Unhappy Maiden);
+    # read and reset by the engine's Battle-Phase loop.
+    battle_phase_ended: bool = False
     seed: int = 0
     rng: random.Random = field(default_factory=random.Random)
     _next_iid: int = 0
@@ -615,6 +618,15 @@ class GameState:
                     if sid is not None
                     and self.cards[sid].equipped_to == monster_iid
                     and self.cards[sid].is_face_up
+                )
+                total += flat + per * count
+            elif mod.scaling == "named_in_graveyards":
+                per = mod.scale_atk if which == "atk" else mod.scale_defn
+                count = sum(
+                    1
+                    for pl in self.players
+                    for i in pl.graveyard
+                    if self.cards[i].card.name in mod.count_names
                 )
                 total += flat + per * count
             else:
