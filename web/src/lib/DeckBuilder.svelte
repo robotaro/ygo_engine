@@ -193,12 +193,17 @@
             <div class="thumb">
               {#if img(card)}
                 <img
+                  class="art"
                   src={img(card)}
+                  width="813"
+                  height="1185"
                   alt={card.name}
                   loading="lazy"
                   decoding="async"
-                  onerror={(e) => (e.currentTarget.style.display = 'none')}
+                  onerror={(e) => (e.currentTarget.style.visibility = 'hidden')}
                 />
+              {:else}
+                <div class="noart">{card.name}</div>
               {/if}
               {#if !card.functional}<span class="dead" title="Effect not implemented yet">∅</span>{/if}
               {#if n > 0}<span class="owned">{n}</span>{/if}
@@ -380,9 +385,12 @@
     gap: 5px;
     white-space: nowrap;
   }
+  /* minmax(0, 1fr) — NOT plain 1fr — so every column is exactly equal. Plain
+     1fr keeps a min-content floor, letting long names/images widen some columns
+     and make the cards different sizes. */
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
     overflow-y: auto;
     align-content: start;
@@ -397,12 +405,14 @@
   /* Plain block (NOT flex) so the fixed-height image area below can't be
      shrunk away — a flex child keeps flex-shrink:1 even with an explicit
      height, which collapsed the thumbnails to nothing. */
+  /* NOTE: no `overflow: hidden` here. As a grid item it would become a scroll
+     container, contribute ~0 height to the `auto` row, collapse the row, and
+     crop every card to a sliver. The image rounds its own corners instead. */
   .poolcard {
     display: block;
     border-radius: var(--r);
     border: 1px solid var(--line);
     background: var(--surface-2);
-    overflow: hidden;
     cursor: pointer;
     color: var(--text);
   }
@@ -413,25 +423,42 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 1px var(--accent);
   }
-  /* Fixed-height image area + object-fit: contain — the whole card shows,
-     uncropped and uniform, without relying on aspect-ratio. */
+  /* The <img> itself (a replaced element sized by its 813×1185 attributes) sets
+     the row height — height:auto keeps the card's true ratio with no crop. Using
+     the image's intrinsic height (not CSS aspect-ratio) avoids the grid
+     min-content collapse that cropped every card to a sliver. */
   .thumb {
     position: relative;
     width: 100%;
-    height: 150px;
+    aspect-ratio: 813 / 1185; /* uniform card-shaped box for every tile */
     background: var(--surface-3);
+    border-radius: var(--r) var(--r) 0 0;
+    overflow: hidden; /* safe here: .thumb is a block child, not a grid item */
   }
-  .thumb img {
-    display: block;
+  .thumb .art {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    height: 150px;
-    object-fit: contain;
+    height: 100%;
+    object-fit: cover; /* whole card fills the box; box matches card ratio = no crop */
+  }
+  .thumb .noart {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 6px;
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.2;
+    color: var(--muted);
   }
   /* name + stats live in a strip BELOW the card, never over the art */
   .label {
     padding: 4px 6px 5px;
     background: var(--surface);
     border-top: 1px solid var(--line);
+    border-radius: 0 0 var(--r) var(--r);
   }
   .cn {
     font-size: 10px;

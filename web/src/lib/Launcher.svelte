@@ -4,7 +4,8 @@
   import BanlistEditor from './BanlistEditor.svelte'
   import OpponentPicker from './OpponentPicker.svelte'
 
-  let tab = $state('play') // 'play' | 'build' | 'banlist'
+  // Initial tab is deep-linkable via ?tab=build|banlist (handy for screenshots).
+  let tab = $state(new URLSearchParams(location.search).get('tab') || 'play') // 'play' | 'build' | 'banlist'
   let decks = $state([])
   let formats = $state([])
   let format = $state('none') // active Forbidden/Limited list
