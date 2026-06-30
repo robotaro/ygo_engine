@@ -93,6 +93,7 @@ from .effects import (
     HalfEquippedHostAtk,
     ProtectControlledFromDestruction,
     RollDieModifyAllStats,
+    ArmLastWill,
     HalvesAttackersAtk,
     LocksAttachedMonster,
     AttachSelfToTarget,
@@ -6228,4 +6229,17 @@ EFFECTS.update({
 })
 CONTINUOUS.update({
     "Ultimate Offering": (PayLifeForExtraNormalSummon(amount=500),),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 131: Last Will — "If a monster on your side of the field was sent to your
+# Graveyard this turn, you can Special Summon 1 monster with 1500 or less ATK from your Deck once
+# during this turn." Modelled as the iconic armed version: activating it (a Normal Spell) arms
+# its controller for the turn (ArmLastWill); the next time a monster they control is sent to
+# their Graveyard, Engine._fire_last_will_for Special Summons a <=1500-ATK Deck monster (once).
+# The retroactive "already died before activation" reading isn't applied — arming watches the
+# rest of the turn, matching the classic sac-then-replace combo.
+EFFECTS.update({
+    "Last Will": (Effect(timing="ignition", resolve=(ArmLastWill(),)),),
 })

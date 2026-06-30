@@ -1396,12 +1396,41 @@ class Engine:
                         effect = self._find_gy_trigger(inst)
                         if effect is not None:
                             self._trigger_effect(iid, effect, inst.controller)
+                        if inst.card.is_monster:
+                            self._fire_last_will_for(inst.owner)
                 else:
                     self._fire_summon_event(*s.summon_events.pop(0))
                 # That resolution may have broken more bonds / orphaned more Equips.
                 self._reconcile_field()
         finally:
             self._processing_gy = False
+
+    def _fire_last_will_for(self, owner: int) -> None:
+        """Last Will: while ``owner`` is armed and hasn't fired it yet this turn, a monster they
+        control reaching their Graveyard Special Summons 1 monster with 1500 or less ATK from
+        their Deck (deterministic highest-ATK eligible pick, like SpecialSummonFromDeck). A
+        no-op without an eligible monster or a free zone, so the once-per-turn use isn't wasted
+        on a fizzle. The summon is queued by state.special_summon for the drain loop to process."""
+        s = self.state
+        pl = s.players[owner]
+        if pl.last_will_armed_turn != s.turn_count or pl.last_will_fired_turn == s.turn_count:
+            return
+        if s.first_empty_monster_zone(owner) is None:
+            return
+        eligible = [
+            i
+            for i in pl.deck
+            if s.inst(i).card.is_monster
+            and (s.inst(i).card.attack or 0) <= 1500
+            and not s.special_summon_locked(owner, s.inst(i).card)
+        ]
+        if not eligible:
+            return
+        pick = max(eligible, key=lambda i: s.inst(i).card.attack or 0)
+        if s.special_summon(pick, owner, Position.FACE_UP_ATTACK):
+            pl.last_will_fired_turn = s.turn_count
+            s.rng.shuffle(pl.deck)
+            self.log(f"  {pl.name}: Last Will Special Summons {s.inst(pick).name}")
 
     def _fire_summon_event(self, iid: int, summoner: int, kind: str = "special") -> None:
         """For a monster just Summoned (any kind): let the opponent respond — Torrential

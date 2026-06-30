@@ -260,6 +260,12 @@ class PlayerState:
     # holds the turn_count it was granted on, so it lapses when the turn advances. Read by
     # GameState.is_battle_indestructible.
     no_battle_destruction_until_turn: int | None = None
+    # Last Will: the turn it was activated (armed) and the turn it last fired its one Special
+    # Summon. While armed (last_will_armed_turn == turn_count) and not yet fired this turn, the
+    # engine Special Summons a <=1500-ATK monster from the Deck the next time a monster this
+    # player controls is sent to their Graveyard. Read by Engine._fire_last_will_for.
+    last_will_armed_turn: int | None = None
+    last_will_fired_turn: int | None = None
 
 
 @dataclass

@@ -2015,6 +2015,17 @@ class PreventBattleDestructionThisTurn(Primitive):
 
 
 @dataclass(frozen=True)
+class ArmLastWill(Primitive):
+    """Last Will: arm its controller for this turn. While armed, the next time a monster they
+    control is sent to their Graveyard this turn the engine Special Summons 1 monster with 1500
+    or less ATK from their Deck (once that turn). Stamps ``players[controller].last_will_armed_turn``
+    with the current turn so the arming lapses when the turn advances."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.players[ctx.controller].last_will_armed_turn = ctx.state.turn_count
+
+
+@dataclass(frozen=True)
 class ReverseStatChangesThisTurn(Primitive):
     """Reverse Trap: until the End Phase, every ATK/DEF increase or decrease on the field flips
     sign (additions subtract, subtractions add). Stamps ``state.reverse_trap_until_turn`` with

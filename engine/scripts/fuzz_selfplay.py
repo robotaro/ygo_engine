@@ -459,6 +459,9 @@ DECK = (
     # Batch 130: Ultimate Offering (pay 500 LP for an extra Normal Summon/Set) — exercises the
     # PayLifeForExtraNormalSummon marker + the offering branch of the summon enumeration.
     + ["Ultimate Offering"] * 2
+    # Batch 131: Last Will (arm: a controlled monster reaching the GY -> SS a <=1500-ATK Deck
+    # monster, once/turn) — exercises the armed watcher in the field-to-GY drain loop.
+    + ["Last Will"] * 2
 )
 
 
