@@ -5752,3 +5752,18 @@ CONTINUOUS.update({
 CONTINUOUS.update({
     "Cyber Harpie Lady": (NameTreatedAs(name="Harpie Lady"),),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 106: Alligator's Sword Dragon — a Fusion that can attack directly when the
+# opponent's only face-up monsters are EARTH/WATER/FIRE. Clears one more one-card-from-ready
+# deck (Joey's Worldwide deck).
+FUSIONS.update({"Alligator's Sword Dragon": ("Baby Dragon", "Alligator's Sword")})
+
+CONTINUOUS.update({
+    "Alligator's Sword Dragon": (
+        CanAttackDirectly(
+            only_if_opponent_attributes=frozenset({Attribute.EARTH, Attribute.WATER, Attribute.FIRE})
+        ),
+    ),
+})

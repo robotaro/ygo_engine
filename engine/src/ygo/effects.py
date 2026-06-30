@@ -193,7 +193,13 @@ class Piercing:
 class CanAttackDirectly:
     """A face-up monster's rider: it may declare a direct attack even while the
     opponent controls monsters (Raging Flame Sprite, Goblin Black Ops). Read by the
-    battle-phase enumeration; suppressed while the monster's effect is inactive."""
+    battle-phase enumeration; suppressed while the monster's effect is inactive.
+
+    ``only_if_opponent_attributes`` (Alligator's Sword Dragon) gates the bypass on every
+    face-up monster the opponent controls having an attribute in the set — empty means
+    unconditional."""
+
+    only_if_opponent_attributes: frozenset = frozenset()
 
 
 @dataclass(frozen=True)

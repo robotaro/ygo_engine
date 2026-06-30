@@ -374,6 +374,10 @@ DECK = (
     # Batch 105: Cyber Harpie Lady (name treated as "Harpie Lady") + Harpie's Pet Dragon
     # (counts "Harpie Lady" on the field) to exercise the name-alias in card_matches_traits.
     + ["Cyber Harpie Lady"] * 1 + ["Harpie's Pet Dragon"] * 1
+    # Batch 106: Alligator's Sword Dragon (conditional direct attack vs EARTH/WATER/FIRE)
+    # plus its Fusion materials. The Fusion can't be summoned in the main-deck fuzz, but the
+    # bodies exercise the pool; the direct-attack rider is covered by unit tests.
+    + ["Baby Dragon"] * 1 + ["Alligator's Sword"] * 1
 )
 
 

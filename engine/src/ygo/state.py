@@ -982,8 +982,20 @@ class GameState:
 
     def can_attack_directly(self, iid: int) -> bool:
         """Whether the monster may declare a direct attack despite the opponent having
-        monsters (a face-up CanAttackDirectly rider)."""
-        return self._self_rider(iid, CanAttackDirectly) is not None
+        monsters (a face-up CanAttackDirectly rider). Alligator's Sword Dragon gates the
+        bypass on every face-up opponent monster having an allowed attribute."""
+        mod = self._self_rider(iid, CanAttackDirectly)
+        if mod is None:
+            return False
+        if mod.only_if_opponent_attributes:
+            opp = self.opponent_of(self.cards[iid].controller)
+            if any(
+                self.cards[i].card.attribute not in mod.only_if_opponent_attributes
+                for i in self.players[opp].monster_zones
+                if i is not None and self.cards[i].is_face_up
+            ):
+                return False  # a face-up opponent monster with a disallowed attribute blocks it
+        return True
 
     def is_battle_indestructible(self, iid: int) -> bool:
         """Whether the monster cannot be destroyed by battle (a BattleIndestructible rider)."""
