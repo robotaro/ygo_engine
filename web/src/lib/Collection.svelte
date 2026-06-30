@@ -92,6 +92,7 @@
       }
       const d = await res.json()
       reveal = { pack: d.pack, cards: d.pulled }
+      packModal = null // make way for the pull reveal
       await refreshProfile() // DP + collection changed
       await loadShop() // affordability may have changed
       if (view === 'library') await loadLibrary()
@@ -155,13 +156,30 @@
   function rarClass(rarity) {
     return 'r-' + (rarity || 'Common').toLowerCase().replace(/\s+/g, '-')
   }
+
+  let packModal = $state(null) // a pack's full contents { name, groups, price, ... }
+  let cardLocator = $state(null) // where to grind a covered card { name, packs }
+
+  async function openPackModal(packId) {
+    cardLocator = null
+    error = ''
+    try {
+      packModal = await (await fetch('/api/pack?id=' + encodeURIComponent(packId))).json()
+    } catch {
+      error = 'Could not load that pack.'
+    }
+  }
+
+  function openCardLocator(card) {
+    cardLocator = { name: card.name, packs: card.inPacks || [] }
+  }
 </script>
 
 <div class="cards">
   <div class="topbar">
     <div class="seg">
       <button class:active={view === 'packs'} onclick={() => (view = 'packs')}>📦 Booster Packs</button>
-      <button class:active={view === 'singles'} onclick={() => (view = 'singles')}>🎴 Single Cards</button>
+      <button class:active={view === 'singles'} onclick={() => (view = 'singles')}>🔍 Find a Card</button>
       <button class:active={view === 'library'} onclick={() => (view = 'library')}>
         🃏 Your Library{$profile ? ` · ${$profile.collectionDistinct}` : ''}
       </button>
@@ -182,19 +200,21 @@
     <div class="packgrid">
       {#each shownPacks as p (p.id)}
         <div class="pack" class:poor={!p.affordable}>
-          {#if p.art}
-            <div class="art">
-              <img
-                src={p.art}
-                alt={p.name}
-                loading="lazy"
-                decoding="async"
-                onerror={(e) => (e.currentTarget.style.display = 'none')}
-              />
-            </div>
-          {/if}
-          <div class="pname" title={p.name}>{p.name}</div>
-          <div class="pmeta">{p.cardsPerPack} cards · {p.distinct} in set</div>
+          <button class="packbody" onclick={() => openPackModal(p.id)} title="See what's in {p.name}">
+            {#if p.art}
+              <div class="art">
+                <img
+                  src={p.art}
+                  alt={p.name}
+                  loading="lazy"
+                  decoding="async"
+                  onerror={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              </div>
+            {/if}
+            <div class="pname" title={p.name}>{p.name}</div>
+            <div class="pmeta">{p.cardsPerPack} cards · {p.distinct} in set</div>
+          </button>
           <button
             class="buy"
             disabled={!p.affordable || busy === p.id}
@@ -206,13 +226,18 @@
       {/each}
     </div>
   {:else if view === 'singles'}
-    <input class="search" placeholder="Search the card shop…" bind:value={singleQuery} />
+    <input class="search" placeholder="Search any card…" bind:value={singleQuery} />
+    <p class="hint">
+      Cards from booster packs must be pulled — open the pack(s) they're in. Only cards in
+      <b>no</b> pack can be bought directly.
+    </p>
     {#if singles.length === 0}
       <div class="empty">No cards match.</div>
     {:else}
       <div class="cardgrid">
         {#each singles as c (c.name)}
-          <div class="owned shopcard" class:poor={c.buy > dp} title={c.name}>
+          {@const orphan = !c.inPacks || c.inPacks.length === 0}
+          <div class="owned shopcard" class:poor={orphan && c.buy > dp} title={c.name}>
             <div class="thumb">
               {#if img(c)}
                 <img src={img(c)} alt={c.name} loading="lazy" decoding="async" />
@@ -222,13 +247,19 @@
               <span class="rar {rarClass(c.rarity)}">{c.rarity}</span>
             </div>
             <div class="cn">{c.name}</div>
-            <button
-              class="act buy"
-              disabled={c.buy > dp || busy === 'buy:' + c.name}
-              onclick={() => buyCard(c)}
-            >
-              {busy === 'buy:' + c.name ? '…' : `◈ ${c.buy.toLocaleString()}`}
-            </button>
+            {#if orphan}
+              <button
+                class="act buy"
+                disabled={c.buy > dp || busy === 'buy:' + c.name}
+                onclick={() => buyCard(c)}
+              >
+                {busy === 'buy:' + c.name ? '…' : `Buy ◈${c.buy.toLocaleString()}`}
+              </button>
+            {:else}
+              <button class="act locate" onclick={() => openCardLocator(c)}>
+                📦 in {c.inPacks.length} pack{c.inPacks.length === 1 ? '' : 's'}
+              </button>
+            {/if}
           </div>
         {/each}
       </div>
@@ -296,6 +327,78 @@
         {/each}
       </div>
       <button class="close btn-primary" onclick={() => (reveal = null)}>Add to Library</button>
+    </div>
+  </div>
+{/if}
+
+{#if cardLocator}
+  <div
+    class="modal"
+    role="button"
+    tabindex="0"
+    onclick={() => (cardLocator = null)}
+    onkeydown={(e) => e.key === 'Escape' && (cardLocator = null)}
+  >
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="sheet narrow" role="dialog" onclick={(e) => e.stopPropagation()}>
+      <h3>Get “{cardLocator.name}”</h3>
+      <p class="sub">Grind one of these packs until it drops:</p>
+      <div class="loclist">
+        {#each cardLocator.packs as p (p.id + p.rarity)}
+          <button class="locrow" onclick={() => openPackModal(p.id)}>
+            <span class="ln">{p.name}</span>
+            <span class="rar inline {rarClass(p.rarity)}">{p.rarity}</span>
+          </button>
+        {/each}
+      </div>
+      <button class="close" onclick={() => (cardLocator = null)}>Close</button>
+    </div>
+  </div>
+{/if}
+
+{#if packModal}
+  <div
+    class="modal"
+    role="button"
+    tabindex="0"
+    onclick={() => (packModal = null)}
+    onkeydown={(e) => e.key === 'Escape' && (packModal = null)}
+  >
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="sheet wide" role="dialog" onclick={(e) => e.stopPropagation()}>
+      <h3>{packModal.name}</h3>
+      <p class="sub">{packModal.cardsPerPack} cards per pack · {packModal.distinct} in set</p>
+      <div class="groups">
+        {#each packModal.groups as g (g.rarity)}
+          <div class="grp">
+            <div class="grhead">
+              <span class="rar inline {rarClass(g.rarity)}">{g.rarity}</span>
+              <span class="gn">{g.cards.length}</span>
+            </div>
+            <div class="minigrid">
+              {#each g.cards as c (c.name)}
+                <div class="mini" title={c.name}>
+                  {#if img(c)}
+                    <img src={img(c)} alt={c.name} loading="lazy" decoding="async" />
+                  {:else}
+                    <div class="noart">{c.name}</div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/each}
+      </div>
+      <div class="modfoot">
+        <button class="close" onclick={() => (packModal = null)}>Close</button>
+        <button
+          class="btn-primary"
+          disabled={!packModal.affordable || busy === packModal.id}
+          onclick={() => openPack(packModal)}
+        >
+          {busy === packModal.id ? 'Opening…' : `Open ◈${packModal.price.toLocaleString()}`}
+        </button>
+      </div>
     </div>
   </div>
 {/if}
@@ -605,5 +708,130 @@
   .close {
     margin-top: 18px;
     padding: 10px 24px;
+  }
+
+  /* Clickable pack body (opens the contents browser). */
+  .packbody {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+    color: inherit;
+  }
+  .packbody:hover .pname {
+    color: var(--accent);
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin: -4px 0 12px;
+    max-width: 640px;
+  }
+  /* "in N packs" locator button on a covered card. */
+  .act.locate {
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .act.locate:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  /* Rarity tag shown inline (in lists / group headers) rather than over art. */
+  .rar.inline {
+    position: static;
+    display: inline-block;
+  }
+
+  /* Card-locator + pack-contents modals. */
+  .sheet.narrow {
+    width: min(420px, 92vw);
+    text-align: left;
+  }
+  .sheet.wide {
+    width: min(900px, 94vw);
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+  .sub {
+    margin: -8px 0 14px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .loclist {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .locrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    cursor: pointer;
+  }
+  .locrow:hover {
+    border-color: var(--accent);
+  }
+  .locrow .ln {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .groups {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-right: 4px;
+  }
+  .grhead {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .grhead .gn {
+    color: var(--faint);
+    font-size: 11px;
+  }
+  .minigrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 6px;
+  }
+  .mini {
+    position: relative;
+    aspect-ratio: 813 / 1185;
+    background: var(--surface-3);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+  }
+  .mini img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .modfoot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .modfoot .close {
+    margin-top: 0;
   }
 </style>
