@@ -383,6 +383,10 @@ DECK = (
     # Enraged Muka Muka (+400) and Flash Assailant (-400 per card in hand).
     + ["Machine King"] * 1
     + ["Muka Muka"] * 1 + ["Enraged Muka Muka"] * 1 + ["Flash Assailant"] * 1
+    # Batch 108: Standby/End-Phase upkeep. Solar Flare Dragon (End-Phase burn +
+    # self-protection while another Pyro is up) and Legendary Fiend (permanent +700 ATK
+    # each of your Standby Phases). A second Solar Flare Dragon arms the protection rider.
+    + ["Solar Flare Dragon"] * 2 + ["Legendary Fiend"] * 1
 )
 
 

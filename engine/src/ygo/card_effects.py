@@ -5786,3 +5786,24 @@ CONTINUOUS.update({
     # Flash Assailant: LOSES 400 ATK and DEF for each card in your hand (negative scale).
     "Flash Assailant": (SelfStatMod(scaling="hand_size", scale_atk=-400, scale_defn=-400),),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 108: Standby/End-Phase upkeep beatsticks — both reuse existing infra,
+# no engine change. Solar Flare Dragon (3 GBA decks) and Legendary Fiend (3) were the
+# only pool cards in this seam with a fully-clean single ruling; the rest are Nomi/LV/
+# pay-or-die/counter cards deferred elsewhere.
+CONTINUOUS.update({
+    # Solar Flare Dragon: cannot be selected as an attack target while you control another
+    # Pyro (a self-only AttackTargetProtection gated on another Pyro), and burns the
+    # opponent for 500 at each of your End Phases.
+    "Solar Flare Dragon": (
+        AttackTargetProtection(self_only=True, requires_control_other_race="Pyro"),
+        EndPhaseTrigger(Effect(resolve=(InflictDamage(OPPONENT, 500),)), whose="controller"),
+    ),
+    # Legendary Fiend: once per turn during your Standby Phase, permanently gains 700 ATK
+    # (whose="controller" already fires exactly once per turn, satisfying "once per turn").
+    "Legendary Fiend": (
+        StandbyTrigger(Effect(resolve=(ModifySelfPermanentStats(atk=700),)), whose="controller"),
+    ),
+})
