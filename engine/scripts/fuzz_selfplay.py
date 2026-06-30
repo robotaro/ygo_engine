@@ -319,6 +319,11 @@ DECK = (
     # attack — exercises the attack-tribute cost across many Battle Phases).
     + ["Magical Mallet"] * 1 + ["Metalmorph"] * 2
     + ["Wall of Illusion"] * 2 + ["Panther Warrior"] * 2
+    # Batch 92: the Toon monsters + their Toon World enabler. Exercises the SS-by-tribute
+    # hand summon, the 500-LP attack cost, the Toon-World-gone cleanup, and the Toon Gemini
+    # Elf battle-damage discard.
+    + ["Toon World"] * 2 + ["Blue-Eyes Toon Dragon"] * 1
+    + ["Toon Summoned Skull"] * 1 + ["Toon Gemini Elf"] * 2
 )
 
 

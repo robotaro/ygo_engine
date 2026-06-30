@@ -5338,3 +5338,46 @@ CONTINUOUS.update({
     # Panther Warrior: "cannot declare an attack unless you Tribute 1 monster."
     "Panther Warrior": (AttackTributeCost(count=1),),
 })
+
+
+# Effects Batch 92: the Toon monsters. The engine already enforces the shared Toon rules
+# — a Toon needs your face-up Toon World to be Summoned (moves.controls_toon_world), can't
+# attack the turn it's Summoned, attacks directly unless the opponent controls a Toon
+# (moves._toon_attack_targets), and is destroyed when Toon World leaves (engine._cleanup_
+# toons). These entries add the per-card pieces.
+def _controls_toon_world(state, controller) -> bool:
+    return any(
+        sid is not None
+        and state.inst(sid).is_face_up
+        and state.inst(sid).card.name == "Toon World"
+        for sid in state.players[controller].spell_trap_zones
+    )
+
+
+HAND_SUMMONS.update({
+    # Blue-Eyes Toon Dragon: cannot be Normal Summoned; SS from hand by Tributing 2 while
+    # you control Toon World. Toon Summoned Skull is the same with 1 Tribute.
+    "Blue-Eyes Toon Dragon": HandSpecialSummon(
+        cannot_normal_summon=True, tribute_count=2, condition=_controls_toon_world
+    ),
+    "Toon Summoned Skull": HandSpecialSummon(
+        cannot_normal_summon=True, tribute_count=1, condition=_controls_toon_world
+    ),
+})
+
+CONTINUOUS.update({
+    # "You must pay 500 LP to declare an attack" — the two big Toons (Toon Gemini Elf has
+    # no such cost). Reuses the AttackLifeCost rider (enumeration gates on payability;
+    # engine._declare_attack pays it).
+    "Blue-Eyes Toon Dragon": (AttackLifeCost(amount=500),),
+    "Toon Summoned Skull": (AttackLifeCost(amount=500),),
+})
+
+EFFECTS.update({
+    # Toon Gemini Elf: a Level-4 Toon (Normal-Summonable while you control Toon World, which
+    # the engine already gates). "If this card inflicts battle damage to your opponent:
+    # discard 1 random card from their hand."
+    "Toon Gemini Elf": (
+        _on_battle_damage((DiscardFromHand(OPPONENT, count=1, random=True),)),
+    ),
+})

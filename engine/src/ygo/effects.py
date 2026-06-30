@@ -155,6 +155,10 @@ class HandSpecialSummon:
     position: Position = Position.FACE_UP_ATTACK
     cannot_normal_summon: bool = False
     banish_costs: "tuple[SummonCost, ...]" = ()
+    # Special Summon by Tributing this many monsters the controller already controls
+    # (Blue-Eyes Toon Dragon = 2, Toon Summoned Skull = 1). The Tributes free a Monster
+    # Zone, so the summon is offered whenever that many monsters are on the board.
+    tribute_count: int = 0
 
 
 @dataclass(frozen=True)

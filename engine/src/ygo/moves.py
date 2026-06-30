@@ -498,18 +498,24 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
     # Special Summon from the hand via a monster's own ability (Cyber Dragon, The
     # Fiend Megacyber, ...). Independent of the Normal Summon; gated by the card's
     # board condition and needing a free Monster Zone.
-    if state.first_empty_monster_zone(player) is not None:
-        for iid in p.hand:
-            rule = state.inst(iid).card.hand_summon
-            if rule is None:
+    for iid in p.hand:
+        rule = state.inst(iid).card.hand_summon
+        if rule is None:
+            continue
+        if rule.condition is not None and not rule.condition(state, player):
+            continue
+        if state.special_summon_locked(player, state.inst(iid).card):
+            continue  # a Barrier Statue / Vanity lock bars this Special Summon
+        if rule.tribute_count:
+            # Tributing frees a zone, so no separate free-zone check — just enough fodder
+            # (Blue-Eyes Toon Dragon needs 2 monsters, Toon Summoned Skull 1).
+            if len(_hand_summon_tributes(state, player)) < rule.tribute_count:
                 continue
-            if rule.condition is not None and not rule.condition(state, player):
-                continue
-            if state.special_summon_locked(player, state.inst(iid).card):
-                continue  # a Barrier Statue / Vanity lock bars this Special Summon
-            if _summon_banish_choice(state, player, rule) is None:
-                continue  # the banish cost (Chaos: 1 LIGHT + 1 DARK) can't be paid
-            actions.append(SpecialSummonFromHand(iid))
+        elif state.first_empty_monster_zone(player) is None:
+            continue  # a cost-free Special Summon needs an open Monster Zone
+        if _summon_banish_choice(state, player, rule) is None:
+            continue  # the banish cost (Chaos: 1 LIGHT + 1 DARK) can't be paid
+        actions.append(SpecialSummonFromHand(iid))
 
     # battle-position changes (not on the turn a monster was summoned/already changed)
     for iid in p.monster_zones:
@@ -1346,6 +1352,16 @@ def _summon_banish_choice(state: GameState, player: int, rule) -> list[int] | No
     return chosen
 
 
+def _hand_summon_tributes(state: GameState, player: int) -> list[int]:
+    """The monsters ``player`` controls that could pay a hand-Summon Tribute cost (Toon
+    Dragon / Toon Summoned Skull), weakest (lowest ATK) first so the headless payer keeps
+    its strongest board."""
+    return sorted(
+        (i for i in state.players[player].monster_zones if i is not None),
+        key=lambda i: state.cards[i].card.attack or 0,
+    )
+
+
 def _special_summon_from_hand(state: GameState, action: SpecialSummonFromHand) -> str:
     """Special Summon a monster from the hand via its own ability. Does not consume
     the Normal Summon; the board condition was already checked at enumeration."""
@@ -1355,9 +1371,15 @@ def _special_summon_from_hand(state: GameState, action: SpecialSummonFromHand) -
     to_banish = _summon_banish_choice(state, player, rule) or []
     for b in to_banish:
         state.banish(b)  # pay the banish cost (1 LIGHT + 1 DARK for the Chaos monsters)
+    tributed = 0
+    if rule is not None and rule.tribute_count:
+        for t in _hand_summon_tributes(state, player)[: rule.tribute_count]:
+            state.send_to_graveyard(t)  # Tribute the weakest monsters (Toon SS cost)
+            tributed += 1
     position = rule.position if rule is not None else Position.FACE_UP_ATTACK
     state.special_summon(action.iid, player, position, index=action.zone_index)
     extra = f" (banishing {len(to_banish)})" if to_banish else ""
+    extra += f" (tributing {tributed})" if tributed else ""
     return f"Special Summons {inst.name} (from the hand){extra}"
 
 
