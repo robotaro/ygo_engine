@@ -1,19 +1,30 @@
 <script>
-  // "My Cards": your card library + the booster-pack shop. Buying a pack spends
-  // Duelist Points and drops the pulled cards into your library.
+  // "My Cards": your library, the booster-pack shop, and the single-card shop.
+  // Spend Duelist Points to open packs or buy specific cards; sell duplicates
+  // back for a fraction of their value.
   import { profile, refreshProfile } from './store.js'
 
-  let view = $state('shop') // 'shop' | 'library'
+  let view = $state('packs') // 'packs' | 'singles' | 'library'
   let games = $state([]) // pack shop, grouped by game
   let activeGame = $state('') // which game's packs are shown
   let library = $state([]) // owned cards
-  let query = $state('')
-  let busy = $state('') // id of the pack currently being opened
+  let singles = $state([]) // single-card shop search results
+  let query = $state('') // library search
+  let singleQuery = $state('') // single-card shop search
+  let busy = $state('') // id of the action in flight (pack id / buy:name / sell:name)
   let error = $state('')
   let reveal = $state(null) // { pack, cards } shown after opening a pack
+  let toast = $state(null) // transient { text, kind } after a buy/sell
+  let toastTimer
 
   let dp = $derived($profile?.duelistPoints ?? 0)
   let shownPacks = $derived(games.find((g) => g.key === activeGame)?.packs ?? [])
+
+  function flash(text, kind) {
+    toast = { text, kind }
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => (toast = null), 2400)
+  }
 
   async function loadShop() {
     try {
@@ -35,14 +46,30 @@
     }
   }
 
-  // Load the shop once; reload the library whenever it's shown or the search changes.
+  async function loadSingles() {
+    const params = new URLSearchParams({ limit: '120' })
+    if (singleQuery) params.set('query', singleQuery)
+    try {
+      singles = (await (await fetch('/api/cards?' + params)).json()).cards
+    } catch {
+      singles = []
+    }
+  }
+
+  // Load the pack shop once; reload library / singles on demand as their search changes.
   $effect(() => {
     loadShop()
   })
   $effect(() => {
-    const q = query
+    void query
     if (view !== 'library') return
     const h = setTimeout(loadLibrary, 200)
+    return () => clearTimeout(h)
+  })
+  $effect(() => {
+    void singleQuery
+    if (view !== 'singles') return
+    const h = setTimeout(loadSingles, 200)
     return () => clearTimeout(h)
   })
 
@@ -71,15 +98,68 @@
     }
   }
 
+  async function buyCard(card) {
+    if (busy) return
+    busy = 'buy:' + card.name
+    error = ''
+    try {
+      const res = await fetch('/api/shop/buy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: card.name }),
+      })
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}))
+        error = typeof e.detail === 'string' ? e.detail : 'Could not buy this card.'
+        return
+      }
+      const d = await res.json()
+      flash(`Bought ${card.name} · ◈${d.spent.toLocaleString()}`, 'spend')
+      await refreshProfile() // DP + collection changed (affordability is derived from dp)
+    } finally {
+      busy = ''
+    }
+  }
+
+  async function sellCard(card) {
+    if (busy) return
+    busy = 'sell:' + card.name
+    error = ''
+    try {
+      const res = await fetch('/api/shop/sell', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: card.name }),
+      })
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}))
+        error = typeof e.detail === 'string' ? e.detail : 'Could not sell this card.'
+        return
+      }
+      const d = await res.json()
+      flash(`Sold ${card.name} · +◈${d.earned.toLocaleString()}`, 'earn')
+      await refreshProfile()
+      await loadLibrary() // owned count dropped (card may now be gone)
+    } finally {
+      busy = ''
+    }
+  }
+
   function img(card) {
     return card?.imageId ? `/cards/${card.imageId}.jpg` : null
+  }
+
+  // Rarity → a CSS class that escalates brightness (single-accent palette, no new colours).
+  function rarClass(rarity) {
+    return 'r-' + (rarity || 'Common').toLowerCase().replace(/\s+/g, '-')
   }
 </script>
 
 <div class="cards">
   <div class="topbar">
     <div class="seg">
-      <button class:active={view === 'shop'} onclick={() => (view = 'shop')}>🛒 Card Shop</button>
+      <button class:active={view === 'packs'} onclick={() => (view = 'packs')}>📦 Booster Packs</button>
+      <button class:active={view === 'singles'} onclick={() => (view = 'singles')}>🎴 Single Cards</button>
       <button class:active={view === 'library'} onclick={() => (view = 'library')}>
         🃏 Your Library{$profile ? ` · ${$profile.collectionDistinct}` : ''}
       </button>
@@ -89,7 +169,7 @@
 
   {#if error}<div class="error">{error}</div>{/if}
 
-  {#if view === 'shop'}
+  {#if view === 'packs'}
     <div class="games">
       {#each games as g (g.key)}
         <button class:active={activeGame === g.key} onclick={() => (activeGame = g.key)}>
@@ -123,6 +203,34 @@
         </div>
       {/each}
     </div>
+  {:else if view === 'singles'}
+    <input class="search" placeholder="Search the card shop…" bind:value={singleQuery} />
+    {#if singles.length === 0}
+      <div class="empty">No cards match.</div>
+    {:else}
+      <div class="cardgrid">
+        {#each singles as c (c.name)}
+          <div class="owned shopcard" class:poor={c.buy > dp} title={c.name}>
+            <div class="thumb">
+              {#if img(c)}
+                <img src={img(c)} alt={c.name} loading="lazy" decoding="async" />
+              {:else}
+                <div class="noart">{c.name}</div>
+              {/if}
+              <span class="rar {rarClass(c.rarity)}">{c.rarity}</span>
+            </div>
+            <div class="cn">{c.name}</div>
+            <button
+              class="act buy"
+              disabled={c.buy > dp || busy === 'buy:' + c.name}
+              onclick={() => buyCard(c)}
+            >
+              {busy === 'buy:' + c.name ? '…' : `◈ ${c.buy.toLocaleString()}`}
+            </button>
+          </div>
+        {/each}
+      </div>
+    {/if}
   {:else}
     <input class="search" placeholder="Search your library…" bind:value={query} />
     {#if library.length === 0}
@@ -138,12 +246,24 @@
                 <div class="noart">{c.name}</div>
               {/if}
               <span class="qty">×{c.owned}</span>
+              <span class="rar {rarClass(c.rarity)}">{c.rarity}</span>
             </div>
             <div class="cn">{c.name}</div>
+            <button
+              class="act sell"
+              disabled={busy === 'sell:' + c.name}
+              onclick={() => sellCard(c)}
+            >
+              {busy === 'sell:' + c.name ? '…' : `Sell ◈${c.sell.toLocaleString()}`}
+            </button>
           </div>
         {/each}
       </div>
     {/if}
+  {/if}
+
+  {#if toast}
+    <div class="toast" class:earn={toast.kind === 'earn'}>{toast.text}</div>
   {/if}
 </div>
 
@@ -348,6 +468,83 @@
     font-size: 11px;
     padding: 1px 6px;
     border-radius: var(--r-pill);
+  }
+  /* Rarity tag — escalates brightness within the single-accent palette. */
+  .rar {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 1px 5px;
+    border-radius: var(--r-sm);
+  }
+  .rar.r-common {
+    color: var(--faint);
+  }
+  .rar.r-rare {
+    color: var(--muted);
+  }
+  .rar.r-super-rare {
+    color: var(--text);
+  }
+  .rar.r-ultra-rare {
+    color: var(--accent);
+  }
+  .rar.r-secret-rare {
+    color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+  /* Buy / sell action buttons on a card tile. */
+  .act {
+    width: 100%;
+    margin-top: 4px;
+    padding: 4px 6px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .shopcard .act.buy {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .act.buy:disabled {
+    background: var(--surface-3);
+    color: var(--faint);
+  }
+  .act.sell {
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .act.sell:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .shopcard.poor {
+    opacity: 0.6;
+  }
+  /* Transient buy/sell confirmation. */
+  .toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 9px 18px;
+    border-radius: var(--r-pill);
+    z-index: 60;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  }
+  .toast.earn {
+    border-color: var(--success);
+    color: var(--success);
   }
   .cn {
     font-size: 10px;
