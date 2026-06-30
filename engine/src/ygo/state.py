@@ -36,6 +36,7 @@ from .effects import (
     FieldMod,
     DamageStepBonus,
     MultiAttacker,
+    NoHandLimit,
     Piercing,
     SelfStatMod,
     SpecialSummonLock,
@@ -1140,6 +1141,19 @@ class GameState:
             if mod.whose == "self" and inst.controller != src.controller:
                 continue
             return True
+        return False
+
+    def hand_limit_suppressed(self, player: int) -> bool:
+        """Whether ``player`` has no End-Phase hand-size limit right now. Infinite Cards
+        (``NoHandLimit(whose="both")``) lifts the discard-to-6 for both players while it is
+        face-up; the marker is skipped if its card's effect is negated (Imperial Order)."""
+        for src, mod in self.active_markers(NoHandLimit):
+            if mod.whose == "both":
+                return True
+            if mod.whose == "controller" and src.controller == player:
+                return True
+            if mod.whose == "opponent" and src.controller != player:
+                return True
         return False
 
     def action_locked(self, kind: str, player: int) -> bool:

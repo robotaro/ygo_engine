@@ -1195,8 +1195,8 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
 
 def _end_phase_actions(state: GameState, player: int) -> list[Action]:
     p = state.players[player]
-    if len(p.hand) <= HAND_SIZE_LIMIT:
-        return []
+    if len(p.hand) <= HAND_SIZE_LIMIT or state.hand_limit_suppressed(player):
+        return []  # within the limit, or Infinite Cards has lifted it for this player
     return [DiscardCard(iid) for iid in p.hand]
 
 

@@ -213,6 +213,17 @@ class BattleIndestructible:
 
 
 @dataclass(frozen=True)
+class NoHandLimit:
+    """A face-up card's rider: the End-Phase hand-size limit (discard down to 6) does not
+    apply (Infinite Cards). ``whose`` selects who is exempt — "both" (Infinite Cards lifts
+    the limit for *both* players while it is face-up), "controller", or "opponent". Read by
+    ``GameState.hand_limit_suppressed``; suppressed itself while the card's effect is
+    negated (Imperial Order on Infinite Cards restores the limit)."""
+
+    whose: str = "both"  # "both" | "controller" | "opponent"
+
+
+@dataclass(frozen=True)
 class MultiAttacker:
     """A face-up monster's rider: it may declare up to ``times`` attacks each Battle
     Phase (Hayabusa Knight, Mataza the Zapper, Twinheaded Beast all = 2). Read by the

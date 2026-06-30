@@ -390,6 +390,10 @@ DECK = (
     # Batch 109: Goddess of Whim — once/turn coin-flip ignition that doubles (heads) or
     # halves (tails) her own ATK until the End Phase (new ScaleSelfAtkTemporary primitive).
     + ["Goddess of Whim"] * 2
+    # Batch 110: Infinite Cards — Continuous Spell that lifts the End-Phase hand-size limit
+    # for both players (NoHandLimit floodgate). Exercises the discard-suppression path; the
+    # extra draw engine (Pot of Greed, Card Destruction) keeps hands above 6 to trigger it.
+    + ["Infinite Cards"] * 2
 )
 
 

@@ -81,6 +81,7 @@ from .effects import (
     ModifyStatsTemporary,
     ScaleSelfAtkTemporary,
     MultiAttacker,
+    NoHandLimit,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5829,3 +5830,13 @@ EFFECTS.update({
         ),
     ),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 110: Infinite Cards — lift the End-Phase hand-size limit. The discard-to-6
+# rule already exists (moves._end_phase_actions / HAND_SIZE_LIMIT); this Continuous Spell
+# is the floodgate that suppresses it for both players while face-up. EFFECTS just places
+# it onto the field (_ACTIVATE_ONTO_FIELD); the NoHandLimit marker does the work. Clears
+# the last blocker in both Yami Marik GBA decks.
+EFFECTS.update({"Infinite Cards": _ACTIVATE_ONTO_FIELD})
+CONTINUOUS.update({"Infinite Cards": (NoHandLimit(whose="both"),)})
