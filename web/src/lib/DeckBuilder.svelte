@@ -190,34 +190,36 @@
             ondblclick={() => add(card)}
             onkeydown={(e) => e.key === 'Enter' && (selected = card)}
           >
-            {#if img(card)}
-              <img
-                src={img(card)}
-                alt={card.name}
-                loading="lazy"
-                decoding="async"
-                onerror={(e) => e.currentTarget.remove()}
-              />
-            {/if}
-            <div class="cardgloss">
+            <div class="thumb">
+              {#if img(card)}
+                <img
+                  src={img(card)}
+                  alt={card.name}
+                  loading="lazy"
+                  decoding="async"
+                  onerror={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              {/if}
+              {#if !card.functional}<span class="dead" title="Effect not implemented yet">∅</span>{/if}
+              {#if n > 0}<span class="owned">{n}</span>{/if}
+              <button
+                class="plus"
+                title="Add to deck"
+                disabled={n >= MAX_COPIES}
+                onclick={(e) => {
+                  e.stopPropagation()
+                  add(card)
+                }}>＋</button
+              >
+            </div>
+            <div class="label">
               <div class="cn">{card.name}</div>
               {#if card.cardType === 'monster'}
-                <div class="st">{card.attack ?? '?'}/{card.defense ?? '?'}</div>
+                <div class="st">{card.attack ?? '?'} / {card.defense ?? '?'}</div>
               {:else}
                 <div class="st">{card.subtype || card.cardType}</div>
               {/if}
             </div>
-            {#if !card.functional}<span class="dead" title="Effect not implemented yet">∅</span>{/if}
-            {#if n > 0}<span class="owned">{n}</span>{/if}
-            <button
-              class="plus"
-              title="Add to deck"
-              disabled={n >= MAX_COPIES}
-              onclick={(e) => {
-                e.stopPropagation()
-                add(card)
-              }}>＋</button
-            >
           </div>
         {/each}
       {/if}
@@ -393,8 +395,8 @@
     text-align: center;
   }
   .poolcard {
-    position: relative;
-    height: 122px;
+    display: flex;
+    flex-direction: column;
     border-radius: var(--r);
     border: 1px solid var(--line);
     background: var(--surface-2);
@@ -409,30 +411,39 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 1px var(--accent);
   }
-  .poolcard img {
+  /* the image area keeps the real card aspect ratio so nothing is cropped */
+  .thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 59 / 86;
+    background: var(--surface-3);
+  }
+  .thumb img {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
-  .cardgloss {
-    position: absolute;
-    inset: auto 0 0 0;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
-    padding: 10px 4px 3px;
-    z-index: 1;
-    pointer-events: none;
+  /* name + stats live in a strip BELOW the card, never over the art */
+  .label {
+    padding: 4px 6px 5px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
   }
   .cn {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
-    line-height: 1.1;
-    text-shadow: 0 1px 2px #000;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .st {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--muted);
+    margin-top: 2px;
   }
   .owned {
     position: absolute;
