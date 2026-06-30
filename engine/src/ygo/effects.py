@@ -1548,6 +1548,24 @@ class ModifyStatsTemporary(Primitive):
 
 
 @dataclass(frozen=True)
+class ScaleSelfAtkTemporary(Primitive):
+    """Temporarily scale the effect source's own ATK by ``num``/``den`` until the End
+    Phase (Goddess of Whim: double on a winning coin toss with 2/1, halve on a losing one
+    with 1/2). Applied as a ``temp_atk`` delta off the source's *current* effective ATK —
+    the same convention Limiter Removal uses for doubling — and cleared in the End Phase
+    like every other temporary modifier."""
+
+    num: int = 1
+    den: int = 1
+
+    def execute(self, ctx: EffectContext) -> None:
+        inst = ctx.state.cards.get(ctx.source_iid)
+        if inst is not None and inst.zone is Zone.MONSTER and inst.is_face_up:
+            cur = ctx.state.effective_attack(ctx.source_iid)
+            inst.temp_atk += (cur * self.num) // self.den - cur
+
+
+@dataclass(frozen=True)
 class ModifyAllStatsTemporary(Primitive):
     """Add a temporary ATK/DEF change to every face-up monster on a ``side`` until the
     End Phase (Amazoness Archers drops all the opponent's monsters by 500 ATK). ``side``:

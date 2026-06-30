@@ -387,6 +387,9 @@ DECK = (
     # self-protection while another Pyro is up) and Legendary Fiend (permanent +700 ATK
     # each of your Standby Phases). A second Solar Flare Dragon arms the protection rider.
     + ["Solar Flare Dragon"] * 2 + ["Legendary Fiend"] * 1
+    # Batch 109: Goddess of Whim — once/turn coin-flip ignition that doubles (heads) or
+    # halves (tails) her own ATK until the End Phase (new ScaleSelfAtkTemporary primitive).
+    + ["Goddess of Whim"] * 2
 )
 
 

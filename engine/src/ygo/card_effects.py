@@ -79,6 +79,7 @@ from .effects import (
     ModifyAllStatsTemporary,
     ModifySelfPermanentStats,
     ModifyStatsTemporary,
+    ScaleSelfAtkTemporary,
     MultiAttacker,
     NegateAttack,
     NegatePreviousLink,
@@ -5805,5 +5806,26 @@ CONTINUOUS.update({
     # (whose="controller" already fires exactly once per turn, satisfying "once per turn").
     "Legendary Fiend": (
         StandbyTrigger(Effect(resolve=(ModifySelfPermanentStats(atk=700),)), whose="controller"),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 109: coin-flip stat gamble. Goddess of Whim is the only pool coin card
+# with a fully-clean single ruling (the rest are Arcana Force / multi-coin-tier / skip-
+# turn cards). New reusable ScaleSelfAtkTemporary primitive (double/halve own ATK till the
+# End Phase), driven by the existing CoinFlip win/lose branches.
+EFFECTS.update({
+    "Goddess of Whim": (
+        Effect(
+            timing="ignition",
+            once_per_turn=True,
+            resolve=(
+                CoinFlip(
+                    win=(ScaleSelfAtkTemporary(num=2, den=1),),  # called right -> double ATK
+                    lose=(ScaleSelfAtkTemporary(num=1, den=2),),  # called wrong -> halve ATK
+                ),
+            ),
+        ),
     ),
 })
