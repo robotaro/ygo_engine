@@ -456,6 +456,9 @@ DECK = (
     # Batch 129: Reverse Trap (until End Phase, ATK/DEF increases/decreases reversed) —
     # exercises the reverse_trap flag folded into _effective_stat.
     + ["Reverse Trap"] * 2
+    # Batch 130: Ultimate Offering (pay 500 LP for an extra Normal Summon/Set) — exercises the
+    # PayLifeForExtraNormalSummon marker + the offering branch of the summon enumeration.
+    + ["Ultimate Offering"] * 2
 )
 
 

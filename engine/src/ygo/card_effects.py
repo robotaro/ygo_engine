@@ -98,6 +98,7 @@ from .effects import (
     AttachSelfToTarget,
     NegateAttack,
     NegatePreviousLink,
+    PayLifeForExtraNormalSummon,
     Piercing,
     PlaceCountersOnSelf,
     PreventBattleDamageThisBattle,
@@ -6213,4 +6214,18 @@ EFFECTS.update({
     "Reverse Trap": (
         Effect(speed=2, timing="quick", resolve=(ReverseStatChangesThisTurn(),)),
     ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 130: Ultimate Offering — "During your Main Phase or your opponent's Battle
+# Phase: You can pay 500 Life Points; immediately after this effect resolves, Normal Summon/Set
+# 1 monster." A Continuous Trap: once on the field its PayLifeForExtraNormalSummon(500) marker
+# lets the Main-Phase enumeration offer extra Normal Summons/Sets that each charge 500 LP (after
+# the free Normal Summon is spent). The opponent's-Battle-Phase window is a deferred enhancement.
+EFFECTS.update({
+    "Ultimate Offering": _ACTIVATE_ONTO_FIELD,
+})
+CONTINUOUS.update({
+    "Ultimate Offering": (PayLifeForExtraNormalSummon(amount=500),),
 })

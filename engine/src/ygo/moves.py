@@ -58,6 +58,7 @@ class NormalSummon(Action):
     iid: int
     tributes: tuple[int, ...] = ()
     zone_index: int | None = None  # None -> first empty zone (UI may pin a slot)
+    pay_life: int = 0  # >0: an extra summon bought with Ultimate Offering (LP cost)
 
 
 @dataclass(frozen=True)
@@ -67,6 +68,7 @@ class SetMonster(Action):
     iid: int
     tributes: tuple[int, ...] = ()
     zone_index: int | None = None
+    pay_life: int = 0  # >0: an extra Set bought with Ultimate Offering (LP cost)
 
 
 @dataclass(frozen=True)
@@ -469,36 +471,45 @@ def legal_actions(state: GameState, player: int) -> list[Action]:
     return []
 
 
+def _hand_normal_summon_actions(state: GameState, player: int, pay_life: int = 0) -> list[Action]:
+    """The Normal Summon / Set actions for the cards in ``player``'s hand. ``pay_life`` > 0
+    tags them as Ultimate-Offering paid summons (the apply path charges that LP)."""
+    p = state.players[player]
+    actions: list[Action] = []
+    controlled = [m for m in p.monster_zones if m is not None]
+    has_empty = state.first_empty_monster_zone(player) is not None
+    for iid in p.hand:
+        card = state.inst(iid).card
+        if not card.can_normal_summon:
+            continue
+        if controlled and any(
+            isinstance(m, NoNormalSummonWhileControllingMonster) for m in card.continuous
+        ):
+            continue  # Cave Dragon can't be Normal Summoned/Set while you control a monster
+        if card.is_toon and not controls_toon_world(state, player):
+            continue  # a Toon monster needs your Toon World face-up to be Summoned
+        can_set = not state.action_locked("set", player)  # Searchlightman bars Setting
+        need = tributes_required(card.level)
+        if need == 0:
+            if has_empty:
+                actions.append(NormalSummon(iid, pay_life=pay_life))
+                if can_set:
+                    actions.append(SetMonster(iid, pay_life=pay_life))
+        elif len(controlled) >= need:
+            # tributing frees the zone(s), so no pre-existing empty slot needed
+            for combo in combinations(controlled, need):
+                actions.append(NormalSummon(iid, tributes=combo, pay_life=pay_life))
+                if can_set:
+                    actions.append(SetMonster(iid, tributes=combo, pay_life=pay_life))
+    return actions
+
+
 def _main_phase_actions(state: GameState, player: int) -> list[Action]:
     p = state.players[player]
     actions: list[Action] = []
 
     if not state.normal_summon_used:
-        controlled = [m for m in p.monster_zones if m is not None]
-        has_empty = state.first_empty_monster_zone(player) is not None
-        for iid in p.hand:
-            card = state.inst(iid).card
-            if not card.can_normal_summon:
-                continue
-            if controlled and any(
-                isinstance(m, NoNormalSummonWhileControllingMonster) for m in card.continuous
-            ):
-                continue  # Cave Dragon can't be Normal Summoned/Set while you control a monster
-            if card.is_toon and not controls_toon_world(state, player):
-                continue  # a Toon monster needs your Toon World face-up to be Summoned
-            can_set = not state.action_locked("set", player)  # Searchlightman bars Setting
-            need = tributes_required(card.level)
-            if need == 0:
-                if has_empty:
-                    actions.append(NormalSummon(iid))
-                    if can_set:
-                        actions.append(SetMonster(iid))
-            elif len(controlled) >= need:
-                # tributing frees the zone(s), so no pre-existing empty slot needed
-                for combo in combinations(controlled, need):
-                    actions.append(NormalSummon(iid, tributes=combo))
-                    if can_set:
-                        actions.append(SetMonster(iid, tributes=combo))
+        actions.extend(_hand_normal_summon_actions(state, player))
 
         # Gemini Summon: spend your Normal Summon to unlock a face-up Gemini you
         # already control (it doesn't move). Treated as a Normal Summon, so it's
@@ -509,6 +520,12 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             inst = state.inst(iid)
             if inst.card.is_gemini and inst.is_face_up and not inst.gemini_unlocked:
                 actions.append(GeminiSummon(iid))
+    else:
+        # Ultimate Offering: once the free Normal Summon is spent, pay LP for additional
+        # Normal Summons/Sets (offered only while LP stay above the cost after paying).
+        cost = state.extra_normal_summon_cost(player)
+        if cost is not None and p.life_points > cost:
+            actions.extend(_hand_normal_summon_actions(state, player, pay_life=cost))
 
     # Special Summon from the hand via a monster's own ability (Cyber Dragon, The
     # Fiend Megacyber, ...). Independent of the Normal Summon; gated by the card's
@@ -1214,9 +1231,13 @@ def _end_phase_actions(state: GameState, player: int) -> list[Action]:
 def apply(state: GameState, action: Action) -> str:
     """Mutate ``state`` by ``action``; return a short description for the log."""
     if isinstance(action, NormalSummon):
-        return _summon(state, action.iid, action.tributes, action.zone_index, face_up=True)
+        return _summon(
+            state, action.iid, action.tributes, action.zone_index, face_up=True, pay_life=action.pay_life
+        )
     if isinstance(action, SetMonster):
-        return _summon(state, action.iid, action.tributes, action.zone_index, face_up=False)
+        return _summon(
+            state, action.iid, action.tributes, action.zone_index, face_up=False, pay_life=action.pay_life
+        )
     if isinstance(action, SpecialSummonFromHand):
         return _special_summon_from_hand(state, action)
     if isinstance(action, GeminiSummon):
@@ -1434,9 +1455,12 @@ def _summon(
     zone_index: int | None,
     *,
     face_up: bool,
+    pay_life: int = 0,
 ) -> str:
     inst = state.inst(iid)
     player = inst.owner  # the card is in the summoner's hand
+    if pay_life:
+        state.players[player].life_points -= pay_life  # Ultimate Offering's extra-summon cost
     for tribute_iid in tributes:
         state.send_to_graveyard(tribute_iid)
 
@@ -1451,6 +1475,7 @@ def _summon(
 
     verb = "Normal Summons" if face_up else "Sets"
     extra = f" (tributing {len(tributes)})" if tributes else ""
+    extra += f" (paid {pay_life} LP)" if pay_life else ""
     return f"{verb} {inst.name}{extra}"
 
 

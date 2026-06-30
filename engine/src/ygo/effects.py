@@ -274,6 +274,18 @@ class LocksAttachedMonster:
 
 
 @dataclass(frozen=True)
+class PayLifeForExtraNormalSummon:
+    """A face-up card (Ultimate Offering, a Continuous Trap) that lets its controller pay
+    ``amount`` Life Points for an ADDITIONAL Normal Summon/Set once their one free Normal
+    Summon for the turn is spent. Read by GameState.extra_normal_summon_cost, which the
+    Main-Phase enumeration uses to offer paid summons; suppressed while the card is face-down or
+    negated (Royal Decree). The card's "or during your opponent's Battle Phase" window is a
+    deferred enhancement — summons outside your own Main Phase aren't enumerated yet."""
+
+    amount: int = 500
+
+
+@dataclass(frozen=True)
 class RacePositionLock:
     """A face-up floodgate (Dragon Capture Jar, a Continuous Trap) that bars every face-up
     monster of ``race`` on EITHER side from changing its battle position while this card stays

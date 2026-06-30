@@ -42,6 +42,7 @@ from .effects import (
     DamageStepBonus,
     MultiAttacker,
     NoHandLimit,
+    PayLifeForExtraNormalSummon,
     Piercing,
     RacePositionLock,
     SelfStatMod,
@@ -1243,6 +1244,14 @@ class GameState:
                     ):
                         return True
         return False
+
+    def extra_normal_summon_cost(self, player: int) -> int | None:
+        """The Life Points ``player`` may pay for an ADDITIONAL Normal Summon/Set this turn
+        (Ultimate Offering charges 500), or None if they control no such face-up card. The
+        Main-Phase enumeration offers the paid summon once the free Normal Summon is spent."""
+        for _src, mod in self.active_markers(PayLifeForExtraNormalSummon, (player,)):
+            return mod.amount
+        return None
 
     def monster_attack_locked(self, iid: int) -> bool:
         """Whether monster ``iid`` cannot declare an attack because a Spellbinding Circle (or
