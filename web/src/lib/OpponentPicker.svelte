@@ -317,7 +317,7 @@
   .tface {
     position: relative;
     width: 100%;
-    aspect-ratio: 1;
+    height: 96px;
     border-radius: var(--r-sm);
     overflow: hidden;
     background: var(--surface-3);

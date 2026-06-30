@@ -411,19 +411,19 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 1px var(--accent);
   }
-  /* the image drives the tile height (in-flow, with the card's aspect ratio) so
-     the whole card is visible and never cropped; the box keeps shape if the
-     image is missing */
+  /* Fixed-height image area + object-fit: contain — the whole card shows,
+     uncropped and uniform, without relying on aspect-ratio. */
   .thumb {
     position: relative;
     width: 100%;
-    aspect-ratio: 59 / 86;
+    height: 150px;
     background: var(--surface-3);
   }
   .thumb img {
-    display: block;
+    position: absolute;
+    inset: 0;
     width: 100%;
-    aspect-ratio: 59 / 86;
+    height: 100%;
     object-fit: contain;
   }
   /* name + stats live in a strip BELOW the card, never over the art */
@@ -504,7 +504,7 @@
   /* Detail panel */
   .dart {
     width: 100%;
-    aspect-ratio: 59 / 86;
+    height: 340px;
     border-radius: var(--r);
     overflow: hidden;
     border: 1px solid var(--line-strong);
@@ -516,7 +516,7 @@
   .dart img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
   .noart {
     font-weight: 700;
