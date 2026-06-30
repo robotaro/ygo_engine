@@ -1532,6 +1532,26 @@ class LoseHalfLifePoints(Primitive):
 
 
 @dataclass(frozen=True)
+class PreventBattleDamageThisBattle(Primitive):
+    """Make the effect's controller take no battle damage from the current battle (Kuriboh's
+    discard). Adds them to ``GameState.battle_damage_prevented``, which the attack resolution
+    reads at every battle-damage site and the engine clears at the next attack declaration."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.battle_damage_prevented.add(ctx.controller)
+
+
+@dataclass(frozen=True)
+class PreventBattleDamageThisTurn(Primitive):
+    """Make the effect's controller take no battle damage for the rest of this turn (Winged
+    Kuriboh, on being destroyed). Stamps ``no_battle_damage_until_turn`` with the current
+    turn so it lapses automatically when the turn advances."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.players[ctx.controller].no_battle_damage_until_turn = ctx.state.turn_count
+
+
+@dataclass(frozen=True)
 class CoinFlip(Primitive):
     """Toss ``count`` coins (each 50/50 via the seeded RNG) and run the ``win`` branch's
     primitives if at least ``win_threshold`` come up heads, else the ``lose`` branch.

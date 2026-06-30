@@ -210,6 +210,11 @@ class PlayerState:
     )
     field_zone: int | None = None
 
+    # Turn-scoped "you take no battle damage for the rest of this turn" immunity (Winged
+    # Kuriboh): holds the turn_count it was granted on, so it lapses automatically once the
+    # turn advances. Read by GameState.takes_no_battle_damage.
+    no_battle_damage_until_turn: int | None = None
+
 
 @dataclass
 class GameState:
@@ -265,6 +270,10 @@ class GameState:
     # Points" window (Fire Princess) after a chain, a draw-trigger sweep, or the Standby
     # upkeep. Transient.
     lp_gain_pending: list = field(default_factory=list)
+    # Player indices that take NO battle damage for the CURRENT attack only (Kuriboh's
+    # discard). Reset by the engine at each attack declaration, set by the damage-step
+    # window before damage is calculated, read by _resolve_attack's _take_battle_damage.
+    battle_damage_prevented: set = field(default_factory=set)
     # Set by an effect to end the current Battle Phase immediately (The Unhappy Maiden);
     # read and reset by the engine's Battle-Phase loop.
     battle_phase_ended: bool = False
@@ -436,6 +445,15 @@ class GameState:
             return
         self.players[player].life_points += amount
         self.lp_gain_pending.append((player, amount))
+
+    def takes_no_battle_damage(self, player: int) -> bool:
+        """Whether ``player`` is currently immune to battle damage — either for this one
+        attack (Kuriboh's discard added them to ``battle_damage_prevented``) or for the
+        rest of this turn (Winged Kuriboh set ``no_battle_damage_until_turn`` to the
+        current turn). Read at every battle-damage site so the source is one place."""
+        if player in self.battle_damage_prevented:
+            return True
+        return self.players[player].no_battle_damage_until_turn == self.turn_count
 
     def send_to_graveyard(self, iid: int, by_battle: bool = False, by_effect: bool = False) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``

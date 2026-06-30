@@ -431,6 +431,7 @@ class Engine:
         s.attack_negated = False
         s.attack_redirect = None
         s.reflect_battle_damage = False
+        s.battle_damage_prevented = set()  # Kuriboh's per-battle immunity, set in the damage-step window
         # Mark at declaration (not only in _resolve_attack) so a *negated* attack — which
         # returns before resolving — still counts as this monster having attacked.
         s.inst(attacker).attacked_this_turn = True
@@ -504,6 +505,12 @@ class Engine:
                 effect = self._flip_effect(tinst.card)
                 if effect is not None:
                     flip_pending = (target, tinst.controller, effect)
+
+        # Start of the Damage Step: the attacked player may discard a hand monster whose
+        # quick effect prevents the battle damage (Kuriboh) before it is calculated.
+        self._fire_damage_step_window(tp, attacker, target)
+        if self.result is not None:
+            return
 
         self.log(f"  {s.players[tp].name}: {apply(s, DeclareAttack(attacker, target))}")
         self._check_life_points()
@@ -1012,6 +1019,49 @@ class Engine:
             target_iid, effect, inst.controller,
             {"attacker": attacker_iid, "target": target_iid},
         )
+
+    @staticmethod
+    def _damage_step_effect(card):
+        """A monster's hand quick effect that may be activated at the start of the Damage
+        Step by discarding it (Kuriboh: ``Trigger(kind="damage_step")``), or None."""
+        return next(
+            (
+                e
+                for e in card.effects
+                if e.timing == "trigger" and e.trigger is not None and e.trigger.kind == "damage_step"
+            ),
+            None,
+        )
+
+    def _fire_damage_step_window(self, tp: int, attacker_iid: int, target_iid) -> None:
+        """At the start of the Damage Step, let the attacked player discard a hand monster
+        whose quick effect prevents the battle damage from this attack (Kuriboh). Offered
+        whenever ``tp``'s monster attacks — the activating player is the one being attacked
+        (``tp``'s opponent), matching "if your opponent's monster attacks". Discarding the
+        card is the activation cost; its effect then resolves on a fresh Chain (setting the
+        per-battle immunity ``_take_battle_damage`` reads). At most one is taken per attack
+        (a second copy would be wasted — the first zeroes the whole battle's damage)."""
+        s = self.state
+        if self.result is not None:
+            return
+        victim = s.opponent_of(tp)
+        event = {"kind": "damage_step", "player": tp, "attacker": attacker_iid, "target": target_iid}
+        options = [
+            ActivateSpell(iid)
+            for iid in s.players[victim].hand
+            if self._damage_step_effect(s.inst(iid).card) is not None
+        ]
+        if not options:
+            return
+        chosen = self.agents[victim].respond(s, options, event)
+        if chosen is None:
+            return
+        effect = self._damage_step_effect(s.inst(chosen.iid).card)
+        if effect is None:
+            return
+        self.log(f"  {s.players[victim].name} discards {s.inst(chosen.iid).name}")
+        s.send_to_graveyard(chosen.iid)  # the discard — Kuriboh's activation cost
+        self._trigger_effect(chosen.iid, effect, victim, event)
 
     def _switch_attacker_to_defense_after_attack(self, attacker_iid: int) -> None:
         """A monster carrying a ``DefenseAfterAttack`` rider (Spear Dragon, the Goblin

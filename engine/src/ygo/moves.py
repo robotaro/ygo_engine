@@ -1390,11 +1390,15 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     state.battle_pair = None  # reset; set below once a defending monster is in the battle
     state.battle_damage_taken = None  # reset; set below for whichever player takes damage
 
-    def _take_battle_damage(player_idx: int, amount: int) -> None:
-        # Apply battle damage and record (victim, amount) for the engine's
-        # "when you take battle damage" Trap window.
+    def _take_battle_damage(player_idx: int, amount: int) -> int:
+        # Apply battle damage and record (victim, amount) for the engine's "when you take
+        # battle damage" Trap window. A player immune this battle/turn (Kuriboh, Winged
+        # Kuriboh) takes 0 and the hit is not recorded. Returns the amount actually dealt.
+        if state.takes_no_battle_damage(player_idx):
+            return 0
         state.players[player_idx].life_points -= amount
         state.battle_damage_taken = (player_idx, amount)
+        return amount
 
     def _hit_defender(amount: int) -> None:
         # Battle damage to the defending player — redirected to the attacker by Dimension
@@ -1402,8 +1406,9 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         if state.reflect_battle_damage:
             _take_battle_damage(me, amount)
         else:
-            _take_battle_damage(opp, amount)
-            state.battle_damage_dealt = (action.attacker, amount)
+            dealt = _take_battle_damage(opp, amount)
+            if dealt > 0:  # no "inflicted battle damage" trigger if Kuriboh zeroed it
+                state.battle_damage_dealt = (action.attacker, dealt)
 
     if action.target is None:
         _hit_defender(atk)

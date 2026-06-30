@@ -83,6 +83,8 @@ from .effects import (
     NegatePreviousLink,
     Piercing,
     PlaceCountersOnSelf,
+    PreventBattleDamageThisBattle,
+    PreventBattleDamageThisTurn,
     ReturnAllSetCardsToHand,
     ReturnAllSpellTrapsToHand,
     ReturnFromGraveyardToDeck,
@@ -5115,5 +5117,35 @@ CONTINUOUS.update({
     # on draw), Cure Mermaid (Standby gain), Numinous Healer, any healing Spell.
     "Fire Princess": (
         LifeGainTrigger(Effect(resolve=(InflictDamage(OPPONENT, 500),))),
+    ),
+})
+
+# Effects Batch 85: battle-damage prevention (deck-impact #18 — Kuriboh). All battle
+# damage to a player now flows through one chokepoint (_resolve_attack's _take_battle_
+# damage), which consults state.takes_no_battle_damage, so a card can zero the damage for
+# one battle or one turn.
+EFFECTS.update({
+    # Kuriboh: "During damage calculation, if your opponent's monster attacks (Quick
+    # Effect): You can discard this card; you take no battle damage from that battle." A
+    # hand quick effect offered by the engine's damage-step window (kind="damage_step",
+    # by=OPPONENT — the attacker is the activator's opponent); discarding it is the cost,
+    # and PreventBattleDamageThisBattle adds the controller to the per-battle immunity.
+    "Kuriboh": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="damage_step", by=OPPONENT),
+            resolve=(PreventBattleDamageThisBattle(),),
+        ),
+    ),
+    # Winged Kuriboh: "If this card on the field is destroyed and sent to the GY: For the
+    # rest of this turn, you take no battle damage." Reuses Batch 83's unified "destroyed"
+    # GY trigger (battle OR effect); PreventBattleDamageThisTurn stamps the turn-scoped
+    # immunity that the same _take_battle_damage chokepoint reads.
+    "Winged Kuriboh": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="destroyed", by=SELF),
+            resolve=(PreventBattleDamageThisTurn(),),
+        ),
     ),
 })

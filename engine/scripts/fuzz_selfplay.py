@@ -285,6 +285,11 @@ DECK = (
     + ["Fire Princess"] * 2
     + ["Solemn Wishes"] * 1
     + ["Cure Mermaid"] * 1
+    # Batch 85: battle-damage prevention — Kuriboh (hand discard in the damage-step window
+    # -> 0 damage from that battle) and Winged Kuriboh (destroyed -> no battle damage the
+    # rest of the turn).
+    + ["Kuriboh"] * 2
+    + ["Winged Kuriboh"] * 2
 )
 
 
