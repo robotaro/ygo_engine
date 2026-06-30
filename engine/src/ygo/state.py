@@ -37,6 +37,7 @@ from .effects import (
     EquipMod,
     FieldMod,
     HalvesAttackersAtk,
+    LocksAttachedMonster,
     SafeAttacker,
     DamageStepBonus,
     MultiAttacker,
@@ -1199,6 +1200,33 @@ class GameState:
             if mod.whose == "opponent" and src.controller != player:
                 return True
         return False
+
+    def _attached_lock(self, iid: int, kind: str) -> bool:
+        """Whether a face-up, live Continuous Trap attached to monster ``iid`` (equipped_to)
+        locks its ``kind`` ("attack"/"position") — Spellbinding Circle. The attaching card is
+        suppressed while face-down or negated (Royal Decree)."""
+        for pl in self.players:
+            for sid in pl.spell_trap_zones:
+                if sid is None:
+                    continue
+                inst = self.cards[sid]
+                if inst.equipped_to != iid or not inst.is_face_up or self.effect_negated(sid):
+                    continue
+                for mod in inst.card.continuous:
+                    if isinstance(mod, LocksAttachedMonster) and (
+                        (kind == "attack" and mod.no_attack) or (kind == "position" and mod.no_position)
+                    ):
+                        return True
+        return False
+
+    def monster_attack_locked(self, iid: int) -> bool:
+        """Whether monster ``iid`` cannot declare an attack because a Spellbinding Circle (or
+        similar attached lock) holds it."""
+        return self._attached_lock(iid, "attack")
+
+    def monster_position_locked(self, iid: int) -> bool:
+        """Whether monster ``iid`` cannot change its battle position for the same reason."""
+        return self._attached_lock(iid, "position")
 
     def destroys_attached_equips(self, iid: int) -> bool:
         """Whether the monster ``iid`` destroys any Equip Card equipped to it (Gearfried

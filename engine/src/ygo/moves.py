@@ -541,6 +541,8 @@ def _main_phase_actions(state: GameState, player: int) -> list[Action]:
             continue
         if inst.position_locked_until is not None and state.turn_count <= inst.position_locked_until:
             continue  # Goblin Attack Force: frozen in Defense until its next turn
+        if state.monster_position_locked(iid):
+            continue  # Spellbinding Circle: the targeted monster cannot change position
         if inst.position is Position.FACE_DOWN_DEFENSE:
             actions.append(FlipSummon(iid))
         elif inst.position in (Position.FACE_UP_ATTACK, Position.FACE_UP_DEFENSE):
@@ -1152,6 +1154,8 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
             continue  # used up its attack(s) this Battle Phase (2+ for a MultiAttacker)
         if inst.attack_disabled_on_turn == state.turn_count:
             continue  # an effect this turn barred this monster from attacking
+        if state.monster_attack_locked(iid):
+            continue  # Spellbinding Circle: the targeted monster cannot attack
         cost = state.attack_life_cost(iid)
         if cost and state.players[player].life_points <= cost:
             continue  # Dark Elf: cannot pay the LP cost required to declare an attack

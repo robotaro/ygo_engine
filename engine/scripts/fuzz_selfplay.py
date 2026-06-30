@@ -422,6 +422,10 @@ DECK = (
     # Batch 118: Mirror Wall (Continuous Trap: halves opponent attackers' ATK while up; pay
     # 2000 each Standby). Exercises the per-attacker halving flag + the StandbyUpkeep cost.
     + ["Mirror Wall"] * 2
+    # Batch 119: Spellbinding Circle (attach to an opponent monster; it cannot attack or
+    # change position; destroyed with its target). Exercises the attached-lock gates + the
+    # orphan-equip cleanup on a Trap.
+    + ["Spellbinding Circle"] * 2
 )
 
 

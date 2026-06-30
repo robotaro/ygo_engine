@@ -250,6 +250,19 @@ class DebuffsAttackTargetAtk:
 
 
 @dataclass(frozen=True)
+class LocksAttachedMonster:
+    """A face-up card (a Continuous Trap attached to a monster via ``equipped_to``) that locks
+    the monster it points at: ``no_attack`` bars it from declaring an attack, ``no_position``
+    bars it from changing battle position (Spellbinding Circle does both). Read by
+    GameState.monster_attack_locked / monster_position_locked; the engine's orphan-equip
+    cleanup destroys the trap when its target leaves the field ("when that monster is
+    destroyed, destroy this card")."""
+
+    no_attack: bool = True
+    no_position: bool = True
+
+
+@dataclass(frozen=True)
 class HalvesAttackersAtk:
     """A face-up card's rider: every opponent monster that declares an attack while this card
     is face-up has its ATK halved for as long as this card stays on the field (Mirror Wall).
@@ -2131,6 +2144,22 @@ class EquipToTarget(Primitive):
                 equip.equipped_to = target
         else:
             ctx.state.send_to_graveyard(ctx.source_iid)  # nothing to equip -> to the GY
+
+
+@dataclass(frozen=True)
+class AttachSelfToTarget(Primitive):
+    """Attach the effect SOURCE (a Continuous Trap like Spellbinding Circle) to the targeted
+    monster by setting its ``equipped_to`` — so its LocksAttachedMonster rider can find its
+    victim and the engine's orphan cleanup destroys it when the monster leaves. Unlike
+    EquipToTarget this skips the Gearfried 'destroys Equip Cards' check (the source is a Trap,
+    not an Equip Card)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        from .enums import Zone
+
+        target = ctx.targets[0] if ctx.targets else None
+        if target is not None and target in ctx.state.cards and ctx.state.inst(target).zone is Zone.MONSTER:
+            ctx.state.inst(ctx.source_iid).equipped_to = target
 
 
 # --- Slice 4: monster-effect primitives ---

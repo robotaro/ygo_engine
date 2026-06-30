@@ -90,6 +90,8 @@ from .effects import (
     ProtectControlledFromDestruction,
     RollDieModifyAllStats,
     HalvesAttackersAtk,
+    LocksAttachedMonster,
+    AttachSelfToTarget,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5976,4 +5978,26 @@ CONTINUOUS.update({
 EFFECTS.update({"Mirror Wall": _ACTIVATE_ONTO_FIELD})
 CONTINUOUS.update({
     "Mirror Wall": (HalvesAttackersAtk(), StandbyUpkeep(pay_life=2000, whose="controller")),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 119: Spellbinding Circle — a Continuous Trap that targets 1 opponent monster
+# and locks it (cannot attack or change battle position) until the Circle leaves or its
+# target is destroyed. Modelled by attaching the Circle to the target (equipped_to) so the
+# engine's orphan-equip cleanup destroys it with the monster; the LocksAttachedMonster rider
+# drives the attack/position gates. Reusable for the wider targeted-lock family (Nightmare
+# Wheel, Shattered Axe, Mask of the Accursed). Bottleneck for the Lumis&Umbra + Yugi Muto decks.
+EFFECTS.update({
+    "Spellbinding Circle": (
+        Effect(
+            speed=2,
+            timing="quick",
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(AttachSelfToTarget(),),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    "Spellbinding Circle": (LocksAttachedMonster(no_attack=True, no_position=True),),
 })
