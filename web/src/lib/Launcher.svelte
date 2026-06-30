@@ -2,11 +2,22 @@
   import { newGame, profile } from './store.js'
   import MyDecks from './MyDecks.svelte'
   import Collection from './Collection.svelte'
+  import Tournament from './Tournament.svelte'
   import BanlistEditor from './BanlistEditor.svelte'
   import OpponentPicker from './OpponentPicker.svelte'
 
-  // Initial tab is deep-linkable via ?tab=decks|cards|banlist (handy for screenshots).
-  let tab = $state(new URLSearchParams(location.search).get('tab') || 'play') // play|decks|cards|banlist
+  // Initial tab is deep-linkable via ?tab=decks|cards|tournament|banlist.
+  const urlTab = new URLSearchParams(location.search).get('tab')
+  let tab = $state(urlTab || 'play') // play|decks|cards|tournament|banlist
+  let nudged = $state(false) // auto-routed to an active tournament yet?
+
+  // Land on the bracket when a tournament is in progress (e.g. after a round).
+  $effect(() => {
+    if (!urlTab && !nudged && $profile?.tournament?.active) {
+      tab = 'tournament'
+      nudged = true
+    }
+  })
   let formats = $state([])
   let format = $state('none') // active Forbidden/Limited list
   let yourDeck = $state('')
@@ -53,6 +64,7 @@
     <button class:active={tab === 'play'} onclick={() => (tab = 'play')}>⚔ Play</button>
     <button class:active={tab === 'decks'} onclick={() => (tab = 'decks')}>🗂 My Decks</button>
     <button class:active={tab === 'cards'} onclick={() => (tab = 'cards')}>🃏 My Cards</button>
+    <button class:active={tab === 'tournament'} onclick={() => (tab = 'tournament')}>🏆 Tournament</button>
     <button class:active={tab === 'banlist'} onclick={() => (tab = 'banlist')}>⛔ Banned Cards</button>
   </div>
 
@@ -108,6 +120,8 @@
     <MyDecks onPlay={pickAndPlay} />
   {:else if tab === 'cards'}
     <Collection />
+  {:else if tab === 'tournament'}
+    <Tournament />
   {:else}
     <div class="build">
       <BanlistEditor onSaved={() => loadFormats()} />

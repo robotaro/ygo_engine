@@ -91,6 +91,47 @@ def test_collection_endpoint_returns_owned_with_counts(iso):
     assert len(monsters["cards"]) <= 50
 
 
+def test_tournament_flow(iso):
+    data = srv.tournaments()
+    assert data["tournament"] is None
+    assert len(data["presets"]) >= 1
+    preset = data["presets"][0]
+
+    # Start with the owned Starter Deck.
+    st = srv.start_tournament({"presetId": preset["id"], "deckId": srv.STARTER_DECK_ID})
+    assert st["tournament"]["active"] is True
+    assert st["currentOpponent"]["name"] == preset["opponents"][0]["name"]
+
+    before = srv.get_profile()["duelistPoints"]
+    bonus_seen = 0
+    for _ in range(preset["rounds"]):
+        r = srv.advance_tournament({"won": True})
+        bonus_seen += r["bonus"]
+    assert r["tournament"]["champion"] is True
+    assert bonus_seen == preset["reward"]
+    # champion bonus landed on top of any per-duel DP
+    assert srv.get_profile()["duelistPoints"] == before + preset["reward"]
+
+
+def test_tournament_rejects_unowned_deck(iso):
+    import pytest as _pytest
+    from fastapi import HTTPException as _HE
+
+    preset = srv.tournaments()["presets"][0]
+    # A bundled GBA deck the fresh profile doesn't own.
+    with _pytest.raises(_HE) as e:
+        srv.start_tournament({"presetId": preset["id"], "deckId": "gba/eternal_duelist_soul/yami_yugi.txt"})
+    assert e.value.status_code == 400
+
+
+def test_tournament_forfeit(iso):
+    preset = srv.tournaments()["presets"][0]
+    srv.start_tournament({"presetId": preset["id"], "deckId": srv.STARTER_DECK_ID})
+    assert srv.tournament_now()["tournament"]["active"] is True
+    srv.forfeit_tournament()
+    assert srv.tournament_now()["tournament"] is None
+
+
 def test_reset_profile(iso):
     srv.buy_pack(
         {"packId": min((p for g in srv.packs()["games"] for p in g["packs"]), key=lambda p: p["price"])["id"]}

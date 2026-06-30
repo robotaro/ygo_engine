@@ -26,6 +26,26 @@ export async function refreshProfile() {
 }
 
 let ws = null
+let tournamentMatch = false // was the live duel a tournament round?
+
+// Start a duel that counts as a tournament round (its result advances the bracket).
+export function startTournamentDuel(seed, deck, opp) {
+  tournamentMatch = true
+  newGame(seed, deck, opp)
+}
+
+async function advanceTournament(won) {
+  try {
+    await fetch('/api/tournament/advance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ won }),
+    })
+  } catch {
+    /* offline — the bracket will reconcile on next load */
+  }
+  refreshProfile()
+}
 
 // Poll the backend so the header can show real server reachability, not just
 // whether a duel WebSocket happens to be open.
@@ -127,7 +147,12 @@ export function newGame(seed, deck, opp) {
       case 'result':
         result.set(msg) // includes dpEarned + duelistPoints from the server
         awaiting.set(false)
-        refreshProfile() // DP was just awarded — update the header balance
+        if (tournamentMatch) {
+          tournamentMatch = false
+          advanceTournament(!!msg.youWin) // advance the bracket (also refreshes profile)
+        } else {
+          refreshProfile() // DP was just awarded — update the header balance
+        }
         break
       default:
         break

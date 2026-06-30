@@ -80,6 +80,7 @@ class Profile:
     active_deck: str = STARTER_DECK_ID
     stats: dict[str, int] = field(default_factory=lambda: {"wins": 0, "losses": 0, "duels": 0})
     packs_opened: int = 0
+    tournament: dict | None = None  # active tournament run (see tournament.py), or None
 
     # -- collection helpers ------------------------------------------------- #
     def owns(self, card_name: str, count: int = 1) -> bool:
@@ -145,6 +146,7 @@ class Profile:
             "active_deck": self.active_deck,
             "stats": self.stats,
             "packs_opened": self.packs_opened,
+            "tournament": self.tournament,
         }
 
     @classmethod
@@ -157,6 +159,7 @@ class Profile:
             active_deck=obj.get("active_deck", STARTER_DECK_ID),
             stats=dict(obj.get("stats", {"wins": 0, "losses": 0, "duels": 0})),
             packs_opened=int(obj.get("packs_opened", 0)),
+            tournament=obj.get("tournament"),
         )
 
 

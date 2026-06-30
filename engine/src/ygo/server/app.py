@@ -51,6 +51,7 @@ from ..enums import Attribute, CardType
 from ..packs import get_pack, list_packs, open_pack
 from ..paths import ASSETS, DECKS_DIR, REPO_ROOT
 from ..profile import STARTER_DECK_ID, Profile, load_profile, new_profile, save_profile
+from .. import tournament as tour
 from .session import GameSession
 
 app = FastAPI(title="ygo_engine")
@@ -483,6 +484,99 @@ def buy_pack(payload: dict) -> dict:
         "spent": pack.price,
         "duelistPoints": profile.duelist_points,
     }
+
+
+# --------------------------------------------------------------------------- #
+#  Tournaments: a gauntlet bracket of GBA duelists, played for DP
+# --------------------------------------------------------------------------- #
+TOURNEY_SIZE = 6  # opponents per bracket (cap)
+_TOURNEY_CACHE: list | None = None
+
+
+def tournament_presets() -> list[dict]:
+    """One championship per GBA game, made of that game's legal duelists."""
+    global _TOURNEY_CACHE
+    if _TOURNEY_CACHE is not None:
+        return _TOURNEY_CACHE
+    presets = []
+    for game in opponent_roster():
+        legal = [d for d in game["duelists"] if d["legal"]][:TOURNEY_SIZE]
+        if len(legal) < 2:
+            continue
+        opponents = [{"id": d["id"], "name": d["name"], "portrait": d["portrait"]} for d in legal]
+        presets.append(
+            {
+                "id": "game:" + game["key"],
+                "name": game["title"] + " Championship",
+                "game": game["key"],
+                "rounds": len(opponents),
+                "reward": tour.DP_PER_ROUND * len(opponents),
+                "opponents": opponents,
+            }
+        )
+    _TOURNEY_CACHE = presets
+    return presets
+
+
+def _tournament_state(profile: Profile) -> dict:
+    return {
+        "tournament": profile.tournament,
+        "currentOpponent": tour.current_opponent(profile.tournament),
+    }
+
+
+@app.get("/api/tournaments")
+def tournaments() -> dict:
+    profile = load_profile()
+    return {"presets": tournament_presets(), **_tournament_state(profile)}
+
+
+@app.get("/api/tournament")
+def tournament_now() -> dict:
+    return _tournament_state(load_profile())
+
+
+@app.post("/api/tournaments/start")
+def start_tournament(payload: dict) -> dict:
+    profile = load_profile()
+    preset = next((p for p in tournament_presets() if p["id"] == payload.get("presetId")), None)
+    if preset is None:
+        raise HTTPException(status_code=404, detail="Unknown tournament")
+    deck_id = payload.get("deckId") or profile.active_deck
+    summary = deck_summary(deck_id, profile)
+    if summary is None:
+        raise HTTPException(status_code=400, detail="Unknown deck")
+    if not summary["owned"]:
+        raise HTTPException(status_code=400, detail="You don't own every card in that deck")
+    if not summary["legal"]:
+        raise HTTPException(status_code=400, detail="That deck isn't tournament-legal")
+    profile.tournament = tour.start_run(preset["name"], deck_id, preset["opponents"])
+    profile.active_deck = deck_id
+    save_profile(profile)
+    return _tournament_state(profile)
+
+
+@app.post("/api/tournament/advance")
+def advance_tournament(payload: dict) -> dict:
+    """Report a tournament-match result; advance the bracket and award any bonus."""
+    profile = load_profile()
+    run = profile.tournament
+    if not run or not run.get("active"):
+        return {**_tournament_state(profile), "bonus": 0}
+    run, bonus = tour.advance(run, bool(payload.get("won")))
+    if bonus:
+        profile.earn(bonus)
+    profile.tournament = run
+    save_profile(profile)
+    return {**_tournament_state(profile), "bonus": bonus, "duelistPoints": profile.duelist_points}
+
+
+@app.post("/api/tournament/forfeit")
+def forfeit_tournament() -> dict:
+    profile = load_profile()
+    profile.tournament = None
+    save_profile(profile)
+    return _tournament_state(profile)
 
 
 @app.post("/api/decks/validate")
