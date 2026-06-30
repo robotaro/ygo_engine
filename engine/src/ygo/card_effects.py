@@ -5767,3 +5767,22 @@ CONTINUOUS.update({
         ),
     ),
 })
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 107: continuous ATK/DEF scaling by board/hand count. The single
+# highest-incidence cheap win — Machine King appears in 5 GBA decks, the Muka Mukas
+# and Flash Assailant in several more. Machine King reuses the existing "race_on_field"
+# mode (Insect Queen, Batch 101); the Muka Muka family needs only the new "hand_size"
+# scaling mode added to state._self_stat_delta.
+CONTINUOUS.update({
+    # Machine King: gains 100 ATK for each Machine-Type monster on the field (both
+    # sides, including itself — race_on_field counts every face-up Machine).
+    "Machine King": (SelfStatMod(scaling="race_on_field", count_race="Machine", scale_atk=100),),
+    # Muka Muka: gains 300 ATK and DEF for each card in your hand.
+    "Muka Muka": (SelfStatMod(scaling="hand_size", scale_atk=300, scale_defn=300),),
+    # Enraged Muka Muka: the same, but +400 per card.
+    "Enraged Muka Muka": (SelfStatMod(scaling="hand_size", scale_atk=400, scale_defn=400),),
+    # Flash Assailant: LOSES 400 ATK and DEF for each card in your hand (negative scale).
+    "Flash Assailant": (SelfStatMod(scaling="hand_size", scale_atk=-400, scale_defn=-400),),
+})

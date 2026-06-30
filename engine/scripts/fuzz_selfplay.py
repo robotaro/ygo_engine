@@ -378,6 +378,11 @@ DECK = (
     # plus its Fusion materials. The Fusion can't be summoned in the main-deck fuzz, but the
     # bodies exercise the pool; the direct-attack rider is covered by unit tests.
     + ["Baby Dragon"] * 1 + ["Alligator's Sword"] * 1
+    # Batch 107: continuous ATK/DEF scaling by board/hand count. Machine King (+100 per
+    # Machine on the field, via race_on_field) and the hand-size scalers Muka Muka (+300),
+    # Enraged Muka Muka (+400) and Flash Assailant (-400 per card in hand).
+    + ["Machine King"] * 1
+    + ["Muka Muka"] * 1 + ["Enraged Muka Muka"] * 1 + ["Flash Assailant"] * 1
 )
 
 

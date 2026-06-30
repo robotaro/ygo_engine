@@ -853,6 +853,12 @@ class GameState:
                     if i is not None and self.cards[i].is_face_up
                 )
                 total += flat + per * count
+            elif mod.scaling == "hand_size":
+                # Muka Muka (+300), Enraged Muka Muka (+400), Flash Assailant (-400): scale
+                # per card in the controller's hand. The source is on the field, never in
+                # hand, so it never counts itself.
+                per = mod.scale_atk if which == "atk" else mod.scale_defn
+                total += flat + per * len(self.players[inst.controller].hand)
             elif mod.scaling == "named_in_graveyards":
                 per = mod.scale_atk if which == "atk" else mod.scale_defn
                 count = sum(

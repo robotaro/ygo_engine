@@ -109,7 +109,10 @@ class SelfStatMod:
         Magician" or "Magician of Black Chaos" in the GYs).
       * ``"opponent_field_and_gy_race"`` adds them per ``count_race`` monster the OPPONENT
         controls face-up PLUS each in the opponent's Graveyard (Buster Blader: +500 ATK for
-        every Dragon the opponent controls or has in their GY)."""
+        every Dragon the opponent controls or has in their GY).
+      * ``"hand_size"`` adds ``scale_atk``/``scale_defn`` per card in the controller's hand
+        (Muka Muka +300, Enraged Muka Muka +400; Flash Assailant uses negative scales to
+        *lose* 400 per card). The source is on the field, so it never counts itself."""
 
     atk: int = 0
     defn: int = 0
