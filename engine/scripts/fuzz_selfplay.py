@@ -311,6 +311,9 @@ DECK = (
        "Left Leg of the Forbidden One"]
     + ["Big Eye"] * 1 + ["Backup Soldier"] * 1 + ["Buster Blader"] * 1
     + ["Koumori Dragon"] * 2  # a vanilla Dragon so Buster Blader's scaling actually fires
+    # Batch 90: Solemn Judgment (negate a Summon OR a S/T activation, pay half LP) and
+    # Tribe-Infecting Virus (discard 1, declare a Type, wipe it from the field).
+    + ["Solemn Judgment"] * 2 + ["Tribe-Infecting Virus"] * 2
 )
 
 

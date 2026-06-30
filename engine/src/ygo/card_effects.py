@@ -98,6 +98,7 @@ from .effects import (
     ReturnSpellFromGraveyardToHand,
     PlantSelfInOpponentDeck,
     LookAtTopReorderBestFirst,
+    DestroyFaceUpMonstersOfDeclaredType,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5257,6 +5258,42 @@ CONTINUOUS.update({
     "Buster Blader": (
         SelfStatMod(
             scaling="opponent_field_and_gy_race", scale_atk=500, count_race="Dragon"
+        ),
+    ),
+})
+
+# Effects Batch 90: the heavy-hitting disruption cards (each a blocker in ~8 GBA decks).
+EFFECTS.update({
+    # Solemn Judgment (Counter Trap): "Pay half your LP; negate a Summon OR a Spell/Trap
+    # activation, and if you do, destroy that card." Composed from the two existing
+    # negation seams — the quick chain-response (Magic Jammer / Dark Bribe) for a S/T
+    # activation, and the Summon-response window (Horn of Heaven) for a Summon — each
+    # paying half LP first (LoseHalfLifePoints subtracts directly, so it's a cost, not
+    # damage). The Summon window fires on Normal Summons (the documented simplification).
+    "Solemn Judgment": (
+        Effect(
+            speed=3,
+            timing="quick",
+            condition=_chain_top_is_spell_or_trap,
+            resolve=(LoseHalfLifePoints(SELF), NegatePreviousLink()),
+        ),
+        Effect(
+            speed=3,
+            timing="trigger",
+            trigger=Trigger(kind="summon", by=OPPONENT, subject="monster"),
+            resolve=(LoseHalfLifePoints(SELF), DestroyTargets()),
+        ),
+    ),
+    # Tribe-Infecting Virus: "Discard 1; declare 1 Type; destroy all face-up monsters of
+    # that Type on the field." A monster Ignition effect: discard cost paid by the engine,
+    # gated to when the opponent has a face-up monster; the new primitive declares the
+    # Type that nets the most enemy monsters and wipes both sides of it.
+    "Tribe-Infecting Virus": (
+        Effect(
+            timing="ignition",
+            discard_cost=1,
+            condition=_opponent_has_faceup_monster,
+            resolve=(DestroyFaceUpMonstersOfDeclaredType(),),
         ),
     ),
 })

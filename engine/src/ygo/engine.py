@@ -48,6 +48,7 @@ from .moves import (
     makeable_fusions,
     pay_costs,
     response_options,
+    response_effect_for,
     resolve_effect,
     reveal_for_activation,
     ritual_monster_in_hand,
@@ -761,7 +762,7 @@ class Engine:
         if chosen is None:
             return None
         card = s.inst(chosen.iid).card
-        effect = card.effects[0]
+        effect = response_effect_for(s, player, chosen.iid, event, last_speed)
         reveal_for_activation(s, chosen.iid, chosen.zone_index)
         self.log(f"  {s.players[player].name} activates {card.name}")
         self._pay_activation_cost(chosen.iid, player, effect)

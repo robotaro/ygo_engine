@@ -913,12 +913,16 @@ def response_options(
             continue
         if inst.set_on_turn is None or inst.set_on_turn >= state.turn_count:
             continue
-        effect = inst.card.effects[0] if inst.card.effects else None
-        if effect is None or effect.speed < last_speed:
-            continue
         if state.cannot_activate_card(iid):  # Jinzo bars Traps from a response window too
             continue
-        options += _activations_for_effect(state, player, iid, effect, event)
+        # A card may carry several response effects, one per window (Solemn Judgment: a
+        # quick S/T-negation AND a Summon-negation trigger). Offer every effect fast
+        # enough for this window; each is independently gated by its own timing,
+        # condition, trigger-match and cost, so only the relevant one yields options.
+        for effect in inst.card.effects:
+            if effect.speed < last_speed:
+                continue
+            options += _activations_for_effect(state, player, iid, effect, event)
 
     # Quick-Play spells straight from the hand (only on your own turn).
     if state.turn_player == player and state.first_empty_spell_trap_zone(player) is not None:
@@ -934,6 +938,20 @@ def response_options(
             options += _activations_for_effect(state, player, iid, effect, event)
 
     return options
+
+
+def response_effect_for(state, player, iid, event, last_speed):
+    """The specific effect of card ``iid`` that is activatable in this response window —
+    mirrors ``response_options``' per-effect gating so the engine resolves the matched
+    effect, not blindly ``effects[0]`` (Solemn Judgment offers a quick S/T-negation in a
+    chain window but its Summon-negation in a Summon window). First match wins."""
+    inst = state.inst(iid)
+    for effect in inst.card.effects:
+        if effect.speed < last_speed:
+            continue
+        if _activations_for_effect(state, player, iid, effect, event):
+            return effect
+    return inst.card.effects[0] if inst.card.effects else None
 
 
 def _activations_for_effect(state, player, iid, effect, event):

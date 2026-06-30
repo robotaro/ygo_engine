@@ -942,6 +942,41 @@ class DestroyAllMonsters(Primitive):
 
 
 @dataclass(frozen=True)
+class DestroyFaceUpMonstersOfDeclaredType(Primitive):
+    """Tribe-Infecting Virus: declare 1 Type, then destroy every face-up monster of that
+    Type on the field (both sides). With no human to declare, the controller picks the
+    Type that nets the most enemy monsters destroyed — the opponent's face-up count of a
+    race minus its own — so it never wipes more of its own board than the enemy's."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s, me = ctx.state, ctx.controller
+        opp = s.opponent_of(me)
+
+        def faceup(pl):
+            return [
+                s.inst(i)
+                for i in s.players[pl].monster_zones
+                if i is not None and s.inst(i).is_face_up
+            ]
+
+        own, foe = faceup(me), faceup(opp)
+        races = {inst.card.race for inst in own + foe if inst.card.race}
+        if not races:
+            return
+        best = max(
+            races,
+            key=lambda r: (
+                sum(1 for inst in foe if inst.card.race == r)
+                - sum(1 for inst in own if inst.card.race == r),
+                sum(1 for inst in foe if inst.card.race == r),
+            ),
+        )
+        for inst in own + foe:
+            if inst.card.race == best:
+                s.send_to_graveyard(inst.iid, by_effect=True)
+
+
+@dataclass(frozen=True)
 class DestroyOwnMonstersHalfAtkBurn(Primitive):
     """Time Wizard's wrong call: destroy as many monsters its controller controls as
     possible, and if any were destroyed, the controller takes damage equal to half the
