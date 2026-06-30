@@ -236,6 +236,12 @@ DECK = (
     + ["Left Arm of the Forbidden One"]
     + ["Right Leg of the Forbidden One"]
     + ["Left Leg of the Forbidden One"]
+    # battle-banish trigger + GY-Standby self-return + conditional named SS
+    + ["D.D. Warrior Lady"] * 2
+    + ["Sinister Serpent"] * 2
+    + ["Elegant Egotist"] * 2
+    + ["Harpie Lady"] * 2
+    + ["Harpie Lady Sisters"] * 2
 )
 
 

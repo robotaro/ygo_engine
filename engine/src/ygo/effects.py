@@ -464,6 +464,17 @@ class EndPhaseTrigger:
 
 
 @dataclass(frozen=True)
+class GraveyardStandbyReturn:
+    """A card that, during its owner's Standby Phase while it sits in their Graveyard,
+    may add itself back to the hand (Sinister Serpent). Read directly off the card's
+    ``continuous`` list by the engine's Standby hook — it is inert on the field (no
+    field-passive consumer scans for it). At most one carrier returns per Standby Phase,
+    matching the "once per turn" wording, and only on the owner's own Standby Phase.
+    (Sinister Serpent's downside — banish 1 copy during the opponent's next End Phase —
+    is not modelled; the headless engine treats the optional return as taken.)"""
+
+
+@dataclass(frozen=True)
 class DrawTrigger:
     """A face-up card's reaction to its controller drawing (Slice 10).
 
@@ -899,6 +910,25 @@ class BanishTargets(Primitive):
         for iid in list(ctx.targets):
             if iid in ctx.state.cards:
                 ctx.state.banish(iid)
+
+
+@dataclass(frozen=True)
+class BanishSelfAndEventMonster(Primitive):
+    """D.D. Warrior Lady: after a battle, banish the opponent's monster it fought (the
+    ``foe`` iid on the triggering event) and banish the source itself — each from
+    wherever it now sits, since a combatant destroyed in the battle is already in the
+    Graveyard while a survivor is still on the field."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        foe = (ctx.event or {}).get("foe")
+        for iid in (foe, ctx.source_iid):
+            if (
+                iid is not None
+                and iid in s.cards
+                and s.inst(iid).zone in (Zone.MONSTER, Zone.GRAVEYARD)
+            ):
+                s.banish(iid)
 
 
 @dataclass(frozen=True)

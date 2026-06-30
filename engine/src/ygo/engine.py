@@ -19,6 +19,7 @@ from .effects import (
     DefenseAfterAttack,
     DrawTrigger,
     EndPhaseTrigger,
+    GraveyardStandbyReturn,
     SpellCounterHolder,
     StandbyTrigger,
     StandbyUpkeep,
@@ -205,10 +206,29 @@ class Engine:
                     # path runs its own life-point / GY / draw checks, so it doesn't
                     # need the fixed-LP `fired` bookkeeping below.
                     self._fire_standby_trigger(inst, mod, tp)
+        self._fire_graveyard_standby_returns(tp)
         if fired:
             self._check_life_points()
             self._check_field_to_gy_triggers()
             self._changed()
+
+    def _fire_graveyard_standby_returns(self, tp: int) -> None:
+        """Sinister Serpent: during its owner's Standby Phase, a card in their Graveyard
+        carrying a ``GraveyardStandbyReturn`` marker adds itself back to the hand. At most
+        one returns per Standby Phase ("once per turn"); only the turn player's own GY is
+        scanned (the marker says "during YOUR Standby Phase, if this card is in YOUR GY")."""
+        s = self.state
+        if self.result is not None:
+            return
+        for iid in list(s.players[tp].graveyard):
+            inst = s.cards.get(iid)
+            if inst is None or inst.owner != tp:
+                continue
+            if any(isinstance(m, GraveyardStandbyReturn) for m in inst.card.continuous):
+                s.return_to_hand(iid)
+                self.log(f"  {s.players[tp].name} adds {inst.name} from the GY to their hand")
+                self._changed()
+                return  # one per turn
 
     def _standby_upkeep_order(self) -> list[int]:
         """Face-up cards that might carry a Standby upkeep, in a stable order
@@ -444,6 +464,10 @@ class Engine:
         # "When this card destroys a monster by battle" (Masked Chopper, Guardian Angel
         # Joan, Hydrogeddon) — fired from the (destroyer, destroyed) pairs combat recorded.
         self._fire_destroys_by_battle_trigger()
+
+        # "When this card battles an opponent's monster" (D.D. Warrior Lady's mutual
+        # banish) — fired from the recorded combatant pair, regardless of who survived.
+        self._fire_battles_trigger()
 
         # Spear Dragon / Goblin Attack Force: switch the attacker to Defense once its
         # attack has resolved (and lock its position if the rider says so).
@@ -774,6 +798,35 @@ class Engine:
                 inst.controller,
                 {"destroyer": destroyer_iid, "destroyed": destroyed_iid},
             )
+
+    def _fire_battles_trigger(self) -> None:
+        """Fire a monster's "when this card battles an opponent's monster" SELF Trigger
+        after damage calculation (D.D. Warrior Lady's mutual banish), from the transient
+        ``battle_pair`` combatants. Each carrier banishes its foe and itself; it fires
+        even if the carrier was destroyed in the battle (it banishes itself from the
+        Graveyard), so — unlike the destroys/dealt-damage triggers — it is NOT gated on
+        the source still being a live face-up monster. The event carries the ``foe`` iid
+        (the opponent's monster in the battle)."""
+        s = self.state
+        pair = s.battle_pair
+        s.battle_pair = None
+        if pair is None or self.result is not None:
+            return
+        a, b = pair
+        for me_iid, foe_iid in ((a, b), (b, a)):
+            if self.result is not None:
+                return
+            inst = s.cards.get(me_iid)
+            if inst is None or not inst.card.is_monster:
+                continue
+            if s.monster_effects_negated(me_iid):
+                continue  # Skill Drain on a survivor; a GY carrier is never negated
+            effect = next(self._trigger_effects(inst.card, kind="battles", by=SELF), None)
+            if effect is None:
+                continue
+            if effect.condition is not None and not effect.condition(s, inst.controller):
+                continue
+            self._trigger_effect(me_iid, effect, inst.controller, {"foe": foe_iid})
 
     def _fire_attack_declared_trigger(self, attacker_iid: int) -> None:
         """Fire the attacking monster's OWN "when this card declares an attack" Trigger

@@ -18,6 +18,7 @@ from .effects import (
     AttackTargetProtection,
     BanishAttackingDefensePositionMonsters,
     BanishEventMonster,
+    BanishSelfAndEventMonster,
     BanishTargets,
     ChangeAllPositions,
     ChangeTargetPosition,
@@ -59,6 +60,7 @@ from .effects import (
     EquipToTarget,
     FieldMod,
     GainLifePoints,
+    GraveyardStandbyReturn,
     HandSpecialSummon,
     InflictDamage,
     LoseHalfLifePoints,
@@ -4747,4 +4749,46 @@ CONTINUOUS.update({
     # Maha Vailo — gains 500 ATK for each Equip Card equipped to it (its own boost is on
     # top of whatever ATK the Equips themselves grant).
     "Maha Vailo": (SelfStatMod(scaling="equips_on_self", scale_atk=500),),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 75: deck-impact mechanisms — a battle-banish trigger, a GY-Standby
+# self-return, and a conditional named Special Summon.
+EFFECTS.update({
+    # D.D. Warrior Lady — after damage calculation, when it battles an opponent's monster:
+    # banish that monster and banish this card (fires whether or not either was destroyed).
+    "D.D. Warrior Lady": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="battles", by=SELF),
+            resolve=(BanishSelfAndEventMonster(),),
+        ),
+    ),
+    # Elegant Egotist — while you control a "Harpie Lady", Special Summon 1 "Harpie Lady"
+    # or "Harpie Lady Sisters" from your Deck (the deterministic highest-ATK pick brings
+    # out Harpie Lady Sisters when it is available).
+    "Elegant Egotist": (
+        Effect(
+            timing="ignition",
+            condition=lambda s, c: any(
+                i is not None
+                and s.inst(i).is_face_up
+                and "Harpie Lady" in s.inst(i).card.name
+                and "Sisters" not in s.inst(i).card.name
+                for i in s.players[c].monster_zones
+            ),
+            resolve=(
+                SpecialSummonFromDeck(
+                    card_filter=CardFilter(
+                        card_kind="monster", name_contains=frozenset({"Harpie Lady"})
+                    ),
+                ),
+            ),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    # Sinister Serpent — during your Standby Phase, if it is in your GY, add it back to
+    # your hand. Read off the card in the GY by the engine's Standby hook.
+    "Sinister Serpent": (GraveyardStandbyReturn(),),
 })

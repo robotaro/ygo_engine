@@ -224,6 +224,11 @@ class GameState:
     # Trigger (Masked Chopper, Guardian Angel Joan). Reset each _resolve_attack, drained
     # by the engine after the attack.
     battle_destroyed_by: list = field(default_factory=list)
+    # Transient (attacker_iid, defender_iid) of the monster-vs-monster battle just
+    # resolved — for the engine's "when this card battles an opponent's monster" Trigger
+    # (D.D. Warrior Lady's mutual banish). None on a direct attack. Reset each
+    # _resolve_attack, drained by the engine after the attack.
+    battle_pair: tuple | None = None
     seed: int = 0
     rng: random.Random = field(default_factory=random.Random)
     _next_iid: int = 0

@@ -1379,6 +1379,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     )
     state.battle_damage_dealt = None  # reset; set below when the attacker damages opp
     state.battle_destroyed_by = []  # reset; appended below for each combat death
+    state.battle_pair = None  # reset; set below once a defending monster is in the battle
 
     def _hit_defender(amount: int) -> None:
         # Battle damage to the defending player — redirected to the attacker by Dimension
@@ -1394,6 +1395,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
         return f"{attacker.name} attacks directly — {atk} damage"
 
     target = state.inst(action.target)
+    state.battle_pair = (action.attacker, action.target)  # a monster-vs-monster battle
     prefix = ""
     if target.position is Position.FACE_DOWN_DEFENSE:
         target.position = Position.FACE_UP_DEFENSE
