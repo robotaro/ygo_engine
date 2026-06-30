@@ -254,7 +254,9 @@ def cards(
         order=order,
         limit=max(1, min(limit, 5000)),
     )
-    return {"count": len(hits), "cards": [card_to_dict(c) for c in hits]}
+    index = _pack_index()
+    cards = [{**card_to_dict(c), "inPacks": index.get(c.name, [])} for c in hits]
+    return {"count": len(cards), "cards": cards}
 
 
 # --------------------------------------------------------------------------- #
@@ -360,6 +362,27 @@ def _all_packs() -> list:
     if _PACK_CACHE is None:
         _PACK_CACHE = list_packs(REGISTRY)
     return _PACK_CACHE
+
+
+_PACK_INDEX: dict[str, list[dict]] | None = None
+
+
+def _pack_index() -> dict[str, list[dict]]:
+    """``{card_name: [{id, name, rarity}, ...]}`` — every purchasable pack that
+    can yield a given card. The reverse of the pack catalogue: it tells you
+    which packs to grind for a specific card (empty == not in any pack, so the
+    only way to get it is the single-card shop)."""
+    global _PACK_INDEX
+    if _PACK_INDEX is None:
+        index: dict[str, list[dict]] = {}
+        for pack in _all_packs():
+            for rarity, names in pack.by_rarity.items():
+                for name in names:
+                    index.setdefault(name, []).append(
+                        {"id": pack.id, "name": pack.name, "rarity": rarity}
+                    )
+        _PACK_INDEX = index
+    return _PACK_INDEX
 
 
 def deck_summary(deck_id: str, profile: Profile, banlist: BanList | None = None) -> dict | None:
@@ -472,6 +495,35 @@ def packs() -> dict:
     return {"games": games, "duelistPoints": profile.duelist_points}
 
 
+@app.get("/api/pack")
+def pack_detail(id: str) -> dict:
+    """One pack's full contents, grouped by the rarity you'd pull each card at —
+    the browsable 'what's in this pack' list, so you know what you're grinding."""
+    pack = get_pack(id, REGISTRY)
+    if pack is None:
+        raise HTTPException(status_code=404, detail="Unknown pack")
+    rarity_order = ("Secret Rare", "Ultra Rare", "Super Rare", "Rare", "Common", "(Unsorted)")
+    groups = []
+    # rarest-first, then any rarity not in the canonical order
+    for rarity in (*rarity_order, *(r for r in pack.by_rarity if r not in rarity_order)):
+        names = pack.by_rarity.get(rarity)
+        if not names:
+            continue
+        cards = [card_to_dict(REGISTRY.get(n)) for n in names if REGISTRY.get(n)]
+        groups.append({"rarity": rarity, "cards": cards})
+    return {
+        "id": pack.id,
+        "name": pack.name,
+        "game": pack.game,
+        "price": pricing.pack_price(pack, REGISTRY),
+        "cardsPerPack": pack.cards_per_pack,
+        "distinct": pack.distinct,
+        "art": pack_art_url(pack),
+        "affordable": load_profile().can_afford(pricing.pack_price(pack, REGISTRY)),
+        "groups": groups,
+    }
+
+
 @app.post("/api/packs/open")
 def buy_pack(payload: dict) -> dict:
     """Spend DP to open a pack; the pulled cards go into your library."""
@@ -521,9 +573,15 @@ def _shop_card(payload: dict) -> tuple[CardDef, int]:
 
 @app.post("/api/shop/buy")
 def shop_buy(payload: dict) -> dict:
-    """Buy a card outright (single-card shop) at its full value."""
+    """Buy a card outright. Only cards in NO booster pack are buyable as singles
+    — everything a pack can yield must be ground for instead."""
     profile = load_profile()
     card, qty = _shop_card(payload)
+    if _pack_index().get(card.name):
+        raise HTTPException(
+            status_code=400,
+            detail=f"{card.name} comes from booster packs — open packs to get it",
+        )
     unit = pricing.buy_value(card, REGISTRY)
     cost = unit * qty
     if not profile.can_afford(cost):
