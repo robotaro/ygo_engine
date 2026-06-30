@@ -88,6 +88,7 @@ from .effects import (
     SafeAttacker,
     DebuffsAttackTargetAtk,
     DirectBattleDamageThisTurn,
+    HalfEquippedHostAtk,
     ProtectControlledFromDestruction,
     RollDieModifyAllStats,
     HalvesAttackersAtk,
@@ -6085,5 +6086,33 @@ EFFECTS.update({
 EFFECTS.update({
     "Lady Assailant of Flames": (
         _flip(resolve=(BanishTopOfDeck(player=SELF, count=3), InflictDamage(OPPONENT, 800))),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 124: Kiseitai — "When your opponent's monster attacks this card, this card
+# becomes an Equip Card equipped to the attacking monster (no damage calculation). During each
+# of your opponent's Standby Phases, gain LP equal to half the equipped monster's ATK." The
+# exact Blast Sphere (Batch 82) shape: a reactive "attacked" Trigger that equips the source to
+# the attacker (EquipSelfToAttacker fizzles the attack — its target is gone), plus a
+# requires_equipped StandbyTrigger on the opponent's Standby that pays out via the new
+# HalfEquippedHostAtk value source. Last blocker of Tea Gardner (WCT2004).
+EFFECTS.update({
+    "Kiseitai": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="attacked", by=OPPONENT),
+            resolve=(EquipSelfToAttacker(),),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    "Kiseitai": (
+        StandbyTrigger(
+            Effect(resolve=(GainLifePoints(SELF, value=HalfEquippedHostAtk()),)),
+            whose="opponent",
+            requires_equipped=True,
+        ),
     ),
 })

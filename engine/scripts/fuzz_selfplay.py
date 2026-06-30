@@ -438,6 +438,9 @@ DECK = (
     # Batch 123: Lady Assailant of Flames (FLIP: banish top 3 of own deck; 800 burn) —
     # exercises the new BanishTopOfDeck(SELF) primitive in a Flip Effect.
     + ["Lady Assailant of Flames"] * 2
+    # Batch 124: Kiseitai (attacked -> equip to attacker; gain half its ATK each opponent
+    # Standby) — exercises EquipSelfToAttacker + the HalfEquippedHostAtk value source.
+    + ["Kiseitai"] * 2
 )
 
 

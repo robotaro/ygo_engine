@@ -989,6 +989,25 @@ class TargetAttack(ValueSource):
 
 
 @dataclass(frozen=True)
+class HalfEquippedHostAtk(ValueSource):
+    """Half the (effective) ATK of the monster this Equip Card is attached to (Kiseitai,
+    once it has become an Equip Card on the attacker, gains its controller that much LP each
+    of the opponent's Standby Phases). 0 if the source is not currently attached or its host
+    has left the field."""
+
+    def value(self, ctx: EffectContext) -> int:
+        from .enums import Zone
+
+        src = ctx.state.cards.get(ctx.source_iid)
+        if src is None or src.equipped_to is None:
+            return 0
+        host = ctx.state.cards.get(src.equipped_to)
+        if host is None or host.zone is not Zone.MONSTER:
+            return 0
+        return ctx.state.effective_attack(host.iid) // 2
+
+
+@dataclass(frozen=True)
 class DirectBattleDamageThisTurn(ValueSource):
     """The most recent battle damage the controller inflicted by a DIRECT attack this turn
     (Sebek's Blessing gains that much LP). 0 if none yet; reset at the start of each turn."""
