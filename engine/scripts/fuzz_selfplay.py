@@ -271,6 +271,8 @@ DECK = (
     + ["Elegant Egotist"] * 2
     + ["Harpie Lady"] * 2  # the Egotist condition + a Big Bang Shot host
     + ["Big Bang Shot"] * 2
+    # Batch 82: Blast Sphere (attacked -> equip to attacker -> delayed Standby kill)
+    + ["Blast Sphere"] * 2
 )
 
 

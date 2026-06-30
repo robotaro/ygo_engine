@@ -41,6 +41,7 @@ from .effects import (
     DebuffBattleDestroyer,
     DefenseAfterAttack,
     DestroyedByBattleAttack,
+    DestroyEquipHostThenBurn,
     DestroyAllFieldSpells,
     DestroyAllOtherCards,
     DestroyAllSpecialSummoned,
@@ -63,6 +64,7 @@ from .effects import (
     EndPhaseSummonSweep,
     EndPhaseTrigger,
     EquipMod,
+    EquipSelfToAttacker,
     EquipToTarget,
     FieldMod,
     GainLifePoints,
@@ -5024,5 +5026,37 @@ HAND_SUMMONS.update({
     # Egotist (which Special Summons it from the Deck — see Batch 75).
     "Harpie Lady Sisters": HandSpecialSummon(
         cannot_normal_summon=True, condition=lambda s, c: False
+    ),
+})
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 82: Blast Sphere (deck-impact). A face-down Defense monster that, when
+# attacked, equips ITSELF to the attacker before damage calculation (the attack then
+# fizzles — its target is gone), then on the attacker's controller's next Standby Phase
+# destroys that monster and burns its controller for its ATK.
+EFFECTS.update({
+    # Part 1 (reactive Trigger): attacked by an opponent's monster -> equip to the
+    # attacker. The engine fires this before damage calculation and re-checks the
+    # target afterward, so the moved monster fizzles the attack.
+    "Blast Sphere": (
+        Effect(
+            timing="trigger",
+            trigger=Trigger(kind="attacked", by=OPPONENT),
+            resolve=(EquipSelfToAttacker(),),
+        ),
+    ),
+})
+CONTINUOUS.update({
+    # Part 2 (delayed payoff): once Blast Sphere is an Equip Card, on its controller's
+    # opponent's (= the attacker's) next Standby Phase, destroy the equipped monster and
+    # inflict its ATK as damage. ``requires_equipped`` keeps it inert while Blast Sphere
+    # is still a face-up monster; firing destroys the host -> Blast Sphere is orphaned and
+    # cleaned to the GY, so it resolves exactly once.
+    "Blast Sphere": (
+        StandbyTrigger(
+            Effect(resolve=(DestroyEquipHostThenBurn(),)),
+            whose="opponent",
+            requires_equipped=True,
+        ),
     ),
 })

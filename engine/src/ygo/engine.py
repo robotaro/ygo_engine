@@ -15,6 +15,7 @@ from typing import Callable
 
 from .agents import Agent
 from .effects import (
+    OPPONENT,
     SELF,
     DefenseAfterAttack,
     DrawTrigger,
@@ -304,6 +305,8 @@ class Engine:
             return
         if mod.requires_attack and inst.position is not Position.FACE_UP_ATTACK:
             return
+        if mod.requires_equipped and inst.equipped_to is None:
+            return  # Blast Sphere fires only once it has equipped to the attacker
         if s.effect_negated(inst.iid):
             return
         self._trigger_effect(inst.iid, mod.effect, controller)
@@ -456,6 +459,24 @@ class Engine:
         if target is not None and target not in s.cards:
             self._changed()  # the target left the field; the attack fizzles
             return
+
+        # "When this card is attacked" — the attacked monster's OWN reactive Trigger
+        # fires before damage calculation (Blast Sphere equips itself to the attacker).
+        # If it pulls the target out of the monster zone, the attack fizzles.
+        if target is not None:
+            self._fire_attacked_trigger(target, attacker)
+            if self.result is not None:
+                return
+            tinst = s.cards.get(target)
+            if tinst is None or tinst.zone is not Zone.MONSTER:
+                self.log("  the attack target is no longer on the field; the attack fizzles")
+                self._changed()
+                return
+            atk = s.cards.get(attacker)
+            if atk is None or atk.zone is not Zone.MONSTER or atk.position is not Position.FACE_UP_ATTACK:
+                self.log("  the attacker is no longer able to attack")
+                self._changed()
+                return
 
         # A face-down monster being attacked is flipped — note its Flip Effect first.
         flip_pending = None
@@ -893,6 +914,32 @@ class Engine:
             if effect.condition is not None and not effect.condition(s, inst.controller):
                 return  # Gravekeeper's Assailant needs "Necrovalley" on the field
             self._trigger_effect(attacker_iid, effect, inst.controller, {"attacker": attacker_iid})
+
+    def _fire_attacked_trigger(self, target_iid: int, attacker_iid: int) -> None:
+        """Fire the ATTACKED monster's OWN "when this card is attacked" Trigger
+        (Blast Sphere — equip itself to the attacking monster) on a fresh Chain, BEFORE
+        damage calculation. ``by=OPPONENT`` since the attacker belongs to the source's
+        opponent. Guarded on the target still being a monster on the field and its
+        monster effects not negated; the event carries the attacker so the effect can
+        equip onto it. The caller re-checks the target afterward: if the effect removed
+        it from the monster zone, the attack fizzles."""
+        s = self.state
+        if self.result is not None:
+            return
+        inst = s.cards.get(target_iid)
+        if inst is None or inst.zone is not Zone.MONSTER:
+            return
+        if s.monster_effects_negated(target_iid):
+            return
+        effect = next(self._trigger_effects(inst.card, kind="attacked", by=OPPONENT), None)
+        if effect is None:
+            return
+        if effect.condition is not None and not effect.condition(s, inst.controller):
+            return
+        self._trigger_effect(
+            target_iid, effect, inst.controller,
+            {"attacker": attacker_iid, "target": target_iid},
+        )
 
     def _switch_attacker_to_defense_after_attack(self, attacker_iid: int) -> None:
         """A monster carrying a ``DefenseAfterAttack`` rider (Spear Dragon, the Goblin

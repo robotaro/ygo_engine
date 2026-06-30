@@ -453,13 +453,16 @@ class StandbyTrigger:
       * "both"       — every Standby Phase.
     ``requires_defense`` / ``requires_attack`` gate it on the source's face-up
     battle position (Dancing Fairy must be in Attack, Destiny HERO - Defender in
-    Defense). The firing is suppressed while the source's effects are negated
-    (Skill Drain on a monster, Royal Decree on a Trap)."""
+    Defense). ``requires_equipped`` fires only while the source is itself an Equip
+    Card (Blast Sphere, after it has equipped to the attacking monster — inert while
+    it is still a face-up monster). The firing is suppressed while the source's
+    effects are negated (Skill Drain on a monster, Royal Decree on a Trap)."""
 
     effect: "Effect"
     whose: str = "controller"  # "controller" | "opponent" | "both"
     requires_defense: bool = False
     requires_attack: bool = False
+    requires_equipped: bool = False
 
 
 @dataclass(frozen=True)
@@ -1031,6 +1034,55 @@ class BanishEquippedMonster(Primitive):
         iid = src.last_equipped_to
         if iid is not None and iid in s.cards and s.inst(iid).zone is Zone.MONSTER:
             s.banish(iid)
+
+
+@dataclass(frozen=True)
+class EquipSelfToAttacker(Primitive):
+    """Blast Sphere's reactive effect: when this face-down Defense monster is attacked,
+    before damage calculation it leaves the monster zone and equips itself to the
+    attacking monster — a monster card becoming an Equip Card, the same move a Union
+    monster makes. The attack then fizzles because its target is gone (the engine
+    re-checks the target after this fires). The attacker is read from the triggering
+    event. A no-op if the controller has no free Spell/Trap Zone (the monster stays in
+    the monster zone and battles normally)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        attacker = (ctx.event or {}).get("attacker")
+        src = s.cards.get(ctx.source_iid)
+        if src is None or attacker is None:
+            return
+        host = s.cards.get(attacker)
+        if host is None or host.zone is not Zone.MONSTER:
+            return
+        index = s.first_empty_spell_trap_zone(src.controller)
+        if index is None:
+            return  # nowhere to put the equip — the monster battles normally
+        s.place_spell_trap(ctx.source_iid, src.controller, index, Position.FACE_UP_ATTACK)
+        src.equipped_to = attacker
+
+
+@dataclass(frozen=True)
+class DestroyEquipHostThenBurn(Primitive):
+    """Blast Sphere's delayed payoff (fired on its controller's opponent's next Standby
+    Phase via a ``requires_equipped`` StandbyTrigger): destroy the monster this card is
+    equipped to and, if it did, inflict damage to that monster's controller equal to its
+    ATK on the field. A no-op if the host has already left the field (Blast Sphere would
+    then be an orphaned equip, already cleaned up)."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        s = ctx.state
+        src = s.cards.get(ctx.source_iid)
+        if src is None or src.equipped_to is None:
+            return
+        host = s.cards.get(src.equipped_to)
+        if host is None or host.zone is not Zone.MONSTER:
+            return
+        victim = host.controller
+        atk = s.effective_attack(host.iid)
+        s.send_to_graveyard(host.iid)
+        if atk > 0:
+            s.players[victim].life_points -= atk
 
 
 @dataclass(frozen=True)
