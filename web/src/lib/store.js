@@ -13,6 +13,7 @@ export const result = writable(null) // {winner, youWin, reason} when the duel e
 export const connected = writable(false) // WebSocket open (i.e. a duel is live)
 export const online = writable(false) // backend HTTP reachable (polled)
 export const profile = writable(null) // {duelistPoints, collection..., decks, stats}
+export const tournamentOutcome = writable(null) // set after a tournament round: {champion, eliminated, next, ...}
 
 // Pull the player's save (DP balance, collection size, decks) and broadcast it.
 // Call after anything that mutates the profile: pack opens, deck saves, duel end.
@@ -36,11 +37,25 @@ export function startTournamentDuel(seed, deck, opp) {
 
 async function advanceTournament(won) {
   try {
-    await fetch('/api/tournament/advance', {
+    const res = await fetch('/api/tournament/advance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ won }),
     })
+    if (res.ok) {
+      const d = await res.json()
+      const t = d.tournament || {}
+      tournamentOutcome.set({
+        won,
+        champion: !!t.champion,
+        eliminated: !!t.eliminated,
+        next: d.currentOpponent, // {id,name,portrait} | null
+        deck: t.deck,
+        wins: t.wins || 0,
+        bonus: d.bonus || 0,
+        reward: t.reward || 0,
+      })
+    }
   } catch {
     /* offline — the bracket will reconcile on next load */
   }
@@ -75,6 +90,7 @@ function resetGameStores() {
   targetRequest.set(null)
   choosePrompt.set(null)
   ritualPrompt.set(null)
+  tournamentOutcome.set(null)
 }
 
 // Close any duel and return to the launcher (board === null shows the menu).
@@ -149,6 +165,7 @@ export function newGame(seed, deck, opp) {
         awaiting.set(false)
         if (tournamentMatch) {
           tournamentMatch = false
+          tournamentOutcome.set({ pending: true, won: !!msg.youWin }) // overlay shows tourney mode immediately
           advanceTournament(!!msg.youWin) // advance the bracket (also refreshes profile)
         } else {
           refreshProfile() // DP was just awarded — update the header balance

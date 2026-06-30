@@ -183,7 +183,13 @@
       const res = await fetch('/api/decks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, main: { ...main }, extra: { ...extra }, format }),
+        body: JSON.stringify({
+          name,
+          main: { ...main },
+          extra: { ...extra },
+          format,
+          replaces: loadId || undefined, // delete the old file if a rename created a new one
+        }),
       })
       if (!res.ok) {
         const e = await res.json().catch(() => ({}))

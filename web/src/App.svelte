@@ -19,8 +19,10 @@
     connected,
     online,
     profile,
+    tournamentOutcome,
     startHealthMonitor,
     leaveGame,
+    startTournamentDuel,
     sendIntent,
   } from './lib/store.js'
 
@@ -965,11 +967,40 @@
 
   {#if $result}
     <div class="overlay">
-      <div class="resultcard" class:win={$result.youWin}>
-        <h2>{$result.youWin ? 'You Win!' : $result.winner == null ? 'Draw' : 'You Lose'}</h2>
-        <p>{$result.reason}</p>
-        <button onclick={leaveGame}>Back to Menu</button>
-      </div>
+      {#if $tournamentOutcome}
+        {@const t = $tournamentOutcome}
+        <div class="resultcard" class:win={t.champion || t.won}>
+          {#if t.pending}
+            <h2>{t.won ? 'Round Won!' : 'Defeated'}</h2>
+            <p>Tallying the bracket…</p>
+          {:else if t.champion}
+            <h2>🏆 Champion!</h2>
+            <p>You took the whole bracket — <b>+{t.reward.toLocaleString()} DP</b></p>
+            <button onclick={leaveGame}>Back to Menu</button>
+          {:else if t.eliminated}
+            <h2>Eliminated</h2>
+            <p>Knocked out after {t.wins} {t.wins === 1 ? 'win' : 'wins'}. {$result.reason}</p>
+            <button onclick={leaveGame}>Back to Bracket</button>
+          {:else if t.next}
+            <h2>Round Won!</h2>
+            <p>Next up: <b>{t.next.name}</b></p>
+            <button class="btn-primary" onclick={() => startTournamentDuel(undefined, t.deck, t.next.id)}>
+              Play Next Round ▶
+            </button>
+            <button onclick={leaveGame}>Back to Bracket</button>
+          {:else}
+            <h2>{t.won ? 'Round Won!' : 'Defeated'}</h2>
+            <p>{$result.reason}</p>
+            <button onclick={leaveGame}>Back to Bracket</button>
+          {/if}
+        </div>
+      {:else}
+        <div class="resultcard" class:win={$result.youWin}>
+          <h2>{$result.youWin ? 'You Win!' : $result.winner == null ? 'Draw' : 'You Lose'}</h2>
+          <p>{$result.reason}</p>
+          <button onclick={leaveGame}>Back to Menu</button>
+        </div>
+      {/if}
     </div>
   {/if}
 </main>

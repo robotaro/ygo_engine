@@ -100,6 +100,9 @@
     <div class="packgrid">
       {#each shownPacks as p (p.id)}
         <div class="pack" class:poor={!p.affordable}>
+          {#if p.art}
+            <div class="art"><img src={p.art} alt={p.name} loading="lazy" decoding="async" /></div>
+          {/if}
           <div class="pname" title={p.name}>{p.name}</div>
           <div class="pmeta">{p.cardsPerPack} cards · {p.distinct} in set</div>
           <button
@@ -248,6 +251,19 @@
   }
   .pack.poor {
     opacity: 0.55;
+  }
+  .pack .art {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--r);
+    overflow: hidden;
+    background: var(--surface-3);
+    margin-bottom: 2px;
+  }
+  .pack .art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
   .pname {
     font-weight: 700;

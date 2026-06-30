@@ -68,10 +68,27 @@ def parse_blueprint(path: Path | str) -> list[tuple[str, int, str]]:
     return rows
 
 
+def _blueprint_title(path: Path) -> str | None:
+    """A deck's display name from its leading ``# Title`` comment, if any.
+
+    ``to_blueprint_text`` writes the deck name as ``# <name>`` on line 1, so a
+    saved deck round-trips its real name (casing and spaces) instead of falling
+    back to the slugged filename. ``#EXTRA DECK`` (no space after ``#``) and
+    ``//`` comments are not titles.
+    """
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        match = re.match(r"^#\s+(.+)$", line)
+        return match.group(1).strip() if match else None
+    return None
+
+
 def load_decklist(path: Path | str, registry: CardRegistry, name: str | None = None) -> DeckList:
     """Resolve a blueprint file against the card registry."""
     path = Path(path)
-    deck = DeckList(name=name or path.stem)
+    deck = DeckList(name=name or _blueprint_title(path) or path.stem)
     for section, count, card_name in parse_blueprint(path):
         card = registry.get(card_name)
         if card is None:

@@ -49,7 +49,7 @@ from ..deckbuild import (
 from ..decks import DeckList, load_decklist
 from ..enums import Attribute, CardType
 from ..packs import get_pack, list_packs, open_pack
-from ..paths import ASSETS, DECKS_DIR, REPO_ROOT
+from ..paths import ASSETS, CARD_PACKS_DIR, DECKS_DIR, REPO_ROOT
 from ..profile import STARTER_DECK_ID, Profile, load_profile, new_profile, save_profile
 from .. import tournament as tour
 from .session import GameSession
@@ -430,6 +430,19 @@ def collection(
     return {"count": len(cards), "cards": cards, "distinct": len(profile.collection)}
 
 
+PACK_IMAGES_DIR = CARD_PACKS_DIR / "gba" / "_images"
+
+
+def pack_art_url(pack) -> str | None:
+    """Box-art URL for a pack if we scraped one (filename = the pack slug)."""
+    slug = pack.id.rsplit("/", 1)[-1]
+    return (
+        f"/pack_art/{pack.game}/{slug}.png"
+        if (PACK_IMAGES_DIR / pack.game / f"{slug}.png").is_file()
+        else None
+    )
+
+
 @app.get("/api/packs")
 def packs() -> dict:
     """The booster-pack shop, grouped by game, with prices and affordability."""
@@ -444,6 +457,7 @@ def packs() -> dict:
                 "cardsPerPack": p.cards_per_pack,
                 "distinct": p.distinct,
                 "affordable": profile.can_afford(p.price),
+                "art": pack_art_url(p),
             }
         )
     games = []
@@ -606,6 +620,16 @@ def save_deck(payload: dict) -> dict:
     path = user_dir / f"{slug}.txt"
     path.write_text(to_blueprint_text(deck), encoding="utf-8")
     deck_id = path.relative_to(DECKS_DIR).as_posix()
+    # Editing + renaming a deck would otherwise leave the old file orphaned —
+    # clean it up (only user decks, never a bundled one).
+    replaces = payload.get("replaces")
+    if replaces and replaces != deck_id:
+        old = resolve_deck_id(replaces)
+        user_root = (DECKS_DIR / "user").resolve()
+        if old is not None and user_root in old.resolve().parents:
+            old.unlink(missing_ok=True)
+            if replaces in profile.decks:
+                profile.decks.remove(replaces)
     if deck_id not in profile.decks:
         profile.decks.append(deck_id)
     profile.active_deck = deck_id
@@ -698,6 +722,10 @@ if _cards_dir.is_dir():
 # Duelist portraits for the opponent picker.
 if PORTRAIT_DIR.is_dir():
     app.mount("/portraits", StaticFiles(directory=str(PORTRAIT_DIR)), name="portraits")
+
+# Booster-pack box art for the shop.
+if PACK_IMAGES_DIR.is_dir():
+    app.mount("/pack_art", StaticFiles(directory=str(PACK_IMAGES_DIR)), name="pack_art")
 
 # Serve the built frontend if present (optional; dev uses the Vite server).
 _dist = REPO_ROOT / "web" / "dist"

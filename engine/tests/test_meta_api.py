@@ -80,6 +80,24 @@ def test_save_deck_is_owned_only(iso):
     assert all(d["id"] != res["id"] for d in srv.get_profile()["decks"])
 
 
+def test_deck_name_round_trips(iso):
+    # A saved deck keeps its real name (casing/spaces), not the slugged filename.
+    owned = list(srv.load_profile().collection)[:40]
+    res = srv.save_deck({"name": "My Cool Deck", "main": {n: 1 for n in owned}})
+    assert srv.get_deck(res["id"])["name"] == "My Cool Deck"
+    assert any(d["name"] == "My Cool Deck" for d in srv.get_profile()["decks"])
+
+
+def test_rename_deletes_the_old_file(iso):
+    owned = list(srv.load_profile().collection)[:40]
+    a = srv.save_deck({"name": "Alpha", "main": {n: 1 for n in owned}})
+    b = srv.save_deck({"name": "Beta", "main": {n: 1 for n in owned}, "replaces": a["id"]})
+    assert b["id"] != a["id"]
+    assert srv.resolve_deck_id(a["id"]) is None  # old file removed
+    ids = [d["id"] for d in srv.get_profile()["decks"]]
+    assert b["id"] in ids and a["id"] not in ids
+
+
 def test_collection_endpoint_returns_owned_with_counts(iso):
     col = srv.collection()
     assert col["distinct"] == 50
