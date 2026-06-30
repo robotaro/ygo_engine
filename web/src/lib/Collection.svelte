@@ -4,7 +4,9 @@
   // back for a fraction of their value.
   import { profile, refreshProfile } from './store.js'
 
-  let view = $state('packs') // 'packs' | 'singles' | 'library'
+  // Initial view is deep-linkable via the URL hash (#packs|#singles|#library).
+  const hashView = location.hash.replace('#', '')
+  let view = $state(['packs', 'singles', 'library'].includes(hashView) ? hashView : 'packs')
   let games = $state([]) // pack shop, grouped by game
   let activeGame = $state('') // which game's packs are shown
   let library = $state([]) // owned cards

@@ -6,6 +6,7 @@
   import { cubicOut } from 'svelte/easing'
   import CardTile from './lib/CardTile.svelte'
   import Launcher from './lib/Launcher.svelte'
+  import RewardPicker from './lib/RewardPicker.svelte'
   import {
     board,
     legal,
@@ -32,6 +33,10 @@
   // Floating "-1200" damage numbers spawned during combat (see playBattleFx).
   let damageFloaters = []
   let floaterSeq = 0
+
+  // Win-reward pack pick: show it once per result, until the player claims it.
+  let rewardClaimed = false
+  $: if ($result) rewardClaimed = false
 
   let draggedIid = null
   let selectedAttacker = null
@@ -1036,7 +1041,11 @@
 
   {#if $result}
     <div class="overlay">
-      {#if $tournamentOutcome}
+      {#if $result.youWin && $result.pendingReward && !rewardClaimed}
+        <div class="resultcard win">
+          <RewardPicker onclaimed={() => (rewardClaimed = true)} />
+        </div>
+      {:else if $tournamentOutcome}
         {@const t = $tournamentOutcome}
         <div class="resultcard" class:win={t.champion || t.won}>
           {#if t.pending}
