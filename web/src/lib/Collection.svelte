@@ -101,7 +101,15 @@
       {#each shownPacks as p (p.id)}
         <div class="pack" class:poor={!p.affordable}>
           {#if p.art}
-            <div class="art"><img src={p.art} alt={p.name} loading="lazy" decoding="async" /></div>
+            <div class="art">
+              <img
+                src={p.art}
+                alt={p.name}
+                loading="lazy"
+                decoding="async"
+                onerror={(e) => (e.currentTarget.style.display = 'none')}
+              />
+            </div>
           {/if}
           <div class="pname" title={p.name}>{p.name}</div>
           <div class="pmeta">{p.cardsPerPack} cards · {p.distinct} in set</div>
@@ -254,7 +262,7 @@
   }
   .pack .art {
     width: 100%;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 813 / 1185; /* a card's proportions — show it whole, never cropped */
     border-radius: var(--r);
     overflow: hidden;
     background: var(--surface-3);
@@ -263,7 +271,7 @@
   .pack .art img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
   .pname {
     font-weight: 700;

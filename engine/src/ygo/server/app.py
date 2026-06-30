@@ -49,7 +49,7 @@ from ..deckbuild import (
 from ..decks import DeckList, load_decklist
 from ..enums import Attribute, CardType
 from ..packs import get_pack, list_packs, open_pack
-from ..paths import ASSETS, CARD_PACKS_DIR, DECKS_DIR, REPO_ROOT
+from ..paths import ASSETS, DECKS_DIR, REPO_ROOT
 from ..profile import STARTER_DECK_ID, Profile, load_profile, new_profile, save_profile
 from .. import tournament as tour
 from .session import GameSession
@@ -430,17 +430,13 @@ def collection(
     return {"count": len(cards), "cards": cards, "distinct": len(profile.collection)}
 
 
-PACK_IMAGES_DIR = CARD_PACKS_DIR / "gba" / "_images"
-
-
 def pack_art_url(pack) -> str | None:
-    """Box-art URL for a pack if we scraped one (filename = the pack slug)."""
-    slug = pack.id.rsplit("/", 1)[-1]
-    return (
-        f"/pack_art/{pack.game}/{slug}.png"
-        if (PACK_IMAGES_DIR / pack.game / f"{slug}.png").is_file()
-        else None
-    )
+    """Box art for a pack: the full, high-res art of its flagship card. (The
+    scraped GBA box images are tiny — 48px wide in places — so we render the
+    namesake/flagship card from our 813x1185 card art instead.)"""
+    name = pack.cover_card
+    card = REGISTRY.get(name) if name else None
+    return f"/cards/{card.image_id}.jpg" if card and card.image_id else None
 
 
 @app.get("/api/packs")
@@ -722,10 +718,6 @@ if _cards_dir.is_dir():
 # Duelist portraits for the opponent picker.
 if PORTRAIT_DIR.is_dir():
     app.mount("/portraits", StaticFiles(directory=str(PORTRAIT_DIR)), name="portraits")
-
-# Booster-pack box art for the shop.
-if PACK_IMAGES_DIR.is_dir():
-    app.mount("/pack_art", StaticFiles(directory=str(PACK_IMAGES_DIR)), name="pack_art")
 
 # Serve the built frontend if present (optional; dev uses the Vite server).
 _dist = REPO_ROOT / "web" / "dist"

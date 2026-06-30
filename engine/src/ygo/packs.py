@@ -40,6 +40,9 @@ RARITY_WEIGHTS = {
 }
 RARE_OR_BETTER = ("Rare", "Super Rare", "Ultra Rare", "Secret Rare")
 
+# Rarest first — used to pick a flagship card for a pack's box art.
+_COVER_RARITY_ORDER = ("Secret Rare", "Ultra Rare", "Super Rare", "Rare", "Common", "(Unsorted)")
+
 DEFAULT_CARDS_PER_PACK = 3
 DEFAULT_PRICE = 100  # for old packs whose source listed no price
 
@@ -58,6 +61,25 @@ class PackDef:
     @property
     def card_names(self) -> list[str]:
         return [n for names in self.by_rarity.values() for n in names]
+
+    @property
+    def cover_card(self) -> str | None:
+        """The card to use as the pack's box art: its namesake if the pack is
+        named after one of its own cards, otherwise its rarest (flagship) card."""
+        if not self.card_names:
+            return None
+        want = self.name.lower()
+        for n in self.card_names:  # named after a card it actually contains?
+            if n.lower() == want:
+                return n
+        # ...or a card whose name extends the pack's (Exodia -> Exodia the Forbidden One).
+        contains = sorted((n for n in self.card_names if want in n.lower()), key=len)
+        if contains:
+            return contains[0]
+        for rarity in _COVER_RARITY_ORDER:  # otherwise the flagship/rarest card
+            if self.by_rarity.get(rarity):
+                return self.by_rarity[rarity][0]
+        return self.card_names[0]
 
     @property
     def distinct(self) -> int:
