@@ -2015,6 +2015,22 @@ class PreventBattleDestructionThisTurn(Primitive):
 
 
 @dataclass(frozen=True)
+class ArmSoulExchange(Primitive):
+    """Soul Exchange: let the controller Tribute the targeted opponent monster (as if they
+    controlled it) for a Tribute Summon this turn, and bar their own Battle Phase this turn.
+    Stamps the target + turn on the controller's PlayerState (read by GameState.soul_exchange_
+    fodder and the Tribute-Summon enumeration) and the battle-phase-skip turn (read by the
+    engine's Battle Phase). Both lapse when the turn advances."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        pl = ctx.state.players[ctx.controller]
+        pl.skip_battle_phase_turn = ctx.state.turn_count
+        if ctx.targets:
+            pl.soul_exchange_target_iid = ctx.targets[0]
+            pl.soul_exchange_turn = ctx.state.turn_count
+
+
+@dataclass(frozen=True)
 class ArmLastWill(Primitive):
     """Last Will: arm its controller for this turn. While armed, the next time a monster they
     control is sent to their Graveyard this turn the engine Special Summons 1 monster with 1500

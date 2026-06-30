@@ -477,7 +477,14 @@ def _hand_normal_summon_actions(state: GameState, player: int, pay_life: int = 0
     p = state.players[player]
     actions: list[Action] = []
     controlled = [m for m in p.monster_zones if m is not None]
-    has_empty = state.first_empty_monster_zone(player) is not None
+    own_set = set(controlled)
+    free_zones = sum(1 for z in p.monster_zones if z is None)
+    has_empty = free_zones > 0
+    # Soul Exchange: an opponent monster you may Tribute (as if you controlled it) this turn.
+    tribute_fodder = list(controlled)
+    se_target = state.soul_exchange_fodder(player)
+    if se_target is not None and se_target not in own_set:
+        tribute_fodder.append(se_target)
     for iid in p.hand:
         card = state.inst(iid).card
         if not card.can_normal_summon:
@@ -495,9 +502,14 @@ def _hand_normal_summon_actions(state: GameState, player: int, pay_life: int = 0
                 actions.append(NormalSummon(iid, pay_life=pay_life))
                 if can_set:
                     actions.append(SetMonster(iid, pay_life=pay_life))
-        elif len(controlled) >= need:
-            # tributing frees the zone(s), so no pre-existing empty slot needed
-            for combo in combinations(controlled, need):
+        elif len(tribute_fodder) >= need:
+            for combo in combinations(tribute_fodder, need):
+                # The summoned monster lands on YOUR side, so it needs room there: each of YOUR
+                # OWN monsters Tributed frees one of your zones, but a Tributed opponent monster
+                # (Soul Exchange) frees one of theirs, not yours.
+                own_freed = sum(1 for m in combo if m in own_set)
+                if free_zones + own_freed < 1:
+                    continue
                 actions.append(NormalSummon(iid, tributes=combo, pay_life=pay_life))
                 if can_set:
                     actions.append(SetMonster(iid, tributes=combo, pay_life=pay_life))

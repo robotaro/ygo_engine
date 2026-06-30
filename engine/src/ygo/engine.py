@@ -481,6 +481,8 @@ class Engine:
         s.battle_phase_ended = False
         if s.turn_count == 1:  # the player going first gets no Battle Phase
             return
+        if s.players[tp].skip_battle_phase_turn == s.turn_count:
+            return  # Soul Exchange: no Battle Phase the turn you activate it
         for _ in range(_MAX_ACTIONS_PER_PHASE):
             if self.result is not None or s.battle_phase_ended:
                 return

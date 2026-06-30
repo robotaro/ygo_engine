@@ -462,6 +462,9 @@ DECK = (
     # Batch 131: Last Will (arm: a controlled monster reaching the GY -> SS a <=1500-ATK Deck
     # monster, once/turn) — exercises the armed watcher in the field-to-GY drain loop.
     + ["Last Will"] * 2
+    # Batch 132: Soul Exchange (Tribute the opponent's monster for your Tribute Summon; skip
+    # your Battle Phase) — exercises the SE fodder branch + the battle-phase skip.
+    + ["Soul Exchange"] * 2
 )
 
 

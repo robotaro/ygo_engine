@@ -94,6 +94,7 @@ from .effects import (
     ProtectControlledFromDestruction,
     RollDieModifyAllStats,
     ArmLastWill,
+    ArmSoulExchange,
     HalvesAttackersAtk,
     LocksAttachedMonster,
     AttachSelfToTarget,
@@ -6242,4 +6243,23 @@ CONTINUOUS.update({
 # rest of the turn, matching the classic sac-then-replace combo.
 EFFECTS.update({
     "Last Will": (Effect(timing="ignition", resolve=(ArmLastWill(),)),),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 132: Soul Exchange — "Target 1 monster your opponent controls; this turn, if you
+# Tribute a monster, you must Tribute that target, as if you controlled it. You cannot conduct
+# your Battle Phase the turn you activate this card." A Normal Spell: ArmSoulExchange records the
+# targeted opponent monster as available Tribute fodder for the controller's Tribute Summon this
+# turn (fed into the summon enumeration) and bars their Battle Phase this turn. The "you MUST
+# Tribute that target" clause is relaxed to "you MAY" (the classic permissive behaviour).
+# Last of the 7-card Yugi Starter Deck push -> ygored/Starter-Deck-Yugi is fully playable.
+EFFECTS.update({
+    "Soul Exchange": (
+        Effect(
+            timing="ignition",
+            target=TargetSpec(count=1, where="opponent_monsters"),
+            resolve=(ArmSoulExchange(),),
+        ),
+    ),
 })

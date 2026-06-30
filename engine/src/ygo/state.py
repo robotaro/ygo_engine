@@ -266,6 +266,14 @@ class PlayerState:
     # player controls is sent to their Graveyard. Read by Engine._fire_last_will_for.
     last_will_armed_turn: int | None = None
     last_will_fired_turn: int | None = None
+    # Soul Exchange: the opponent's monster this player may Tribute (as if they controlled it)
+    # for a Tribute Summon this turn, and the turn it was granted on. Read by
+    # GameState.soul_exchange_fodder, which feeds the Tribute-Summon enumeration.
+    soul_exchange_target_iid: int | None = None
+    soul_exchange_turn: int | None = None
+    # Soul Exchange also bars this player's Battle Phase the turn they activate it; holds that
+    # turn_count. Read by Engine._battle_phase.
+    skip_battle_phase_turn: int | None = None
 
 
 @dataclass
@@ -1250,6 +1258,19 @@ class GameState:
                     ):
                         return True
         return False
+
+    def soul_exchange_fodder(self, player: int) -> int | None:
+        """The opponent monster ``player`` may Tribute (as if they controlled it) for a Tribute
+        Summon this turn under Soul Exchange, or None. Valid only on the turn it was granted and
+        while the target is still a face-up-or-down monster the opponent controls."""
+        pl = self.players[player]
+        if pl.soul_exchange_turn != self.turn_count:
+            return None
+        iid = pl.soul_exchange_target_iid
+        inst = self.cards.get(iid) if iid is not None else None
+        if inst is None or inst.zone is not Zone.MONSTER or inst.controller == player:
+            return None
+        return iid
 
     def extra_normal_summon_cost(self, player: int) -> int | None:
         """The Life Points ``player`` may pay for an ADDITIONAL Normal Summon/Set this turn
