@@ -254,6 +254,10 @@ class PlayerState:
     # Kuriboh): holds the turn_count it was granted on, so it lapses automatically once the
     # turn advances. Read by GameState.takes_no_battle_damage.
     no_battle_damage_until_turn: int | None = None
+    # Turn-scoped "your monsters cannot be destroyed by battle this turn" immunity (Waboku):
+    # holds the turn_count it was granted on, so it lapses when the turn advances. Read by
+    # GameState.is_battle_indestructible.
+    no_battle_destruction_until_turn: int | None = None
 
 
 @dataclass
@@ -1034,9 +1038,13 @@ class GameState:
         return True
 
     def is_battle_indestructible(self, iid: int) -> bool:
-        """Whether the monster cannot be destroyed by battle — an unconditional
-        BattleIndestructible rider (Marshmallon), or a SafeAttacker (Rocket Warrior) during
-        its controller's own Battle Phase (when it is the attacker)."""
+        """Whether the monster cannot be destroyed by battle — its controller's turn-scoped
+        Waboku immunity, an unconditional BattleIndestructible rider (Marshmallon), or a
+        SafeAttacker (Rocket Warrior) during its controller's own Battle Phase (when it is the
+        attacker)."""
+        inst = self.cards.get(iid)
+        if inst is not None and self.players[inst.controller].no_battle_destruction_until_turn == self.turn_count:
+            return True
         if self._self_rider(iid, BattleIndestructible) is not None:
             return True
         return self._safe_attacker_active(iid)

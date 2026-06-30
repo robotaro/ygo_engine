@@ -102,6 +102,7 @@ from .effects import (
     PlaceCountersOnSelf,
     PreventBattleDamageThisBattle,
     PreventBattleDamageThisTurn,
+    PreventBattleDestructionThisTurn,
     ReturnAllSetCardsToHand,
     ReturnAllSpellTrapsToHand,
     ReturnFromGraveyardToDeck,
@@ -6157,6 +6158,24 @@ EFFECTS.update({
             condition=_can_two_pronged_attack,
             target=TargetSpec(count=1, where="opponent_monsters"),
             resolve=(DestroyOwnMonsters(count=2), DestroyTargets()),
+        ),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 127: Waboku — "You take no battle damage from your opponent's monsters this
+# turn. Your monsters cannot be destroyed by battle this turn." A quick Trap pairing the
+# existing PreventBattleDamageThisTurn (Winged Kuriboh's turn-scoped damage immunity) with a
+# new PreventBattleDestructionThisTurn, which stamps a turn-scoped per-player battle-
+# indestructible flag (no_battle_destruction_until_turn) that GameState.is_battle_indestructible
+# honours.
+EFFECTS.update({
+    "Waboku": (
+        Effect(
+            speed=2,
+            timing="quick",
+            resolve=(PreventBattleDamageThisTurn(), PreventBattleDestructionThisTurn()),
         ),
     ),
 })

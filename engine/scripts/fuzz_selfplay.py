@@ -447,6 +447,9 @@ DECK = (
     # Batch 126: Two-Pronged Attack (destroy 2 of your monsters + 1 of the opponent's) —
     # exercises the DestroyOwnMonsters primitive alongside a targeted destroy.
     + ["Two-Pronged Attack"] * 2
+    # Batch 127: Waboku (no battle damage + your monsters indestructible by battle this turn)
+    # — exercises PreventBattleDestructionThisTurn + the turn-scoped indestructible flag.
+    + ["Waboku"] * 2
 )
 
 

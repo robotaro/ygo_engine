@@ -1979,6 +1979,16 @@ class PreventBattleDamageThisTurn(Primitive):
 
 
 @dataclass(frozen=True)
+class PreventBattleDestructionThisTurn(Primitive):
+    """Make the effect controller's monsters indestructible by battle for the rest of this turn
+    (Waboku). Stamps ``no_battle_destruction_until_turn`` with the current turn so it lapses
+    automatically when the turn advances."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        ctx.state.players[ctx.controller].no_battle_destruction_until_turn = ctx.state.turn_count
+
+
+@dataclass(frozen=True)
 class CoinFlip(Primitive):
     """Toss ``count`` coins (each 50/50 via the seeded RNG) and run the ``win`` branch's
     primitives if at least ``win_threshold`` come up heads, else the ``lose`` branch.
