@@ -304,6 +304,16 @@ class AttackTargetProtection:
     requires_control_other: bool = False
     requires_control_other_race: str | None = None
     requires_control_other_attribute: "Attribute | None" = None
+    # Dormant unless the controller also controls a face-up "Umi" (or a card treated as
+    # Umi). The Legendary Fisherman cannot be targeted for attacks only while Umi is up.
+    requires_face_up_umi: bool = False
+
+
+@dataclass(frozen=True)
+class NoBattleDamageWhileUmi:
+    """A face-up card's continuous rider: while its controller also controls a face-up
+    "Umi" (or a card treated as Umi), that controller takes no battle damage from
+    attacking monsters (Tornado Wall). Read by ``GameState.takes_no_battle_damage``."""
 
 
 @dataclass(frozen=True)

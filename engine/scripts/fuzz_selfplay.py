@@ -328,6 +328,11 @@ DECK = (
     # equip/stat-copy). Thousand-Eyes Restrict is a Fusion (extra deck) — covered by unit
     # tests, not the main-deck fuzz.
     + ["Relinquished"] * 1 + ["Black Illusion Ritual"] * 1
+    # Batch 94: the Water/Umi cluster. A Legendary Ocean (treated as Umi, WATER +200/+200),
+    # Tornado Wall (no battle damage while Umi), The Legendary Fisherman (untargetable while
+    # Umi) + a couple of WATER bodies to exercise the boost and the Umi-gated riders.
+    + ["A Legendary Ocean"] * 2 + ["Tornado Wall"] * 1
+    + ["The Legendary Fisherman"] * 1 + ["7 Colored Fish"] * 2
 )
 
 

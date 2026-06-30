@@ -20,6 +20,7 @@ from .effects import (
     ActivationLock,
     AttackLifeCost,
     AttackTributeCost,
+    NoBattleDamageWhileUmi,
     AttackTargetProtection,
     BattleIndestructible,
     CanAttackDirectly,
@@ -51,6 +52,10 @@ EXODIA_PIECES = frozenset(
         "Left Leg of the Forbidden One",
     }
 )
+
+# Cards that count as "Umi" on the field — the original plus those whose name is always
+# treated as "Umi" (A Legendary Ocean). Several WATER cards key off a face-up "Umi".
+_UMI_NAMES = frozenset({"Umi", "A Legendary Ocean"})
 
 
 # The field→Graveyard trigger kinds, all drained off the ``gy_from_field`` queue:
@@ -460,7 +465,23 @@ class GameState:
         current turn). Read at every battle-damage site so the source is one place."""
         if player in self.battle_damage_prevented:
             return True
-        return self.players[player].no_battle_damage_until_turn == self.turn_count
+        if self.players[player].no_battle_damage_until_turn == self.turn_count:
+            return True
+        # Tornado Wall: no battle damage from attacking monsters while you control Umi.
+        if self.controls_face_up_umi(player) and any(
+            True for _src, _mod in self.active_markers(NoBattleDamageWhileUmi, (player,))
+        ):
+            return True
+        return False
+
+    def controls_face_up_umi(self, player: int) -> bool:
+        """Whether ``player`` controls a face-up "Umi" — or a card always treated as Umi
+        (A Legendary Ocean). The enabler several WATER cards key off."""
+        for iid in self.field_cards(player, monsters=False):
+            inst = self.cards[iid]
+            if inst.is_face_up and inst.card.name in _UMI_NAMES:
+                return True
+        return False
 
     def send_to_graveyard(self, iid: int, by_battle: bool = False, by_effect: bool = False) -> None:
         """Move a card to its *owner's* Graveyard, clearing field flags. ``by_battle``
@@ -1090,6 +1111,8 @@ class GameState:
             return False
         controller = inst.controller
         for src, mod in self.active_markers(AttackTargetProtection, (controller,)):
+            if mod.requires_face_up_umi and not self.controls_face_up_umi(controller):
+                continue  # The Legendary Fisherman is only untargetable while Umi is up
             if mod.requires_control_name_contains is not None and not any(
                 m is not None
                 and self.cards[m].is_face_up

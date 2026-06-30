@@ -103,6 +103,7 @@ from .effects import (
     AttackTributeCost,
     ReturnEventAttackerToHand,
     AbsorbMonsterAsEquip,
+    NoBattleDamageWhileUmi,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5428,5 +5429,32 @@ CONTINUOUS.update({
     "Thousand-Eyes Restrict": (
         SelfStatMod(scaling="absorbed_monster"),
         AttackRestriction(all_cannot_attack=True, affects="both"),
+    ),
+})
+
+
+# Effects Batch 94: the Water / "Umi" cluster — A Legendary Ocean, Tornado Wall, The
+# Legendary Fisherman. A Legendary Ocean is always treated as "Umi" (state._UMI_NAMES), so
+# the other two key off it via state.controls_face_up_umi.
+# DEFERRED (documented): A Legendary Ocean's "reduce all WATER monsters' Level by 1" (no
+# effective-Level layer yet); The Legendary Fisherman's "unaffected by Spell effects" (no
+# spell-immunity layer); Tornado Wall's self-destruct when Umi leaves (the no-damage effect
+# already re-checks Umi each time, so it simply stops working — the card just lingers).
+EFFECTS.update({
+    "A Legendary Ocean": _ACTIVATE_ONTO_FIELD,  # a Field Spell (treated as "Umi")
+    "Tornado Wall": _ACTIVATE_ONTO_FIELD,  # a Continuous Trap
+})
+
+CONTINUOUS.update({
+    # All WATER monsters on the field gain 200 ATK/DEF.
+    "A Legendary Ocean": (
+        FieldMod(atk=200, defn=200, attributes=frozenset({Attribute.WATER})),
+    ),
+    # While you control a face-up Umi, you take no battle damage from attacking monsters.
+    "Tornado Wall": (NoBattleDamageWhileUmi(),),
+    # While Umi is face-up, The Legendary Fisherman cannot be selected as an attack target
+    # (the opponent may still attack you directly).
+    "The Legendary Fisherman": (
+        AttackTargetProtection(self_only=True, requires_face_up_umi=True),
     ),
 })
