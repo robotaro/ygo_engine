@@ -42,6 +42,7 @@
   $: you = $board?.you
   $: opp = $board?.opponent
   $: phase = $board?.phase
+  $: phaseIndex = PHASES.findIndex((p) => p.key === phase)
 
   // Life points count up/down instead of snapping, and flash red on damage.
   const youLp = tweened(8000, { duration: 550, easing: cubicOut })
@@ -99,14 +100,15 @@
   $: youGyTargetable = !!you?.graveyard?.some((g) => targetCandidates.includes(g.iid))
   $: oppGyTargetable = !!opp?.graveyard?.some((g) => targetCandidates.includes(g.iid))
 
-  const PHASE_LABEL = {
-    draw_phase: 'Draw',
-    standby_phase: 'Standby',
-    main_phase_1: 'Main 1',
-    battle_phase: 'Battle',
-    main_phase_2: 'Main 2',
-    end_phase: 'End',
-  }
+  // The turn's phase state machine, in order — rendered as a stepper.
+  const PHASES = [
+    { key: 'draw_phase', label: 'Draw' },
+    { key: 'standby_phase', label: 'Standby' },
+    { key: 'main_phase_1', label: 'Main 1' },
+    { key: 'battle_phase', label: 'Battle' },
+    { key: 'main_phase_2', label: 'Main 2' },
+    { key: 'end_phase', label: 'End' },
+  ]
   const NEXT_LABEL = {
     main_phase_1: 'Go to Battle ▶',
     battle_phase: 'End Battle ▶',
@@ -658,14 +660,23 @@
         </div>
       </div>
 
-      <!-- Center status -->
+      <!-- Center status: the turn's phase state machine -->
       <div class="status">
         <span class="turn">Turn {$board.turnCount}</span>
-        <span class="phase">{PHASE_LABEL[phase] ?? phase}</span>
-        <span class="whose">{yourTurn ? 'Your move' : '… opponent thinking'}</span>
-        {#if yourTurn && $legal?.canPass}
-          <button class="next" onclick={nextPhase}>{NEXT_LABEL[phase] ?? 'Continue ▶'}</button>
-        {/if}
+        <div class="phasetrack">
+          {#each PHASES as p, i}
+            {#if i > 0}<span class="sep" class:past={i <= phaseIndex}></span>{/if}
+            <span class="ph" class:on={i === phaseIndex} class:done={i < phaseIndex}>
+              <span class="dot"></span>{p.label}
+            </span>
+          {/each}
+        </div>
+        <div class="statusright">
+          <span class="whose">{yourTurn ? 'Your move' : '… opponent'}</span>
+          {#if yourTurn && $legal?.canPass}
+            <button class="next" onclick={nextPhase}>{NEXT_LABEL[phase] ?? 'Continue ▶'}</button>
+          {/if}
+        </div>
       </div>
 
       {#if $board.chain?.length}
@@ -1264,25 +1275,82 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    justify-content: center;
-    padding: 6px;
-    border-top: 1px solid #2c3c2c;
-    border-bottom: 1px solid #2c3c2c;
+    padding: 8px 4px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
   }
   .status .turn {
-    color: #bbb;
-  }
-  .status .phase {
-    font-weight: 800;
-    color: #ffe08a;
-    font-size: 16px;
-  }
-  .status .whose {
-    color: #9fd9a9;
+    color: var(--muted);
     font-size: 13px;
+    font-weight: 600;
+    flex: none;
+    width: 110px;
+  }
+  .phasetrack {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+  }
+  .ph {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--faint);
+    white-space: nowrap;
+  }
+  .ph .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--line-strong);
+    transition: all 0.15s ease;
+  }
+  .ph.done {
+    color: var(--muted);
+  }
+  .ph.done .dot {
+    background: var(--muted);
+  }
+  .ph.on {
+    color: var(--text);
+    font-weight: 700;
+  }
+  .ph.on .dot {
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--warn-dim);
+  }
+  .sep {
+    width: 22px;
+    height: 2px;
+    background: var(--line);
+    margin: 0 6px;
+    border-radius: var(--r-pill);
+  }
+  .sep.past {
+    background: var(--muted);
+  }
+  .statusright {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex: none;
+    width: 190px;
+  }
+  .whose {
+    color: var(--muted);
+    font-size: 12px;
   }
   .next {
-    margin-left: 8px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    font-weight: 700;
+  }
+  .next:hover {
+    background: var(--accent-hover);
   }
   .chainbar {
     text-align: center;
