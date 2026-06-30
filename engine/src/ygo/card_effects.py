@@ -23,6 +23,7 @@ from .effects import (
     BanishFaceDownThenDeckBanishIfFlip,
     BanishSelfAndEventMonster,
     BanishTargets,
+    BanishTopOfDeck,
     ChangeAllPositions,
     ChangeTargetPosition,
     BattleIndestructible,
@@ -6072,5 +6073,17 @@ EFFECTS.update({
             condition=_owns_battle_dead_this_turn,
             resolve=(ReturnOwnBattleDeadToHand(),),
         ),
+    ),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 123: Lady Assailant of Flames — "FLIP: Banish the top 3 cards of your Deck;
+# inflict 800 damage to your opponent." A Flip Effect that pairs the new BanishTopOfDeck(SELF)
+# primitive with a flat burn. Last remaining blocker of T.A. Gardner (Worldwide Edition),
+# which The Forgiving Maiden (Batch 122) brought to 1-away.
+EFFECTS.update({
+    "Lady Assailant of Flames": (
+        _flip(resolve=(BanishTopOfDeck(player=SELF, count=3), InflictDamage(OPPONENT, 800))),
     ),
 })

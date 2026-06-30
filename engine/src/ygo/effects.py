@@ -2381,6 +2381,22 @@ class MillFromDeck(Primitive):
 
 
 @dataclass(frozen=True)
+class BanishTopOfDeck(Primitive):
+    """Banish the top ``count`` cards of a player's Deck (Lady Assailant of Flames banishes
+    the top 3 of her controller's own Deck). The "top" is the end of the deck list, where
+    draws come from — same convention as MillFromDeck. ``player`` is SELF or OPPONENT. Fewer
+    cards than ``count`` -> banish as many as there are."""
+
+    player: str = SELF
+    count: int = 3
+
+    def execute(self, ctx: EffectContext) -> None:
+        deck = ctx.state.players[ctx.side(self.player)].deck
+        for _ in range(min(self.count, len(deck))):
+            ctx.state.banish(deck[-1])
+
+
+@dataclass(frozen=True)
 class DiscardFromHand(Primitive):
     """Make a player discard ``count`` cards from their hand to the Graveyard.
     ``player`` is OPPONENT (Confiscation, Delinquent Duo) or SELF. ``random`` picks

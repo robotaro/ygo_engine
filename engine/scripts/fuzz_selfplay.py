@@ -435,6 +435,9 @@ DECK = (
     # Batch 122: The Forgiving Maiden (Tribute self -> return a monster destroyed by battle
     # this turn) — exercises the send-to-GY self-Tribute cost + the died_on_turn stamp.
     + ["The Forgiving Maiden"] * 2
+    # Batch 123: Lady Assailant of Flames (FLIP: banish top 3 of own deck; 800 burn) —
+    # exercises the new BanishTopOfDeck(SELF) primitive in a Flip Effect.
+    + ["Lady Assailant of Flames"] * 2
 )
 
 
