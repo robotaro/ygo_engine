@@ -192,6 +192,7 @@ class Engine:
                 if mod.gain_life:
                     s.gain_life_points(player, mod.gain_life)
                     self.log(f"  {s.players[player].name} gains {mod.gain_life} LP from {inst.name}")
+            self._fire_drawn_card_triggers(player, drawn)
             self._fire_draw_again_triggers(player, drawn)
         # Solemn Wishes' LP gain may feed a "when you gain Life Points" trigger (Fire Princess).
         self._fire_life_gain_window()
@@ -209,6 +210,23 @@ class Engine:
                 more = s.draw(player, 1)
                 if more:
                     self.log(f"  {s.players[player].name} draws 1 more ({s.inst(more[0]).name})")
+
+    def _fire_drawn_card_triggers(self, player: int, drawn: tuple) -> None:
+        """Fire any "when this card is drawn" effect (Parasite Paracide) on a just-drawn
+        card — resolved for the DRAWER. Only a *planted* copy fires (the flag the plant
+        set); a naturally-drawn copy does nothing. The flag is consumed before resolving
+        so the mandatory effect runs exactly once: Parasite springs onto the drawer's
+        field face-up Defense and burns them 1000."""
+        s = self.state
+        for iid in drawn:
+            inst = s.cards.get(iid)
+            if inst is None or not inst.planted_in_deck:
+                continue
+            effect = next((e for e in inst.card.effects if e.timing == "drawn"), None)
+            if effect is None:
+                continue
+            inst.planted_in_deck = False
+            self._trigger_effect(iid, effect, player)
 
     # ------------------------------------------------------------------ #
     def _standby_phase(self, tp: int) -> None:

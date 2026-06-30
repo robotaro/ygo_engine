@@ -148,6 +148,11 @@ class CardInstance:
     # reset by place_monster / on leaving the field — read by "an opponent's monster
     # that was Tribute Summoned declares an attack" (Blast Held by a Tribute).
     was_tribute_summoned: bool = False
+    # True while this card sits in a Deck it was *planted* in by an effect (Parasite
+    # Paracide buries itself in the opponent's Deck). Its "when drawn" effect fires only
+    # for a planted copy — a naturally-drawn copy does nothing — and the flag is consumed
+    # the moment that effect resolves.
+    planted_in_deck: bool = False
     # The turn this card last activated a "once per turn" Ignition effect. Turn-stamped
     # so it expires on its own; reset when the card leaves the field.
     effect_activated_on_turn: int | None = None
@@ -433,6 +438,7 @@ class GameState:
         inst.attack_disabled_on_turn = None
         inst.destroy_at_end_phase = None
         inst.position_locked_until = None  # a position lock doesn't outlive the field
+        inst.planted_in_deck = False  # a card leaving the field carries no stale plant flag
 
     def gain_life_points(self, player: int, amount: int) -> None:
         """The single Life-Point GAIN sink (ygopro's Duel.Recover): add ``amount`` to
@@ -514,6 +520,25 @@ class GameState:
         deck = self.players[inst.owner].deck
         deck.append(iid)
         if not to_top:
+            self.rng.shuffle(deck)
+
+    def send_to_player_deck(self, iid: int, player: int, *, shuffle: bool = True, planted: bool = False) -> None:
+        """Send a card into a *specific* player's Deck — not necessarily its owner's.
+        Parasite Paracide buries itself in the opponent's Deck this way. Ownership
+        transfers to that player so the owner-keyed piles (deck/hand/GY) stay
+        consistent: the card now lives entirely on their side, and they draw it like
+        any other card. ``planted`` flags it so its 'when drawn' effect fires only
+        for this buried copy."""
+        inst = self.cards[iid]
+        self._remove_from_current_location(iid)
+        self._clear_field_flags(inst)  # resets controller to the OLD owner; overridden below
+        inst.zone = Zone.DECK
+        inst.owner = player
+        inst.controller = player
+        inst.planted_in_deck = planted
+        deck = self.players[player].deck
+        deck.append(iid)
+        if shuffle:
             self.rng.shuffle(deck)
 
     # ----- derived stats (the "layers": printed value + active modifiers) -----

@@ -1192,6 +1192,19 @@ class ReturnSelfToDeck(Primitive):
 
 
 @dataclass(frozen=True)
+class PlantSelfInOpponentDeck(Primitive):
+    """FLIP: bury this card in the opponent's Deck and shuffle it in (Parasite
+    Paracide). Ownership transfers to the opponent so the card lives entirely on
+    their side; it's flagged ``planted`` so its 'when drawn' effect fires only for
+    this buried copy — drawing one from your own Deck normally does nothing."""
+
+    def execute(self, ctx: EffectContext) -> None:
+        if ctx.source_iid in ctx.state.cards:
+            opp = ctx.state.opponent_of(ctx.controller)
+            ctx.state.send_to_player_deck(ctx.source_iid, opp, shuffle=True, planted=True)
+
+
+@dataclass(frozen=True)
 class ReturnAllSpellTrapsToHand(Primitive):
     """Giant Trunade: return every Spell/Trap on the field (both players', including
     Field Spells and the activating card itself) to its owner's hand."""
@@ -2171,6 +2184,23 @@ class SpecialSummonFromHand(Primitive):
         if not eligible:
             return
         iid = max(eligible, key=lambda i: ctx.state.inst(i).card.attack or 0)
+        ctx.state.special_summon(iid, ctx.controller, self.position)
+
+
+@dataclass(frozen=True)
+class SpecialSummonSelf(Primitive):
+    """Special Summon this card (the effect's source) to the controller's field —
+    Parasite Paracide springs onto the drawer's field face-up Defense the moment it
+    is drawn. A no-op if it isn't somewhere summonable, no Monster Zone is free, or a
+    Special Summon lock bars it (the card simply stays where it is)."""
+
+    position: Position = Position.FACE_UP_ATTACK
+
+    def execute(self, ctx: EffectContext) -> None:
+        iid = ctx.source_iid
+        inst = ctx.state.cards.get(iid)
+        if inst is None or inst.zone is Zone.MONSTER:
+            return
         ctx.state.special_summon(iid, ctx.controller, self.position)
 
 

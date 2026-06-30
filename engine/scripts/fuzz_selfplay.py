@@ -299,6 +299,10 @@ DECK = (
     + ["Heart of the Underdog"] * 1
     + ["Tethys, Goddess of Light"] * 1
     + ["Dunames Dark Witch"] * 2
+    # Batch 88: Parasite Paracide — FLIP buries it in the opponent's deck; when they draw
+    # it, it Special Summons onto their field and burns them 1000 (exercises the plant +
+    # ownership transfer + the timing="drawn" ambush across many self-play draws).
+    + ["Parasite Paracide"] * 2
 )
 
 

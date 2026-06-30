@@ -96,6 +96,7 @@ from .effects import (
     ReturnFromHandToDeck,
     ReturnSelfToDeck,
     ReturnSpellFromGraveyardToHand,
+    PlantSelfInOpponentDeck,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -108,6 +109,7 @@ from .effects import (
     SpecialSummonFromExtraDeck,
     SpecialSummonFromGraveyard,
     SpecialSummonFromHand,
+    SpecialSummonSelf,
     SpecialSummonLock,
     SpellCounterHolder,
     StandbyTrigger,
@@ -5186,5 +5188,35 @@ CONTINUOUS.update({
     # draw (must be face-up on the field, which the active-markers scan already requires).
     "Tethys, Goddess of Light": (
         DrawAgainOnDraw(CardFilter(card_kind="monster", races=frozenset({"Fairy"}))),
+    ),
+})
+
+# Effects Batch 88: Parasite Paracide (deck-impact) — the bury-and-ambush Flip Insect.
+# Two effects compose its two-stage trick, riding infrastructure already in place:
+#  (1) FLIP -> PlantSelfInOpponentDeck buries this card in the opponent's Deck and
+#      shuffles (state.send_to_player_deck transfers ownership so it lives entirely on
+#      their side; the copy is flagged ``planted``).
+#  (2) timing="drawn" -> when that buried copy is drawn, engine._fire_drawn_card_triggers
+#      resolves this effect FOR THE DRAWER (riding Batch 87's per-draw record): it Special
+#      Summons itself onto the drawer's field in face-up Defense (SpecialSummonSelf) and
+#      burns the drawer 1000 (InflictDamage(SELF, ...) — SELF == the resolving drawer).
+# DEFERRED RIDER: the printed "all monsters the drawer controls become Insect-Type" clause
+# is a continuous race-override (EFFECT_CHANGE_RACE). No pre-Synchro pool card we ship keys
+# off the *opponent's* monsters being Insect in a way that this would swing (the Insect
+# consumers — Eradicating Aerosol, tribute_races, the Laser Cannon equips — read the static
+# printed race), and a derived effective_race() through every consumer is broad infra for a
+# rare combo. The high-impact behavior (a dead monster + 1000 burn dumped on the drawer) is
+# modeled; the Insect-typing rider is a documented simplification.
+EFFECTS.update({
+    "Parasite Paracide": (
+        _flip(resolve=(PlantSelfInOpponentDeck(),)),
+        Effect(
+            speed=1,
+            timing="drawn",
+            resolve=(
+                SpecialSummonSelf(position=Position.FACE_UP_DEFENSE),
+                InflictDamage(SELF, 1000),
+            ),
+        ),
     ),
 })
