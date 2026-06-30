@@ -250,6 +250,14 @@ class DebuffsAttackTargetAtk:
 
 
 @dataclass(frozen=True)
+class HalvesAttackersAtk:
+    """A face-up card's rider: every opponent monster that declares an attack while this card
+    is face-up has its ATK halved for as long as this card stays on the field (Mirror Wall).
+    The catch is recorded on the attacker (CardInstance.atk_halved_by_wall) when it attacks;
+    GameState._effective_stat applies the halving while a live Wall remains."""
+
+
+@dataclass(frozen=True)
 class MultiAttacker:
     """A face-up monster's rider: it may declare up to ``times`` attacks each Battle
     Phase (Hayabusa Knight, Mataza the Zapper, Twinheaded Beast all = 2). Read by the

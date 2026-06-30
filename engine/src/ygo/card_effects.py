@@ -89,6 +89,7 @@ from .effects import (
     DirectBattleDamageThisTurn,
     ProtectControlledFromDestruction,
     RollDieModifyAllStats,
+    HalvesAttackersAtk,
     NegateAttack,
     NegatePreviousLink,
     Piercing,
@@ -5962,4 +5963,17 @@ HAND_SUMMONS.update({
 })
 CONTINUOUS.update({
     "Toon Mermaid": (AttackLifeCost(amount=500),),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 118: Mirror Wall — a Continuous Trap that halves the ATK of every opponent
+# monster which attacks while it is face-up (for as long as it stays up), and costs 2000 LP
+# each of your Standby Phases. EFFECTS just activates it onto the field; the HalvesAttackersAtk
+# rider drives the halving (recorded per-attacker, applied in _effective_stat) and the
+# StandbyUpkeep enforces the pay-2000-or-destroy. With Toon Mermaid (Batch 117) this flips
+# BOTH Pegasus decks (WCT2004 + Worldwide).
+EFFECTS.update({"Mirror Wall": _ACTIVATE_ONTO_FIELD})
+CONTINUOUS.update({
+    "Mirror Wall": (HalvesAttackersAtk(), StandbyUpkeep(pay_life=2000, whose="controller")),
 })

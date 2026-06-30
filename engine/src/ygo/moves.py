@@ -1518,6 +1518,8 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     attacker.attacks_made_this_turn += 1
     me = attacker.controller
     opp = state.opponent_of(me)
+    if state._attacker_halver_active(me):  # opponent's Mirror Wall catches this attacker
+        attacker.atk_halved_by_wall = True  # set BEFORE the ATK read so this attack is halved too
     atk = state.effective_attack(action.attacker) + state.damage_step_bonus(
         action.attacker, action.target, is_attacker=True, which="atk"
     )

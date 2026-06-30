@@ -36,6 +36,7 @@ from .effects import (
     DestroyAttachedEquips,
     EquipMod,
     FieldMod,
+    HalvesAttackersAtk,
     SafeAttacker,
     DamageStepBonus,
     MultiAttacker,
@@ -158,6 +159,9 @@ class CardInstance:
     # the Destroy* primitives pass; read by the "destroyed_by_effect" and unified
     # "destroyed" triggers (Babycerasaurus, Granadora) while draining the GY queue.
     died_by_effect: bool = False
+    # True once this monster has declared an attack while its opponent controlled a face-up
+    # Mirror Wall — its ATK stays halved while that Mirror Wall remains (read by _effective_stat).
+    atk_halved_by_wall: bool = False
     # True for a card that was in Defense Position when it was destroyed by battle this
     # trip. Stamped by send_to_graveyard; read by Shinato's "destroyed a Defense-Position
     # monster by battle" burn (its original ATK), which fires just after combat.
@@ -483,6 +487,7 @@ class GameState:
         inst.temp_def = 0
         inst.perm_atk = 0  # permanent stat changes (Zombyra, Slate Warrior, a debuffed
         inst.perm_def = 0  # killer) don't outlive the field — a revived copy is back to base
+        inst.atk_halved_by_wall = False  # a fresh field copy is not yet caught by a Mirror Wall
         inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
         inst.died_by_effect = False  # re-stamped by send_to_graveyard if an effect destruction
         inst.died_in_defense = False  # re-stamped by send_to_graveyard for a Defense battle death
@@ -1378,7 +1383,17 @@ class GameState:
         total += self._field_delta(iid, which)
         total += self._self_stat_delta(iid, which)
         total += self._spell_counter_delta(iid, which)
-        return max(0, total)
+        result = max(0, total)
+        # Mirror Wall: an attacker it has caught keeps its ATK halved while the Wall is up.
+        if which == "atk" and inst.atk_halved_by_wall and self._attacker_halver_active(inst.controller):
+            result //= 2
+        return result
+
+    def _attacker_halver_active(self, player: int) -> bool:
+        """Whether ``player``'s opponent controls a face-up, live Mirror Wall (HalvesAttackersAtk)
+        — the condition under which a caught attacker's ATK stays halved."""
+        opp = self.opponent_of(player)
+        return any(True for _s, _m in self.active_markers(HalvesAttackersAtk, (opp,)))
 
     def effective_attack(self, iid: int) -> int:
         return self._effective_stat(iid, "atk")

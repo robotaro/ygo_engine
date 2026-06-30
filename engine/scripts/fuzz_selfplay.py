@@ -419,6 +419,9 @@ DECK = (
     # Batch 117: Toon Mermaid (SS from hand while controlling Toon World; pay 500 to attack).
     # Toon World enables it, so the Toon SS-from-hand + attack-cost paths actually fire.
     + ["Toon Mermaid"] * 2 + ["Toon World"] * 2
+    # Batch 118: Mirror Wall (Continuous Trap: halves opponent attackers' ATK while up; pay
+    # 2000 each Standby). Exercises the per-attacker halving flag + the StandbyUpkeep cost.
+    + ["Mirror Wall"] * 2
 )
 
 
