@@ -1519,6 +1519,8 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     def _hit_defender(amount: int) -> None:
         # Battle damage to the defending player — redirected to the attacker by Dimension
         # Wall (then it's not "damage inflicted to the opponent", so no dealer trigger).
+        if state.deals_halved_battle_damage(action.attacker):
+            amount //= 2  # Susa Soldier inflicts only half its battle damage
         if state.reflect_battle_damage:
             _take_battle_damage(me, amount)
         else:

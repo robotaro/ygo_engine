@@ -25,6 +25,7 @@ from .effects import (
     GraveyardStandbyGainLife,
     GraveyardStandbyReturn,
     LifeGainTrigger,
+    ReturnsToHandAtEndPhase,
     SpellCounterHolder,
     StandbyTrigger,
     StandbyUpkeep,
@@ -1353,8 +1354,14 @@ class Engine:
         for pl in (s.turn_player, s.opponent_of(s.turn_player)):
             for iid in list(s.players[pl].monster_zones):
                 inst = s.cards.get(iid) if iid is not None else None
-                if inst is not None and inst.is_face_up and inst.card.is_spirit:
-                    self.log(f"  {inst.name} returns to {s.players[inst.owner].name}'s hand (Spirit)")
+                if inst is None or not inst.is_face_up:
+                    continue
+                # True Spirits, plus cards with the same End-Phase bounce rider (Susa
+                # Soldier, which always bounces at the first End Phase it is face-up).
+                if inst.card.is_spirit or any(
+                    isinstance(m, ReturnsToHandAtEndPhase) for m in inst.card.continuous
+                ):
+                    self.log(f"  {inst.name} returns to {s.players[inst.owner].name}'s hand")
                     s.return_to_hand(iid)
                     bounced = True
         if bounced:

@@ -343,6 +343,28 @@ class OpponentMillToAttack:
 
 
 @dataclass(frozen=True)
+class CannotBeSpecialSummoned:
+    """A static ability carried on the card: it can never be Special Summoned (Susa
+    Soldier). Read off ``card.continuous`` by ``GameState.special_summon`` — checked
+    against the printed card even while it sits in the hand/Deck/Graveyard."""
+
+
+@dataclass(frozen=True)
+class ReturnsToHandAtEndPhase:
+    """A static ability: a face-up copy returns to its owner's hand during the End Phase
+    (Susa Soldier — the turn it is Normal Summoned or flipped face-up; since it always
+    bounces at the first End Phase it is face-up, a blanket bounce is exact). Read by the
+    engine's ``_return_spirits`` End-Phase sweep, alongside true Spirit monsters."""
+
+
+@dataclass(frozen=True)
+class HalvesBattleDamageDealt:
+    """A face-up monster's continuous rider: the battle damage *it* inflicts to the
+    opponent is halved (Susa Soldier). Read by the attack resolver via
+    ``GameState.deals_halved_battle_damage`` (suppressed under Skill Drain)."""
+
+
+@dataclass(frozen=True)
 class SpecialSummonLock:
     """A face-up card's continuous lock on Special Summoning, read by every Special
     Summon route via ``GameState.special_summon_locked`` (a locked summon simply does

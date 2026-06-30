@@ -23,6 +23,8 @@ from .effects import (
     BanishInsteadOfGraveyard,
     BurnOnHandDiscard,
     OpponentMillToAttack,
+    CannotBeSpecialSummoned,
+    HalvesBattleDamageDealt,
     NoBattleDamageWhileUmi,
     AttackTargetProtection,
     BattleIndestructible,
@@ -392,6 +394,8 @@ class GameState:
         up front so they don't waste the cost on a fizzle. (Tokens are synthesised with
         no source location, so ``CreateToken`` spawns them directly instead.)"""
         inst = self.cards[iid]
+        if any(isinstance(m, CannotBeSpecialSummoned) for m in inst.card.continuous):
+            return False  # Susa Soldier: a printed restriction — never Special Summonable
         if self.special_summon_locked(player, inst.card):
             return False
         if index is None or self.players[player].monster_zones[index] is not None:
@@ -955,6 +959,11 @@ class GameState:
         return sum(
             mod.count for _src, mod in self.active_markers(OpponentMillToAttack, players=(opp,))
         )
+
+    def deals_halved_battle_damage(self, iid: int) -> bool:
+        """Whether the battle damage this monster inflicts to the opponent is halved
+        (Susa Soldier). Suppressed while its effect is inactive or negated (Skill Drain)."""
+        return self._self_rider(iid, HalvesBattleDamageDealt) is not None
 
     def field_cards(
         self,

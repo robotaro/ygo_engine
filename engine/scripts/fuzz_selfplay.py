@@ -346,6 +346,8 @@ DECK = (
     # Gravekeeper's Servant (mill-tax on the opponent's every attack declaration).
     + ["Eatgaboon"] * 1 + ["Petit Moth"] * 1 + ["The Stern Mystic"] * 1
     + ["Gravekeeper's Servant"] * 1
+    # Batch 98: Susa Soldier (cannot be SS; End-Phase self-bounce; halved battle damage).
+    + ["Susa Soldier"] * 2
 )
 
 

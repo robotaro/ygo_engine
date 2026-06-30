@@ -109,6 +109,9 @@ from .effects import (
     AcidTrapHole,
     SearchCardToTopOfDeck,
     OpponentMillToAttack,
+    CannotBeSpecialSummoned,
+    ReturnsToHandAtEndPhase,
+    HalvesBattleDamageDealt,
     SearchFromDeck,
     SearchMonsterToHand,
     SelfStatMod,
@@ -5541,4 +5544,19 @@ CONTINUOUS.update({
     # The opponent must send 1 card from the top of their Deck to the GY to declare an
     # attack (an opponent who can't pay simply cannot attack).
     "Gravekeeper's Servant": (OpponentMillToAttack(count=1),),
+})
+
+
+# --------------------------------------------------------------------------- #
+# Effects Batch 98: Susa Soldier — a 2000-ATK beatstick whose three printed static
+# abilities (carried as continuous riders) clear two more one-card-from-ready decks.
+CONTINUOUS.update({
+    # Susa Soldier: cannot be Special Summoned; returns to the owner's hand during the End
+    # Phase of the turn it is Normal Summoned / flipped face-up; the battle damage it
+    # inflicts to the opponent is halved.
+    "Susa Soldier": (
+        CannotBeSpecialSummoned(),
+        ReturnsToHandAtEndPhase(),
+        HalvesBattleDamageDealt(),
+    ),
 })
