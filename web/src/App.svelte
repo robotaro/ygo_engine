@@ -94,6 +94,7 @@
   })
   $: yourTurn = $awaiting
   $: isYourTurn = !!$board && $board.turnPlayer === $board.viewer
+  $: viewer = $board?.viewer
   $: dragging = draggedIid != null
   $: draggingMonster = draggedIid != null && !!summonOptions(draggedIid)
   $: draggingSpellTrap = draggedIid != null && (canActivate(draggedIid) || canSet(draggedIid))
@@ -620,7 +621,28 @@
     }, 175)
   }
 
-  onMount(() => battleFx.subscribe((fx) => fx && playBattleFx(fx)))
+  // A card/effect just activated — flash it in the centre of the screen so the
+  // player sees what happened before the board changes.
+  let announce = null // { name, text, imageId, mine }
+  let announceTimer
+  function showAnnounce(fx) {
+    announce = {
+      name: fx.name,
+      text: fx.text,
+      imageId: fx.imageId,
+      mine: fx.controller === viewer,
+    }
+    clearTimeout(announceTimer)
+    announceTimer = setTimeout(() => (announce = null), 1500)
+  }
+
+  onMount(() =>
+    battleFx.subscribe((fx) => {
+      if (!fx) return
+      if (fx.kind === 'activate') showAnnounce(fx)
+      else playBattleFx(fx)
+    }),
+  )
 
   // A destroyed monster brightens, shrinks and sinks away (plays on its slot's
   // `out:` whenever a card leaves a monster zone — battle or effect).
@@ -1180,6 +1202,23 @@
         {/each}
       </div>
       <button class="close btn-primary" onclick={() => (settingsOpen = false)}>Done</button>
+    </div>
+  </div>
+{/if}
+
+{#if announce}
+  <div class="announce" transition:fade={{ duration: 150 }}>
+    <div class="acard">
+      {#if announce.imageId}
+        <img src={`/cards/${announce.imageId}.jpg`} alt={announce.name} />
+      {:else}
+        <div class="anoart">{announce.name}</div>
+      {/if}
+    </div>
+    <div class="atext">
+      <div class="alabel">{announce.mine ? 'You activate' : (opp?.name ?? 'Opponent') + ' activates'}</div>
+      <div class="aname">{announce.name}</div>
+      {#if announce.text}<div class="adesc">{announce.text}</div>{/if}
     </div>
   </div>
 {/if}
@@ -1944,6 +1983,7 @@
   .overlay {
     position: fixed;
     inset: 0;
+    z-index: 100; /* above board zone labels (z-index 3) and other in-board chrome */
     background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
@@ -2123,5 +2163,70 @@
     .cardzoom {
       transition: none;
     }
+  }
+  /* Transient card-activation reveal, centred and non-blocking. */
+  .announce {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    pointer-events: none;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.66), rgba(0, 0, 0, 0.2) 70%, transparent);
+  }
+  .announce .acard {
+    width: 150px;
+    aspect-ratio: 813 / 1185;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: 0 0 0 2px var(--accent), 0 12px 40px rgba(0, 0, 0, 0.7);
+    background: var(--surface-3);
+    animation: announcepop 0.22s ease;
+  }
+  .announce .acard img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .anoart {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .atext {
+    max-width: 360px;
+  }
+  .alabel {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .aname {
+    font-size: 24px;
+    font-weight: 900;
+    margin: 2px 0 8px;
+    color: var(--text);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  }
+  .adesc {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+  @keyframes announcepop {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .announce .acard { animation: none; }
   }
 </style>

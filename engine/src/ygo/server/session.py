@@ -54,6 +54,8 @@ def _option_label(state: GameState, option) -> str:
 
 
 class HumanAgent(Agent):
+    interactive = True  # the engine won't auto-pace a human's own moves
+
     def __init__(self, session: "GameSession", player: int):
         self.session = session
         self.player = player

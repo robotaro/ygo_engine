@@ -28,6 +28,8 @@ from .state import GameState
 
 
 class Agent:
+    interactive = False  # True for a human — the engine won't auto-pace their moves
+
     def decide(self, state: GameState, legal: list[Action]) -> Action:
         raise NotImplementedError
 

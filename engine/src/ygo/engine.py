@@ -115,6 +115,28 @@ class Engine:
         if self._pacer is not None:
             self._pacer()
 
+    def _pace_ai(self, tp: int) -> None:
+        """Pause after a *bot's* action so a human watching can follow it. No pause
+        on the human's own moves — those are already gated on their input."""
+        if not getattr(self.agents[tp], "interactive", False):
+            self._pace()
+
+    def _announce(self, iid: int, controller: int) -> None:
+        """Flash a card in the centre of the screen when its effect activates, so a
+        human sees what just happened before the board changes. Paced so the reveal
+        is visible before resolution continues."""
+        card = self.state.inst(iid).card
+        self.fx(
+            {
+                "kind": "activate",
+                "controller": controller,
+                "name": card.name,
+                "text": card.text or "",
+                "imageId": getattr(card, "image_id", None),
+            }
+        )
+        self._pace()
+
     # ------------------------------------------------------------------ #
     def run(self) -> DuelResult:
         self.state.pending_draws.clear()  # ignore the opening-hand draws (pre-game)
@@ -483,6 +505,7 @@ class Engine:
                 self.log(f"  {s.players[tp].name} {apply(s, choice)}")
                 self._check_life_points()
                 self._changed()
+            self._pace_ai(tp)  # let a human watch each of the bot's Main-Phase actions
 
     def _battle_phase(self, tp: int) -> None:
         s = self.state
@@ -688,6 +711,8 @@ class Engine:
         effect = next((e for e in card.effects if e.timing in ("ignition", "quick")), card.effects[0])
         reveal_for_activation(s, action.iid, action.zone_index)
         self.log(f"  {s.players[controller].name} activates {card.name}")
+        self._changed()
+        self._announce(action.iid, controller)
         self._pay_activation_cost(action.iid, controller, effect, tuple(action.targets))
         self._mark_once_per_turn(action.iid, effect)
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
@@ -699,6 +724,7 @@ class Engine:
         card = s.inst(action.iid).card
         effect = next((e for e in card.effects if e.timing == "ignition"), card.effects[0])
         self.log(f"  {s.players[controller].name} activates {card.name}'s effect")
+        self._announce(action.iid, controller)
         self._pay_activation_cost(action.iid, controller, effect, tuple(action.targets))
         self._mark_once_per_turn(action.iid, effect)
         self._run_chain([ChainLink(action.iid, effect, controller, tuple(action.targets), None)])
@@ -744,6 +770,7 @@ class Engine:
         reveal_for_activation(s, poly_iid)  # Polymerization shows in a Spell/Trap zone
         self.log(f"  {s.players[controller].name} activates Polymerization")
         self._changed()
+        self._announce(poly_iid, controller)
 
         fusion_iids = [fid for fid, _ in options]
         chosen = self.agents[controller].choose_card(s, "Fusion Summon which monster?", fusion_iids)
@@ -785,6 +812,7 @@ class Engine:
         reveal_for_activation(s, spell_iid)  # the Ritual Spell shows in a Spell/Trap zone
         self.log(f"  {s.players[controller].name} activates {s.inst(spell_iid).name}")
         self._changed()
+        self._announce(spell_iid, controller)
 
         tributes = self.agents[controller].choose_tributes(s, controller, pool, required)
         valid = (
@@ -856,6 +884,8 @@ class Engine:
         effect = response_effect_for(s, player, chosen.iid, event, last_speed)
         reveal_for_activation(s, chosen.iid, chosen.zone_index)
         self.log(f"  {s.players[player].name} activates {card.name}")
+        self._changed()
+        self._announce(chosen.iid, player)
         self._pay_activation_cost(chosen.iid, player, effect)
         return ChainLink(chosen.iid, effect, player, tuple(chosen.targets), event)
 
@@ -1287,6 +1317,7 @@ class Engine:
                 self.agents[controller].choose_targets(s, source_iid, effect.target, candidates)
             )
         self.log(f"  {s.players[controller].name}'s {s.inst(source_iid).name} effect activates")
+        self._announce(source_iid, controller)
         self._run_chain([ChainLink(source_iid, effect, controller, targets, event)])
 
     def _cleanup_equips(self) -> None:
