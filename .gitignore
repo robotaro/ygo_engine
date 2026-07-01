@@ -22,12 +22,17 @@ assets/card_images/cards/
 # `engine/scripts/build_card_db.py --download`). The curated CSV is committed.
 assets/card_databases/card_db_ocg_pre_synchro_v6.json
 
-# Recorded duels (replay logs saved by the web server)
+# Player state / progress — kept OUT of git so no git operation (checkout, pull,
+# merge, reset) can ever clobber live gameplay. Sync across machines out-of-band
+# (rsync) instead. These are everything the game writes as you play:
+#   profile/            the save: DP, collection, stats, active deck, tournament
+#   deck_blueprints/user/   decks you build in the browser
+#   banlists/user/      custom Forbidden/Limited lists you save
+#   replays/            recorded duels + verbose event/trace logs
+/profile/
+assets/deck_blueprints/user/
+assets/banlists/user/
 replays/
-
-# NOTE: user decks (assets/deck_blueprints/user/), custom banlists
-# (assets/banlists/user/) and the player save (/profile/) are intentionally
-# tracked so progress syncs across machines via git.
 
 # OS
 .DS_Store
