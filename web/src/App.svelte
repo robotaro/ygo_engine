@@ -7,6 +7,7 @@
   import CardTile from './lib/CardTile.svelte'
   import Launcher from './lib/Launcher.svelte'
   import RewardPicker from './lib/RewardPicker.svelte'
+  import { THEMES, themeId, applyTheme } from './lib/theme.js'
   import {
     board,
     legal,
@@ -29,6 +30,9 @@
   } from './lib/store.js'
 
   onMount(startHealthMonitor)
+  onMount(() => applyTheme($themeId))
+
+  let settingsOpen = false
 
   // Floating "-1200" damage numbers spawned during combat (see playBattleFx).
   let damageFloaters = []
@@ -699,6 +703,7 @@
         ◈ {$profile.duelistPoints.toLocaleString()} DP
       </div>
     {/if}
+    <button class="gear" title="Theme" onclick={() => (settingsOpen = true)}>⚙</button>
     {#if $board}
       <button class="menubtn" onclick={leaveGame}>⏎ Menu</button>
     {/if}
@@ -814,7 +819,7 @@
           {/each}
         </div>
         <div class="statusright">
-          <span class="whose">{yourTurn ? 'Your move' : '… opponent'}</span>
+          <span class="whose" class:you={yourTurn}>{yourTurn ? 'Your move' : '… opponent'}</span>
           {#if yourTurn && $legal?.canPass}
             <button class="next" onclick={nextPhase}>{NEXT_LABEL[phase] ?? 'Continue ▶'}</button>
           {/if}
@@ -1154,6 +1159,27 @@
   {/if}
 </main>
 
+{#if settingsOpen}
+  <div class="overlay" role="presentation" onclick={() => (settingsOpen = false)}>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="resultcard settings" role="dialog" onclick={(e) => e.stopPropagation()}>
+      <h2>Theme</h2>
+      <div class="themegrid">
+        {#each THEMES as t}
+          <button class="themebtn" class:sel={$themeId === t.id} onclick={() => themeId.set(t.id)}>
+            <span class="swatch">
+              <span class="sw" style="background:{t.primary}"></span>
+              <span class="sw" style="background:{t.secondary}"></span>
+            </span>
+            {t.name}
+          </button>
+        {/each}
+      </div>
+      <button class="close btn-primary" onclick={() => (settingsOpen = false)}>Done</button>
+    </div>
+  </div>
+{/if}
+
 <svelte:window
   onkeydown={(e) => {
     if (e.key === 'Escape') closeOverlays()
@@ -1309,6 +1335,60 @@
   }
   .menubtn {
     margin-left: 8px;
+  }
+  .gear {
+    margin-left: 8px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1;
+    padding: 6px 9px;
+  }
+  .gear:hover {
+    background: var(--surface-3);
+    color: var(--text);
+  }
+  /* Theme settings modal */
+  .settings {
+    min-width: 320px;
+  }
+  .themegrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0 6px;
+  }
+  .themebtn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    border-radius: var(--r);
+    font-weight: 700;
+  }
+  .themebtn:hover {
+    border-color: var(--accent);
+    background: var(--surface-3);
+  }
+  .themebtn.sel {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .swatch {
+    display: inline-flex;
+  }
+  .swatch .sw {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, 0.45);
+  }
+  .swatch .sw + .sw {
+    margin-left: -5px;
   }
   button {
     background: #b8923a;
@@ -1695,6 +1775,10 @@
   .whose {
     color: var(--muted);
     font-size: 12px;
+  }
+  .whose.you {
+    color: var(--secondary);
+    font-weight: 700;
   }
   .next {
     background: var(--accent);
