@@ -733,7 +733,7 @@
             <CardTile card={opp.graveyard[opp.graveyard.length - 1]} faceDown small />
             <span class="count">{opp.graveyard.length}</span>
           {:else}
-            <span class="zlabel">GY</span>
+            <span class="zlabel">Graveyard</span>
           {/if}
           {#if openGy === 'opp' || oppGyTargetable}
             <div class="gyflyout down" transition:fade={{ duration: 130 }}>
@@ -782,6 +782,7 @@
           oncontextmenu={(e) => opp.fieldZone && openContext(e, opp.fieldZone, 'opp')}
         >
           <CardTile card={opp.fieldZone} small />
+          {#if !opp.fieldZone}<span class="zlabel">Field</span>{/if}
         </div>
       </div>
 
@@ -791,9 +792,7 @@
         <div class="phasetrack">
           {#each PHASES as p, i}
             {#if i > 0}<span class="sep" class:past={i <= phaseIndex}></span>{/if}
-            <span class="ph" class:on={i === phaseIndex} class:done={i < phaseIndex}>
-              <span class="dot"></span>{p.label}
-            </span>
+            <span class="ph" class:on={i === phaseIndex} class:done={i < phaseIndex}>{p.label}</span>
           {/each}
         </div>
         <div class="statusright">
@@ -825,6 +824,7 @@
           oncontextmenu={(e) => you.fieldZone && openContext(e, you.fieldZone, 'field')}
         >
           <CardTile card={you.fieldZone} small />
+          {#if !you.fieldZone}<span class="zlabel">Field</span>{/if}
         </div>
         {#each you.monsterZones as slot, i (i)}
           <!-- One persistent slot per zone, so a dying monster's dissolve (an
@@ -876,7 +876,7 @@
             <CardTile card={you.graveyard[you.graveyard.length - 1]} faceDown small />
             <span class="count">{you.graveyard.length}</span>
           {:else}
-            <span class="zlabel">GY</span>
+            <span class="zlabel">Graveyard</span>
           {/if}
           {#if openGy === 'you' || youGyTargetable}
             <div class="gyflyout" transition:fade={{ duration: 130 }}>
@@ -1001,12 +1001,14 @@
             </div>
             {#if yourTurn && specialSummonable}
               <button class="setbtn" onclick={() => specialSummon(card.iid)}>Sp. Summon</button>
+            {:else if yourTurn && opts?.summon?.length}
+              <button class="setbtn" onclick={() => beginPlace(card.iid, 'summon')}>Summon</button>
             {:else if yourTurn && activatable}
               <button class="setbtn" onclick={() => activateSpell(card.iid)}>Activate</button>
             {:else if yourTurn && settable}
-              <button class="setbtn" onclick={() => setCard(card.iid)}>Set</button>
+              <button class="setbtn" onclick={() => beginPlace(card.iid, 'set')}>Set</button>
             {:else if yourTurn && opts?.set?.length}
-              <button class="setbtn" onclick={() => onSet(card.iid)}>Set</button>
+              <button class="setbtn" onclick={() => beginPlace(card.iid, 'setMonster')}>Set</button>
             {/if}
           </div>
         {/each}
@@ -1486,6 +1488,7 @@
   /* The Field zone is a corner fixture (not part of the central 2×5), so it gets
      the dark recessed look — flagged with a distinct violet edge, not a grey well. */
   .slot.field {
+    position: relative;
     background: rgba(0, 0, 0, 0.45);
     box-shadow: inset 0 0 0 1px #4a3f6a;
   }
@@ -1595,44 +1598,37 @@
     justify-content: center;
     flex: 1;
   }
+  /* Phase tracker: inactive phases are plain faint labels; the CURRENT phase is
+     a bold amber capsule so it reads at a glance across the room. */
   .ph {
-    display: flex;
-    align-items: center;
-    gap: 6px;
     font-size: 12px;
     color: var(--faint);
     white-space: nowrap;
-  }
-  .ph .dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--line-strong);
-    transition: all 0.15s ease;
+    padding: 3px 8px;
+    border-radius: var(--r-pill);
+    transition: all 0.12s ease;
   }
   .ph.done {
     color: var(--muted);
   }
-  .ph.done .dot {
-    background: var(--muted);
-  }
   .ph.on {
-    color: var(--text);
-    font-weight: 700;
-  }
-  .ph.on .dot {
     background: var(--accent);
-    box-shadow: 0 0 0 4px var(--warn-dim);
+    color: var(--accent-ink);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    padding: 4px 14px;
+    box-shadow: 0 0 0 3px var(--warn-dim), 0 2px 8px rgba(0, 0, 0, 0.45);
   }
   .sep {
-    width: 22px;
+    width: 14px;
     height: 2px;
     background: var(--line);
-    margin: 0 6px;
+    margin: 0 3px;
     border-radius: var(--r-pill);
   }
   .sep.past {
-    background: var(--muted);
+    background: var(--line-strong);
   }
   .statusright {
     display: flex;
