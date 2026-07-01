@@ -60,6 +60,7 @@ from .moves import (
     target_candidates,
 )
 from .state import GameState
+from .trace import debug_snapshot, diff_snapshots
 
 # Safety cap so a misbehaving agent can never spin a phase forever.
 _MAX_ACTIONS_PER_PHASE = 200
@@ -83,6 +84,7 @@ class Engine:
         on_change: Callable[[], None] | None = None,
         pacer: Callable[[], None] | None = None,
         fx: Callable[[dict], None] | None = None,
+        trace: Callable[[str], None] | None = None,
     ):
         self.state = state
         self.agents = agents
@@ -94,21 +96,61 @@ class Engine:
         self._pacer = pacer
         self._fx = fx
         self._processing_gy = False  # re-entrancy guard for "sent to GY" triggers
+        # Verbose debug trace (opt-in): one line per state change, for bug reports.
+        self._trace = trace
+        self._trace_prev: dict[str, str] | None = None
+        self._trace_seq = 0
 
     def log(self, message: str) -> None:
         if self._log is not None:
             self._log(message)
+        if self._trace is not None:
+            self._trace_line(f"· {message.strip()}")
+            self._trace_flush()  # dump the state changes this action produced
 
     def _changed(self) -> None:
         """Notify observers (e.g. the web server) that the state advanced."""
+        if self._trace is not None:
+            self._trace_flush()
         if self._on_change is not None:
             self._on_change()
 
     def fx(self, payload: dict) -> None:
         """Emit a transient animation cue (e.g. an attack) to observers. Unlike
         _changed, this carries event detail the snapshot can't (who hit whom)."""
+        if self._trace is not None:
+            self._trace_line(f"FX {payload}")
         if self._fx is not None:
             self._fx(payload)
+
+    # ---- debug trace (no-op unless a trace sink was supplied) ----
+    def _trace_line(self, text: str) -> None:
+        s = self.state
+        self._trace_seq += 1
+        self._trace(f"{self._trace_seq:06d} T{s.turn_count:<2} {s.phase.value:<13}| {text}")
+
+    def _trace_flush(self) -> None:
+        """Diff the whole state against the last snapshot; emit one line per change."""
+        snap = debug_snapshot(self.state)
+        if self._trace_prev is not None:
+            for line in diff_snapshots(self._trace_prev, snap):
+                self._trace_line(f"Δ {line}")
+        self._trace_prev = snap
+
+    def _trace_open(self) -> None:
+        """Opening context: seed + both decks (in draw order) + starting hands. That plus
+        the diffs that follow reconstruct the whole duel from turn 1. The baseline snapshot
+        is captured silently (it's the reference every later ``Δ`` is measured against)."""
+        if self._trace is None:
+            return
+        s = self.state
+        self._trace_line(f"SEED {s.seed}")
+        for p in (0, 1):
+            pl = s.players[p]
+            order = ", ".join(s.inst(i).card.name for i in reversed(pl.deck))  # deck[-1] draws first
+            self._trace_line(f"DECK p{p} ({pl.name}) top->bottom: {order}")
+            self._trace_line(f"HAND p{p}: " + ", ".join(s.inst(i).card.name for i in pl.hand))
+        self._trace_prev = debug_snapshot(self.state)  # baseline for the first diff
 
     def _pace(self) -> None:
         """Dramatic pause at a resolution step (no-op when running headless)."""
@@ -141,6 +183,7 @@ class Engine:
     def run(self) -> DuelResult:
         self.state.pending_draws.clear()  # ignore the opening-hand draws (pre-game)
         self.state.summon_events.clear()  # ignore any pre-game Special Summons
+        self._trace_open()  # opening context + baseline snapshot (no-op without a trace sink)
         while self.result is None and self.state.turn_count <= self.max_turns:
             self._run_turn()
         if self.result is None:
@@ -165,6 +208,8 @@ class Engine:
             if self.result is not None:
                 return
             s.phase = phase
+            if self._trace is not None:
+                self._trace_line(f"=== PHASE {phase.value} (turn {s.turn_count}, {s.players[tp].name}) ===")
             self._changed()
             self._run_phase(phase, tp)
         if self.result is not None:
@@ -541,29 +586,49 @@ class Engine:
         # Mark at declaration (not only in _resolve_attack) so a *negated* attack — which
         # returns before resolving — still counts as this monster having attacked.
         s.inst(attacker).attacked_this_turn = True
-        # Dark Elf: pay the LP cost required to attack (enumeration already verified it is
-        # payable). Paid at declaration, even if the attack is later negated.
-        cost = s.attack_life_cost(attacker)
-        if cost:
-            s.players[tp].life_points -= cost
-            self.log(f"  {s.players[tp].name} pays {cost} LP for {s.inst(attacker).name} to attack")
-        tribute = s.attack_tribute_cost(attacker)
-        if tribute:
-            # Panther Warrior: Tribute the weakest other monsters to attack (enumeration
-            # already verified enough are available). Paid even if the attack is negated.
-            for fodder in s.attack_tribute_fodder(attacker)[:tribute]:
-                self.log(f"  {s.players[tp].name} Tributes {s.inst(fodder).name} for {s.inst(attacker).name} to attack")
-                s.send_to_graveyard(fodder)
-        mill = s.attack_deck_cost(tp)
-        if mill:
-            # Gravekeeper's Servant: send the top card(s) of the attacker's Deck to the GY
-            # (enumeration already verified enough are there). Paid at declaration.
-            for _ in range(mill):
-                if s.players[tp].deck:
-                    s.send_to_graveyard(s.players[tp].deck[-1])
-            self.log(f"  {s.players[tp].name} sends {mill} card(s) from the top of their Deck (Gravekeeper's Servant)")
+        # Pay to attack (Dark Elf's LP, Panther Warrior's Tribute, Gravekeeper mill) — but
+        # only ONCE per attack. A replay (the target self-equipped away before damage and
+        # this attack re-declares) must not re-charge the cost; `attack_cost_paid` guards it.
+        paid_life_cost = 0  # LP just spent as an attack cost — the UI shows it as a cost, not a hit
+        if not s.inst(attacker).attack_cost_paid:
+            # Dark Elf: pay the LP cost required to attack (enumeration already verified it is
+            # payable). Paid at declaration, even if the attack is later negated.
+            cost = s.attack_life_cost(attacker)
+            if cost:
+                s.players[tp].life_points -= cost
+                paid_life_cost = cost
+                self.log(f"  {s.players[tp].name} pays {cost} LP for {s.inst(attacker).name} to attack")
+            tribute = s.attack_tribute_cost(attacker)
+            if tribute:
+                # Panther Warrior: Tribute the weakest other monsters to attack (enumeration
+                # already verified enough are available). Paid even if the attack is negated.
+                for fodder in s.attack_tribute_fodder(attacker)[:tribute]:
+                    self.log(f"  {s.players[tp].name} Tributes {s.inst(fodder).name} for {s.inst(attacker).name} to attack")
+                    s.send_to_graveyard(fodder)
+            mill = s.attack_deck_cost(tp)
+            if mill:
+                # Gravekeeper's Servant: send the top card(s) of the attacker's Deck to the GY
+                # (enumeration already verified enough are there). Paid at declaration.
+                for _ in range(mill):
+                    if s.players[tp].deck:
+                        s.send_to_graveyard(s.players[tp].deck[-1])
+                self.log(f"  {s.players[tp].name} sends {mill} card(s) from the top of their Deck (Gravekeeper's Servant)")
+            s.inst(attacker).attack_cost_paid = True
         self.log(f"  {s.players[tp].name} declares an attack with {s.inst(attacker).name}")
+        # A labelled "Attack!" splash so a watcher can tell whose attack this is (and which
+        # monster). ``cost`` lets the client show the pay-to-attack LP as a cost, not a hit.
+        self.fx(
+            {
+                "kind": "declare",
+                "player": tp,
+                "attacker": attacker,
+                "target": target,
+                "name": s.inst(attacker).name,
+                "cost": paid_life_cost,
+            }
+        )
         self._changed()
+        self._pace_ai(tp)  # hold the banner so a human can read the bot's attack before it lands
 
         self._response_window(
             {"kind": "attack_declared", "player": tp, "attacker": attacker, "target": target}
@@ -583,6 +648,7 @@ class Engine:
             neg = s.cards.get(attacker)
             if neg is not None and neg.zone is Zone.MONSTER:
                 neg.attacks_made_this_turn += 1
+                neg.attack_cost_paid = False  # attack consumed; the next one pays its own cost
             self.log("  the attack is negated")
             self._changed()
             return

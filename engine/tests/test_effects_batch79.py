@@ -11,7 +11,7 @@ and Light is a Nomi monster (banish 2 LIGHT from the GY to Special Summon) whose
 
 from __future__ import annotations
 
-from ygo.agents import Agent
+from ygo.agents import Agent, GreedyAgent
 from ygo.cards import CardRegistry
 from ygo.card_effects import EFFECTS
 from ygo.effects import EffectContext
@@ -97,6 +97,22 @@ def test_dark_elf_cost_suppressed_while_effect_negated():
     s.place_spell_trap(drain.iid, ME, 0, Position.FACE_UP_ATTACK)
     assert s.monster_effects_negated(elf.iid)
     assert s.attack_life_cost(elf.iid) == 0  # the "pay to attack" effect is itself negated
+
+
+def test_dark_elf_pays_its_cost_only_once_on_an_attack_replay():
+    # Dark Elf attacks a face-down Blast Sphere, which equips itself to the attacker *before
+    # damage* — the target leaves the field, so the attack fizzles into a replay. The replay
+    # is legal (Dark Elf re-declares and hits directly), but it must NOT re-charge the 1000 LP:
+    # the cost is paid once per attack, not once per declaration.
+    s = _fresh(tp=ME)
+    elf = _spawn(s, "Dark Elf", ME, 0)  # 2000 ATK
+    _spawn(s, "Blast Sphere", OPP, 0, pos=Position.FACE_DOWN_DEFENSE)
+    s.players[ME].life_points = 8000
+    s.players[OPP].life_points = 8000
+    Engine(s, [GreedyAgent(), GreedyAgent()])._battle_phase(ME)
+    assert s.players[ME].life_points == 7000  # paid 1000 LP exactly once (the bug charged 2000)
+    assert s.players[OPP].life_points == 6000  # the replay landed a 2000 direct hit
+    assert s.inst(elf.iid).attacks_made_this_turn == 1  # exactly one completed attack
 
 
 # ------------------------------------------------------------- Nobleman of Crossout

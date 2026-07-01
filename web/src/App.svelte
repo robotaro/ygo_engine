@@ -72,21 +72,40 @@
   $: if (opp) oppLp.set(opp.lifePoints)
   let youHit = false
   let oppHit = false
+  let prevPhase = null
+  let pendingCost = null // {mine, amount}: an attacker's pay-to-attack LP — a cost, not a hit
   onMount(() => {
     let py = null
     let po = null
     return board.subscribe((b) => {
       if (!b) {
         py = po = null
+        prevPhase = null
         return
       }
+      // GBA-style phase splash on every phase (or turn) change — skip the first snapshot.
+      if (b.phase !== prevPhase) {
+        if (prevPhase !== null) showPhaseSplash(b.phase)
+        prevPhase = b.phase
+      }
       if (py != null && b.you.lifePoints < py) {
-        youHit = true
-        setTimeout(() => (youHit = false), 600)
+        const drop = py - b.you.lifePoints
+        // Your own pay-to-attack cost is not a hit — swallow the flash for it.
+        if (pendingCost && pendingCost.mine && drop === pendingCost.amount) {
+          pendingCost = null
+        } else {
+          youHit = true
+          setTimeout(() => (youHit = false), 600)
+        }
       }
       if (po != null && b.opponent.lifePoints < po) {
-        oppHit = true
-        setTimeout(() => (oppHit = false), 600)
+        const drop = po - b.opponent.lifePoints
+        if (pendingCost && !pendingCost.mine && drop === pendingCost.amount) {
+          pendingCost = null // the opponent's own attack cost — not a hit
+        } else {
+          oppHit = true
+          setTimeout(() => (oppHit = false), 600)
+        }
       }
       py = b.you.lifePoints
       po = b.opponent.lifePoints
@@ -636,10 +655,41 @@
     announceTimer = setTimeout(() => (announce = null), 1500)
   }
 
+  // A GBA-style "Attack!" splash naming the attacker and whose it is. Dark Elf's
+  // pay-to-attack LP (fx.cost) is stashed so its life-bar drop reads as a cost, not a hit.
+  let attackBanner = null // { name, mine }
+  let attackBannerTimer
+  function showAttackBanner(fx) {
+    if (fx.cost > 0) pendingCost = { mine: !!fx.mine, amount: fx.cost }
+    attackBanner = { name: fx.name, mine: !!fx.mine }
+    clearTimeout(attackBannerTimer)
+    attackBannerTimer = setTimeout(() => (attackBanner = null), 1100)
+  }
+
+  // A GBA-style phase splash ("Draw Phase", "Battle Phase", …) shown briefly on each change.
+  const PHASE_LABEL = {
+    draw_phase: 'Draw Phase',
+    standby_phase: 'Standby Phase',
+    main_phase_1: 'Main Phase 1',
+    battle_phase: 'Battle Phase',
+    main_phase_2: 'Main Phase 2',
+    end_phase: 'End Phase',
+  }
+  let phaseSplash = null // the label string, or null
+  let phaseSplashTimer
+  function showPhaseSplash(phase) {
+    const label = PHASE_LABEL[phase]
+    if (!label) return
+    phaseSplash = label
+    clearTimeout(phaseSplashTimer)
+    phaseSplashTimer = setTimeout(() => (phaseSplash = null), 850)
+  }
+
   onMount(() =>
     battleFx.subscribe((fx) => {
       if (!fx) return
       if (fx.kind === 'activate') showAnnounce(fx)
+      else if (fx.kind === 'declare') showAttackBanner(fx)
       else playBattleFx(fx)
     }),
   )
@@ -1220,6 +1270,20 @@
       <div class="aname">{announce.name}</div>
       {#if announce.text}<div class="adesc">{announce.text}</div>{/if}
     </div>
+  </div>
+{/if}
+
+{#if attackBanner}
+  <div class="splash attack" class:mine={attackBanner.mine} transition:fade={{ duration: 120 }}>
+    <div class="splash-who">{attackBanner.mine ? 'You attack' : (opp?.name ?? 'Opponent') + ' attacks'}</div>
+    <div class="splash-word">Attack</div>
+    <div class="splash-sub">{attackBanner.name}</div>
+  </div>
+{/if}
+
+{#if phaseSplash}
+  <div class="splash phase" transition:fade={{ duration: 120 }}>
+    <div class="splash-word phase-word">{phaseSplash}</div>
   </div>
 {/if}
 
@@ -2226,7 +2290,72 @@
     from { transform: scale(0.7); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
   }
+
+  /* GBA-style centre-screen splashes: attack declarations + phase changes. The colour of
+     the "Attack" word tells you at a glance whose attack it is — accent when it's yours,
+     danger-red when the opponent is swinging at you. */
+  .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    pointer-events: none;
+    text-align: center;
+  }
+  .splash-who,
+  .splash-sub,
+  .splash-word {
+    animation: splashpop 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  }
+  .splash-who {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  }
+  .splash-word {
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  .splash.attack .splash-word {
+    font-size: clamp(56px, 12vw, 128px);
+    text-transform: uppercase;
+    color: var(--danger);
+    -webkit-text-stroke: 2px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 6px 26px rgba(0, 0, 0, 0.85), 0 0 30px color-mix(in srgb, var(--danger) 55%, transparent);
+  }
+  .splash.attack.mine .splash-word {
+    color: var(--accent);
+    text-shadow: 0 6px 26px rgba(0, 0, 0, 0.85), 0 0 30px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  .splash-sub {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--muted);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  }
+  .splash.phase .phase-word {
+    font-size: clamp(32px, 6vw, 60px);
+    color: var(--text);
+    -webkit-text-stroke: 1px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.85);
+    opacity: 0.96;
+  }
+  @keyframes splashpop {
+    0% { transform: scale(0.6) translateY(6px); opacity: 0; }
+    55% { transform: scale(1.06); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .announce .acard { animation: none; }
+    .splash-who, .splash-sub, .splash-word { animation: none; }
   }
 </style>

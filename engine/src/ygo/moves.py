@@ -1189,15 +1189,19 @@ def _battle_phase_actions(state: GameState, player: int) -> list[Action]:
             continue  # an effect this turn barred this monster from attacking
         if state.monster_attack_locked(iid):
             continue  # Spellbinding Circle: the targeted monster cannot attack
-        cost = state.attack_life_cost(iid)
-        if cost and state.players[player].life_points <= cost:
-            continue  # Dark Elf: cannot pay the LP cost required to declare an attack
-        tribute = state.attack_tribute_cost(iid)
-        if tribute and len(state.attack_tribute_fodder(iid)) < tribute:
-            continue  # Panther Warrior: no other monster to Tribute -> cannot attack
-        mill = state.attack_deck_cost(player)
-        if mill and len(state.players[player].deck) < mill:
-            continue  # Gravekeeper's Servant: too few cards to mill -> cannot attack
+        # Pay-to-attack affordability gates — skipped once the cost is already paid, so a
+        # replay (the first attack fizzled when the target self-equipped away) can re-declare
+        # even if the monster could no longer afford a fresh payment.
+        if not inst.attack_cost_paid:
+            cost = state.attack_life_cost(iid)
+            if cost and state.players[player].life_points <= cost:
+                continue  # Dark Elf: cannot pay the LP cost required to declare an attack
+            tribute = state.attack_tribute_cost(iid)
+            if tribute and len(state.attack_tribute_fodder(iid)) < tribute:
+                continue  # Panther Warrior: no other monster to Tribute -> cannot attack
+            mill = state.attack_deck_cost(player)
+            if mill and len(state.players[player].deck) < mill:
+                continue  # Gravekeeper's Servant: too few cards to mill -> cannot attack
         if state.attack_barred_needs_ally(iid):
             continue  # Cave Dragon: cannot attack unless you control another Dragon
         if atk_floor is not None and state.effective_attack(iid) >= atk_floor:
@@ -1561,6 +1565,7 @@ def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     attacker = state.inst(action.attacker)
     attacker.attacked_this_turn = True
     attacker.attacks_made_this_turn += 1
+    attacker.attack_cost_paid = False  # this attack completed; the next one pays its own cost
     me = attacker.controller
     opp = state.opponent_of(me)
     if state._attacker_halver_active(me):  # opponent's Mirror Wall catches this attacker

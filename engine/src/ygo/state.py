@@ -108,6 +108,11 @@ class CardInstance:
     summoned_this_turn: bool = False
     attacked_this_turn: bool = False
     attacks_made_this_turn: int = 0  # how many attacks declared this turn (multi-attackers)
+    # A pay-to-attack cost (Dark Elf's LP, Panther Warrior's Tribute, Gravekeeper mill) is
+    # paid once at declaration. If that attack then fizzles into a replay — the target left
+    # the field before damage (Blast Sphere self-equips) — the monster re-declares, and this
+    # flag stops it from paying the cost a SECOND time. Cleared when the attack completes.
+    attack_cost_paid: bool = False
     position_changed_this_turn: bool = False
     # True once this monster has destroyed an opponent's monster by battle this turn
     # (Insect Queen's End-Phase token recursion reads it). A per-turn flag.
@@ -219,6 +224,7 @@ class CardInstance:
         self.summoned_this_turn = False
         self.attacked_this_turn = False
         self.attacks_made_this_turn = 0
+        self.attack_cost_paid = False
         self.position_changed_this_turn = False
         self.destroyed_a_monster_by_battle_this_turn = False
 

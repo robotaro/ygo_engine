@@ -14,6 +14,7 @@ GreedyAgent opponent runs inline. No engine changes were needed beyond an
 
 from __future__ import annotations
 
+import os
 import queue
 import time
 from pathlib import Path
@@ -281,6 +282,12 @@ class GameSession:
         # Wrap every seat so the whole battle can be saved and replayed later.
         recorders = [RecordingAgent(a) for a in agents] if self.record_dir else None
 
+        # A verbose per-duel event trace (one line per state change) for bug reports.
+        # On by default; set YGO_TRACE=0 to disable. Written line-buffered so a crash
+        # still leaves the trace-up-to-the-crash on disk.
+        trace_file = self._open_trace()
+        trace_cb = (lambda line: trace_file.write(line + "\n")) if trace_file else None
+
         self.engine = Engine(
             self.state,
             recorders or agents,
@@ -288,12 +295,16 @@ class GameSession:
             on_change=self._push_state,
             pacer=lambda: time.sleep(0.7),  # let resolution steps breathe in the UI
             fx=self._push_fx,
+            trace=trace_cb,
         )
         self._push_state()
         try:
             result = self.engine.run()
         except EngineAborted:
             return
+        finally:
+            if trace_file is not None:
+                trace_file.close()
         if recorders is not None:
             self._save_replay(recorders, tuple(names), result)
         self.send(
@@ -304,6 +315,20 @@ class GameSession:
                 "youWin": result.winner == self.human_player,
             }
         )
+
+    def _open_trace(self):
+        """Open this duel's debug-trace file, or return None if tracing is off / has
+        nowhere to write. Path is printed to the client log so it can be found later."""
+        if self.record_dir is None or os.environ.get("YGO_TRACE", "1") == "0":
+            return None
+        try:
+            self.record_dir.mkdir(parents=True, exist_ok=True)
+            path = self.record_dir / f"duel_seed{self.seed}_{int(time.time())}.trace.log"
+            handle = open(path, "w", buffering=1)  # line-buffered: survives a mid-duel crash
+        except OSError:
+            return None
+        self._on_log(f"(event trace: {path})")
+        return handle
 
     def _save_replay(self, recorders, names, result) -> None:
         replay = Replay(
@@ -337,6 +362,8 @@ class GameSession:
         if isinstance(dmg, (list, tuple)) and len(dmg) == 2:
             h = self.human_player
             fx["damage"] = {"you": dmg[h], "opp": dmg[1 - h]}
+        if "player" in fx:  # whose action this is, from the human's own perspective
+            fx["mine"] = fx["player"] == self.human_player
         self.send({"type": "fx", "fx": fx})
 
     def send(self, message: dict) -> None:
