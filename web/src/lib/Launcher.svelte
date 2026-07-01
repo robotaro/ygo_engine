@@ -5,6 +5,7 @@
   import Tournament from './Tournament.svelte'
   import BanlistEditor from './BanlistEditor.svelte'
   import OpponentPicker from './OpponentPicker.svelte'
+  import { prettyDeckName } from './util.js'
 
   // Initial tab is deep-linkable via ?tab=decks|cards|tournament|banlist.
   const urlTab = new URLSearchParams(location.search).get('tab')
@@ -92,7 +93,7 @@
           <select bind:value={yourDeck}>
             {#each myDecks as d (d.id)}
               <option value={d.id}>
-                {d.legal ? '' : '⚠ '}{d.name.replace(/[-_]+/g, ' ')} · {d.playablePct}%
+                {d.legal ? '' : '⚠ '}{prettyDeckName(d.name)} · {d.playablePct}%
               </option>
             {/each}
           </select>

@@ -92,6 +92,7 @@ function resetGameStores() {
   choosePrompt.set(null)
   ritualPrompt.set(null)
   tournamentOutcome.set(null)
+  battleFx.set(null) // drop any stale combat cue so it can't replay into the next game
 }
 
 // Close any duel and return to the launcher (board === null shows the menu).
@@ -121,8 +122,15 @@ export function newGame(seed, deck, opp) {
   ws = new WebSocket(`${proto}://${location.host}/ws?${q}`)
   ws.onopen = () => connected.set(true)
   ws.onclose = () => connected.set(false)
+  ws.onerror = (e) => console.error('[ws] connection error', e)
   ws.onmessage = (event) => {
-    const msg = JSON.parse(event.data)
+    let msg
+    try {
+      msg = JSON.parse(event.data)
+    } catch (err) {
+      console.error('[ws] ignoring malformed message', err)
+      return
+    }
     switch (msg.type) {
       case 'state':
         board.set(msg.state)

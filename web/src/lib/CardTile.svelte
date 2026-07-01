@@ -161,9 +161,9 @@
 
   .card {
     border: 2px solid var(--accent);
-    background: linear-gradient(160deg, #2b2b33, #1c1c22);
+    background: linear-gradient(160deg, var(--surface-2), var(--surface));
     padding: 5px;
-    color: #f3f3f3;
+    color: var(--text);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -189,7 +189,7 @@
   }
   .lv {
     font-size: 8px;
-    color: #ffcf5c;
+    color: var(--accent);
     font-weight: 700;
   }
   .stats {
@@ -204,12 +204,12 @@
     color: #8ab6ff;
   }
   .slash {
-    color: #888;
+    color: var(--faint);
   }
   .kind {
     font-size: 9px;
     text-transform: uppercase;
-    color: #bdbdbd;
+    color: var(--muted);
     text-align: right;
   }
   .trib {
@@ -217,8 +217,8 @@
     top: 2px;
     right: 2px;
     z-index: 2;
-    background: #c0651c;
-    color: #fff;
+    background: var(--accent);
+    color: var(--accent-ink);
     font-size: 9px;
     font-weight: 800;
     border-radius: 3px;
@@ -230,17 +230,17 @@
     right: 2px;
     z-index: 2;
     background: rgba(0, 0, 0, 0.78);
-    color: #ffd9a0;
+    color: var(--accent);
     font-size: 10px;
     font-weight: 800;
     border-radius: 3px;
     padding: 0 4px;
   }
   .stat-badge.boosted {
-    color: #7dff9e;
+    color: var(--success);
   }
   .stat-badge.weakened {
-    color: #ff8a7a;
+    color: var(--danger);
   }
 
   @media (prefers-reduced-motion: reduce) {

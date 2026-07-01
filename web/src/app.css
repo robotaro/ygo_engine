@@ -21,6 +21,7 @@
   --accent: #f0b429;
   --accent-hover: #ffc340;
   --accent-ink: #1a1400; /* text on the accent */
+  --secondary: #ffd876; /* lighter partner of the accent (theme.js overrides per theme) */
 
   /* semantic status (not decoration) */
   --success: #4ccb6e;

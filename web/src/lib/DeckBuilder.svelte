@@ -5,6 +5,8 @@
   //   '+' / dbl-clik -> add it to the deck
   // In `ownedOnly` mode the pool is your card library and copies are capped at
   // how many you own; `loadId` loads an existing deck to edit.
+  import { getJSON, postJSON } from './api.js'
+  import { cardImg, debounce } from './util.js'
   let { onPlay = null, onSaved = null, ownedOnly = false, loadId = null } = $props()
 
   let name = $state('My Deck')
@@ -51,8 +53,7 @@
 
   // Load the available formats once.
   $effect(() => {
-    fetch('/api/formats')
-      .then((r) => r.json())
+    getJSON('/api/formats')
       .then((d) => (formats = d.formats))
       .catch(() => {})
   })
@@ -94,8 +95,8 @@
     ;(async () => {
       try {
         const [deck, col] = await Promise.all([
-          fetch('/api/decks/' + loadId).then((r) => r.json()),
-          fetch('/api/collection').then((r) => r.json()),
+          getJSON('/api/decks/' + loadId),
+          getJSON('/api/collection'),
         ])
         if (cancelled) return
         name = deck.name
@@ -113,34 +114,37 @@
 
   // -- card search (debounced). Fetches the whole matching pool (your library in
   //    owned-only mode); the grid renders a window of it and grows on scroll. --
+  async function searchPool() {
+    const endpoint = ownedOnly ? '/api/collection' : '/api/cards'
+    const params = new URLSearchParams({ sort: sortBy, order: sortDir })
+    if (!ownedOnly) params.set('limit', '5000')
+    if (query) params.set('query', query)
+    if (typeFilter) params.set('type', typeFilter)
+    if (functionalOnly && !ownedOnly) params.set('functional', 'true')
+    try {
+      const data = await getJSON(`${endpoint}?${params}`)
+      let cards = data.cards
+      if (functionalOnly && ownedOnly) cards = cards.filter((c) => c.functional)
+      results = cards
+    } catch {
+      results = []
+    } finally {
+      loading = false
+      visibleCount = 60
+      gridEl?.scrollTo({ top: 0 })
+    }
+  }
+  const searchPoolDebounced = debounce(searchPool, 200)
   $effect(() => {
-    const q = query
-    const t = typeFilter
-    const f = functionalOnly
-    const s = sortBy
-    const o = sortDir
+    // re-run whenever any search input changes
+    void query
+    void typeFilter
+    void functionalOnly
+    void sortBy
+    void sortDir
     loading = true
-    const handle = setTimeout(async () => {
-      const endpoint = ownedOnly ? '/api/collection' : '/api/cards'
-      const params = new URLSearchParams({ sort: s, order: o })
-      if (!ownedOnly) params.set('limit', '5000')
-      if (q) params.set('query', q)
-      if (t) params.set('type', t)
-      if (f && !ownedOnly) params.set('functional', 'true')
-      try {
-        const data = await (await fetch(`${endpoint}?${params}`)).json()
-        let cards = data.cards
-        if (f && ownedOnly) cards = cards.filter((c) => c.functional)
-        results = cards
-      } catch {
-        results = []
-      } finally {
-        loading = false
-        visibleCount = 60
-        gridEl?.scrollTo({ top: 0 })
-      }
-    }, 200)
-    return () => clearTimeout(handle)
+    searchPoolDebounced()
+    return () => searchPoolDebounced.cancel()
   })
 
   // Reveal more cards as the grid is scrolled near the bottom.
@@ -155,59 +159,53 @@
   }
 
   // -- live validation (debounced) whenever the deck, its name, or format changes --
+  async function runValidation(payload) {
+    try {
+      const res = await fetch('/api/decks/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      validation = await res.json()
+    } catch {
+      validation = null
+    }
+  }
+  const runValidationDebounced = debounce(runValidation, 250)
   $effect(() => {
     const payload = { name, main: { ...main }, extra: { ...extra }, format }
     if (mainSize === 0 && extraSize === 0) {
       validation = null
       return
     }
-    const handle = setTimeout(async () => {
-      try {
-        const res = await fetch('/api/decks/validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        validation = await res.json()
-      } catch {
-        validation = null
-      }
-    }, 250)
-    return () => clearTimeout(handle)
+    runValidationDebounced(payload)
+    return () => runValidationDebounced.cancel()
   })
 
   async function save() {
     saving = true
     saveError = ''
     try {
-      const res = await fetch('/api/decks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          main: { ...main },
-          extra: { ...extra },
-          format,
-          replaces: loadId || undefined, // delete the old file if a rename created a new one
-        }),
+      const data = await postJSON('/api/decks', {
+        name,
+        main: { ...main },
+        extra: { ...extra },
+        format,
+        replaces: loadId || undefined, // delete the old file if a rename created a new one
       })
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}))
-        const missing = e?.detail?.missing
-        if (missing) {
-          const names = Object.keys(missing)
-          saveError =
-            "Your library is short on: " +
-            names.slice(0, 4).join(', ') +
-            (names.length > 4 ? `, +${names.length - 4} more` : '')
-        } else {
-          saveError = 'Could not save this deck.'
-        }
-        return
-      }
-      const data = await res.json()
       savedId = data.id
       onSaved?.(data.id)
+    } catch (e) {
+      const missing = e?.detail?.missing
+      if (missing) {
+        const names = Object.keys(missing)
+        saveError =
+          'Your library is short on: ' +
+          names.slice(0, 4).join(', ') +
+          (names.length > 4 ? `, +${names.length - 4} more` : '')
+      } else {
+        saveError = 'Could not save this deck.'
+      }
     } finally {
       saving = false
     }
@@ -216,10 +214,6 @@
   async function saveAndPlay() {
     await save()
     if (savedId) onPlay?.(savedId)
-  }
-
-  function img(card) {
-    return card?.imageId ? `/cards/${card.imageId}.jpg` : null
   }
 
   function typeLine(c) {
@@ -288,10 +282,10 @@
             onkeydown={(e) => e.key === 'Enter' && (selected = card)}
           >
             <div class="thumb">
-              {#if img(card)}
+              {#if cardImg(card)}
                 <img
                   class="art"
-                  src={img(card)}
+                  src={cardImg(card)}
                   width="813"
                   height="1185"
                   alt={card.name}
@@ -333,8 +327,8 @@
   <section class="detail">
     {#if selected}
       <div class="dart">
-        {#if img(selected)}
-          <img src={img(selected)} alt={selected.name} decoding="async" />
+        {#if cardImg(selected)}
+          <img src={cardImg(selected)} alt={selected.name} decoding="async" />
         {:else}
           <div class="noart">{selected.name}</div>
         {/if}
@@ -418,7 +412,7 @@
             {#if restrictedMap[cn]}
               <span class="ban" class:over={!restrictedMap[cn].ok}>{banLabel(restrictedMap[cn].cap)}</span>
             {/if}
-            <button class="mini" onclick={() => add(known[cn])} disabled={copies(cn) >= MAX_COPIES}
+            <button class="mini" onclick={() => add(known[cn])} disabled={copies(cn) >= cap(known[cn])}
               >+</button
             >
             <button class="mini" onclick={() => remove(cn, 'extra')}>−</button>

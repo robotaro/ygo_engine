@@ -3,6 +3,7 @@
   // delete the ones you've built. Every deck is built only from cards you own.
   import { profile, refreshProfile } from './store.js'
   import DeckBuilder from './DeckBuilder.svelte'
+  import { prettyDeckName } from './util.js'
 
   let { onPlay = null } = $props()
 
@@ -13,10 +14,6 @@
   let confirmId = $state('') // deck id awaiting delete confirmation
 
   let decks = $derived($profile?.decks ?? [])
-
-  function pretty(name) {
-    return name.replace(/[-_]+/g, ' ').trim()
-  }
 
   function newDeck() {
     editing = { id: null }
@@ -60,7 +57,7 @@
           <div class="deck">
             <div class="meta">
               <div class="name">
-                {pretty(d.name)}
+                {prettyDeckName(d.name)}
                 {#if d.isStarter}<span class="tag">Starter</span>{/if}
               </div>
               <div class="sub">

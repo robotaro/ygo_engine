@@ -2,6 +2,8 @@
   // Tournament: enter a gauntlet bracket of duelists with one of your decks.
   // Win every round to be crowned champion for a DP bonus.
   import { profile, startTournamentDuel } from './store.js'
+  import { getJSON, postJSON } from './api.js'
+  import { prettyDeckName } from './util.js'
 
   let presets = $state([])
   let run = $state(null) // active/finished run, or null
@@ -14,7 +16,7 @@
 
   async function load() {
     try {
-      const d = await (await fetch('/api/tournaments')).json()
+      const d = await getJSON('/api/tournaments')
       presets = d.presets
       run = d.tournament
       current = d.currentOpponent
@@ -36,19 +38,11 @@
     busy = true
     error = ''
     try {
-      const res = await fetch('/api/tournaments/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ presetId: preset.id, deckId }),
-      })
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}))
-        error = typeof e.detail === 'string' ? e.detail : 'Could not start the tournament.'
-        return
-      }
-      const d = await res.json()
+      const d = await postJSON('/api/tournaments/start', { presetId: preset.id, deckId })
       run = d.tournament
       current = d.currentOpponent
+    } catch (e) {
+      error = typeof e.detail === 'string' ? e.detail : 'Could not start the tournament.'
     } finally {
       busy = false
     }
@@ -64,7 +58,7 @@
   }
 
   function deckName(id) {
-    return (myDecks.find((d) => d.id === id)?.name || id).replace(/[-_]+/g, ' ')
+    return prettyDeckName(myDecks.find((d) => d.id === id)?.name || id)
   }
   function status(i) {
     if (!run) return ''
@@ -129,7 +123,7 @@
         <span>Enter with</span>
         <select bind:value={deckId}>
           {#each myDecks as d (d.id)}
-            <option value={d.id}>{d.name.replace(/[-_]+/g, ' ')}{d.legal ? '' : ' ⚠'}</option>
+            <option value={d.id}>{prettyDeckName(d.name)}{d.legal ? '' : ' ⚠'}</option>
           {/each}
         </select>
       </label>

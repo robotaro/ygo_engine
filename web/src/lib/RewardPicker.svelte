@@ -4,6 +4,8 @@
   // done so the result overlay can move on.
   import { onMount } from 'svelte'
   import { refreshProfile } from './store.js'
+  import { getJSON, postJSON } from './api.js'
+  import { cardImg } from './util.js'
 
   let { onclaimed } = $props()
 
@@ -16,7 +18,7 @@
 
   onMount(async () => {
     try {
-      const d = await (await fetch('/api/rewards')).json()
+      const d = await getJSON('/api/rewards')
       if (!d.pending || !d.packs?.length) {
         onclaimed?.() // nothing to claim — skip straight through
         return
@@ -35,25 +37,16 @@
     busy = pack.id
     error = ''
     try {
-      const res = await fetch('/api/rewards/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packId: pack.id }),
-      })
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}))
-        error = typeof e.detail === 'string' ? e.detail : 'Could not open this pack.'
-        return
-      }
-      const d = await res.json()
+      const d = await postJSON('/api/rewards/claim', { packId: pack.id })
       reveal = { pack: d.pack, cards: d.pulled }
       await refreshProfile() // collection changed
+    } catch (e) {
+      error = typeof e.detail === 'string' ? e.detail : 'Could not open this pack.'
     } finally {
       busy = ''
     }
   }
 
-  const img = (c) => (c?.imageId ? `/cards/${c.imageId}.jpg` : null)
 </script>
 
 <div class="reward">
@@ -65,8 +58,8 @@
       {#each reveal.cards as c (c.name)}
         <div class="pull" class:new={c.isNew}>
           <div class="thumb">
-            {#if img(c)}
-              <img src={img(c)} alt={c.name} decoding="async" />
+            {#if cardImg(c)}
+              <img src={cardImg(c)} alt={c.name} decoding="async" />
             {:else}
               <div class="noart">{c.name}</div>
             {/if}

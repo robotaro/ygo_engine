@@ -3,6 +3,9 @@
   // Spend Duelist Points to open packs or buy specific cards; sell duplicates
   // back for a fraction of their value.
   import { profile, refreshProfile } from './store.js'
+  import { getJSON, postJSON } from './api.js'
+  import { cardImg, debounce } from './util.js'
+  import Modal from './Modal.svelte'
 
   // Initial view is deep-linkable via the URL hash (#packs|#singles|#library).
   const hashView = location.hash.replace('#', '')
@@ -46,7 +49,7 @@
 
   async function loadShop() {
     try {
-      const d = await (await fetch('/api/packs')).json()
+      const d = await getJSON('/api/packs')
       games = d.games
       if (!activeGame && games.length) activeGame = games[0].key
     } catch {
@@ -58,7 +61,7 @@
     const params = new URLSearchParams()
     if (query) params.set('query', query)
     try {
-      library = (await (await fetch('/api/collection?' + params)).json()).cards
+      library = (await getJSON('/api/collection?' + params)).cards
     } catch {
       library = []
     }
@@ -68,11 +71,14 @@
     const params = new URLSearchParams({ limit: '120' })
     if (singleQuery) params.set('query', singleQuery)
     try {
-      singles = (await (await fetch('/api/cards?' + params)).json()).cards
+      singles = (await getJSON('/api/cards?' + params)).cards
     } catch {
       singles = []
     }
   }
+
+  const loadLibraryDebounced = debounce(loadLibrary, 200)
+  const loadSinglesDebounced = debounce(loadSingles, 200)
 
   // Load the pack shop once; reload library / singles on demand as their search changes.
   $effect(() => {
@@ -81,14 +87,14 @@
   $effect(() => {
     void query
     if (view !== 'library') return
-    const h = setTimeout(loadLibrary, 200)
-    return () => clearTimeout(h)
+    loadLibraryDebounced()
+    return () => loadLibraryDebounced.cancel()
   })
   $effect(() => {
     void singleQuery
     if (view !== 'singles') return
-    const h = setTimeout(loadSingles, 200)
-    return () => clearTimeout(h)
+    loadSinglesDebounced()
+    return () => loadSinglesDebounced.cancel()
   })
 
   async function openPack(pack) {
@@ -96,22 +102,14 @@
     busy = pack.id
     error = ''
     try {
-      const res = await fetch('/api/packs/open', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packId: pack.id }),
-      })
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}))
-        error = typeof e.detail === 'string' ? e.detail : 'Could not open this pack.'
-        return
-      }
-      const d = await res.json()
+      const d = await postJSON('/api/packs/open', { packId: pack.id })
       reveal = { pack: d.pack, cards: d.pulled }
       packModal = null // make way for the pull reveal
       await refreshProfile() // DP + collection changed
       await loadShop() // affordability may have changed
       if (view === 'library') await loadLibrary()
+    } catch (e) {
+      error = typeof e.detail === 'string' ? e.detail : 'Could not open this pack.'
     } finally {
       busy = ''
     }
@@ -122,19 +120,11 @@
     busy = 'buy:' + card.name
     error = ''
     try {
-      const res = await fetch('/api/shop/buy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: card.name }),
-      })
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}))
-        error = typeof e.detail === 'string' ? e.detail : 'Could not buy this card.'
-        return
-      }
-      const d = await res.json()
+      const d = await postJSON('/api/shop/buy', { name: card.name })
       flash(`Bought ${card.name} · ◈${d.spent.toLocaleString()}`, 'spend')
       await refreshProfile() // DP + collection changed (affordability is derived from dp)
+    } catch (e) {
+      error = typeof e.detail === 'string' ? e.detail : 'Could not buy this card.'
     } finally {
       busy = ''
     }
@@ -145,27 +135,15 @@
     busy = 'sell:' + card.name
     error = ''
     try {
-      const res = await fetch('/api/shop/sell', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: card.name }),
-      })
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}))
-        error = typeof e.detail === 'string' ? e.detail : 'Could not sell this card.'
-        return
-      }
-      const d = await res.json()
+      const d = await postJSON('/api/shop/sell', { name: card.name })
       flash(`Sold ${card.name} · +◈${d.earned.toLocaleString()}`, 'earn')
       await refreshProfile()
       await loadLibrary() // owned count dropped (card may now be gone)
+    } catch (e) {
+      error = typeof e.detail === 'string' ? e.detail : 'Could not sell this card.'
     } finally {
       busy = ''
     }
-  }
-
-  function img(card) {
-    return card?.imageId ? `/cards/${card.imageId}.jpg` : null
   }
 
   // Rarity → a CSS class that escalates brightness (single-accent palette, no new colours).
@@ -181,7 +159,7 @@
     cardLocator = null
     error = ''
     try {
-      packModal = await (await fetch('/api/pack?id=' + encodeURIComponent(packId))).json()
+      packModal = await getJSON('/api/pack?id=' + encodeURIComponent(packId))
     } catch {
       error = 'Could not load that pack.'
     }
@@ -277,8 +255,8 @@
               onclick={() => (cardDetail = c)}
               onkeydown={(e) => e.key === 'Enter' && (cardDetail = c)}
             >
-              {#if img(c)}
-                <img src={img(c)} alt={c.name} loading="lazy" decoding="async" />
+              {#if cardImg(c)}
+                <img src={cardImg(c)} alt={c.name} loading="lazy" decoding="async" />
               {:else}
                 <div class="noart">{c.name}</div>
               {/if}
@@ -319,8 +297,8 @@
               onclick={() => (cardDetail = c)}
               onkeydown={(e) => e.key === 'Enter' && (cardDetail = c)}
             >
-              {#if img(c)}
-                <img src={img(c)} alt={c.name} loading="lazy" decoding="async" />
+              {#if cardImg(c)}
+                <img src={cardImg(c)} alt={c.name} loading="lazy" decoding="async" />
               {:else}
                 <div class="noart">{c.name}</div>
               {/if}
@@ -347,22 +325,15 @@
 </div>
 
 {#if reveal}
-  <div
-    class="modal"
-    role="button"
-    tabindex="0"
-    onclick={() => (reveal = null)}
-    onkeydown={(e) => e.key === 'Escape' && (reveal = null)}
-  >
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="sheet" role="dialog" onclick={(e) => e.stopPropagation()}>
+  <Modal onclose={() => (reveal = null)}>
+    <div class="sheet" role="dialog">
       <h3>{reveal.pack}</h3>
       <div class="pulls">
         {#each reveal.cards as c (c.name)}
           <div class="pull" class:new={c.isNew}>
             <div class="thumb">
-              {#if img(c)}
-                <img src={img(c)} alt={c.name} decoding="async" />
+              {#if cardImg(c)}
+                <img src={cardImg(c)} alt={c.name} decoding="async" />
               {:else}
                 <div class="noart">{c.name}</div>
               {/if}
@@ -374,24 +345,17 @@
       </div>
       <button class="close btn-primary" onclick={() => (reveal = null)}>Add to Library</button>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 {#if cardDetail}
   {@const c = cardDetail}
   {@const orphan = !c.inPacks || c.inPacks.length === 0}
-  <div
-    class="modal"
-    role="button"
-    tabindex="0"
-    onclick={() => (cardDetail = null)}
-    onkeydown={(e) => e.key === 'Escape' && (cardDetail = null)}
-  >
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="sheet detail" role="dialog" onclick={(e) => e.stopPropagation()}>
+  <Modal onclose={() => (cardDetail = null)}>
+    <div class="sheet detail" role="dialog">
       <div class="dart">
-        {#if img(c)}
-          <img src={img(c)} alt={c.name} decoding="async" />
+        {#if cardImg(c)}
+          <img src={cardImg(c)} alt={c.name} decoding="async" />
         {:else}
           <div class="noart">{c.name}</div>
         {/if}
@@ -438,19 +402,12 @@
         </div>
       </div>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 {#if cardLocator}
-  <div
-    class="modal"
-    role="button"
-    tabindex="0"
-    onclick={() => (cardLocator = null)}
-    onkeydown={(e) => e.key === 'Escape' && (cardLocator = null)}
-  >
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="sheet narrow" role="dialog" onclick={(e) => e.stopPropagation()}>
+  <Modal onclose={() => (cardLocator = null)}>
+    <div class="sheet narrow" role="dialog">
       <h3>Get “{cardLocator.name}”</h3>
       <p class="sub">Grind one of these packs until it drops:</p>
       <div class="loclist">
@@ -463,19 +420,12 @@
       </div>
       <button class="close" onclick={() => (cardLocator = null)}>Close</button>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 {#if packModal}
-  <div
-    class="modal"
-    role="button"
-    tabindex="0"
-    onclick={() => (packModal = null)}
-    onkeydown={(e) => e.key === 'Escape' && (packModal = null)}
-  >
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="sheet wide" role="dialog" onclick={(e) => e.stopPropagation()}>
+  <Modal onclose={() => (packModal = null)}>
+    <div class="sheet wide" role="dialog">
       <h3>{packModal.name}</h3>
       <p class="sub">{packModal.cardsPerPack} cards per pack · {packModal.distinct} in set</p>
       <div class="groups">
@@ -488,8 +438,8 @@
             <div class="minigrid">
               {#each g.cards as c (c.name)}
                 <div class="mini" title={c.name}>
-                  {#if img(c)}
-                    <img src={img(c)} alt={c.name} loading="lazy" decoding="async" />
+                  {#if cardImg(c)}
+                    <img src={cardImg(c)} alt={c.name} loading="lazy" decoding="async" />
                   {:else}
                     <div class="noart">{c.name}</div>
                   {/if}
@@ -510,7 +460,7 @@
         </button>
       </div>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 <style>
@@ -846,7 +796,7 @@
     font-size: 13px;
     padding: 9px 18px;
     border-radius: var(--r-pill);
-    z-index: 60;
+    z-index: 110; /* above <Modal> (z-index 100) so a buy/sell toast stays visible */
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
   }
   .toast.earn {
@@ -864,15 +814,7 @@
     overflow: hidden;
   }
 
-  /* pack-open reveal */
-  .modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.72);
-    display: grid;
-    place-items: center;
-    z-index: 50;
-  }
+  /* pack-open reveal (the backdrop is provided by <Modal>) */
   .sheet {
     background: var(--surface);
     border: 1px solid var(--line-strong);

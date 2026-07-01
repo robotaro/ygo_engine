@@ -1,6 +1,7 @@
 <script>
   // Pick who to duel from the 154 GBA enemy decks, with portraits, grouped by
   // game. Shows the current pick as a card; "Change" opens a searchable grid.
+  import Modal from './Modal.svelte'
   let { selected = '', format = 'none', onSelect = null } = $props()
 
   let games = $state([])
@@ -98,13 +99,7 @@
 </div>
 
 {#if open}
-  <div
-    class="overlay"
-    role="button"
-    tabindex="0"
-    onclick={(e) => e.target === e.currentTarget && (open = false)}
-    onkeydown={(e) => e.key === 'Escape' && (open = false)}
-  >
+  <Modal onclose={() => (open = false)}>
     <div class="modal" role="dialog" tabindex="-1">
       <div class="mhead">
         <h3>Choose your opponent</h3>
@@ -156,7 +151,7 @@
         {/each}
       </div>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 <style>
@@ -234,14 +229,7 @@
     flex: none;
   }
 
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.66);
-    display: grid;
-    place-items: center;
-    z-index: 50;
-  }
+  /* the backdrop is provided by <Modal>; this is the dialog panel inside it */
   .modal {
     width: min(900px, 92vw);
     height: min(80vh, 720px);

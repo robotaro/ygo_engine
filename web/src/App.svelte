@@ -8,7 +8,9 @@
   import Launcher from './lib/Launcher.svelte'
   import RewardPicker from './lib/RewardPicker.svelte'
   import PhaseStrip from './lib/PhaseStrip.svelte'
-  import { THEMES, themeId, applyTheme } from './lib/theme.js'
+  import Modal from './lib/Modal.svelte'
+  import { cardImg } from './lib/util.js'
+  import { THEMES, themeId } from './lib/theme.js'
   import {
     board,
     legal,
@@ -31,7 +33,6 @@
   } from './lib/store.js'
 
   onMount(startHealthMonitor)
-  onMount(() => applyTheme($themeId))
 
   let settingsOpen = false
 
@@ -74,6 +75,7 @@
   let oppHit = false
   let prevPhase = null
   let pendingCost = null // {mine, amount}: an attacker's pay-to-attack LP — a cost, not a hit
+  let pendingCostTimer
   onMount(() => {
     let py = null
     let po = null
@@ -89,20 +91,26 @@
         prevPhase = b.phase
       }
       if (py != null && b.you.lifePoints < py) {
-        const drop = py - b.you.lifePoints
-        // Your own pay-to-attack cost is not a hit — swallow the flash for it.
-        if (pendingCost && pendingCost.mine && drop === pendingCost.amount) {
+        let drop = py - b.you.lifePoints
+        // Your own pay-to-attack cost is not a hit — subtract it (whether it lands
+        // alone or bundled with battle damage) and consume it on this update, so a
+        // later unrelated drop of the same size is never wrongly swallowed.
+        if (pendingCost && pendingCost.mine) {
+          drop -= pendingCost.amount
           pendingCost = null
-        } else {
+        }
+        if (drop > 0) {
           youHit = true
           setTimeout(() => (youHit = false), 600)
         }
       }
       if (po != null && b.opponent.lifePoints < po) {
-        const drop = po - b.opponent.lifePoints
-        if (pendingCost && !pendingCost.mine && drop === pendingCost.amount) {
-          pendingCost = null // the opponent's own attack cost — not a hit
-        } else {
+        let drop = po - b.opponent.lifePoints
+        if (pendingCost && !pendingCost.mine) {
+          drop -= pendingCost.amount // the opponent's own attack cost — not a hit
+          pendingCost = null
+        }
+        if (drop > 0) {
           oppHit = true
           setTimeout(() => (oppHit = false), 600)
         }
@@ -151,9 +159,18 @@
   // A Graveyard is "live" (auto-expanded) when one of its cards is a valid target.
   $: youGyTargetable = !!you?.graveyard?.some((g) => targetCandidates.includes(g.iid))
   $: oppGyTargetable = !!opp?.graveyard?.some((g) => targetCandidates.includes(g.iid))
-  // Auto-open the Graveyard browser when a revive/target effect needs a pick there.
-  $: if ((youGyTargetable || oppGyTargetable) && !openGy)
-    openGy = youGyTargetable ? 'you' : 'opp'
+  let gyAuto = false // the Graveyard browser was force-opened for a target pick
+  // Auto-open the Graveyard browser when a revive/target effect needs a pick there,
+  // and auto-close it once that pick resolves (so it doesn't linger after a revive).
+  $: {
+    if ((youGyTargetable || oppGyTargetable) && !openGy) {
+      openGy = youGyTargetable ? 'you' : 'opp'
+      gyAuto = true
+    } else if (gyAuto && !youGyTargetable && !oppGyTargetable) {
+      openGy = null
+      gyAuto = false
+    }
+  }
 
   // The turn's phase state machine, in order — rendered as a stepper.
   const PHASES = [
@@ -668,7 +685,12 @@
   let attackBanner = null // { name, mine }
   let attackBannerTimer
   function showAttackBanner(fx) {
-    if (fx.cost > 0) pendingCost = { mine: !!fx.mine, amount: fx.cost }
+    if (fx.cost > 0) {
+      pendingCost = { mine: !!fx.mine, amount: fx.cost }
+      // Safety net: drop the cost even if its LP change never arrives (whiffed attack).
+      clearTimeout(pendingCostTimer)
+      pendingCostTimer = setTimeout(() => (pendingCost = null), 1500)
+    }
     attackBanner = { name: fx.name, mine: !!fx.mine }
     clearTimeout(attackBannerTimer)
     attackBannerTimer = setTimeout(() => (attackBanner = null), 1100)
@@ -725,6 +747,7 @@
 
   function toggleGy(side) {
     openGy = openGy === side ? null : side
+    gyAuto = false // a manual open/close shouldn't be auto-closed by the effect above
   }
 
   // A Spell/Trap card may be a target (e.g. Mystical Space Typhoon hits either
@@ -1085,15 +1108,15 @@
               <CardTile {card} />
             </div>
             {#if yourTurn && specialSummonable}
-              <button class="setbtn" onclick={() => specialSummon(card.iid)}>✨ Sp. Summon</button>
+              <button class="setbtn btn-primary" onclick={() => specialSummon(card.iid)}>✨ Sp. Summon</button>
             {:else if yourTurn && opts?.summon?.length}
-              <button class="setbtn" onclick={() => beginPlace(card.iid, 'summon')}>⚔️ Summon</button>
+              <button class="setbtn btn-primary" onclick={() => beginPlace(card.iid, 'summon')}>⚔️ Summon</button>
             {:else if yourTurn && activatable}
-              <button class="setbtn" onclick={() => activateSpell(card.iid)}>⚡ Activate</button>
+              <button class="setbtn btn-primary" onclick={() => activateSpell(card.iid)}>⚡ Activate</button>
             {:else if yourTurn && settable}
-              <button class="setbtn" onclick={() => beginPlace(card.iid, 'set')}>🔽 Set</button>
+              <button class="setbtn btn-primary" onclick={() => beginPlace(card.iid, 'set')}>🔽 Set</button>
             {:else if yourTurn && opts?.set?.length}
-              <button class="setbtn" onclick={() => beginPlace(card.iid, 'setMonster')}>🛡️ Set</button>
+              <button class="setbtn btn-primary" onclick={() => beginPlace(card.iid, 'setMonster')}>🛡️ Set</button>
             {/if}
           </div>
         {/each}
@@ -1139,7 +1162,7 @@
             </button>
           {/each}
         </div>
-        <button class="confirm" disabled={!ritualValid} onclick={confirmTributes}>
+        <button class="confirm btn-primary" disabled={!ritualValid} onclick={confirmTributes}>
           Tribute &amp; Summon
         </button>
       </div>
@@ -1257,9 +1280,8 @@
 
 {#if openGy}
   {@const g = openGy === 'you' ? you : opp}
-  <div class="overlay" role="presentation" onclick={() => (openGy = null)}>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="resultcard gymodal" role="dialog" onclick={(e) => e.stopPropagation()}>
+  <Modal onclose={() => (openGy = null)}>
+    <div class="resultcard gymodal" role="dialog" aria-label="Graveyard">
       <h3>{openGy === 'you' ? 'Your' : opp.name + '’s'} Graveyard · {g.graveyard.length}</h3>
       {#if g.graveyard.length === 0}
         <div class="gyempty">The Graveyard is empty.</div>
@@ -1281,13 +1303,12 @@
       {/if}
       <button class="close btn-primary" onclick={() => (openGy = null)}>Close</button>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 {#if settingsOpen}
-  <div class="overlay" role="presentation" onclick={() => (settingsOpen = false)}>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="resultcard settings" role="dialog" onclick={(e) => e.stopPropagation()}>
+  <Modal onclose={() => (settingsOpen = false)}>
+    <div class="resultcard settings" role="dialog" aria-label="Theme settings">
       <h2>Theme</h2>
       <div class="themegrid">
         {#each THEMES as t}
@@ -1302,14 +1323,14 @@
       </div>
       <button class="close btn-primary" onclick={() => (settingsOpen = false)}>Done</button>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 {#if announce}
   <div class="announce" transition:fade={{ duration: 150 }}>
     <div class="acard">
       {#if announce.imageId}
-        <img src={`/cards/${announce.imageId}.jpg`} alt={announce.name} />
+        <img src={cardImg(announce)} alt={announce.name} />
       {:else}
         <div class="anoart">{announce.name}</div>
       {/if}
@@ -1396,7 +1417,7 @@
         <div class="zoomfallback">{preview.name}</div>
         {#if preview.imageId}
           <img
-            src={`/cards/${preview.imageId}.jpg`}
+            src={cardImg(preview)}
             alt={preview.name}
             onerror={(e) => e.currentTarget.remove()}
           />
@@ -1545,18 +1566,6 @@
   }
   .swatch .sw + .sw {
     margin-left: -5px;
-  }
-  button {
-    background: #b8923a;
-    color: #1a1a1a;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 5px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #d9bf7a;
   }
   .table {
     background:
@@ -1827,7 +1836,7 @@
     outline: 2px solid var(--success);
   }
   .slot.tribute {
-    outline: 2px solid #ff9e3d;
+    outline: 2px solid var(--accent);
   }
   .slot.targetable {
     outline: 2px solid var(--danger);
@@ -1837,18 +1846,18 @@
     cursor: pointer;
   }
   .slot.st.actionable:hover {
-    outline: 2px solid #c9b3ff;
+    outline: 2px solid var(--accent);
   }
   /* The Field zone is a corner fixture (not part of the central 2×5), so it gets
-     the dark recessed look — flagged with a distinct violet edge, not a grey well. */
+     the dark recessed look, distinguished by a slightly stronger edge. */
   .slot.field {
     position: relative;
     background: rgba(0, 0, 0, 0.45);
-    box-shadow: inset 0 0 0 1px #4a3f6a;
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
   .slot.field.armed {
-    outline: 2px dashed #c9b3ff;
-    background: rgba(201, 179, 255, 0.1);
+    outline: 2px dashed var(--success);
+    background: var(--success-dim);
   }
   /* Corner piles: Deck, Extra Deck, Graveyard — recessed & darker than the play
      wells so they read as fixtures, never as a place you can drop a card. */
@@ -1975,9 +1984,9 @@
   .chainbar {
     text-align: center;
     font-size: 13px;
-    color: #c9b3ff;
-    background: rgba(107, 63, 160, 0.25);
-    border-radius: 6px;
+    color: var(--accent);
+    background: var(--surface-2);
+    border-radius: var(--r-sm);
     padding: 4px;
   }
   /* Response prompt: a lighter backdrop keeps the board (with the involved cards
@@ -2096,8 +2105,8 @@
     animation: respondpulse 1.1s ease-in-out infinite;
   }
   .slot.respondsource {
-    outline: 2px solid #c9b3ff;
-    box-shadow: 0 0 16px 3px rgba(201, 179, 255, 0.7);
+    outline: 2px solid var(--accent);
+    box-shadow: 0 0 16px 3px color-mix(in srgb, var(--accent) 70%, transparent);
     border-radius: var(--r);
     animation: respondpulse 1.1s ease-in-out infinite;
   }
@@ -2110,7 +2119,7 @@
   }
 
   .choose {
-    border-color: #6cff9e;
+    border-color: var(--success);
   }
   .choose-options {
     display: flex;
@@ -2129,38 +2138,38 @@
     border-radius: 8px;
   }
   .choosecard:hover {
-    background: rgba(108, 255, 158, 0.12);
+    background: var(--success-dim);
   }
   .choosecard .cn {
     font-size: 11px;
-    color: #eee;
+    color: var(--text);
     max-width: 80px;
   }
   .rtotal {
-    color: #ff8a7a;
+    color: var(--danger);
     font-weight: 700;
     margin: 4px 0 0;
   }
   .rtotal.ok {
-    color: #7dff9e;
+    color: var(--success);
   }
   .tributepick {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    background: #2b2b33;
-    color: #eee;
-    border: 2px solid #444;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 2px solid var(--line-strong);
     padding: 8px 10px;
-    border-radius: 7px;
+    border-radius: var(--r);
   }
   .tributepick .lv {
     font-size: 10px;
-    color: #bbb;
+    color: var(--muted);
   }
   .tributepick.picked {
-    border-color: #6cff9e;
-    background: rgba(108, 255, 158, 0.15);
+    border-color: var(--success);
+    background: var(--success-dim);
   }
   .confirm {
     margin-top: 14px;
@@ -2170,15 +2179,15 @@
     cursor: not-allowed;
   }
   .passbtn {
-    background: #555;
-    color: #eee;
+    background: var(--surface-3);
+    color: var(--text);
   }
   .banner {
     text-align: center;
-    background: #3a2e12;
-    color: #ffe08a;
+    background: var(--warn-dim);
+    color: var(--warn);
     padding: 6px;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     font-size: 13px;
   }
   .banner button {
@@ -2231,8 +2240,8 @@
   }
   .logline {
     white-space: pre-wrap;
-    color: #cfcfcf;
-    border-bottom: 1px solid #1c1c18;
+    color: var(--text);
+    border-bottom: 1px solid var(--line);
     padding: 1px 0;
   }
   .overlay {
@@ -2245,14 +2254,14 @@
     justify-content: center;
   }
   .resultcard {
-    background: #1c1c22;
-    border: 2px solid #b8923a;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: var(--r-lg);
     padding: 30px 50px;
     text-align: center;
   }
   .resultcard.win {
-    border-color: #6cff9e;
+    border-color: var(--success);
   }
   .resultcard h2 {
     margin: 0 0 8px;
@@ -2392,9 +2401,9 @@
   .ctxmenu {
     position: fixed;
     z-index: 211;
-    background: #1b1b24;
-    border: 1px solid #44444f;
-    border-radius: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
     padding: 4px;
     min-width: 168px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
@@ -2405,14 +2414,14 @@
     text-align: left;
     background: none;
     border: none;
-    color: #eaeaf0;
+    color: var(--text);
     padding: 7px 10px;
-    border-radius: 5px;
+    border-radius: var(--r-sm);
     font-size: 13px;
     cursor: pointer;
   }
   .ctxmenu button:hover {
-    background: #2e2e3c;
+    background: var(--surface-3);
   }
   @media (prefers-reduced-motion: reduce) {
     .cardzoom {

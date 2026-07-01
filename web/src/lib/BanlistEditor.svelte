@@ -2,6 +2,8 @@
   // Build your own Forbidden/Limited list. Search the pool, set each card's
   // status (Forbidden / Limited / Semi / Unlimited), name it, and save — it then
   // shows up as a selectable Format in the Play tab and Deck Builder.
+  import { getJSON, postJSON } from './api.js'
+  import { cardImg, debounce } from './util.js'
   let { onSaved = null } = $props()
 
   let name = $state('My Banlist')
@@ -36,31 +38,31 @@
 
   // Load existing lists once (to populate the "start from" selector).
   $effect(() => {
-    fetch('/api/formats')
-      .then((r) => r.json())
+    getJSON('/api/formats')
       .then((d) => (formats = d.formats.filter((f) => f.id !== 'none')))
       .catch(() => {})
   })
 
   // Pool search (debounced).
+  async function searchCards() {
+    const params = new URLSearchParams({ limit: '150' })
+    if (query) params.set('query', query)
+    if (typeFilter) params.set('type', typeFilter)
+    try {
+      results = (await getJSON(`/api/cards?${params}`)).cards
+    } catch {
+      results = []
+    } finally {
+      loading = false
+    }
+  }
+  const searchCardsDebounced = debounce(searchCards, 200)
   $effect(() => {
-    const q = query
-    const t = typeFilter
+    void query
+    void typeFilter
     loading = true
-    const handle = setTimeout(async () => {
-      const params = new URLSearchParams({ limit: '150' })
-      if (q) params.set('query', q)
-      if (t) params.set('type', t)
-      try {
-        const res = await fetch(`/api/cards?${params}`)
-        results = (await res.json()).cards
-      } catch {
-        results = []
-      } finally {
-        loading = false
-      }
-    }, 200)
-    return () => clearTimeout(handle)
+    searchCardsDebounced()
+    return () => searchCardsDebounced.cancel()
   })
 
   function setStatus(cardName, cap) {
@@ -80,8 +82,7 @@
   async function startFrom(id) {
     if (!id) return
     try {
-      const res = await fetch('/api/banlist?id=' + encodeURIComponent(id))
-      const data = await res.json()
+      const data = await getJSON('/api/banlist?id=' + encodeURIComponent(id))
       limits = { ...data.limits }
       if (name === 'My Banlist' && data.name) name = data.name + ' (copy)'
     } catch {
@@ -93,21 +94,14 @@
     saving = true
     savedId = null
     try {
-      const res = await fetch('/api/banlists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, limits: { ...limits } }),
-      })
-      const data = await res.json()
+      const data = await postJSON('/api/banlists', { name, limits: { ...limits } })
       savedId = data.id
       onSaved?.(data.id)
+    } catch {
+      /* save failed — leave savedId null so no confirmation shows */
     } finally {
       saving = false
     }
-  }
-
-  function img(card) {
-    return card?.imageId ? `/cards/${card.imageId}.jpg` : null
   }
 </script>
 
@@ -132,8 +126,8 @@
         {#each results as card (card.name)}
           {@const cur = limits[card.name] ?? 3}
           <div class="crow" class:restricted={cur < 3}>
-            {#if img(card)}
-              <img src={img(card)} alt="" loading="lazy" decoding="async" />
+            {#if cardImg(card)}
+              <img src={cardImg(card)} alt="" loading="lazy" decoding="async" />
             {:else}
               <div class="noimg"></div>
             {/if}
@@ -293,7 +287,7 @@
     background: var(--danger); color: #1a0c0c; border-color: transparent;
   }
   .sbtn.on.s1 {
-    background: #e0913a; color: #1a1400; border-color: transparent;
+    background: var(--secondary); color: var(--bg); border-color: transparent;
   }
   .sbtn.on.s2 {
     background: var(--accent); color: var(--accent-ink); border-color: transparent;
@@ -329,7 +323,7 @@
     color: var(--danger);
   }
   .t.l {
-    color: #e0913a;
+    color: var(--secondary);
   }
   .t.s {
     color: var(--accent);
@@ -361,7 +355,7 @@
     background: var(--danger-dim); color: var(--danger);
   }
   .b1 {
-    background: rgba(224, 145, 58, 0.18); color: #e0a05a;
+    background: color-mix(in srgb, var(--secondary) 20%, transparent); color: var(--secondary);
   }
   .b2 {
     background: var(--warn-dim); color: var(--accent);
