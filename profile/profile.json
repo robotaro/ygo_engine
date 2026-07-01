@@ -1,0 +1,107 @@
+{
+  "name": "Duelist",
+  "duelist_points": 2050,
+  "collection": {
+    "Mystical Elf": 1,
+    "Feral Imp": 1,
+    "Winged Dragon, Guardian of the Fortress #1": 1,
+    "Summoned Skull": 1,
+    "Beaver Warrior": 1,
+    "Dark Magician": 1,
+    "Gaia The Fierce Knight": 1,
+    "Curse of Dragon": 1,
+    "Celtic Guardian": 1,
+    "Mammoth Graveyard": 1,
+    "Great White": 1,
+    "Silver Fang": 1,
+    "Giant Soldier of Stone": 1,
+    "Dragon Zombie": 1,
+    "Doma The Angel of Silence": 1,
+    "Ansatsu": 1,
+    "Witty Phantom": 1,
+    "Claw Reacher": 1,
+    "Mystic Clown": 1,
+    "Sword of Dark Destruction": 1,
+    "Book of Secret Arts": 1,
+    "Dark Hole": 1,
+    "Dian Keto the Cure Master": 1,
+    "Ancient Elf": 1,
+    "Magical Ghost": 1,
+    "Fissure": 1,
+    "Trap Hole": 1,
+    "Two-Pronged Attack": 1,
+    "De-Spell": 1,
+    "Monster Reborn": 1,
+    "Reinforcements": 1,
+    "Change of Heart": 1,
+    "The Stern Mystic": 1,
+    "Wall of Illusion": 1,
+    "Neo the Magic Swordsman": 1,
+    "Baron of the Fiend Sword": 1,
+    "Man-Eating Treasure Chest": 1,
+    "Sorcerer of the Doomed": 1,
+    "Last Will": 1,
+    "Waboku": 1,
+    "Soul Exchange": 1,
+    "Card Destruction": 1,
+    "Trap Master": 1,
+    "Dragon Capture Jar": 1,
+    "Yami": 1,
+    "Man-Eater Bug": 1,
+    "Reverse Trap": 1,
+    "Remove Trap": 1,
+    "Castle Walls": 1,
+    "Ultimate Offering": 1
+  },
+  "decks": [],
+  "active_deck": "ygored/Starter-Deck-Yugi.txt",
+  "stats": {
+    "wins": 0,
+    "losses": 1,
+    "duels": 1
+  },
+  "packs_opened": 0,
+  "tournament": {
+    "active": true,
+    "name": "Worldwide Edition Championship",
+    "deck": "ygored/Starter-Deck-Yugi.txt",
+    "opponents": [
+      {
+        "id": "gba/worldwide_edition/ishizu_ishtar.txt",
+        "name": "Ishizu Ishtar",
+        "portrait": "/portraits/ishizu_ishtar.png"
+      },
+      {
+        "id": "gba/worldwide_edition/joey_wheeler.txt",
+        "name": "Joey Wheeler",
+        "portrait": "/portraits/joey_wheeler.png"
+      },
+      {
+        "id": "gba/worldwide_edition/joey_wheeler_2.txt",
+        "name": "Joey Wheeler",
+        "portrait": "/portraits/joey_wheeler.png"
+      },
+      {
+        "id": "gba/worldwide_edition/maximillion_pegasus.txt",
+        "name": "Maximillion Pegasus",
+        "portrait": "/portraits/maximillion_pegasus.png"
+      },
+      {
+        "id": "gba/worldwide_edition/seeker.txt",
+        "name": "Seeker",
+        "portrait": "/portraits/seeker.png"
+      },
+      {
+        "id": "gba/worldwide_edition/seto_kaiba.txt",
+        "name": "Seto Kaiba",
+        "portrait": "/portraits/seto_kaiba.png"
+      }
+    ],
+    "round": 0,
+    "wins": 0,
+    "eliminated": false,
+    "champion": false,
+    "reward": 1500
+  },
+  "pending_reward": null
+}

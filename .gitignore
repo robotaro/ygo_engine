@@ -25,14 +25,9 @@ assets/card_databases/card_db_ocg_pre_synchro_v6.json
 # Recorded duels (replay logs saved by the web server)
 replays/
 
-# Decks saved from the in-browser deck builder
-assets/deck_blueprints/user/
-
-# Custom Forbidden/Limited lists saved from the deck builder
-assets/banlists/user/
+# NOTE: user decks (assets/deck_blueprints/user/), custom banlists
+# (assets/banlists/user/) and the player save (/profile/) are intentionally
+# tracked so progress syncs across machines via git.
 
 # OS
 .DS_Store
-
-# Player save file (profile, collection, DP)
-/profile/
