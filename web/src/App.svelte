@@ -126,6 +126,14 @@
   $: if (!$legal) unionSource = null
   $: validTargets =
     selectedAttacker != null && $legal ? attackTargets(selectedAttacker) || [] : []
+  // While a response prompt is open, glow the cards it involves on the board: the
+  // source(s) you could activate and every monster they could target.
+  $: responseTargets = $responsePrompt
+    ? new Set($responsePrompt.options.flatMap((o) => o.targets || []))
+    : new Set()
+  $: responseSources = $responsePrompt
+    ? new Set($responsePrompt.options.map((o) => o.iid))
+    : new Set()
   $: mustDiscard = !!$legal?.discards?.length
   $: pendingName = pendingTribute
     ? (you?.hand.find((c) => c.iid === pendingTribute.iid)?.name ?? 'monster')
@@ -588,7 +596,7 @@
     const tEl =
       targetIid != null
         ? document.querySelector(`.slot.mon[data-iid="${targetIid}"]`)
-        : document.querySelector(mine ? '.playerbar.opp' : '.playerbar.you')
+        : document.querySelector(mine ? '.hudpanel.opp' : '.hudpanel.you')
     const a = aEl.getBoundingClientRect()
     let dx = 0
     let dy = mine ? -44 : 44
@@ -635,8 +643,8 @@
     setTimeout(() => {
       if (fx.target != null) flashHit(document.querySelector(`.slot.mon[data-iid="${fx.target}"]`))
       const dmg = fx.damage || {}
-      if (dmg.opp > 0) floatDamage(dmg.opp, document.querySelector('.playerbar.opp'))
-      if (dmg.you > 0) floatDamage(dmg.you, document.querySelector('.playerbar.you'))
+      if (dmg.opp > 0) floatDamage(dmg.opp, document.querySelector('.hudpanel.opp'))
+      if (dmg.you > 0) floatDamage(dmg.you, document.querySelector('.hudpanel.you'))
     }, 175)
   }
 
@@ -791,19 +799,12 @@
     <Launcher />
   {:else}
     <div class="table">
-      <!-- Opponent -->
-      <div
-        class="playerbar opp"
-        class:targetable={selectedAttacker != null && validTargets.includes(null)}
-        onclick={onDirectAttack}
-      >
-        <div class="who">{opp.name}</div>
-        <div class="lp" class:hit={oppHit}>LP {Math.round($oppLp)}</div>
-        <PhaseStrip phases={PHASES} index={phaseIndex} active={!isYourTurn} />
-        <div class="piles">hand {opp.handCount}</div>
+      <!-- Opponent's hand (backs only — name/LP/phase live in the centre HUD below). -->
+      <div class="oppinfo">
         <div class="ohand">
           {#each Array(opp.handCount) as _}<div class="minicard back"></div>{/each}
         </div>
+        <span class="ohcount">✋ {opp.handCount}</span>
       </div>
 
       <!-- Opponent's half — their mat rotated 180° (Spell/Trap line on top). -->
@@ -844,6 +845,7 @@
             class:targetable={slot &&
               ((selectedAttacker != null && validTargets.includes(slot.iid)) ||
                 targetCandidates.includes(slot.iid))}
+            class:respondtarget={slot && responseTargets.has(slot.iid)}
             onclick={() => slot && onClickOppMonster(slot.iid)}
             oncontextmenu={(e) => slot && openContext(e, slot, 'opp')}
           >
@@ -867,18 +869,34 @@
         </div>
       </div>
 
-      <!-- Center status: whose turn + current phase (per-player strips live in
-           each LP bar); the advance button drives the turn forward. -->
-      <div class="status">
-        <span class="turn">Turn {$board.turnCount}</span>
-        <div class="nowphase">
-          <b>{isYourTurn ? 'Your' : opp.name + '’s'}</b> {PHASES[phaseIndex]?.label ?? ''}
+      <!-- GBA-style centre HUD: your panel (left) and the opponent's (right), each with
+           name, Life Points and the phase tracker. The active player's panel lights up;
+           the opponent's panel is the click target for a direct attack. -->
+      <div class="hud">
+        <div class="hudpanel you" class:active={isYourTurn}>
+          <span class="hudname">{you.name}</span>
+          <div class="hudlp" class:hit={youHit}><span>LP</span><b>{Math.round($youLp)}</b></div>
+          <PhaseStrip phases={PHASES} index={phaseIndex} active={isYourTurn} />
         </div>
-        <div class="statusright">
-          <span class="whose" class:you={yourTurn}>{yourTurn ? 'Your move' : '… opponent'}</span>
+
+        <div class="hudmid">
+          <span class="turnno">Turn {$board.turnCount}</span>
           {#if yourTurn && $legal?.canPass}
             <button class="next" onclick={nextPhase}>{NEXT_LABEL[phase] ?? 'Continue ▶'}</button>
+          {:else}
+            <span class="whose" class:you={yourTurn}>{yourTurn ? 'Your move' : 'Opponent…'}</span>
           {/if}
+        </div>
+
+        <div
+          class="hudpanel opp"
+          class:active={!isYourTurn}
+          class:targetable={selectedAttacker != null && validTargets.includes(null)}
+          onclick={onDirectAttack}
+        >
+          <span class="hudname">{opp.name}</span>
+          <div class="hudlp" class:hit={oppHit}><span>LP</span><b>{Math.round($oppLp)}</b></div>
+          <PhaseStrip phases={PHASES} index={phaseIndex} active={!isYourTurn} />
         </div>
       </div>
 
@@ -922,6 +940,8 @@
             class:drop={!slot}
             class:armed={!slot && (draggingMonster || placingMonster)}
             data-iid={slot?.iid}
+            class:respondtarget={slot && responseTargets.has(slot.iid)}
+            class:respondsource={slot && responseSources.has(slot.iid)}
             class:selected={slot && (selectedAttacker === slot.iid || unionSource === slot.iid)}
             class:tribute={slot && pendingTribute?.chosen.includes(slot.iid)}
             class:targetable={slot &&
@@ -980,6 +1000,7 @@
               class="slot st"
               class:actionable={yourTurn && (canActivate(slot.iid) || canUnionUnequip(slot.iid))}
               class:targetable={targetCandidates.includes(slot.iid)}
+              class:respondsource={responseSources.has(slot.iid)}
               title={canUnionUnequip(slot.iid) ? 'Unequip this Union (Special Summon it back)' : null}
               onclick={() => onClickOwnSpellTrap(slot.iid, i)}
               oncontextmenu={(e) => openContext(e, slot, 'ownSpellTrap', i)}
@@ -1003,12 +1024,6 @@
             <span class="count">{you.deckCount}</span>{/if}
           <span class="zlabel">Deck</span>
         </div>
-      </div>
-
-      <div class="playerbar you">
-        <div class="who">{you.name}</div>
-        <div class="lp" class:hit={youHit}>LP {Math.round($youLp)}</div>
-        <PhaseStrip phases={PHASES} index={phaseIndex} active={isYourTurn} />
       </div>
 
       <!-- Hand -->
@@ -1148,13 +1163,47 @@
   {/if}
 
   {#if $responsePrompt && $awaiting}
-    <div class="overlay">
-      <div class="resultcard respond">
+    <!-- Light backdrop so the board (with the involved cards glowing) stays readable. -->
+    <div class="respond-overlay">
+      <div class="respondcard">
         <h2>Your response?</h2>
-        <p>{$responsePrompt.event}</p>
+        <div class="respond-event">
+          {#if $responsePrompt.eventCard}
+            <div class="rc-thumb"><CardTile card={$responsePrompt.eventCard} small /></div>
+          {/if}
+          <span>{$responsePrompt.event}</span>
+        </div>
         <div class="respond-options">
           {#each $responsePrompt.options as opt}
-            <button onclick={() => respondWith(opt)}>{opt.label}</button>
+            <button class="respond-opt" onclick={() => respondWith(opt)}>
+              <div class="ro-card">
+                <div class="rc-thumb"><CardTile card={opt.source} small /></div>
+                <div class="ro-info">
+                  <div class="ro-name">{opt.source?.name ?? opt.label}</div>
+                  {#if opt.source?.text}<div class="ro-text">{opt.source.text}</div>{/if}
+                </div>
+              </div>
+              {#if opt.targetCards?.length}
+                <div class="ro-arrow">▶</div>
+                <div class="ro-targets">
+                  {#each opt.targetCards as t}
+                    <div class="ro-card">
+                      <div class="rc-thumb"><CardTile card={t} small /></div>
+                      <div class="ro-info">
+                        <div class="ro-name">{t.name}</div>
+                        <div class="ro-stat">
+                          {#if t.cardType === 'monster'}
+                            ATK {t.attack ?? '?'} · DEF {t.defense ?? '?'}{#if t.level != null} · Lv{t.level}{/if}
+                          {:else}
+                            {t.cardType}{t.subtype ? ` · ${t.subtype}` : ''}
+                          {/if}
+                        </div>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </button>
           {/each}
           <button class="passbtn" onclick={respondPass}>Pass</button>
         </div>
@@ -1520,55 +1569,94 @@
     flex-direction: column;
     gap: 8px;
   }
-  .playerbar {
+  /* GBA-style centre HUD: two compact status panels (you left, opponent right),
+     each with name, Life Points and the phase tracker; the active player's lifts. */
+  .hud {
+    display: grid;
+    /* Match the mat's exact footprint (7×90px + 6×8px gaps) and centre it, so the two
+       panels line up with the board's left/right edges. The middle column is a fixed
+       width so the panels don't resize when the advance button shows/hides. */
+    width: calc(7 * 90px + 6 * 8px);
+    margin-inline: auto;
+    grid-template-columns: 1fr 180px 1fr;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .hudpanel {
     display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 6px 10px;
-    border-radius: var(--r-sm);
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 14px;
+    border-radius: var(--r);
     background: var(--surface);
     box-shadow: inset 0 0 0 1px var(--line);
+    transition: box-shadow 0.2s ease, background 0.2s ease;
   }
-  .playerbar.targetable {
+  .hudpanel.you { align-items: flex-start; text-align: left; }
+  .hudpanel.opp { align-items: flex-end; text-align: right; }
+  .hudpanel.active {
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+  .hudpanel.opp.targetable {
     outline: 2px solid var(--danger);
     cursor: crosshair;
   }
-  .who {
-    font-weight: 700;
-  }
-  .lp {
-    font-size: 18px;
+  .hudname {
+    font-size: 12px;
     font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+    transition: color 0.2s ease;
+  }
+  .hudpanel.active .hudname { color: var(--accent); }
+  .hudlp {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
     color: var(--accent);
     transition: color 0.25s ease;
-    transform-origin: left center;
   }
-  .lp.hit {
+  .hudpanel.opp .hudlp { flex-direction: row-reverse; }
+  .hudlp span {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .hudlp b {
+    font-size: 27px;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .hudlp.hit {
     color: var(--danger);
     animation: lp-hit 0.5s ease;
   }
   @keyframes lp-hit {
-    0% {
-      transform: scale(1);
-    }
-    30% {
-      transform: scale(1.22);
-    }
-    100% {
-      transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    30% { transform: scale(1.18); }
+    100% { transform: scale(1); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .lp.hit {
-      animation: none;
-    }
+    .hudlp.hit { animation: none; }
   }
-  .piles {
+
+  /* Slim opponent-hand strip (card backs) above their mat. */
+  .oppinfo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .ohcount {
     font-size: 12px;
+    font-weight: 700;
     color: var(--muted);
   }
   .ohand {
-    margin-left: auto;
     display: flex;
     gap: 2px;
   }
@@ -1850,53 +1938,36 @@
     cursor: crosshair;
     border-radius: 8px;
   }
-  .status {
+  /* The thin middle column between the two HUD panels: turn number + the advance
+     button (your turn) or a "whose move" hint (opponent's turn). */
+  .hudmid {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 14px;
-    padding: 8px 4px;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
+    justify-content: center;
+    gap: 6px;
   }
-  .status .turn {
+  .turnno {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     color: var(--muted);
-    font-size: 13px;
-    font-weight: 600;
-    flex: none;
-    width: 110px;
-  }
-  /* Current-turn phase, big and centred (the per-player strips in each LP bar
-     show the full state machine). */
-  .nowphase {
-    flex: 1;
-    text-align: center;
-    font-size: 15px;
-    color: var(--muted);
-  }
-  .nowphase b {
-    color: var(--accent);
-  }
-  .statusright {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    flex: none;
-    width: 190px;
   }
   .whose {
     color: var(--muted);
     font-size: 12px;
+    font-weight: 600;
   }
   .whose.you {
-    color: var(--secondary);
-    font-weight: 700;
+    color: var(--accent);
+    font-weight: 800;
   }
   .next {
     background: var(--accent);
     color: var(--accent-ink);
     border: none;
     font-weight: 700;
+    white-space: nowrap;
   }
   .next:hover {
     background: var(--accent-hover);
@@ -1909,9 +1980,135 @@
     border-radius: 6px;
     padding: 4px;
   }
-  .respond {
-    border-color: #c9b3ff;
+  /* Response prompt: a lighter backdrop keeps the board (with the involved cards
+     glowing) readable; each choice shows the card being activated and its target(s)
+     with art, stats and effect text. */
+  .respond-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.48);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  .respondcard {
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: var(--r-lg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75);
+    padding: 18px 20px;
+    width: min(600px, 94vw);
+    max-height: 88vh;
+    overflow-y: auto;
+    text-align: center;
+  }
+  .respondcard h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+  }
+  .respond-event {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  .rc-thumb {
+    flex: none;
+  }
+  .respond-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .respond-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
+    padding: 8px 10px;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .respond-opt:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+  }
+  .respond-opt > .ro-card {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .ro-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .ro-info {
+    min-width: 0;
+  }
+  .ro-name {
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ro-text {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .ro-stat {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .ro-arrow {
+    color: var(--muted);
+    font-size: 11px;
+    flex: none;
+  }
+  .ro-targets {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: none;
+  }
+
+  /* Board glows while a response prompt is open (visible through the light backdrop). */
+  .slot.respondtarget {
+    outline: 2px solid var(--danger);
+    box-shadow: 0 0 16px 3px color-mix(in srgb, var(--danger) 75%, transparent);
+    border-radius: var(--r);
+    animation: respondpulse 1.1s ease-in-out infinite;
+  }
+  .slot.respondsource {
+    outline: 2px solid #c9b3ff;
+    box-shadow: 0 0 16px 3px rgba(201, 179, 255, 0.7);
+    border-radius: var(--r);
+    animation: respondpulse 1.1s ease-in-out infinite;
+  }
+  @keyframes respondpulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.35); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slot.respondtarget, .slot.respondsource { animation: none; }
+  }
+
   .choose {
     border-color: #6cff9e;
   }
@@ -1971,12 +2168,6 @@
   .confirm:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-  }
-  .respond-options {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
   }
   .passbtn {
     background: #555;

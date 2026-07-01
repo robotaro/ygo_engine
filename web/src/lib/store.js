@@ -136,7 +136,7 @@ export function newGame(seed, deck, opp) {
         choosePrompt.set(null)
         ritualPrompt.set(null)
         if (msg.context === 'response') {
-          responsePrompt.set({ options: msg.options, event: msg.event })
+          responsePrompt.set({ options: msg.options, event: msg.event, eventCard: msg.eventCard })
         } else if (msg.context === 'target') {
           targetRequest.set({
             source: msg.source,

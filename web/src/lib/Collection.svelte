@@ -21,6 +21,22 @@
 
   let dp = $derived($profile?.duelistPoints ?? 0)
   let shownPacks = $derived(games.find((g) => g.key === activeGame)?.packs ?? [])
+  let activeGameTitle = $derived(games.find((g) => g.key === activeGame)?.title ?? '')
+
+  // A foil booster-pack wrapper: serrated crimp on the top/bottom edges (one polygon,
+  // computed once) and a hue derived from the pack name so a shelf of packs looks varied.
+  const SERRATE = (() => {
+    const n = 13, d = 2.6, step = 100 / n, pts = [[0, d]]
+    for (let i = 0; i < n; i++) { pts.push([(i + 0.5) * step, 0]); pts.push([(i + 1) * step, d]) }
+    pts.push([100, 100 - d])
+    for (let i = n - 1; i >= 0; i--) { pts.push([(i + 0.5) * step, 100]); pts.push([i * step, 100 - d]) }
+    return 'polygon(' + pts.map((p) => p[0].toFixed(2) + '% ' + p[1].toFixed(2) + '%').join(',') + ')'
+  })()
+  function packHue(name) {
+    let h = 0
+    for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) % 360
+    return h
+  }
 
   function flash(text, kind) {
     toast = { text, kind }
@@ -159,6 +175,7 @@
 
   let packModal = $state(null) // a pack's full contents { name, groups, price, ... }
   let cardLocator = $state(null) // where to grind a covered card { name, packs }
+  let cardDetail = $state(null) // a card shown enlarged with full details (art/stats/text)
 
   async function openPackModal(packId) {
     cardLocator = null
@@ -200,20 +217,33 @@
     <div class="packgrid">
       {#each shownPacks as p (p.id)}
         <div class="pack" class:poor={!p.affordable}>
-          <button class="packbody" onclick={() => openPackModal(p.id)} title="See what's in {p.name}">
-            {#if p.art}
-              <div class="art">
-                <img
-                  src={p.art}
-                  alt={p.name}
-                  loading="lazy"
-                  decoding="async"
-                  onerror={(e) => (e.currentTarget.style.display = 'none')}
-                />
-              </div>
-            {/if}
-            <div class="pname" title={p.name}>{p.name}</div>
-            <div class="pmeta">{p.cardsPerPack} cards · {p.distinct} in set</div>
+          <button
+            class="wrap"
+            onclick={() => openPackModal(p.id)}
+            title="See what's in {p.name}"
+          >
+            <div class="foil" style="--h:{packHue(p.name)}; clip-path:{SERRATE}">
+              {#if p.art}
+                <!-- full-bleed, blurred+dark copy of the flagship art fills the wrapper -->
+                <img class="bleed" src={p.art} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+              {/if}
+              <div class="sheen"></div>
+              <div class="hdr"><span class="kicker">{activeGameTitle}</span></div>
+              {#if p.art}
+                <div class="art">
+                  <!-- window shows ONLY the card's illustration (fixed crop) -->
+                  <img
+                    src={p.art}
+                    alt={p.name}
+                    loading="lazy"
+                    decoding="async"
+                    onerror={(e) => (e.currentTarget.closest('.art').style.display = 'none')}
+                  />
+                </div>
+              {/if}
+              <div class="ribbon"><span class="nm" title={p.name}>{p.name}</span></div>
+              <div class="ftr"><span class="cpp">{p.cardsPerPack} cards per pack</span></div>
+            </div>
           </button>
           <button
             class="buy"
@@ -238,7 +268,15 @@
         {#each singles as c (c.name)}
           {@const orphan = !c.inPacks || c.inPacks.length === 0}
           <div class="owned shopcard" class:poor={orphan && c.buy > dp} title={c.name}>
-            <div class="thumb">
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="thumb"
+              role="button"
+              tabindex="0"
+              title="Click for details"
+              onclick={() => (cardDetail = c)}
+              onkeydown={(e) => e.key === 'Enter' && (cardDetail = c)}
+            >
               {#if img(c)}
                 <img src={img(c)} alt={c.name} loading="lazy" decoding="async" />
               {:else}
@@ -272,7 +310,15 @@
       <div class="cardgrid">
         {#each library as c (c.name)}
           <div class="owned" title={c.name}>
-            <div class="thumb">
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="thumb"
+              role="button"
+              tabindex="0"
+              title="Click for details"
+              onclick={() => (cardDetail = c)}
+              onkeydown={(e) => e.key === 'Enter' && (cardDetail = c)}
+            >
               {#if img(c)}
                 <img src={img(c)} alt={c.name} loading="lazy" decoding="async" />
               {:else}
@@ -327,6 +373,70 @@
         {/each}
       </div>
       <button class="close btn-primary" onclick={() => (reveal = null)}>Add to Library</button>
+    </div>
+  </div>
+{/if}
+
+{#if cardDetail}
+  {@const c = cardDetail}
+  {@const orphan = !c.inPacks || c.inPacks.length === 0}
+  <div
+    class="modal"
+    role="button"
+    tabindex="0"
+    onclick={() => (cardDetail = null)}
+    onkeydown={(e) => e.key === 'Escape' && (cardDetail = null)}
+  >
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="sheet detail" role="dialog" onclick={(e) => e.stopPropagation()}>
+      <div class="dart">
+        {#if img(c)}
+          <img src={img(c)} alt={c.name} decoding="async" />
+        {:else}
+          <div class="noart">{c.name}</div>
+        {/if}
+      </div>
+      <div class="dinfo">
+        <h3>{c.name}</h3>
+        <div class="dmeta">
+          <span class="rar inline {rarClass(c.rarity)}">{c.rarity}</span>
+          <span class="dtype">{c.cardType}{c.subtype ? ` · ${c.subtype}` : ''}</span>
+        </div>
+        {#if c.cardType === 'monster'}
+          <div class="dstats">
+            {#if c.attribute}<span>{c.attribute}</span>{/if}
+            {#if c.level != null}<span>Level {c.level}</span>{/if}
+            {#if c.race}<span>{c.race}</span>{/if}
+            <span class="atkdef">ATK {c.attack ?? '?'} · DEF {c.defense ?? '?'}</span>
+          </div>
+        {/if}
+        {#if c.text}<p class="dtext">{c.text}</p>{/if}
+        <div class="dactions">
+          {#if c.owned != null}
+            <span class="ownedtag">You own ×{c.owned}</span>
+            <button
+              class="act sell"
+              disabled={busy === 'sell:' + c.name}
+              onclick={() => sellCard(c)}
+            >
+              {busy === 'sell:' + c.name ? '…' : `Sell ◈${c.sell.toLocaleString()}`}
+            </button>
+          {:else if orphan}
+            <button
+              class="act buy"
+              disabled={c.buy > dp || busy === 'buy:' + c.name}
+              onclick={() => buyCard(c)}
+            >
+              {busy === 'buy:' + c.name ? '…' : `Buy ◈${c.buy.toLocaleString()}`}
+            </button>
+          {:else}
+            <button class="act locate" onclick={() => { cardDetail = null; openCardLocator(c) }}>
+              📦 in {c.inPacks.length} pack{c.inPacks.length === 1 ? '' : 's'}
+            </button>
+          {/if}
+          <button class="close" onclick={() => (cardDetail = null)}>Close</button>
+        </div>
+      </div>
     </div>
   </div>
 {/if}
@@ -474,39 +584,131 @@
     padding-bottom: 12px;
   }
   .pack {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
   .pack.poor {
     opacity: 0.55;
   }
-  .pack .art {
+  /* --- foil booster-pack wrapper --- */
+  .wrap {
+    position: relative;
     width: 100%;
-    aspect-ratio: 813 / 1185; /* a card's proportions — show it whole, never cropped */
-    border-radius: var(--r);
+    aspect-ratio: 62 / 100;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+    transition: transform 0.12s ease;
+  }
+  .wrap:hover {
+    transform: translateY(-3px);
+  }
+  .foil {
+    position: absolute;
+    inset: 0;
     overflow: hidden;
-    background: var(--surface-3);
-    margin-bottom: 2px;
+    display: flex;
+    flex-direction: column;
+    /* clip-path (serrated crimp) is set inline; hue from the pack name */
+    background: linear-gradient(
+      135deg,
+      hsl(var(--h), 55%, 42%),
+      hsl(var(--h), 60%, 22%) 45%,
+      hsl(var(--h), 52%, 34%)
+    );
   }
-  .pack .art img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+  /* full-bleed, blurred+dark copy of the flagship art fills the wrapper */
+  .foil .bleed {
+    position: absolute;
+    inset: -20%;
+    width: 140%;
+    height: 140%;
+    object-fit: cover;
+    filter: blur(10px) brightness(0.5) saturate(1.1);
+    opacity: 0.5;
+    z-index: 0;
   }
-  .pname {
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.25;
-    min-height: 2.5em;
+  .sheen {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.2) 45%, transparent 60%);
+    mix-blend-mode: screen;
   }
-  .pmeta {
-    font-size: 11px;
-    color: var(--muted);
+  .hdr,
+  .art,
+  .ribbon,
+  .ftr {
+    position: relative;
+    z-index: 2;
+  }
+  .hdr {
+    padding: 12px 8px 4px;
+    text-align: center;
+    flex: none;
+  }
+  .kicker {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  }
+  /* window: ONLY the card's illustration (one fixed crop of the art box, for every card) */
+  /* the illustration is a square, so the window is square; the crop (calibrated) shows
+     exactly the art box — no card frame, name bar, stats or type line. */
+  .art {
+    flex: none;
+    margin: 6px 12px 2px;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.45);
+  }
+  .art img {
+    position: absolute;
+    width: 125%;
+    height: auto;
+    left: -12.5%;
+    top: -32%;
+  }
+  .ribbon {
+    flex: none;
+    margin-top: auto;
+    padding: 7px 10px 5px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.52));
+    border-top: 2px solid rgba(255, 255, 255, 0.45);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+  }
+  .nm {
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.05;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .ftr {
+    flex: none;
+    padding: 5px 8px 12px;
+    text-align: center;
+  }
+  .cpp {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
   }
   .buy {
     margin-top: auto;
@@ -710,22 +912,96 @@
     padding: 10px 24px;
   }
 
-  /* Clickable pack body (opens the contents browser). */
-  .packbody {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
-    padding: 0;
-    background: transparent;
-    border: 0;
-    text-align: left;
+  /* Thumbnails in the shop/library are clickable to open the detail modal. */
+  .owned .thumb {
     cursor: pointer;
-    color: inherit;
+    transition: box-shadow 0.12s ease;
   }
-  .packbody:hover .pname {
+  .owned .thumb:hover {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  /* Card detail modal: big art + name, type, stats and effect text, with the
+     shop/library action so you can decide (and act) from one place. */
+  .sheet.detail {
+    display: flex;
+    gap: 18px;
+    text-align: left;
+    width: min(580px, 94vw);
+    align-items: flex-start;
+  }
+  .sheet.detail h3 {
+    margin: 0 0 8px;
+  }
+  .dart {
+    flex: none;
+    width: 210px;
+    aspect-ratio: 813 / 1185;
+    border-radius: var(--r);
+    overflow: hidden;
+    background: var(--surface-3);
+  }
+  .dart img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .dinfo {
+    flex: 1;
+    min-width: 0;
+  }
+  .dmeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .dtype {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: capitalize;
+  }
+  .dstats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .dstats .atkdef {
     color: var(--accent);
+    font-weight: 700;
   }
+  .dtext {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text);
+    background: var(--surface-2);
+    border-radius: var(--r);
+    padding: 10px 12px;
+    margin: 0 0 14px;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+  .dactions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .dactions .close {
+    margin-top: 0;
+    padding: 8px 18px;
+  }
+  .ownedtag {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  /* Clickable pack body (opens the contents browser). */
   .hint {
     font-size: 12px;
     color: var(--muted);

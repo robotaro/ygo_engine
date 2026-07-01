@@ -24,7 +24,7 @@ from ..engine import Engine
 from ..enums import Zone
 from ..moves import Action, Pass
 from ..replay import RecordingAgent, Replay
-from ..serialize import legal_to_dict, match_intent, state_to_dict
+from ..serialize import _card_public, legal_to_dict, match_intent, state_to_dict
 from ..setup import new_duel
 from ..state import GameState
 
@@ -44,6 +44,25 @@ def _describe_event(state: GameState, event: dict | None, viewer: int) -> str:
     if event["kind"] == "summon":
         return f"{actor} Summoned {state.inst(event['monster']).name}"
     return f"{actor} acted"
+
+
+def _event_card_iid(event: dict | None) -> int | None:
+    """The card that triggered this response window (the attacker, the summoned
+    monster, or the activated card), so the client can show it."""
+    if not event:
+        return None
+    for key in ("attacker", "monster", "iid", "source_iid"):
+        if event.get(key) is not None:
+            return event[key]
+    return None
+
+
+def _card_detail(state: GameState, iid: int | None) -> dict | None:
+    """Full, un-redacted card info for one iid (art, stats, effect text) — the detail a
+    player needs to weigh a response. Omniscient: this is the player's own decision."""
+    if iid is None or iid not in state.cards:
+        return None
+    return _card_public(state.inst(iid))
 
 
 def _option_label(state: GameState, option) -> str:
@@ -90,8 +109,20 @@ class HumanAgent(Agent):
                 "player": self.player,
                 "state": state_to_dict(state, self.player),
                 "event": _describe_event(state, event, self.player),
+                # The card that triggered the window (summoned monster / attacker), plus,
+                # per option, the card being activated and each of its targets — with art,
+                # stats and effect text — so the choice can be made on full information.
+                "eventCard": _card_detail(state, _event_card_iid(event)),
                 "options": [
-                    {"iid": o.iid, "targets": list(o.targets), "label": _option_label(state, o)}
+                    {
+                        "iid": o.iid,
+                        "targets": list(o.targets),
+                        "label": _option_label(state, o),
+                        "source": _card_detail(state, o.iid),
+                        "targetCards": [
+                            c for c in (_card_detail(state, t) for t in o.targets) if c
+                        ],
+                    }
                     for o in options
                 ],
             }
