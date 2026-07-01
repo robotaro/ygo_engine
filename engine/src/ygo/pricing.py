@@ -32,10 +32,11 @@ All prices round **up** to the nearest :data:`ROUND_TO` DP for clean numbers.
 from __future__ import annotations
 
 import math
+import weakref
 from functools import lru_cache
 
+from .banlist import NO_RESTRICTIONS, BanList, load_banlist
 from .cards import CardDef, CardRegistry
-from .deckbuild import NO_RESTRICTIONS, BanList, load_banlist
 
 # Rarity tiers, rarest last. "(Unsorted)" packs (rarity unknown in the source)
 # count as Common. Ranks are the keys used throughout this module.
@@ -85,7 +86,12 @@ def reference_banlist() -> BanList:
         return NO_RESTRICTIONS
 
 
-_RARITY_MAP_CACHE: dict[int, dict[str, int]] = {}
+# Keyed on the registry *object* (not id(registry), which a GC'd-then-reused
+# object could collide with, serving a stale map); the weak keys also let a
+# retired registry's cache entry be collected.
+_RARITY_MAP_CACHE: "weakref.WeakKeyDictionary[CardRegistry, dict[str, int]]" = (
+    weakref.WeakKeyDictionary()
+)
 
 
 def rarity_map(registry: CardRegistry) -> dict[str, int]:
@@ -95,7 +101,7 @@ def rarity_map(registry: CardRegistry) -> dict[str, int]:
     Built lazily from the pack catalogue and cached per registry; importing
     :mod:`packs` here (rather than at module top) keeps the import graph a DAG.
     """
-    cached = _RARITY_MAP_CACHE.get(id(registry))
+    cached = _RARITY_MAP_CACHE.get(registry)
     if cached is not None:
         return cached
 
@@ -108,7 +114,7 @@ def rarity_map(registry: CardRegistry) -> dict[str, int]:
             for name in names:
                 if rank > best.get(name, -1):
                     best[name] = rank
-    _RARITY_MAP_CACHE[id(registry)] = best
+    _RARITY_MAP_CACHE[registry] = best
     return best
 
 

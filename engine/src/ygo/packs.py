@@ -150,12 +150,21 @@ def list_packs(registry: CardRegistry) -> list[PackDef]:
 
 
 def get_pack(pack_id: str, registry: CardRegistry) -> PackDef | None:
-    """Resolve a pack by id (traversal-guarded)."""
+    """Resolve a pack by id (traversal-guarded).
+
+    Uses a ``parents``-based containment check, not a string prefix: the latter
+    would wrongly admit a sibling like ``card_packs_x/...`` whose path merely
+    *starts with* the root's string.
+    """
+    if not pack_id:
+        return None
     root = CARD_PACKS_DIR.resolve()
     path = (root / pack_id).with_suffix(".txt").resolve()
-    if not str(path).startswith(str(root)) or not path.is_file():
+    if root not in path.parents:  # outside the packs dir -> reject
         return None
-    pack = _parse_pack(path, CARD_PACKS_DIR.resolve(), registry)
+    if not path.is_file():
+        return None
+    pack = _parse_pack(path, root, registry)
     return pack if pack.purchasable else None
 
 

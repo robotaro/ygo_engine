@@ -36,6 +36,22 @@ def test_get_pack_resolves_and_guards(all_packs):
     assert K.get_pack(sample.id, REGISTRY) is not None
     assert K.get_pack("../../../etc/passwd", REGISTRY) is None
     assert K.get_pack("gba/nope/does_not_exist", REGISTRY) is None
+    assert K.get_pack("", REGISTRY) is None
+
+
+def test_get_pack_rejects_sibling_prefix_traversal(tmp_path, monkeypatch):
+    # A `parents`-based guard must reject a SIBLING dir whose path merely *starts
+    # with* the root's string (card_packs vs card_packs_evil) — the old prefix
+    # check would have wrongly admitted it and read a file outside the packs dir.
+    root = tmp_path / "card_packs"
+    evil = tmp_path / "card_packs_evil"
+    root.mkdir()
+    evil.mkdir()
+    (evil / "leak.txt").write_text("# Pack: Leak\n## Common\nKuriboh\n", encoding="utf-8")
+    monkeypatch.setattr(K, "CARD_PACKS_DIR", root)
+
+    # id resolves to .../card_packs/../card_packs_evil/leak -> outside root -> rejected
+    assert K.get_pack("../card_packs_evil/leak", REGISTRY) is None
 
 
 def test_open_pack_pulls_from_pack_only(all_packs):

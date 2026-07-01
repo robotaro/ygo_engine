@@ -14,9 +14,11 @@ GreedyAgent opponent runs inline. No engine changes were needed beyond an
 
 from __future__ import annotations
 
+import asyncio
 import os
 import queue
 import time
+import uuid
 from pathlib import Path
 
 from ..agents import Agent, GreedyAgent
@@ -288,16 +290,30 @@ class GameSession:
         seed: int = 0,
         human_player: int = 0,
         record_dir: Path | None = None,
+        loop: asyncio.AbstractEventLoop | None = None,
     ):
         self.deck_a = deck_a
         self.deck_b = deck_b
         self.seed = seed
         self.human_player = human_player
         self.record_dir = record_dir
-        self.outbound: queue.Queue = queue.Queue()
+        # When driven by the async WebSocket, outbound messages are delivered onto
+        # the event loop's asyncio.Queue via call_soon_threadsafe, so the pump can
+        # ``await`` them (cancellation-safe, no wedged threadpool worker). Headless
+        # callers (tests) pass no loop and drain a plain thread-safe queue.
+        self._loop = loop
+        self.outbound: asyncio.Queue | queue.Queue = (
+            asyncio.Queue() if loop is not None else queue.Queue()
+        )
         self.inbound: queue.Queue = queue.Queue()
         self.state: GameState | None = None
         self.engine: Engine | None = None
+        # Set on disconnect/abort; checked on the engine's send/pace path so a
+        # disconnect during a busy CPU turn tears the engine down promptly.
+        self.stopped = False
+        # A per-session token so two duels in the same second (same seed) can't
+        # overwrite each other's trace/replay files.
+        self.uid = uuid.uuid4().hex[:8]
 
     # ----- lifecycle (run on the engine worker thread) -----
     def run(self) -> None:
@@ -324,7 +340,7 @@ class GameSession:
             recorders or agents,
             log=self._on_log,
             on_change=self._push_state,
-            pacer=lambda: time.sleep(0.7),  # let resolution steps breathe in the UI
+            pacer=self._pace,  # let resolution steps breathe in the UI (and bail on abort)
             fx=self._push_fx,
             trace=trace_cb,
         )
@@ -338,14 +354,17 @@ class GameSession:
                 trace_file.close()
         if recorders is not None:
             self._save_replay(recorders, tuple(names), result)
-        self.send(
-            {
-                "type": "result",
-                "winner": result.winner,
-                "reason": result.reason,
-                "youWin": result.winner == self.human_player,
-            }
-        )
+        try:
+            self.send(
+                {
+                    "type": "result",
+                    "winner": result.winner,
+                    "reason": result.reason,
+                    "youWin": result.winner == self.human_player,
+                }
+            )
+        except EngineAborted:
+            pass  # client vanished as the duel ended — nothing left to deliver
 
     def _open_trace(self):
         """Open this duel's debug-trace file, or return None if tracing is off / has
@@ -354,7 +373,7 @@ class GameSession:
             return None
         try:
             self.record_dir.mkdir(parents=True, exist_ok=True)
-            path = self.record_dir / f"duel_seed{self.seed}_{int(time.time())}.trace.log"
+            path = self.record_dir / f"duel_seed{self.seed}_{int(time.time())}_{self.uid}.trace.log"
             handle = open(path, "w", buffering=1)  # line-buffered: survives a mid-duel crash
         except OSError:
             return None
@@ -370,7 +389,7 @@ class GameSession:
             decisions=[r.log for r in recorders],
             result={"winner": result.winner, "reason": result.reason},
         )
-        path = self.record_dir / f"duel_seed{self.seed}_{int(time.time())}.json"
+        path = self.record_dir / f"duel_seed{self.seed}_{int(time.time())}_{self.uid}.json"
         try:
             replay.save(path)
             self._on_log(f"(replay saved: {path.name})")
@@ -397,16 +416,48 @@ class GameSession:
             fx["mine"] = fx["player"] == self.human_player
         self.send({"type": "fx", "fx": fx})
 
+    def _pace(self) -> None:
+        """Dramatic pause between resolution steps — but bail immediately if the
+        client has gone, so a disconnect mid-CPU-turn tears the engine down now
+        rather than after the whole turn finishes."""
+        if self.stopped:
+            raise EngineAborted()
+        time.sleep(0.7)
+
     def send(self, message: dict) -> None:
-        self.outbound.put(message)
+        if self.stopped:
+            # Client is gone; unwind the engine instead of queueing dead messages.
+            raise EngineAborted()
+        if message.get("type") == "decision":
+            # A new prompt: discard any intents queued before it (a double-click,
+            # or a stale answer to the previous prompt) so they can't be dequeued
+            # as the answer to *this* decision.
+            self._drain_inbound()
+        if self._loop is not None:
+            self._loop.call_soon_threadsafe(self.outbound.put_nowait, message)
+        else:
+            self.outbound.put(message)
 
     # ----- client -> engine -----
     def submit_intent(self, intent: dict) -> None:
         self.inbound.put(intent)
+
+    def _drain_inbound(self) -> None:
+        """Drop stale intents from the inbound queue, preserving the abort sentinel."""
+        aborted = False
+        try:
+            while True:
+                if self.inbound.get_nowait() is _ABORT:
+                    aborted = True  # remember, but keep draining stale intents
+        except queue.Empty:
+            pass
+        if aborted:
+            self.inbound.put(_ABORT)  # never swallow the disconnect signal
 
     def wait_for_intent(self):
         item = self.inbound.get()
         return None if item is _ABORT else item
 
     def abort(self) -> None:
+        self.stopped = True
         self.inbound.put(_ABORT)

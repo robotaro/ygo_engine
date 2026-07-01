@@ -98,6 +98,25 @@ def test_rename_deletes_the_old_file(iso):
     assert b["id"] in ids and a["id"] not in ids
 
 
+def test_colliding_slugs_do_not_overwrite(iso, tmp_path, monkeypatch):
+    # Different names can slug to the same stem ("My Deck!" / "My Deck?" -> "my_deck").
+    # They must land in separate files, not silently clobber one another.
+    decks_root = tmp_path / "decks"
+    (decks_root / "user").mkdir(parents=True)
+    monkeypatch.setattr(srv, "DECKS_DIR", decks_root)
+
+    owned = list(srv.load_profile().collection)[:40]
+    main = {n: 1 for n in owned}
+    a = srv.save_deck({"name": "My Deck!", "main": main})
+    b = srv.save_deck({"name": "My Deck?", "main": main})
+
+    assert a["id"] != b["id"]  # disambiguated, not the same file
+    assert srv.resolve_deck_id(a["id"]) is not None
+    assert srv.resolve_deck_id(b["id"]) is not None
+    saved = set(srv.load_profile().decks)
+    assert a["id"] in saved and b["id"] in saved
+
+
 def test_collection_endpoint_returns_owned_with_counts(iso):
     col = srv.collection()
     assert col["distinct"] == 50

@@ -50,3 +50,42 @@ def test_session_saves_a_replay(tmp_path, monkeypatch):
     assert data["result"]["reason"]
     assert len(data["decisions"]) == 2  # one decision log per seat
     assert data["seed"] == 2
+
+
+def test_drain_inbound_clears_stale_intents_but_keeps_abort():
+    # A double-clicked / queued intent must not answer the *next* decision.
+    s = GameSession(deck_a=DECK_A, deck_b=DECK_B)
+    s.submit_intent({"kind": "pass"})
+    s.submit_intent({"kind": "pass"})
+    s._drain_inbound()
+    assert s.inbound.empty()
+
+    # The abort sentinel is never swallowed by a drain (a stale intent alongside
+    # it is still cleared, but the disconnect signal survives).
+    s.abort()
+    s.submit_intent({"kind": "stale"})
+    s._drain_inbound()
+    assert s.wait_for_intent() is None  # abort still delivered
+
+
+def test_abort_tears_down_the_engine_thread(tmp_path, monkeypatch):
+    # A disconnect mid-duel must stop the worker promptly, not wedge it.
+    import ygo.server.session as sess
+
+    monkeypatch.setattr(sess.time, "sleep", lambda *a, **k: None)
+    session = GameSession(
+        deck_a=DECK_A, deck_b=DECK_B, seed=2, human_player=0, record_dir=tmp_path
+    )
+    worker = threading.Thread(target=session.run, daemon=True)
+    worker.start()
+
+    # Wait until the engine is actually asking the human to decide, then abort.
+    deadline = time.time() + 20
+    while time.time() < deadline:
+        msg = session.outbound.get(timeout=15)
+        if msg["type"] == "decision":
+            break
+    session.abort()
+    worker.join(timeout=5)
+    assert not worker.is_alive(), "engine thread did not tear down after abort()"
+    assert session.stopped is True

@@ -40,7 +40,7 @@ def test_win_sets_pending_reward_and_no_dp(iso):
     before_dp = profile.duelist_points
     # Simulate the WS result handler's reward branch.
     profile.record_result(True, dp=0)
-    profile.pending_reward = {"game": game}
+    profile.add_reward({"game": game})
     srv.save_profile(profile)
 
     assert srv.load_profile().duelist_points == before_dp  # no DP for the win
@@ -53,7 +53,7 @@ def test_win_sets_pending_reward_and_no_dp(iso):
 def test_claim_reward_grants_cards_and_clears(iso):
     game = _a_gba_game_with_packs()
     profile = srv.load_profile()
-    profile.pending_reward = {"game": game}
+    profile.add_reward({"game": game})
     srv.save_profile(profile)
 
     choices = srv.rewards()["packs"]
@@ -63,8 +63,27 @@ def test_claim_reward_grants_cards_and_clears(iso):
 
     assert len(res["pulled"]) >= 1
     assert srv.load_profile().total_cards() > before
-    assert srv.load_profile().pending_reward is None
+    assert srv.load_profile().pending_rewards == []
     assert srv.rewards()["pending"] is False
+
+
+def test_reward_queue_survives_a_second_win(iso):
+    # Two wins before either reward is claimed: both must queue (no lost reward).
+    games = {p.game for p in srv._all_packs()}
+    g1, g2 = sorted(games)[:2]
+    profile = srv.load_profile()
+    profile.add_reward({"game": g1})
+    profile.add_reward({"game": g2})
+    srv.save_profile(profile)
+
+    assert srv.rewards()["pendingCount"] == 2
+    assert srv.rewards()["game"] == g1  # oldest first (FIFO)
+
+    first = next(p for p in srv._all_packs() if p.game == g1)
+    srv.claim_reward({"packId": first.id})
+    # The second reward is still pending after claiming the first.
+    assert srv.load_profile().pending_rewards == [{"game": g2}]
+    assert srv.rewards()["game"] == g2
 
 
 def test_claim_rejects_pack_from_another_game(iso):
@@ -72,7 +91,7 @@ def test_claim_rejects_pack_from_another_game(iso):
     assert len(games) >= 2
     g1, g2 = sorted(games)[:2]
     profile = srv.load_profile()
-    profile.pending_reward = {"game": g1}
+    profile.add_reward({"game": g1})
     srv.save_profile(profile)
     other = next(p for p in srv._all_packs() if p.game == g2)
     with pytest.raises(HTTPException) as e:

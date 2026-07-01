@@ -51,7 +51,14 @@ from ..enums import Attribute, CardType
 from ..packs import get_pack, list_packs, open_pack
 from .. import pricing
 from ..paths import ASSETS, DECKS_DIR, REPO_ROOT
-from ..profile import STARTER_DECK_ID, Profile, load_profile, new_profile, save_profile
+from ..profile import (
+    STARTER_DECK_ID,
+    Profile,
+    load_profile,
+    new_profile,
+    profile_transaction,
+    save_profile,
+)
 from .. import tournament as tour
 from .session import GameSession
 
@@ -417,7 +424,8 @@ def profile_summary(profile: Profile) -> dict:
         "collectionTotal": profile.total_cards(),
         "activeDeck": profile.active_deck,
         "decks": [d for d in decks if d is not None],
-        "pendingReward": profile.pending_reward,
+        "pendingReward": profile.next_reward(),  # the reward a claim would resolve next
+        "pendingRewardCount": len(profile.pending_rewards),
     }
 
 
@@ -527,34 +535,33 @@ def pack_detail(id: str) -> dict:
 @app.post("/api/packs/open")
 def buy_pack(payload: dict) -> dict:
     """Spend DP to open a pack; the pulled cards go into your library."""
-    profile = load_profile()
     pack = get_pack(payload.get("packId", ""), REGISTRY)
     if pack is None:
         raise HTTPException(status_code=404, detail="Unknown pack")
     price = pricing.pack_price(pack, REGISTRY)
-    if not profile.can_afford(price):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Not enough DP — need {price}, have {profile.duelist_points}",
-        )
-    profile.spend(price)
-    pulled = open_pack(pack, random.Random())
-    before = set(profile.collection)
-    profile.add_cards(Counter(pulled))
-    profile.packs_opened += 1
-    save_profile(profile)
-    cards = []
-    for name in pulled:
-        card = REGISTRY.get(name)
-        entry = card_to_dict(card)
-        entry["isNew"] = name not in before
-        cards.append(entry)
-    return {
-        "pack": pack.name,
-        "pulled": cards,
-        "spent": price,
-        "duelistPoints": profile.duelist_points,
-    }
+    with profile_transaction() as profile:
+        if not profile.can_afford(price):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Not enough DP — need {price}, have {profile.duelist_points}",
+            )
+        profile.spend(price)
+        pulled = open_pack(pack, random.Random())
+        before = set(profile.collection)
+        profile.add_cards(Counter(pulled))
+        profile.packs_opened += 1
+        cards = []
+        for name in pulled:
+            card = REGISTRY.get(name)
+            entry = card_to_dict(card)
+            entry["isNew"] = name not in before
+            cards.append(entry)
+        return {
+            "pack": pack.name,
+            "pulled": cards,
+            "spent": price,
+            "duelistPoints": profile.duelist_points,
+        }
 
 
 # --------------------------------------------------------------------------- #
@@ -565,7 +572,10 @@ def _shop_card(payload: dict) -> tuple[CardDef, int]:
     card = REGISTRY.get((payload.get("name") or "").strip())
     if card is None:
         raise HTTPException(status_code=404, detail="Unknown card")
-    qty = int(payload.get("qty", 1) or 1)
+    try:
+        qty = int(payload.get("qty", 1) or 1)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Quantity must be a whole number")
     if qty < 1:
         raise HTTPException(status_code=400, detail="Quantity must be at least 1")
     return card, qty
@@ -575,7 +585,6 @@ def _shop_card(payload: dict) -> tuple[CardDef, int]:
 def shop_buy(payload: dict) -> dict:
     """Buy a card outright. Only cards in NO booster pack are buyable as singles
     — everything a pack can yield must be ground for instead."""
-    profile = load_profile()
     card, qty = _shop_card(payload)
     if _pack_index().get(card.name):
         raise HTTPException(
@@ -584,45 +593,44 @@ def shop_buy(payload: dict) -> dict:
         )
     unit = pricing.buy_value(card, REGISTRY)
     cost = unit * qty
-    if not profile.can_afford(cost):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Not enough DP — need {cost}, have {profile.duelist_points}",
-        )
-    profile.spend(cost)
-    profile.add_cards({card.name: qty})
-    save_profile(profile)
-    return {
-        "card": card_to_dict(card),
-        "qty": qty,
-        "spent": cost,
-        "owned": profile.collection.get(card.name, 0),
-        "duelistPoints": profile.duelist_points,
-        "profile": profile_summary(profile),
-    }
+    with profile_transaction() as profile:
+        if not profile.can_afford(cost):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Not enough DP — need {cost}, have {profile.duelist_points}",
+            )
+        profile.spend(cost)
+        profile.add_cards({card.name: qty})
+        return {
+            "card": card_to_dict(card),
+            "qty": qty,
+            "spent": cost,
+            "owned": profile.collection.get(card.name, 0),
+            "duelistPoints": profile.duelist_points,
+            "profile": profile_summary(profile),
+        }
 
 
 @app.post("/api/shop/sell")
 def shop_sell(payload: dict) -> dict:
     """Sell duplicates back for DP (a fraction of the card's value)."""
-    profile = load_profile()
     card, qty = _shop_card(payload)
-    if not profile.owns(card.name, qty):
-        have = profile.collection.get(card.name, 0)
-        raise HTTPException(status_code=400, detail=f"You only own {have}x {card.name}")
     unit = pricing.sell_value(card, REGISTRY)
     proceeds = unit * qty
-    profile.remove_cards({card.name: qty})
-    profile.earn(proceeds)
-    save_profile(profile)
-    return {
-        "card": card_to_dict(card),
-        "qty": qty,
-        "earned": proceeds,
-        "owned": profile.collection.get(card.name, 0),
-        "duelistPoints": profile.duelist_points,
-        "profile": profile_summary(profile),
-    }
+    with profile_transaction() as profile:
+        if not profile.owns(card.name, qty):
+            have = profile.collection.get(card.name, 0)
+            raise HTTPException(status_code=400, detail=f"You only own {have}x {card.name}")
+        profile.remove_cards({card.name: qty})
+        profile.earn(proceeds)
+        return {
+            "card": card_to_dict(card),
+            "qty": qty,
+            "earned": proceeds,
+            "owned": profile.collection.get(card.name, 0),
+            "duelistPoints": profile.duelist_points,
+            "profile": profile_summary(profile),
+        }
 
 
 # --------------------------------------------------------------------------- #
@@ -651,14 +659,19 @@ def reward_pack_dict(pack) -> dict:
 
 @app.get("/api/rewards")
 def rewards() -> dict:
-    """The booster packs offered for an unclaimed win reward (opponent's game)."""
+    """The booster packs offered for the next unclaimed win reward (its game).
+
+    Rewards queue up, so more than one may be pending; this describes the oldest,
+    which a claim resolves next. ``pendingCount`` tells the UI how many remain.
+    """
     profile = load_profile()
-    reward = profile.pending_reward
+    reward = profile.next_reward()
     if not reward:
-        return {"pending": False, "packs": []}
+        return {"pending": False, "packs": [], "pendingCount": 0}
     game = reward.get("game")
     return {
         "pending": True,
+        "pendingCount": len(profile.pending_rewards),
         "game": game,
         "gameTitle": GAME_TITLES.get(game, game),
         "packs": [reward_pack_dict(p) for p in packs_for_game(game)],
@@ -667,33 +680,34 @@ def rewards() -> dict:
 
 @app.post("/api/rewards/claim")
 def claim_reward(payload: dict) -> dict:
-    """Open the chosen reward pack for free and clear the pending reward."""
-    profile = load_profile()
-    reward = profile.pending_reward
-    if not reward:
-        raise HTTPException(status_code=400, detail="No reward to claim")
+    """Open the chosen reward pack for free and pop the oldest pending reward."""
     pack = get_pack(payload.get("packId", ""), REGISTRY)
-    game = reward.get("game")
-    if pack is None or (game and pack.game != game):
-        raise HTTPException(status_code=400, detail="That pack isn't one of your reward choices")
-    pulled = open_pack(pack, random.Random())
-    before = set(profile.collection)
-    profile.add_cards(Counter(pulled))
-    profile.packs_opened += 1
-    profile.pending_reward = None
-    save_profile(profile)
-    cards = []
-    for name in pulled:
-        card = REGISTRY.get(name)
-        entry = card_to_dict(card)
-        entry["isNew"] = name not in before
-        cards.append(entry)
-    return {
-        "pack": pack.name,
-        "pulled": cards,
-        "duelistPoints": profile.duelist_points,
-        "profile": profile_summary(profile),
-    }
+    with profile_transaction() as profile:
+        reward = profile.next_reward()
+        if not reward:
+            raise HTTPException(status_code=400, detail="No reward to claim")
+        game = reward.get("game")
+        if pack is None or (game and pack.game != game):
+            raise HTTPException(
+                status_code=400, detail="That pack isn't one of your reward choices"
+            )
+        pulled = open_pack(pack, random.Random())
+        before = set(profile.collection)
+        profile.add_cards(Counter(pulled))
+        profile.packs_opened += 1
+        profile.claim_next_reward()  # pop the reward we just resolved
+        cards = []
+        for name in pulled:
+            card = REGISTRY.get(name)
+            entry = card_to_dict(card)
+            entry["isNew"] = name not in before
+            cards.append(entry)
+        return {
+            "pack": pack.name,
+            "pulled": cards,
+            "duelistPoints": profile.duelist_points,
+            "profile": profile_summary(profile),
+        }
 
 
 # --------------------------------------------------------------------------- #
@@ -748,45 +762,46 @@ def tournament_now() -> dict:
 
 @app.post("/api/tournaments/start")
 def start_tournament(payload: dict) -> dict:
-    profile = load_profile()
     preset = next((p for p in tournament_presets() if p["id"] == payload.get("presetId")), None)
     if preset is None:
         raise HTTPException(status_code=404, detail="Unknown tournament")
-    deck_id = payload.get("deckId") or profile.active_deck
-    summary = deck_summary(deck_id, profile)
-    if summary is None:
-        raise HTTPException(status_code=400, detail="Unknown deck")
-    if not summary["owned"]:
-        raise HTTPException(status_code=400, detail="You don't own every card in that deck")
-    if not summary["legal"]:
-        raise HTTPException(status_code=400, detail="That deck isn't tournament-legal")
-    profile.tournament = tour.start_run(preset["name"], deck_id, preset["opponents"])
-    profile.active_deck = deck_id
-    save_profile(profile)
-    return _tournament_state(profile)
+    with profile_transaction() as profile:
+        deck_id = payload.get("deckId") or profile.active_deck
+        summary = deck_summary(deck_id, profile)
+        if summary is None:
+            raise HTTPException(status_code=400, detail="Unknown deck")
+        if not summary["owned"]:
+            raise HTTPException(status_code=400, detail="You don't own every card in that deck")
+        if not summary["legal"]:
+            raise HTTPException(status_code=400, detail="That deck isn't tournament-legal")
+        profile.tournament = tour.start_run(preset["name"], deck_id, preset["opponents"])
+        profile.active_deck = deck_id
+        return _tournament_state(profile)
 
 
 @app.post("/api/tournament/advance")
 def advance_tournament(payload: dict) -> dict:
     """Report a tournament-match result; advance the bracket and award any bonus."""
-    profile = load_profile()
-    run = profile.tournament
-    if not run or not run.get("active"):
-        return {**_tournament_state(profile), "bonus": 0}
-    run, bonus = tour.advance(run, bool(payload.get("won")))
-    if bonus:
-        profile.earn(bonus)
-    profile.tournament = run
-    save_profile(profile)
-    return {**_tournament_state(profile), "bonus": bonus, "duelistPoints": profile.duelist_points}
+    with profile_transaction() as profile:
+        run = profile.tournament
+        if not run or not run.get("active"):
+            return {**_tournament_state(profile), "bonus": 0}
+        run, bonus = tour.advance(run, bool(payload.get("won")))
+        if bonus:
+            profile.earn(bonus)
+        profile.tournament = run
+        return {
+            **_tournament_state(profile),
+            "bonus": bonus,
+            "duelistPoints": profile.duelist_points,
+        }
 
 
 @app.post("/api/tournament/forfeit")
 def forfeit_tournament() -> dict:
-    profile = load_profile()
-    profile.tournament = None
-    save_profile(profile)
-    return _tournament_state(profile)
+    with profile_transaction() as profile:
+        profile.tournament = None
+        return _tournament_state(profile)
 
 
 @app.post("/api/decks/validate")
@@ -797,43 +812,65 @@ def validate(payload: dict) -> dict:
     return validation_dict(deck, payload.get("format"))
 
 
+def _unique_user_deck_path(user_dir: Path, slug: str, keep: Path | None) -> Path:
+    """A ``user/<slug>.txt`` path that won't clobber a *different* existing deck.
+
+    Different names can slug to the same stem ("My Deck!" and "My Deck?" both
+    -> "my_deck"); silently overwriting one with the other loses a deck. ``keep``
+    is the one file we're allowed to overwrite (the deck being edited in place);
+    any other collision gets a ``-2``, ``-3``… suffix.
+    """
+    candidate = user_dir / f"{slug}.txt"
+    if not candidate.exists() or candidate == keep:
+        return candidate
+    i = 2
+    while True:
+        candidate = user_dir / f"{slug}-{i}.txt"
+        if not candidate.exists() or candidate == keep:
+            return candidate
+        i += 1
+
+
 @app.post("/api/decks")
 def save_deck(payload: dict) -> dict:
     """Save one of *your* decks — buildable only from cards you own."""
-    profile = load_profile()
     name = (payload.get("name") or "Untitled").strip()
     slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_") or "deck"
     deck = decklist_from_counts(name, payload.get("main", {}), payload.get("extra", {}))
     counts = Counter(c.name for c in (*deck.main, *deck.extra))
-    missing = profile.missing_for_deck(dict(counts))
-    if missing:
-        raise HTTPException(
-            status_code=400,
-            detail={"error": "Your library is short on some cards", "missing": missing},
-        )
     user_dir = DECKS_DIR / "user"
-    user_dir.mkdir(parents=True, exist_ok=True)
-    path = user_dir / f"{slug}.txt"
-    path.write_text(to_blueprint_text(deck), encoding="utf-8")
-    deck_id = path.relative_to(DECKS_DIR).as_posix()
-    # Editing + renaming a deck would otherwise leave the old file orphaned —
-    # clean it up (only user decks, never a bundled one).
+    user_root = user_dir.resolve()
     replaces = payload.get("replaces")
-    if replaces and replaces != deck_id:
-        old = resolve_deck_id(replaces)
-        user_root = (DECKS_DIR / "user").resolve()
-        if old is not None and user_root in old.resolve().parents:
-            old.unlink(missing_ok=True)
-            if replaces in profile.decks:
-                profile.decks.remove(replaces)
-    if deck_id not in profile.decks:
-        profile.decks.append(deck_id)
-    profile.active_deck = deck_id
-    save_profile(profile)
-    return {
-        "id": deck_id,
-        "validation": validation_dict(deck, payload.get("format")),
-    }
+    with profile_transaction() as profile:
+        missing = profile.missing_for_deck(dict(counts))
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Your library is short on some cards", "missing": missing},
+            )
+        # The one existing file we may overwrite: the user deck being edited in place.
+        keep = resolve_deck_id(replaces) if replaces else None
+        if keep is not None and user_root not in keep.resolve().parents:
+            keep = None  # never overwrite a bundled deck via `replaces`
+        user_dir.mkdir(parents=True, exist_ok=True)
+        path = _unique_user_deck_path(user_dir, slug, keep)
+        path.write_text(to_blueprint_text(deck), encoding="utf-8")
+        deck_id = path.relative_to(DECKS_DIR).as_posix()
+        # Editing + renaming a deck would otherwise leave the old file orphaned —
+        # clean it up (only user decks, never a bundled one).
+        if replaces and replaces != deck_id:
+            old = resolve_deck_id(replaces)
+            if old is not None and user_root in old.resolve().parents:
+                old.unlink(missing_ok=True)
+                if replaces in profile.decks:
+                    profile.decks.remove(replaces)
+        if deck_id not in profile.decks:
+            profile.decks.append(deck_id)
+        profile.active_deck = deck_id
+        return {
+            "id": deck_id,
+            "validation": validation_dict(deck, payload.get("format")),
+        }
 
 
 @app.get("/api/decks/{deck_id:path}")
@@ -859,13 +896,12 @@ def delete_deck(deck_id: str) -> dict:
     if path is None or user_root not in path.resolve().parents:
         raise HTTPException(status_code=400, detail="Not a deletable deck")
     path.unlink()
-    profile = load_profile()
-    if deck_id in profile.decks:
-        profile.decks.remove(deck_id)
-    if profile.active_deck == deck_id:
-        profile.active_deck = STARTER_DECK_ID
-    save_profile(profile)
-    return {"deleted": deck_id}
+    with profile_transaction() as profile:
+        if deck_id in profile.decks:
+            profile.decks.remove(deck_id)
+        if profile.active_deck == deck_id:
+            profile.active_deck = STARTER_DECK_ID
+        return {"deleted": deck_id}
 
 
 # --------------------------------------------------------------------------- #
@@ -879,49 +915,61 @@ async def duel_ws(websocket: WebSocket) -> None:
     your_deck = resolve_deck_id(websocket.query_params.get("deck")) or DECK_A
     opp_deck = resolve_deck_id(opp_id) or DECK_B
 
+    # Bind the session to this event loop: the engine thread hands outbound
+    # messages back via loop.call_soon_threadsafe, so the pump can ``await`` a
+    # cancellation-safe asyncio.Queue instead of blocking a threadpool worker.
+    loop = asyncio.get_running_loop()
     session = GameSession(
-        deck_a=your_deck, deck_b=opp_deck, seed=seed, human_player=0, record_dir=RECORD_DIR
+        deck_a=your_deck,
+        deck_b=opp_deck,
+        seed=seed,
+        human_player=0,
+        record_dir=RECORD_DIR,
+        loop=loop,
     )
     worker = threading.Thread(target=session.run, daemon=True)
     worker.start()
 
-    loop = asyncio.get_running_loop()
-
     async def pump_outbound() -> None:
-        # Bridge the engine thread's blocking queue to the async socket.
         while True:
-            message = await loop.run_in_executor(None, session.outbound.get)
+            message = await session.outbound.get()
             if message.get("type") == "result":
                 # The duel is over — tally it. A win grants a free booster-pack
                 # pick from the opponent's game (GBA-style) instead of flat DP;
-                # a loss still pays the small consolation DP.
-                profile = load_profile()
+                # a loss still pays the small consolation DP. Done inside a
+                # profile transaction so the result can't race another mutation.
                 won = bool(message.get("youWin"))
                 game = opponent_game(opp_id)
-                if won and packs_for_game(game):
-                    earned = profile.record_result(True, dp=0)
-                    profile.pending_reward = {"game": game}
-                else:
-                    earned = profile.record_result(won)
-                save_profile(profile)
-                message = {
-                    **message,
-                    "dpEarned": earned,
-                    "duelistPoints": profile.duelist_points,
-                    "pendingReward": profile.pending_reward,
-                }
+                with profile_transaction() as profile:
+                    if won and packs_for_game(game):
+                        earned = profile.record_result(True, dp=0)
+                        profile.add_reward({"game": game})
+                    else:
+                        earned = profile.record_result(won)
+                    message = {
+                        **message,
+                        "dpEarned": earned,
+                        "duelistPoints": profile.duelist_points,
+                        "pendingReward": profile.next_reward(),
+                    }
             await websocket.send_json(message)
 
     pump = asyncio.create_task(pump_outbound())
     try:
         while True:
-            intent = await websocket.receive_json()
+            try:
+                intent = await websocket.receive_json()
+            except (ValueError, json.JSONDecodeError):
+                continue  # ignore a malformed (non-JSON) frame; keep the duel alive
             session.submit_intent(intent)
     except WebSocketDisconnect:
         pass
     finally:
-        session.abort()
+        session.abort()  # sets the stopped flag + unblocks a waiting human
         pump.cancel()
+        # Confirm the engine thread actually tears down (it should, promptly,
+        # now that abort() is checked on the send/pace path).
+        await loop.run_in_executor(None, worker.join, 2.0)
 
 
 # Card art (downloaded by scripts/download_card_images.py). Mounted before "/".
