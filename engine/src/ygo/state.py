@@ -296,6 +296,11 @@ class GameState:
     attack_negated: bool = False  # transient flag set while resolving an attack response
     attack_redirect: int | None = None  # a response set a new attack target (Call of the Earthbound)
     reflect_battle_damage: bool = False  # Dimension Wall: my battle damage hits the attacker
+    # The engine's _declare_attack has already reset the transient attack flags above and let
+    # its response windows populate them (Dimension Wall's reflect, Kuriboh's prevented). When
+    # True, _resolve_attack must NOT re-reset them; when False (the bare apply(DeclareAttack)
+    # path used in tests/tools), _resolve_attack resets them so a prior attack can't leak in.
+    _attack_flags_prepared: bool = False
     # Players whose monsters cannot be destroyed by an effect during the current chain
     # (White Hole protects its controller's monsters from a chained "Dark Hole"). Set by
     # ProtectControlledFromDestruction; cleared when the chain finishes resolving.
@@ -554,6 +559,20 @@ class GameState:
         self.players[player].life_points += amount
         self.lp_gain_pending.append((player, amount))
 
+    def deal_damage(self, player: int, amount: int, *, is_cost: bool = False) -> None:
+        """The single effect-DAMAGE sink (ygopro's Duel.Damage), the mirror of
+        ``gain_life_points``: subtract ``amount`` from ``player``'s Life Points and — unless
+        this is an LP COST (Toon World, pay-to-negate) — record it in ``effect_damage_pending``
+        so the engine's post-chain "when you take damage" window (Numinous Healer / Attack and
+        Receive) can react. A non-positive amount is a no-op. Every burn path routes through
+        here so that window sees them all; BATTLE damage keeps its own separate record and does
+        NOT come through here."""
+        if amount <= 0:
+            return
+        self.players[player].life_points -= amount
+        if not is_cost:
+            self.effect_damage_pending.append((player, amount))
+
     def takes_no_battle_damage(self, player: int) -> bool:
         """Whether ``player`` is currently immune to battle damage — either for this one
         attack (Kuriboh's discard added them to ``battle_damage_prevented``) or for the
@@ -635,7 +654,7 @@ class GameState:
         discarded card (callers fire once per card, so the per-card total is exact)."""
         opp = self.opponent_of(discarder)
         for _src, mod in self.active_markers(BurnOnHandDiscard, players=(opp,)):
-            self.players[discarder].life_points -= mod.amount
+            self.deal_damage(discarder, mod.amount)  # burn — routes the "took damage" window
 
     def banish(self, iid: int) -> None:
         """Remove a card from play to its *owner's* banished pile, clearing field
@@ -728,7 +747,9 @@ class GameState:
         if mod.scaling == "spell_trap":
             count = sum(1 for i in self.players[controller].spell_trap_zones if i is not None)
             return flat + per * count
-        return flat
+        # A non-None scaling that matched nothing above is an authoring typo — fail loudly
+        # rather than silently applying only the flat part.
+        raise ValueError(f"unknown EquipMod scaling {mod.scaling!r}")
 
     # ----- field/continuous layers (face-up Field & Continuous Spells) -----
     def _active_continuous_sources(self):
@@ -957,8 +978,11 @@ class GameState:
                     and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
                 )
                 total += flat + per * (field + gy)
+            elif mod.scaling is None:
+                total += flat  # a flat self-boost (Goggle Golem, the Gadgets) — no scaling
             else:
-                total += flat
+                # A non-None scaling that matched no branch is an authoring typo — fail loudly.
+                raise ValueError(f"unknown SelfStatMod scaling {mod.scaling!r}")
         return total
 
     def _spell_counter_delta(self, monster_iid: int, which: str) -> int:

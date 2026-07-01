@@ -127,7 +127,8 @@ def test_the_dark_door_limits_to_one_attack():
     _dark_door_on_field(s, 0)
 
     assert len(_attacks(s, 0)) == 2  # both could attack directly
-    s.inst(a.iid).attacked_this_turn = True  # one attacks
+    s.inst(a.iid).attacked_this_turn = True  # one attacks (a real, completed attack...
+    s.inst(a.iid).attacks_made_this_turn = 1  # ...increments attacks_made — the gate now reads this)
     assert _attacks(s, 0) == []  # no second attack allowed this Battle Phase
 
 

@@ -507,6 +507,16 @@ def _can_ritual_summon_for(monster_name: str):
     return cond
 
 
+def _register(target: dict, entries: dict) -> None:
+    """Merge ``entries`` into an effect dict, raising if any key already exists — so a later
+    batch can never silently shadow an already-defined card (the class of bug that let two
+    non-identical 'Cemetary Bomb' entries coexist). Used for every ``*.update(...)`` below."""
+    clash = target.keys() & entries.keys()
+    if clash:
+        raise ValueError(f"duplicate effect key(s) would shadow an existing card: {sorted(clash)}")
+    target.update(entries)
+
+
 EFFECTS: dict[str, tuple[Effect, ...]] = {
     # --- Slice 1: Ignition Normal Spells, no cost, no targets ---
     "Pot of Greed": (Effect(resolve=(Draw(count=2),)),),
@@ -688,13 +698,6 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             speed=2,
             timing="ignition",
             resolve=(InflictDamage(OPPONENT, value=CountTimes(200, "opponent_hand_and_field")),),
-        ),
-    ),
-    "Cemetary Bomb": (  # Normal Trap: 100 per card in the opponent's Graveyard
-        Effect(
-            speed=2,
-            timing="ignition",
-            resolve=(InflictDamage(OPPONENT, value=CountTimes(100, "opponent_graveyard")),),
         ),
     ),
     "D.D. Dynamite": (  # Normal Trap: 300 per card the opponent has banished
@@ -2710,7 +2713,7 @@ CONTINUOUS: dict[str, tuple] = {
 
 
 # ===== Effects Batch 67: author-only sweep (chunks 0-2) (author-sweep) =====
-EFFECTS.update({
+_register(EFFECTS, {
     '7 Completed': _equip_effect(races=("Machine",)),
     'A Wingbeat of Giant Dragon': (
         Effect(
@@ -3095,7 +3098,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     'Barrier Statue of the Abyss': (
         SpecialSummonLock(whose="both", except_attribute=Attribute.DARK),
     ),
@@ -3117,7 +3120,7 @@ CONTINUOUS.update({
 
 
 # ===== Effects Batch 68: author-only sweep (chunks 3-15) (author-sweep) =====
-EFFECTS.update({
+_register(EFFECTS, {
     'Dark Eruption': (
         Effect(
             timing="ignition",
@@ -4484,7 +4487,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     'Doitsu': (
         UnionMod(host_names=frozenset({"Soitsu"})),
         EquipMod(atk=2500),
@@ -4553,7 +4556,7 @@ CONTINUOUS.update({
 
 
 # ===== Effects Batch 69: during-End-Phase triggers (EndPhaseTrigger) =====
-EFFECTS.update({
+_register(EFFECTS, {
     # Lumina, Lightsworn Summoner — Ignition revive (the End-Phase mill is in CONTINUOUS):
     # discard 1, then Special Summon a Level-4-or-lower "Lightsworn" from your GY.
     "Lumina, Lightsworn Summoner": (
@@ -4571,7 +4574,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Elemental HERO Lady Heat — during each of YOUR End Phases, burn the opponent 200
     # for each face-up "Elemental HERO" you control (counts Lady Heat herself).
     "Elemental HERO Lady Heat": (
@@ -4649,7 +4652,7 @@ CONTINUOUS.update({
 
 
 # ===== Effects Batch 70: attack-lock floodgates (AttackRestriction extension) =====
-EFFECTS.update({
+_register(EFFECTS, {
     # Swords of Revealing Light — Normal Spell that stays face-up on the field; just
     # activating it places it there (the lock + 3-turn timer live in CONTINUOUS). Its
     # flip-the-opponent's-face-down-monsters rider on activation is not modelled.
@@ -4658,7 +4661,7 @@ EFFECTS.update({
     # CONTINUOUS.
     "Gravity Bind": _ACTIVATE_ONTO_FIELD,
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Swords of Revealing Light — while face-up, the opponent's monsters cannot declare
     # an attack; it self-destructs on the opponent's 3rd End Phase (EndPhaseTrigger ticks
     # the countdown each of their End Phases).
@@ -4674,7 +4677,7 @@ CONTINUOUS.update({
 
 
 # ===== Effects Batch 71: "switch to Defense after attacking" family (DefenseAfterAttack) =====
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Spear Dragon — piercing battle damage, then switches to Defense after it attacks.
     "Spear Dragon": (Piercing(), DefenseAfterAttack()),
     # Axe Dragonute — switches to Defense at the end of the Damage Step it attacks.
@@ -4692,7 +4695,7 @@ CONTINUOUS.update({
 
 
 # ===== Effects Batch 72: deck-impact staples (Ring of Destruction, Card Destruction, Dust Tornado) =====
-EFFECTS.update({
+_register(EFFECTS, {
     # Ring of Destruction — Normal Trap (current ruling): during the opponent's turn,
     # target 1 face-up monster they control; you take damage equal to its ATK, then deal
     # the same to the opponent, then destroy it. (Simplifications: the "ATK <= their LP"
@@ -4728,7 +4731,7 @@ EFFECTS.update({
 
 
 # ===== Effects Batch 73: permanent ATK debuff + Megamorph + Nimble (deck-impact) =====
-EFFECTS.update({
+_register(EFFECTS, {
     # Slate Warrior — FLIP: gains 500 ATK/DEF (a permanent self-buff). And when it is
     # destroyed by battle, the monster that destroyed it permanently loses 500 ATK/DEF.
     "Slate Warrior": (
@@ -4771,7 +4774,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Megamorph — ATK becomes double the equipped monster's original ATK while your LP
     # is below your opponent's, or half while it is above (read in effective_attack).
     "Megamorph": (EquipMod(scaling="lp_megamorph"),),
@@ -4783,7 +4786,7 @@ CONTINUOUS.update({
 # handled by GameState.exodia_winner / Engine._check_exodia, so the pieces need no card
 # entry here. Cyber Jar floods both boards from a Flip; Maha Vailo scales with its own
 # Equips; Time Wizard is a once/turn coin toss.
-EFFECTS.update({
+_register(EFFECTS, {
     # Cyber Jar — FLIP: destroy every monster on the field, then both players reveal the
     # top 5 of their Decks, Special Summon all revealed Level 4-or-lower monsters and add
     # the rest to their hands.
@@ -4810,7 +4813,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Maha Vailo — gains 500 ATK for each Equip Card equipped to it (its own boost is on
     # top of whatever ATK the Equips themselves grant).
     "Maha Vailo": (SelfStatMod(scaling="equips_on_self", scale_atk=500),),
@@ -4819,7 +4822,7 @@ CONTINUOUS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 75: deck-impact mechanisms — a battle-banish trigger, a GY-Standby
 # self-return, and a conditional named Special Summon.
-EFFECTS.update({
+_register(EFFECTS, {
     # D.D. Warrior Lady — after damage calculation, when it battles an opponent's monster:
     # banish that monster and banish this card (fires whether or not either was destroyed).
     "D.D. Warrior Lady": (
@@ -4852,7 +4855,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Sinister Serpent — during your Standby Phase, if it is in your GY, add it back to
     # your hand. Read off the card in the GY by the engine's Standby hook.
     "Sinister Serpent": (GraveyardStandbyReturn(),),
@@ -4861,7 +4864,7 @@ CONTINUOUS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 76: deck-impact toolbox — an Extra-Deck cheat, a board-reset flood, and
 # the Machine ATK-doubler.
-EFFECTS.update({
+_register(EFFECTS, {
     # Cyber-Stein — pay 5000 LP: Special Summon 1 Fusion Monster from your Extra Deck in
     # Attack Position (deterministic highest-ATK Fusion).
     "Cyber-Stein": (
@@ -4889,7 +4892,7 @@ EFFECTS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 77: deck-impact — a both-GY stat anthem, a battle-recruiter, and a
 # Battle-Phase-ender.
-EFFECTS.update({
+_register(EFFECTS, {
     # Giant Germ — destroyed by battle & sent to the GY: inflict 500 damage, then Special
     # Summon as many "Giant Germ" as possible from the Deck in face-up Attack Position.
     "Giant Germ": (
@@ -4917,7 +4920,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Dark Magician Girl — gains 300 ATK for each "Dark Magician" or "Magician of Black
     # Chaos" in either Graveyard.
     "Dark Magician Girl": (
@@ -4932,7 +4935,7 @@ CONTINUOUS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 78: deck-impact — a coin-toss attacker-neutering Trap, a GY-Standby LP
 # drip, and an End-Phase summon floodgate.
-EFFECTS.update({
+_register(EFFECTS, {
     # Fairy Box — reactive Trap: when the opponent's monster declares an attack, toss a
     # coin; if you call it right, that monster's ATK becomes 0 for the battle. (Modelled
     # as a one-shot reaction like the other attack-declaration Traps; the Continuous
@@ -4949,7 +4952,7 @@ EFFECTS.update({
     # summon sweep lives in CONTINUOUS.
     "Infinite Dismissal": _ACTIVATE_ONTO_FIELD,
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Darklord Marie — while in the Graveyard, gain 200 LP during each of your Standby
     # Phases.
     "Darklord Marie": (GraveyardStandbyGainLife(amount=200),),
@@ -4961,7 +4964,7 @@ CONTINUOUS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 79: deck-impact — a pay-LP-to-attack monster, a face-down banisher, and a
 # Nomi banish-Summon with a Battle-Phase-only enemy debuff.
-EFFECTS.update({
+_register(EFFECTS, {
     # Nobleman of Crossout — target 1 face-down monster; destroy and banish it, then, if
     # it was a Flip monster, each player banishes every card with that monster's name from
     # their Main Deck. (A face-down monster never flips, so no Flip Effect fires on removal.)
@@ -4973,7 +4976,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Dark Elf — its controller must pay 1000 LP to declare an attack with it.
     "Dark Elf": (AttackLifeCost(amount=1000),),
     # Soul of Purity and Light — every monster the opponent controls loses 300 ATK, but
@@ -5004,7 +5007,7 @@ HAND_SUMMONS.update({
 # damage activate a Set Trap triggered on it; the event carries the damage amount.
 # (Effect-damage activation — Numinous Healer/Attack and Receive also trigger off burn —
 # is not yet modelled; only battle damage opens the window.)
-EFFECTS.update({
+_register(EFFECTS, {
     # Numinous Healer — when you take damage (battle OR effect): gain 1000 LP, plus 500 more
     # for each "Numinous Healer" already in your Graveyard (this copy is still on the chain,
     # not yet in the GY, so it counts only earlier copies).
@@ -5052,7 +5055,7 @@ EFFECTS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 81: deck-COMPLETION targets (each is the last unimplemented card in 2-3
 # GBA decks). A Ritual Spell, a Nomi Winged Beast, and a piercing Equip.
-EFFECTS.update({
+_register(EFFECTS, {
     # Black Magic Ritual — Ritual Summon "Magician of Black Chaos" (Tribute monsters
     # totalling Level 8+). Structurally identical to Black Luster Ritual.
     "Black Magic Ritual": (
@@ -5068,7 +5071,7 @@ EFFECTS.update({
 RITUALS.update({
     "Black Magic Ritual": "Magician of Black Chaos",
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Big Bang Shot — +400 ATK and grants piercing while attached (read by has_piercing).
     "Big Bang Shot": (EquipMod(atk=400, grants_piercing=True),),
 })
@@ -5086,7 +5089,7 @@ HAND_SUMMONS.update({
 # attacked, equips ITSELF to the attacker before damage calculation (the attack then
 # fizzles — its target is gone), then on the attacker's controller's next Standby Phase
 # destroys that monster and burns its controller for its ATK.
-EFFECTS.update({
+_register(EFFECTS, {
     # Part 1 (reactive Trigger): attacked by an opponent's monster -> equip to the
     # attacker. The engine fires this before damage calculation and re-checks the
     # target afterward, so the moved monster fizzles the attack.
@@ -5098,7 +5101,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Part 2 (delayed payoff): once Blast Sphere is an Equip Card, on its controller's
     # opponent's (= the attacker's) next Standby Phase, destroy the equipped monster and
     # inflict its ATK as damage. ``requires_equipped`` keeps it inert while Blast Sphere
@@ -5119,7 +5122,7 @@ CONTINUOUS.update({
 # died: "destroyed_by_effect" (only a card effect) or the unified "destroyed" (battle OR
 # effect, but not a tribute/discard/mill send). Both fire from the same GY-queue drain
 # the recruiters use.
-EFFECTS.update({
+_register(EFFECTS, {
     # Babycerasaurus: "If this card is destroyed by a card effect and sent to the
     # Graveyard: Special Summon 1 Level 4 or lower Dinosaur-Type monster from your Deck."
     # A clean "destroyed_by_effect" SELF trigger — a battle death does NOT fire it.
@@ -5159,7 +5162,7 @@ EFFECTS.update({
 # primitive, the Standby/draw-trigger upkeep markers — routes through it), recording each
 # gain so the engine's life-gain window can react. Fire Princess is the sole pre-Synchro
 # consumer, but the window is reusable for any future "each time you gain LP" card.
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Fire Princess: "Each time you gain Life Points, inflict 500 damage to your opponent."
     # A face-up continuous trigger (LifeGainTrigger) fired once per gain event as the
     # controller's effect, so it pairs with the classic LP engines — Solemn Wishes (gain
@@ -5173,7 +5176,7 @@ CONTINUOUS.update({
 # damage to a player now flows through one chokepoint (_resolve_attack's _take_battle_
 # damage), which consults state.takes_no_battle_damage, so a card can zero the damage for
 # one battle or one turn.
-EFFECTS.update({
+_register(EFFECTS, {
     # Kuriboh: "During damage calculation, if your opponent's monster attacks (Quick
     # Effect): You can discard this card; you take no battle damage from that battle." A
     # hand quick effect offered by the engine's damage-step window (kind="damage_step",
@@ -5204,7 +5207,7 @@ EFFECTS.update({
 # Set Trap can react to its amount before it lands. Nutrient Z gains 4000 LP *first* when
 # its controller is about to take 2000+ battle damage, then the (unchanged) damage applies
 # — and the gain itself feeds the Batch 84 life-gain window (Fire Princess).
-EFFECTS.update({
+_register(EFFECTS, {
     # "During damage calculation, when you are about to take 2000 or more battle damage:
     # Gain 4000 LP first." A Set Normal Trap (speed 2) offered to the player about to take
     # the damage (to_victim) when the previewed amount is 2000+ (min_battle_damage).
@@ -5224,7 +5227,7 @@ EFFECTS.update({
 # now records WHICH cards each draw event produced; the engine, after every draw, draws 1
 # more if a face-up DrawAgainOnDraw card the drawer controls matches a just-drawn card. The
 # extra draw is a fresh event, so a run of matches chains (bounded by the deck).
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Heart of the Underdog (Continuous Spell): "During your Draw Phase, when you draw a
     # Normal Monster(s): You can reveal it; draw 1 more card." Draw-Phase-only, vanilla.
     "Heart of the Underdog": (
@@ -5253,7 +5256,7 @@ CONTINUOUS.update({
 # printed race), and a derived effective_race() through every consumer is broad infra for a
 # rare combo. The high-impact behavior (a dead monster + 1000 burn dumped on the drawer) is
 # modeled; the Insect-typing rider is a documented simplification.
-EFFECTS.update({
+_register(EFFECTS, {
     "Parasite Paracide": (
         _flip(resolve=(PlantSelfInOpponentDeck(),)),
         Effect(
@@ -5272,7 +5275,7 @@ EFFECTS.update({
 # kernel (state.exodia_winner / engine._check_exodia), so deckbuild._KERNEL_IMPLEMENTED now
 # counts the head as functional (it was a false negative). These three companion cards are
 # the real builds — each is a blocker alongside Exodia in the GBA Exodia-stall decks:
-EFFECTS.update({
+_register(EFFECTS, {
     # Big Eye: "FLIP: Look at up to 5 cards from the top of your Deck, then place them on
     # the top in any order." Headless, the engine surfaces the best monster to the top.
     "Big Eye": (_flip(resolve=(LookAtTopReorderBestFirst(count=5),)),),
@@ -5298,7 +5301,7 @@ EFFECTS.update({
 
 # Buster Blader: continuous self-boost — "Gains 500 ATK for each Dragon monster your
 # opponent controls or is in their GY" (ATK only). New SelfStatMod scaling mode.
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Buster Blader": (
         SelfStatMod(
             scaling="opponent_field_and_gy_race", scale_atk=500, count_race="Dragon"
@@ -5307,7 +5310,7 @@ CONTINUOUS.update({
 })
 
 # Effects Batch 90: the heavy-hitting disruption cards (each a blocker in ~8 GBA decks).
-EFFECTS.update({
+_register(EFFECTS, {
     # Solemn Judgment (Counter Trap): "Pay half your LP; negate a Summon OR a Spell/Trap
     # activation, and if you do, destroy that card." Composed from the two existing
     # negation seams — the quick chain-response (Magic Jammer / Dark Bribe) for a S/T
@@ -5343,7 +5346,7 @@ EFFECTS.update({
 })
 
 # Effects Batch 91: utility + battle staples (each a blocker across several GBA decks).
-EFFECTS.update({
+_register(EFFECTS, {
     # Magical Mallet: "Shuffle any number of cards from your hand into the Deck, then draw
     # that many." Headless = shuffle the whole hand back and redraw it (a full refresh).
     "Magical Mallet": (Effect(resolve=(ShuffleHandIntoDeckThenDraw(),)),),
@@ -5370,7 +5373,7 @@ EFFECTS.update({
     ),
 })
 
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Metalmorph's equipped boost + the attack-time damage-step rider (read off the equip).
     "Metalmorph": (
         EquipMod(atk=300, defn=300),
@@ -5406,7 +5409,7 @@ HAND_SUMMONS.update({
     ),
 })
 
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # "You must pay 500 LP to declare an attack" — the two big Toons (Toon Gemini Elf has
     # no such cost). Reuses the AttackLifeCost rider (enumeration gates on payability;
     # engine._declare_attack pays it).
@@ -5414,7 +5417,7 @@ CONTINUOUS.update({
     "Toon Summoned Skull": (AttackLifeCost(amount=500),),
 })
 
-EFFECTS.update({
+_register(EFFECTS, {
     # Toon Gemini Elf: a Level-4 Toon (Normal-Summonable while you control Toon World, which
     # the engine already gates). "If this card inflicts battle damage to your opponent:
     # discard 1 random card from their hand."
@@ -5437,7 +5440,7 @@ RITUALS.update({"Black Illusion Ritual": "Relinquished"})
 
 FUSIONS.update({"Thousand-Eyes Restrict": ("Relinquished", "Thousand-Eyes Idol")})
 
-EFFECTS.update({
+_register(EFFECTS, {
     # Black Illusion Ritual: the Ritual Spell that summons Relinquished.
     "Black Illusion Ritual": (
         Effect(timing="ritual", condition=_can_ritual_summon_for("Relinquished")),
@@ -5461,7 +5464,7 @@ EFFECTS.update({
     ),
 })
 
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # ATK/DEF become equal to the absorbed monster (base 0/0 + the absorbed stats).
     "Relinquished": (SelfStatMod(scaling="absorbed_monster"),),
     # TER copies too, and locks the board: no monster may declare an attack while it's out.
@@ -5479,12 +5482,12 @@ CONTINUOUS.update({
 # effective-Level layer yet); The Legendary Fisherman's "unaffected by Spell effects" (no
 # spell-immunity layer); Tornado Wall's self-destruct when Umi leaves (the no-damage effect
 # already re-checks Umi each time, so it simply stops working — the card just lingers).
-EFFECTS.update({
+_register(EFFECTS, {
     "A Legendary Ocean": _ACTIVATE_ONTO_FIELD,  # a Field Spell (treated as "Umi")
     "Tornado Wall": _ACTIVATE_ONTO_FIELD,  # a Continuous Trap
 })
 
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # All WATER monsters on the field gain 200 ATK/DEF.
     "A Legendary Ocean": (
         FieldMod(atk=200, defn=200, attributes=frozenset({Attribute.WATER})),
@@ -5504,7 +5507,7 @@ CONTINUOUS.update({
 # Magical Thorn. Both are state-level replacements/triggers read by send_to_graveyard:
 # Banisher redirects every send-to-GY into a banish; Magical Thorn burns the opponent
 # whenever one of their hand cards is discarded. Each clears two one-card-from-ready decks.
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Banisher of the Light — any card (either player's) sent to the GY is banished instead.
     "Banisher of the Light": (BanishInsteadOfGraveyard(),),
     # Magical Thorn — when an opponent's hand card is discarded to the GY, burn them 500
@@ -5512,7 +5515,7 @@ CONTINUOUS.update({
     "Magical Thorn": (BurnOnHandDiscard(amount=500),),
 })
 
-EFFECTS.update({
+_register(EFFECTS, {
     # Magical Thorn is a Continuous Trap: activating it just sets it face-up on the field,
     # where its BurnOnHandDiscard rider then watches every opponent discard.
     "Magical Thorn": _ACTIVATE_ONTO_FIELD,
@@ -5523,7 +5526,7 @@ EFFECTS.update({
 # Effects Batch 96: the Weevil insect-trap pair — Acid Trap Hole and Drill Bug.
 # Together they flip Weevil's 4th Reshef deck (a two-blocker) to fully ready, and Acid
 # Trap Hole flips two more one-card-from-ready decks on its own.
-EFFECTS.update({
+_register(EFFECTS, {
     # Acid Trap Hole — a Normal Trap activated at will: target 1 face-down Defense-Position
     # monster, flip it up, then destroy it if its DEF <= 2000, else set it back face-down.
     "Acid Trap Hole": (
@@ -5545,7 +5548,7 @@ EFFECTS.update({
 # Effects Batch 97: a clean summon/attack/flip trio — Eatgaboon (a Trap-Hole variant),
 # The Stern Mystic (a no-op reveal Flip), and Gravekeeper's Servant (an attack-mill tax).
 # Each clears one more one-card-from-ready deck.
-EFFECTS.update({
+_register(EFFECTS, {
     # Eatgaboon — when the opponent Normal/Flip Summons a monster with ATK <= 500, destroy
     # it (the same response-trap shape as Trap Hole, with an upper ATK gate instead).
     "Eatgaboon": (
@@ -5571,7 +5574,7 @@ EFFECTS.update({
     "Gravekeeper's Servant": _ACTIVATE_ONTO_FIELD,
 })
 
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # The opponent must send 1 card from the top of their Deck to the GY to declare an
     # attack (an opponent who can't pay simply cannot attack).
     "Gravekeeper's Servant": (OpponentMillToAttack(count=1),),
@@ -5581,7 +5584,7 @@ CONTINUOUS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 98: Susa Soldier — a 2000-ATK beatstick whose three printed static
 # abilities (carried as continuous riders) clear two more one-card-from-ready decks.
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Susa Soldier: cannot be Special Summoned; returns to the owner's hand during the End
     # Phase of the turn it is Normal Summoned / flipped face-up; the battle damage it
     # inflicts to the opponent is halved.
@@ -5603,7 +5606,7 @@ RITUALS.update({
     "Shinato's Ark": "Shinato, King of a Higher Plane",
 })
 
-EFFECTS.update({
+_register(EFFECTS, {
     "Curse of the Masked Beast": (
         Effect(timing="ritual", condition=_can_ritual_summon_for("The Masked Beast")),
     ),
@@ -5632,7 +5635,7 @@ def _not_battle_phase(state, controller) -> bool:
     return state.phase is not Phase.BATTLE
 
 
-EFFECTS.update({
+_register(EFFECTS, {
     # Dream Clown — when switched from Attack to face-up Defense Position, destroy 1
     # monster the opponent controls.
     "Dream Clown": (
@@ -5661,7 +5664,7 @@ EFFECTS.update({
 # Effects Batch 101: Insect Queen — a board-scaling Insect boss with three clauses, all
 # carried as continuous riders. Clears one more one-card-from-ready deck and anchors the
 # Insect package (Weevil's decks still also want Steel Scorpion).
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Insect Queen": (
         # Gains 200 ATK for each Insect monster on the field (both sides, itself included).
         SelfStatMod(scaling="race_on_field", scale_atk=200, count_race="Insect"),
@@ -5692,7 +5695,7 @@ CONTINUOUS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 102: board-conditional stat cards — Nuvia the Wicked and Aqua Chorus.
 # Each clears one more one-card-from-ready deck.
-EFFECTS.update({
+_register(EFFECTS, {
     # Nuvia the Wicked — if Normal Summoned, destroy itself (a downside that makes it a
     # Set/Flip-only body). Its ATK-loss per opponent monster lives in CONTINUOUS below.
     "Nuvia the Wicked": (
@@ -5707,7 +5710,7 @@ EFFECTS.update({
     "Aqua Chorus": _ACTIVATE_ONTO_FIELD,
 })
 
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Nuvia the Wicked loses 200 ATK for each monster the opponent controls.
     "Nuvia the Wicked": (SelfStatMod(scaling="opponent_monsters", scale_atk=-200),),
     # Aqua Chorus: monsters sharing a name with another face-up monster gain 500 ATK/DEF.
@@ -5726,7 +5729,7 @@ def _controls_face_up_kuriboh(state, controller) -> bool:
     )
 
 
-EFFECTS.update({
+_register(EFFECTS, {
     # Multiply — Tribute 1 face-up "Kuriboh"; Special Summon as many "Kuriboh Tokens"
     # (Fiend/DARK/L1/300/200) as possible in Defense Position. CreateToken fills every
     # empty Monster Zone (the Tribute frees one first).
@@ -5757,7 +5760,7 @@ EFFECTS.update({
 # --------------------------------------------------------------------------- #
 # Effects Batch 104: Cave Dragon — two reusable static restrictions. Clears one more
 # one-card-from-ready deck.
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Cave Dragon": (
         # Cannot be Normal Summoned/Set while you control a monster.
         NoNormalSummonWhileControllingMonster(),
@@ -5772,7 +5775,7 @@ CONTINUOUS.update({
 # Harpie support (Cyber Shield's equip, Elegant Egotist, Harpie's Pet Dragon's count) sees
 # it as one. Modelled as a NameTreatedAs rider read by card_matches_traits. Clears one more
 # one-card-from-ready deck (Mai Valentine's Harpie deck).
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Cyber Harpie Lady": (NameTreatedAs(name="Harpie Lady"),),
 })
 
@@ -5783,7 +5786,7 @@ CONTINUOUS.update({
 # deck (Joey's Worldwide deck).
 FUSIONS.update({"Alligator's Sword Dragon": ("Baby Dragon", "Alligator's Sword")})
 
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Alligator's Sword Dragon": (
         CanAttackDirectly(
             only_if_opponent_attributes=frozenset({Attribute.EARTH, Attribute.WATER, Attribute.FIRE})
@@ -5798,7 +5801,7 @@ CONTINUOUS.update({
 # and Flash Assailant in several more. Machine King reuses the existing "race_on_field"
 # mode (Insect Queen, Batch 101); the Muka Muka family needs only the new "hand_size"
 # scaling mode added to state._self_stat_delta.
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Machine King: gains 100 ATK for each Machine-Type monster on the field (both
     # sides, including itself — race_on_field counts every face-up Machine).
     "Machine King": (SelfStatMod(scaling="race_on_field", count_race="Machine", scale_atk=100),),
@@ -5816,7 +5819,7 @@ CONTINUOUS.update({
 # no engine change. Solar Flare Dragon (3 GBA decks) and Legendary Fiend (3) were the
 # only pool cards in this seam with a fully-clean single ruling; the rest are Nomi/LV/
 # pay-or-die/counter cards deferred elsewhere.
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     # Solar Flare Dragon: cannot be selected as an attack target while you control another
     # Pyro (a self-only AttackTargetProtection gated on another Pyro), and burns the
     # opponent for 500 at each of your End Phases.
@@ -5837,7 +5840,7 @@ CONTINUOUS.update({
 # with a fully-clean single ruling (the rest are Arcana Force / multi-coin-tier / skip-
 # turn cards). New reusable ScaleSelfAtkTemporary primitive (double/halve own ATK till the
 # End Phase), driven by the existing CoinFlip win/lose branches.
-EFFECTS.update({
+_register(EFFECTS, {
     "Goddess of Whim": (
         Effect(
             timing="ignition",
@@ -5859,8 +5862,8 @@ EFFECTS.update({
 # is the floodgate that suppresses it for both players while face-up. EFFECTS just places
 # it onto the field (_ACTIVATE_ONTO_FIELD); the NoHandLimit marker does the work. Clears
 # the last blocker in both Yami Marik GBA decks.
-EFFECTS.update({"Infinite Cards": _ACTIVATE_ONTO_FIELD})
-CONTINUOUS.update({"Infinite Cards": (NoHandLimit(whose="both"),)})
+_register(EFFECTS, {"Infinite Cards": _ACTIVATE_ONTO_FIELD})
+_register(CONTINUOUS, {"Infinite Cards": (NoHandLimit(whose="both"),)})
 
 
 # --------------------------------------------------------------------------- #
@@ -5869,7 +5872,7 @@ CONTINUOUS.update({"Infinite Cards": (NoHandLimit(whose="both"),)})
 # Spell may still target Gearfried and resolve, but it is destroyed instead of attaching.
 # Clears the last blocker in Joey Wheeler's Worldwide deck. (Union-equip and equip-monster-
 # from-GY paths are a deferred edge — the pool's Gearfried decks run only Equip Spells.)
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Gearfried the Iron Knight": (DestroyAttachedEquips(),),
 })
 
@@ -5880,8 +5883,8 @@ CONTINUOUS.update({
 # and reacts) plus the DrawOnOpponentDraw marker the engine's draw-event loop reads. The
 # "activate only when..." timing gate is approximated by the continuous response (the
 # activating draw itself isn't retro-caught). Clears the last blocker in Seeker's deck.
-EFFECTS.update({"Appropriate": (Effect(speed=2, timing="ignition"),)})
-CONTINUOUS.update({"Appropriate": (DrawOnOpponentDraw(count=2),)})
+_register(EFFECTS, {"Appropriate": (Effect(speed=2, timing="ignition"),)})
+_register(CONTINUOUS, {"Appropriate": (DrawOnOpponentDraw(count=2),)})
 
 
 # --------------------------------------------------------------------------- #
@@ -5890,7 +5893,7 @@ CONTINUOUS.update({"Appropriate": (DrawOnOpponentDraw(count=2),)})
 # involving it (SafeAttacker, gated to its controller's own Battle Phase = when it attacks),
 # and after it attacks a monster that target loses 500 ATK until end of turn
 # (DebuffsAttackTargetAtk). Clears the last blocker in Joey's "possessed" Sacred Cards deck.
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Rocket Warrior": (SafeAttacker(), DebuffsAttackTargetAtk(amount=500)),
 })
 
@@ -5906,7 +5909,7 @@ def _dealt_direct_damage_this_turn(state, player):
     return state.direct_damage_dealt_this_turn > 0
 
 
-EFFECTS.update({
+_register(EFFECTS, {
     "Sebek's Blessing": (
         Effect(
             speed=2,
@@ -5930,7 +5933,7 @@ def _chain_top_is_dark_hole(state, controller):
     return card is not None and card.name == "Dark Hole"
 
 
-EFFECTS.update({
+_register(EFFECTS, {
     "White Hole": (
         Effect(
             speed=2,
@@ -5947,7 +5950,7 @@ EFFECTS.update({
 # apply result×100 to a side until the End Phase, riding the temp-stat layer). Skull Dice
 # weakens the opponent's monsters; Graceful Dice pumps yours. Flips Joey Wheeler's WCT2005
 # deck (needed both) and unblocks half of his Eternal Duelist Soul deck.
-EFFECTS.update({
+_register(EFFECTS, {
     "Skull Dice": (
         Effect(
             speed=2,
@@ -5974,7 +5977,7 @@ EFFECTS.update({
 HAND_SUMMONS.update({
     "Toon Mermaid": HandSpecialSummon(cannot_normal_summon=True, condition=_controls_toon_world),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Toon Mermaid": (AttackLifeCost(amount=500),),
 })
 
@@ -5986,8 +5989,8 @@ CONTINUOUS.update({
 # rider drives the halving (recorded per-attacker, applied in _effective_stat) and the
 # StandbyUpkeep enforces the pay-2000-or-destroy. With Toon Mermaid (Batch 117) this flips
 # BOTH Pegasus decks (WCT2004 + Worldwide).
-EFFECTS.update({"Mirror Wall": _ACTIVATE_ONTO_FIELD})
-CONTINUOUS.update({
+_register(EFFECTS, {"Mirror Wall": _ACTIVATE_ONTO_FIELD})
+_register(CONTINUOUS, {
     "Mirror Wall": (HalvesAttackersAtk(), StandbyUpkeep(pay_life=2000, whose="controller")),
 })
 
@@ -5999,7 +6002,7 @@ CONTINUOUS.update({
 # engine's orphan-equip cleanup destroys it with the monster; the LocksAttachedMonster rider
 # drives the attack/position gates. Reusable for the wider targeted-lock family (Nightmare
 # Wheel, Shattered Axe, Mask of the Accursed). Bottleneck for the Lumis&Umbra + Yugi Muto decks.
-EFFECTS.update({
+_register(EFFECTS, {
     "Spellbinding Circle": (
         Effect(
             speed=2,
@@ -6009,7 +6012,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Spellbinding Circle": (LocksAttachedMonster(no_attack=True, no_position=True),),
 })
 
@@ -6019,7 +6022,7 @@ CONTINUOUS.update({
 # Normal/Flip Summons a monster with DEF 500 or less, destroy it. Reuses the summon-response
 # Trigger, gated by a new max_def threshold (added to Trigger). With Spellbinding Circle
 # (Batch 119) this flips Yugi Muto's Reshef deck.
-EFFECTS.update({
+_register(EFFECTS, {
     "House of Adhesive Tape": (
         Effect(
             speed=2,
@@ -6043,7 +6046,7 @@ EFFECTS.update({
 # "changed_to_attack" trigger fired by the engine after a manual ChangePosition that lands in
 # Attack (a face-up toggle only ever moves between the two positions). With Spellbinding
 # Circle (Batch 119) this flips the Lumis & Umbra deck.
-EFFECTS.update({
+_register(EFFECTS, {
     "Crass Clown": (
         Effect(
             timing="trigger",
@@ -6072,7 +6075,7 @@ def _owns_battle_dead_this_turn(state, controller) -> bool:
     )
 
 
-EFFECTS.update({
+_register(EFFECTS, {
     "The Forgiving Maiden": (
         Effect(
             timing="ignition",
@@ -6091,7 +6094,7 @@ EFFECTS.update({
 # inflict 800 damage to your opponent." A Flip Effect that pairs the new BanishTopOfDeck(SELF)
 # primitive with a flat burn. Last remaining blocker of T.A. Gardner (Worldwide Edition),
 # which The Forgiving Maiden (Batch 122) brought to 1-away.
-EFFECTS.update({
+_register(EFFECTS, {
     "Lady Assailant of Flames": (
         _flip(resolve=(BanishTopOfDeck(player=SELF, count=3), InflictDamage(OPPONENT, 800))),
     ),
@@ -6106,7 +6109,7 @@ EFFECTS.update({
 # the attacker (EquipSelfToAttacker fizzles the attack — its target is gone), plus a
 # requires_equipped StandbyTrigger on the opponent's Standby that pays out via the new
 # HalfEquippedHostAtk value source. Last blocker of Tea Gardner (WCT2004).
-EFFECTS.update({
+_register(EFFECTS, {
     "Kiseitai": (
         Effect(
             timing="trigger",
@@ -6115,7 +6118,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Kiseitai": (
         StandbyTrigger(
             Effect(resolve=(GainLifePoints(SELF, value=HalfEquippedHostAtk()),)),
@@ -6132,10 +6135,10 @@ CONTINUOUS.update({
 # at the end of the Battle Phase." The standard Warrior-only equip (_equip_effect + EquipMod
 # 700) plus the new DestroysBattledDragon rider, which the engine reads post-combat off the
 # face-up Equip and drains at the end of the Battle Phase. Last blocker of Joey Wheeler (EDS).
-EFFECTS.update({
+_register(EFFECTS, {
     "Sword of Dragon's Soul": _equip_effect(races=("Warrior",)),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Sword of Dragon's Soul": (EquipMod(atk=700), DestroysBattledDragon(race="Dragon")),
 })
 
@@ -6155,7 +6158,7 @@ def _can_two_pronged_attack(state, controller) -> bool:
     return mine >= 2 and theirs >= 1
 
 
-EFFECTS.update({
+_register(EFFECTS, {
     "Two-Pronged Attack": (
         Effect(
             speed=2,
@@ -6175,7 +6178,7 @@ EFFECTS.update({
 # new PreventBattleDestructionThisTurn, which stamps a turn-scoped per-player battle-
 # indestructible flag (no_battle_destruction_until_turn) that GameState.is_battle_indestructible
 # honours.
-EFFECTS.update({
+_register(EFFECTS, {
     "Waboku": (
         Effect(
             speed=2,
@@ -6192,7 +6195,7 @@ EFFECTS.update({
 # activation flips every face-up Dragon (both sides) to Defense via ChangeAllPositions(race=
 # "Dragon"); while it stays face-up the new RacePositionLock(race="Dragon") floodgate bars any
 # Dragon from changing position (read by GameState.monster_position_locked).
-EFFECTS.update({
+_register(EFFECTS, {
     "Dragon Capture Jar": (
         Effect(
             speed=2,
@@ -6201,7 +6204,7 @@ EFFECTS.update({
         ),
     ),
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Dragon Capture Jar": (RacePositionLock(race="Dragon"),),
 })
 
@@ -6212,7 +6215,7 @@ CONTINUOUS.update({
 # affected)." A quick Trap whose ReverseStatChangesThisTurn primitive stamps a turn-scoped
 # global flag (state.reverse_trap_until_turn); _effective_stat negates the summed additive
 # modifier layer while it is active, leaving the printed base and the Mirror Wall halving alone.
-EFFECTS.update({
+_register(EFFECTS, {
     "Reverse Trap": (
         Effect(speed=2, timing="quick", resolve=(ReverseStatChangesThisTurn(),)),
     ),
@@ -6225,10 +6228,10 @@ EFFECTS.update({
 # 1 monster." A Continuous Trap: once on the field its PayLifeForExtraNormalSummon(500) marker
 # lets the Main-Phase enumeration offer extra Normal Summons/Sets that each charge 500 LP (after
 # the free Normal Summon is spent). The opponent's-Battle-Phase window is a deferred enhancement.
-EFFECTS.update({
+_register(EFFECTS, {
     "Ultimate Offering": _ACTIVATE_ONTO_FIELD,
 })
-CONTINUOUS.update({
+_register(CONTINUOUS, {
     "Ultimate Offering": (PayLifeForExtraNormalSummon(amount=500),),
 })
 
@@ -6241,7 +6244,7 @@ CONTINUOUS.update({
 # their Graveyard, Engine._fire_last_will_for Special Summons a <=1500-ATK Deck monster (once).
 # The retroactive "already died before activation" reading isn't applied — arming watches the
 # rest of the turn, matching the classic sac-then-replace combo.
-EFFECTS.update({
+_register(EFFECTS, {
     "Last Will": (Effect(timing="ignition", resolve=(ArmLastWill(),)),),
 })
 
@@ -6254,7 +6257,7 @@ EFFECTS.update({
 # turn (fed into the summon enumeration) and bars their Battle Phase this turn. The "you MUST
 # Tribute that target" clause is relaxed to "you MAY" (the classic permissive behaviour).
 # Last of the 7-card Yugi Starter Deck push -> ygored/Starter-Deck-Yugi is fully playable.
-EFFECTS.update({
+_register(EFFECTS, {
     "Soul Exchange": (
         Effect(
             timing="ignition",

@@ -704,6 +704,9 @@ class Engine:
         # plain board snapshot can't convey.
         lp_before = [p.life_points for p in s.players]
         field_before = {iid for p in s.players for iid in p.monster_zones if iid is not None}
+        # The response windows above already populated the transient attack flags (reflect,
+        # prevented); tell _resolve_attack not to re-reset them out from under us.
+        s._attack_flags_prepared = True
         self.log(f"  {s.players[tp].name}: {apply(s, DeclareAttack(attacker, target))}")
         self._check_life_points()
         field_after = {iid for p in s.players for iid in p.monster_zones if iid is not None}
@@ -1716,15 +1719,25 @@ class Engine:
                 choice = self.agents[tp].decide(s, menu)
                 self.log(f"  {s.players[tp].name} {apply(s, choice)} (hand-size limit)")
                 self._changed()
+                # A discard can burn (Magical Thorn) — a lethal one must end the Duel here.
+                self._check_life_points()
+                if self.result is not None:
+                    break
         self._clear_temp_stats()  # combat tricks wear off at the turn's end
 
     # ------------------------------------------------------------------ #
     def _check_life_points(self) -> None:
         s = self.state
-        for p in (0, 1):
-            if s.players[p].life_points <= 0:
-                self.result = DuelResult(s.opponent_of(p), f"{s.players[p].name} reached 0 LP")
-                return
+        down = [p for p in (0, 1) if s.players[p].life_points <= 0]
+        if not down:
+            return
+        if len(down) == 2:
+            # Both players hit 0 in the same step (Tremendous Fire, a mutual-KO burn) —
+            # that's a DRAW, not a win for whoever the loop happened to check first.
+            self.result = DuelResult(None, "both players reached 0 LP")
+            return
+        p = down[0]
+        self.result = DuelResult(s.opponent_of(p), f"{s.players[p].name} reached 0 LP")
 
     def _check_exodia(self) -> None:
         """End the Duel if a player has assembled all five Forbidden One pieces in hand.

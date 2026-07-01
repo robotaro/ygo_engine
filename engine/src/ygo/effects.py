@@ -1151,7 +1151,8 @@ def _count_pool(ctx: EffectContext, pool: str, card_filter=None) -> int:
             and s.inst(i).is_face_up
             and (card_filter is None or card_filter.matches(s.inst(i).card))
         )
-    return 0
+    # An unrecognised pool is an authoring typo, not "count 0" — fail loudly.
+    raise ValueError(f"unknown CountTimes pool {pool!r}")
 
 
 # --------------------------------------------------------------------------- #
@@ -1268,7 +1269,7 @@ class DestroyOwnMonstersHalfAtkBurn(Primitive):
         for iid in victims:
             s.send_to_graveyard(iid, by_effect=True)
         if victims:
-            s.players[c].life_points -= total // 2
+            s.deal_damage(c, total // 2)  # routes the "took damage" window
 
 
 @dataclass(frozen=True)
@@ -1470,8 +1471,7 @@ class DestroyEquipHostThenBurn(Primitive):
         victim = host.controller  # whoever controls it NOW takes the damage
         atk = s.effective_attack(host.iid)
         s.send_to_graveyard(host.iid, by_effect=True)
-        if atk > 0:
-            s.players[victim].life_points -= atk
+        s.deal_damage(victim, atk)  # routes the "took damage" window
 
 
 @dataclass(frozen=True)
@@ -1950,12 +1950,9 @@ class InflictDamage(Primitive):
 
     def execute(self, ctx: EffectContext) -> None:
         amount = self.value.value(ctx) if self.value is not None else self.amount
-        victim = ctx.side(self.player)
-        ctx.state.players[victim].life_points -= amount
-        if not self.is_cost and amount > 0:
-            # Record effect damage so the engine can open a post-chain "when you take
-            # damage" window for the victim. Battle damage uses a separate record.
-            ctx.state.effect_damage_pending.append((victim, amount))
+        # Route through the one damage sink so the engine can open a post-chain "when you take
+        # damage" window (Numinous Healer / Attack and Receive) — unless this is an LP cost.
+        ctx.state.deal_damage(ctx.side(self.player), amount, is_cost=self.is_cost)
 
 
 @dataclass(frozen=True)
@@ -1980,8 +1977,9 @@ class LoseHalfLifePoints(Primitive):
     player: str = SELF
 
     def execute(self, ctx: EffectContext) -> None:
-        p = ctx.state.players[ctx.side(self.player)]
-        p.life_points -= p.life_points // 2
+        side = ctx.side(self.player)
+        # Route through the one damage sink (opens the "took damage" window).
+        ctx.state.deal_damage(side, ctx.state.players[side].life_points // 2)
 
 
 @dataclass(frozen=True)
@@ -2246,8 +2244,9 @@ class DamageEqualToAttackerAtk(Primitive):
         attacker_player = event.get("player", ctx.state.opponent_of(ctx.controller))
         if attacker is None or attacker not in ctx.state.cards:
             return
-        dmg = ctx.state.inst(attacker).card.attack or 0
-        ctx.state.players[attacker_player].life_points -= dmg
+        # Reflect the attacker's EFFECTIVE ATK (pumps/equips count), like Draining Shield,
+        # and route through the one damage sink so a "took damage" reaction can trigger.
+        ctx.state.deal_damage(attacker_player, ctx.state.effective_attack(attacker))
 
 
 @dataclass(frozen=True)
@@ -2609,7 +2608,7 @@ class DiscardHandThenBurn(Primitive):
         for iid in hand:
             s.send_to_graveyard(iid)
         opp = s.opponent_of(ctx.controller)
-        s.players[opp].life_points -= self.per * len(hand)
+        s.deal_damage(opp, self.per * len(hand))  # routes the "took damage" window
 
 
 @dataclass(frozen=True)
@@ -3010,7 +3009,7 @@ class BurnDefenseMonsterOriginalAtk(Primitive):
         if inst is None or not inst.died_in_defense:
             return
         opp = s.opponent_of(ctx.controller)
-        s.players[opp].life_points -= inst.card.attack or 0
+        s.deal_damage(opp, inst.card.attack or 0)  # routes the "took damage" window
 
 
 # --------------------------------------------------------------------------- #

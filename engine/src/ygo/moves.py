@@ -1105,8 +1105,11 @@ def _attacks_locked_out(state: GameState, player: int) -> bool:
     )
     if not locked:
         return False
+    # Gate on attacks actually MADE, not merely declared: a fizzled attack (the target left
+    # the field before damage) grants a replay and must not be locked out, whereas
+    # ``attacked_this_turn`` is set at declaration even for a negated/fizzled attack.
     return any(
-        state.inst(i).attacked_this_turn
+        state.inst(i).attacks_made_this_turn > 0
         for i in state.players[player].monster_zones
         if i is not None
     )
@@ -1524,13 +1527,28 @@ def battle_damage_preview(state: GameState, attacker_iid: int, target_iid: int |
     atk = state.effective_attack(attacker_iid) + state.damage_step_bonus(
         attacker_iid, target_iid, is_attacker=True, which="atk"
     )
+    # Mirror Wall: the resolver sets ``atk_halved_by_wall`` (which effective_attack reads)
+    # BEFORE computing this attack's ATK, so a caught attacker's ATK is halved. That flag
+    # may not be set yet at preview time, so account for the halving here to stay in lockstep.
+    if state._attacker_halver_active(me) and not attacker.atk_halved_by_wall:
+        atk //= 2
 
     def _hit_defender(amount: int):
-        # The defending player takes it, unless Dimension Wall reflects it to the attacker.
+        # Susa Soldier halves the battle damage it inflicts; Dimension Wall then reflects it
+        # to the attacker instead of the defending player.
+        if state.deals_halved_battle_damage(attacker_iid):
+            amount //= 2
         return (me if state.reflect_battle_damage else opp, amount)
 
+    def _attacker_takes(amount: int):
+        # Self battle damage from losing the battle — Rocket Warrior makes the attacker
+        # take none (matches _resolve_attack's attacker_takes_no_self_battle_damage gate).
+        if state.attacker_takes_no_self_battle_damage(attacker_iid):
+            return None
+        return (me, amount)
+
     if target_iid is None:
-        victim, amount = _hit_defender(atk)  # direct attack
+        result = _hit_defender(atk)  # direct attack
     else:
         target = state.inst(target_iid)
         if target.position is Position.FACE_UP_ATTACK:
@@ -1538,9 +1556,9 @@ def battle_damage_preview(state: GameState, attacker_iid: int, target_iid: int |
                 target_iid, attacker_iid, is_attacker=False, which="atk"
             )
             if atk > other:
-                victim, amount = _hit_defender(atk - other)
+                result = _hit_defender(atk - other)
             elif atk < other:
-                victim, amount = me, other - atk  # the attacker's monster loses
+                result = _attacker_takes(other - atk)  # the attacker's monster loses
             else:
                 return None  # mutual destruction, no battle damage
         else:  # face-up or face-down Defense Position -> ATK vs DEF
@@ -1550,11 +1568,14 @@ def battle_damage_preview(state: GameState, attacker_iid: int, target_iid: int |
             if atk > dfn:
                 if not state.has_piercing(attacker_iid):
                     return None  # clean break, no damage
-                victim, amount = _hit_defender(atk - dfn)
+                result = _hit_defender(atk - dfn)
             elif atk < dfn:
-                victim, amount = me, dfn - atk  # the attacker bounces off
+                result = _attacker_takes(dfn - atk)  # the attacker bounces off
             else:
                 return None
+    if result is None:
+        return None
+    victim, amount = result
     if amount <= 0 or state.takes_no_battle_damage(victim):
         return None
     return (victim, amount)
@@ -1562,6 +1583,17 @@ def battle_damage_preview(state: GameState, attacker_iid: int, target_iid: int |
 
 def _resolve_attack(state: GameState, action: DeclareAttack) -> str:
     """Resolve one attack using the v6.0 Determining Damage rules (no piercing)."""
+    # On the bare apply(DeclareAttack) path (no engine _declare_attack ahead of us), the
+    # transient attack flags may still hold the PREVIOUS attack's values. Reset them so a
+    # stale reflect/negate/redirect/prevented cannot leak into this attack. The engine path
+    # sets _attack_flags_prepared after its response windows populate these, so we skip it
+    # there (re-resetting would wipe Dimension Wall / Kuriboh).
+    if not state._attack_flags_prepared:
+        state.attack_negated = False
+        state.attack_redirect = None
+        state.reflect_battle_damage = False
+        state.battle_damage_prevented = set()
+    state._attack_flags_prepared = False
     attacker = state.inst(action.attacker)
     attacker.attacked_this_turn = True
     attacker.attacks_made_this_turn += 1
