@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store'
+import { writable, derived } from 'svelte/store'
 
 // Live game state pushed from the engine.
 export const board = writable(null) // latest board snapshot
@@ -15,6 +15,26 @@ export const connected = writable(false) // WebSocket open (i.e. a duel is live)
 export const online = writable(false) // backend HTTP reachable (polled)
 export const profile = writable(null) // {duelistPoints, collection..., decks, stats}
 export const tournamentOutcome = writable(null) // set after a tournament round: {champion, eliminated, next, ...}
+
+// Interaction affordances — the "what can this card do" lookups derived purely
+// from the server's legal-moves payload. Grouped here so App and <Mat> read them
+// from one place instead of re-deriving the payload shape inline. Each returns a
+// per-iid result against the current `$legal`; subscribing to `$affordances` (or
+// its provider `legal`) is what makes those lookups reactive. Transient
+// interaction state (pendingTribute, selectedAttacker, …) stays owned by App.
+export const affordances = derived(legal, ($legal) => ({
+  summonOptions: (iid) => $legal?.summonable?.[String(iid)] || null,
+  attackTargets: (iid) => $legal?.attackers?.[String(iid)] || null,
+  activateOptions: (iid) => $legal?.activatable?.[String(iid)] || null, // [[target iids]...]
+  canActivate: (iid) => !!($legal?.activatable?.[String(iid)] || null),
+  canSet: (iid) => $legal?.settable?.includes(iid),
+  canFlip: (iid) => $legal?.flips?.includes(iid),
+  canGeminiSummon: (iid) => $legal?.geminiSummonable?.includes(iid),
+  canSpecialSummon: (iid) => $legal?.specialSummonable?.includes(iid),
+  canUnionEquip: (iid) => !!$legal?.unionEquippable?.[iid]?.length,
+  canUnionUnequip: (iid) => $legal?.unionUnequippable?.includes(iid),
+  canChangePos: (iid) => $legal?.positionChanges?.includes(iid),
+}))
 
 // Pull the player's save (DP balance, collection size, decks) and broadcast it.
 // Call after anything that mutates the profile: pack opens, deck saves, duel end.

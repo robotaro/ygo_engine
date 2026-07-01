@@ -5,6 +5,12 @@ export function cardImg(card) {
   return card?.imageId ? `/cards/${card.imageId}.jpg` : null
 }
 
+// A monster slot is in Defense Position (used to turn its tile 90° and to label
+// the position toggle). Pure function of the slot — no legal payload involved.
+export function isDefense(slot) {
+  return slot?.position?.includes('defense')
+}
+
 // Turn a deck id / filename into a human label ("dark-magician" -> "dark magician").
 export function prettyDeckName(id) {
   return (id ?? '').replace(/[-_]+/g, ' ').trim()
