@@ -7,6 +7,7 @@
   import CardTile from './lib/CardTile.svelte'
   import Launcher from './lib/Launcher.svelte'
   import RewardPicker from './lib/RewardPicker.svelte'
+  import PhaseStrip from './lib/PhaseStrip.svelte'
   import { THEMES, themeId, applyTheme } from './lib/theme.js'
   import {
     board,
@@ -92,6 +93,7 @@
     })
   })
   $: yourTurn = $awaiting
+  $: isYourTurn = !!$board && $board.turnPlayer === $board.viewer
   $: dragging = draggedIid != null
   $: draggingMonster = draggedIid != null && !!summonOptions(draggedIid)
   $: draggingSpellTrap = draggedIid != null && (canActivate(draggedIid) || canSet(draggedIid))
@@ -121,15 +123,18 @@
   // A Graveyard is "live" (auto-expanded) when one of its cards is a valid target.
   $: youGyTargetable = !!you?.graveyard?.some((g) => targetCandidates.includes(g.iid))
   $: oppGyTargetable = !!opp?.graveyard?.some((g) => targetCandidates.includes(g.iid))
+  // Auto-open the Graveyard browser when a revive/target effect needs a pick there.
+  $: if ((youGyTargetable || oppGyTargetable) && !openGy)
+    openGy = youGyTargetable ? 'you' : 'opp'
 
   // The turn's phase state machine, in order — rendered as a stepper.
   const PHASES = [
-    { key: 'draw_phase', label: 'Draw' },
-    { key: 'standby_phase', label: 'Standby' },
-    { key: 'main_phase_1', label: 'Main 1' },
-    { key: 'battle_phase', label: 'Battle' },
-    { key: 'main_phase_2', label: 'Main 2' },
-    { key: 'end_phase', label: 'End' },
+    { key: 'draw_phase', label: 'Draw', short: 'DP' },
+    { key: 'standby_phase', label: 'Standby', short: 'SP' },
+    { key: 'main_phase_1', label: 'Main 1', short: 'M1' },
+    { key: 'battle_phase', label: 'Battle', short: 'BP' },
+    { key: 'main_phase_2', label: 'Main 2', short: 'M2' },
+    { key: 'end_phase', label: 'End', short: 'EP' },
   ]
   const NEXT_LABEL = {
     main_phase_1: 'Go to Battle ▶',
@@ -223,6 +228,7 @@
     closePreview()
     placing = null // Escape / backdrop cancels an in-progress placement too
     dropChoice = null
+    openGy = null
   }
 
   // Click-to-place: pick a zone (highlighted) to play a card into, instead of
@@ -721,6 +727,7 @@
       >
         <div class="who">{opp.name}</div>
         <div class="lp" class:hit={oppHit}>LP {Math.round($oppLp)}</div>
+        <PhaseStrip phases={PHASES} index={phaseIndex} active={!isYourTurn} />
         <div class="piles">hand {opp.handCount}</div>
         <div class="ohand">
           {#each Array(opp.handCount) as _}<div class="minicard back"></div>{/each}
@@ -758,26 +765,6 @@
           {:else}
             <span class="zlabel">Graveyard</span>
           {/if}
-          {#if openGy === 'opp' || oppGyTargetable}
-            <div class="gyflyout down" transition:fade={{ duration: 130 }}>
-              {#each opp.graveyard as gy}
-                <div
-                  class="gycard"
-                  class:targetable={targetCandidates.includes(gy.iid)}
-                  onclick={(e) => {
-                    e.stopPropagation()
-                    onClickGraveyard(gy.iid)
-                  }}
-                  oncontextmenu={(e) => {
-                    e.stopPropagation()
-                    openContext(e, gy, 'gy')
-                  }}
-                >
-                  <CardTile card={gy} small />
-                </div>
-              {/each}
-            </div>
-          {/if}
         </div>
         {#each opp.monsterZones as slot, i (i)}
           <div
@@ -809,14 +796,12 @@
         </div>
       </div>
 
-      <!-- Center status: the turn's phase state machine -->
+      <!-- Center status: whose turn + current phase (per-player strips live in
+           each LP bar); the advance button drives the turn forward. -->
       <div class="status">
         <span class="turn">Turn {$board.turnCount}</span>
-        <div class="phasetrack">
-          {#each PHASES as p, i}
-            {#if i > 0}<span class="sep" class:past={i <= phaseIndex}></span>{/if}
-            <span class="ph" class:on={i === phaseIndex} class:done={i < phaseIndex}>{p.label}</span>
-          {/each}
+        <div class="nowphase">
+          <b>{isYourTurn ? 'Your' : opp.name + '’s'}</b> {PHASES[phaseIndex]?.label ?? ''}
         </div>
         <div class="statusright">
           <span class="whose" class:you={yourTurn}>{yourTurn ? 'Your move' : '… opponent'}</span>
@@ -825,6 +810,14 @@
           {/if}
         </div>
       </div>
+
+      {#if isYourTurn && phase === 'battle_phase'}
+        <div class="battlebanner">
+          ⚔️ Battle Phase — {selectedAttacker != null
+            ? 'pick a target, or the opponent to attack directly'
+            : 'click a ⚔️ monster to attack'}
+        </div>
+      {/if}
 
       {#if $board.chain?.length}
         <div class="chainbar">
@@ -889,6 +882,9 @@
                 <CardTile card={slot} faceDown={slot?.faceDown} peek={slot?.faceDown} defense={isDefense(slot)} small />
               </div>
               {#if slot.geminiUnlocked}<span class="badge gemini">★</span>{/if}
+              {#if phase === 'battle_phase' && attackTargets(slot.iid)}
+                <span class="badge canatk" title="Can attack">⚔️</span>
+              {/if}
             {:else}
               <CardTile card={null} small />
             {/if}
@@ -900,26 +896,6 @@
             <span class="count">{you.graveyard.length}</span>
           {:else}
             <span class="zlabel">Graveyard</span>
-          {/if}
-          {#if openGy === 'you' || youGyTargetable}
-            <div class="gyflyout" transition:fade={{ duration: 130 }}>
-              {#each you.graveyard as gy}
-                <div
-                  class="gycard"
-                  class:targetable={targetCandidates.includes(gy.iid)}
-                  onclick={(e) => {
-                    e.stopPropagation()
-                    onClickGraveyard(gy.iid)
-                  }}
-                  oncontextmenu={(e) => {
-                    e.stopPropagation()
-                    openContext(e, gy, 'gy')
-                  }}
-                >
-                  <CardTile card={gy} small />
-                </div>
-              {/each}
-            </div>
           {/if}
         </div>
         <!-- back line: Extra Deck · Spell & Trap · Deck -->
@@ -962,6 +938,7 @@
       <div class="playerbar you">
         <div class="who">{you.name}</div>
         <div class="lp" class:hit={youHit}>LP {Math.round($youLp)}</div>
+        <PhaseStrip phases={PHASES} index={phaseIndex} active={isYourTurn} />
       </div>
 
       <!-- Hand -->
@@ -1158,6 +1135,35 @@
     </div>
   {/if}
 </main>
+
+{#if openGy}
+  {@const g = openGy === 'you' ? you : opp}
+  <div class="overlay" role="presentation" onclick={() => (openGy = null)}>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="resultcard gymodal" role="dialog" onclick={(e) => e.stopPropagation()}>
+      <h3>{openGy === 'you' ? 'Your' : opp.name + '’s'} Graveyard · {g.graveyard.length}</h3>
+      {#if g.graveyard.length === 0}
+        <div class="gyempty">The Graveyard is empty.</div>
+      {:else}
+        <div class="gygrid">
+          {#each g.graveyard as gy (gy.iid)}
+            <div
+              class="gycard"
+              class:targetable={targetCandidates.includes(gy.iid)}
+              onclick={() => onClickGraveyard(gy.iid)}
+              oncontextmenu={(e) => openContext(e, gy, 'gy')}
+              role="button"
+              tabindex="0"
+            >
+              <CardTile card={gy} small />
+            </div>
+          {/each}
+        </div>
+      {/if}
+      <button class="close btn-primary" onclick={() => (openGy = null)}>Close</button>
+    </div>
+  </div>
+{/if}
 
 {#if settingsOpen}
   <div class="overlay" role="presentation" onclick={() => (settingsOpen = false)}>
@@ -1599,6 +1605,35 @@
     text-shadow: 0 0 3px #000, 0 0 3px #000;
     pointer-events: none;
   }
+  /* Sword marker over a monster that can declare an attack this Battle Phase. */
+  .badge.canatk {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    z-index: 4;
+    font-size: 16px;
+    line-height: 1;
+    filter: drop-shadow(0 1px 2px #000);
+    pointer-events: none;
+    animation: swordpulse 1s ease-in-out infinite;
+  }
+  @keyframes swordpulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .badge.canatk { animation: none; }
+  }
+  .battlebanner {
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--danger);
+    background: var(--danger-dim);
+    border-radius: var(--r-sm);
+    padding: 5px 12px;
+    margin: -2px auto 2px;
+  }
   .slot.selected {
     outline: 2px solid var(--success);
   }
@@ -1685,29 +1720,31 @@
     white-space: nowrap;
     pointer-events: none;
   }
-  /* The Graveyard pile expands its contents as a flyout (for revive targets). */
-  .gyflyout {
-    position: absolute;
-    bottom: 96px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 30;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    max-width: 360px;
-    padding: 6px;
-    background: #0f0f0c;
-    border: 1px solid #3a3a30;
-    border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  /* Graveyard browser modal — scrollable grid of the pile's cards. */
+  .gymodal {
+    width: min(680px, 92vw);
+    text-align: left;
   }
-  .gyflyout.down {
-    bottom: auto;
-    top: 96px;
+  .gygrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 64px);
+    gap: 8px;
+    justify-content: center;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 4px;
+    margin: 14px 0 4px;
+  }
+  .gyempty {
+    color: var(--muted);
+    padding: 24px;
+    text-align: center;
+  }
+  .gycard {
+    cursor: pointer;
   }
   .gycard.targetable :global(.tile) {
-    outline: 3px solid #ff6b6b;
+    outline: 3px solid var(--danger);
     cursor: crosshair;
     border-radius: 8px;
   }
@@ -1726,43 +1763,16 @@
     flex: none;
     width: 110px;
   }
-  .phasetrack {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* Current-turn phase, big and centred (the per-player strips in each LP bar
+     show the full state machine). */
+  .nowphase {
     flex: 1;
-  }
-  /* Phase tracker: inactive phases are plain faint labels; the CURRENT phase is
-     a bold amber capsule so it reads at a glance across the room. */
-  .ph {
-    font-size: 12px;
-    color: var(--faint);
-    white-space: nowrap;
-    padding: 3px 8px;
-    border-radius: var(--r-pill);
-    transition: all 0.12s ease;
-  }
-  .ph.done {
+    text-align: center;
+    font-size: 15px;
     color: var(--muted);
   }
-  .ph.on {
-    background: var(--accent);
-    color: var(--accent-ink);
-    font-weight: 800;
-    font-size: 13px;
-    letter-spacing: 0.02em;
-    padding: 4px 14px;
-    box-shadow: 0 0 0 3px var(--warn-dim), 0 2px 8px rgba(0, 0, 0, 0.45);
-  }
-  .sep {
-    width: 14px;
-    height: 2px;
-    background: var(--line);
-    margin: 0 3px;
-    border-radius: var(--r-pill);
-  }
-  .sep.past {
-    background: var(--line-strong);
+  .nowphase b {
+    color: var(--accent);
   }
   .statusright {
     display: flex;
