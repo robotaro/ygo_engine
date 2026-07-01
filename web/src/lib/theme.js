@@ -3,11 +3,13 @@
 // in the browser. Presets only — no custom pickers.
 import { writable } from 'svelte/store'
 
+// Each theme is a cohesive pair — a darker primary + a lighter secondary of the
+// SAME hue (dark/light amber, dark/light blue, …).
 export const THEMES = [
-  { id: 'amber', name: 'Amber', primary: '#f0b429', ink: '#1a1400', hover: '#ffc340', secondary: '#6b8afd' },
-  { id: 'blue', name: 'Dark Blue', primary: '#4f7dff', ink: '#f6f9ff', hover: '#6f95ff', secondary: '#f0b429' },
-  { id: 'emerald', name: 'Emerald', primary: '#12b886', ink: '#04231a', hover: '#1ed69b', secondary: '#f0b429' },
-  { id: 'crimson', name: 'Crimson', primary: '#e5484d', ink: '#ffffff', hover: '#f36a6e', secondary: '#f0b429' },
+  { id: 'amber', name: 'Amber', primary: '#f0b429', ink: '#1a1400', hover: '#ffc340', secondary: '#ffd876' },
+  { id: 'blue', name: 'Blue', primary: '#3d6fd8', ink: '#ffffff', hover: '#5a86e8', secondary: '#8fb6ff' },
+  { id: 'emerald', name: 'Emerald', primary: '#12a877', ink: '#ffffff', hover: '#1ac489', secondary: '#5fe0ab' },
+  { id: 'crimson', name: 'Crimson', primary: '#d83a4a', ink: '#ffffff', hover: '#e85662', secondary: '#ff828c' },
 ]
 
 const KEY = 'ygo-theme'
