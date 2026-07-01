@@ -276,29 +276,30 @@
     if (yourTurn && card && card.name != null) {
       if (where === 'ownMonster') {
         if (phase === 'battle_phase' && attackTargets(iid))
-          items.push({ label: 'Declare Attack', fn: () => (selectedAttacker = iid) })
+          items.push({ icon: '⚔️', label: 'Declare Attack', fn: () => (selectedAttacker = iid) })
         if (canChangePos(iid))
           items.push({
+            icon: isDefense(card) ? '🗡️' : '🛡️',
             label: isDefense(card) ? 'Switch to Attack' : 'Switch to Defense',
             fn: () => sendIntent({ kind: 'changePosition', iid }),
           })
         if (canFlip(iid))
-          items.push({ label: 'Flip Summon', fn: () => sendIntent({ kind: 'flip', iid }) })
+          items.push({ icon: '🔄', label: 'Flip Summon', fn: () => sendIntent({ kind: 'flip', iid }) })
         if (canGeminiSummon(iid))
-          items.push({ label: 'Gemini Summon', fn: () => sendIntent({ kind: 'geminiSummon', iid }) })
+          items.push({ icon: '🌟', label: 'Gemini Summon', fn: () => sendIntent({ kind: 'geminiSummon', iid }) })
         if (canUnionEquip(iid))
-          items.push({ label: 'Equip as Union…', fn: () => (unionSource = iid) })
+          items.push({ icon: '🔗', label: 'Equip as Union…', fn: () => (unionSource = iid) })
       } else if (where === 'ownSpellTrap') {
-        if (canActivate(iid)) items.push({ label: 'Activate', fn: () => beginActivate(iid, zoneIndex) })
+        if (canActivate(iid)) items.push({ icon: '⚡', label: 'Activate', fn: () => beginActivate(iid, zoneIndex) })
         if (canUnionUnequip(iid))
-          items.push({ label: 'Unequip Union', fn: () => sendIntent({ kind: 'unionUnequip', union: iid }) })
+          items.push({ icon: '🔗', label: 'Unequip Union', fn: () => sendIntent({ kind: 'unionUnequip', union: iid }) })
       } else if (where === 'hand') {
         const opts = summonOptions(iid)
-        if (opts?.summon?.length) items.push({ label: 'Summon', fn: () => beginPlace(iid, 'summon') })
-        if (canSpecialSummon(iid)) items.push({ label: 'Special Summon', fn: () => specialSummon(iid) })
-        if (canActivate(iid)) items.push({ label: 'Activate', fn: () => activateSpell(iid) })
-        if (canSet(iid)) items.push({ label: 'Set', fn: () => beginPlace(iid, 'set') })
-        else if (opts?.set?.length) items.push({ label: 'Set', fn: () => beginPlace(iid, 'setMonster') })
+        if (opts?.summon?.length) items.push({ icon: '⚔️', label: 'Summon', fn: () => beginPlace(iid, 'summon') })
+        if (canSpecialSummon(iid)) items.push({ icon: '✨', label: 'Special Summon', fn: () => specialSummon(iid) })
+        if (canActivate(iid)) items.push({ icon: '⚡', label: 'Activate', fn: () => activateSpell(iid) })
+        if (canSet(iid)) items.push({ icon: '🔽', label: 'Set', fn: () => beginPlace(iid, 'set') })
+        else if (opts?.set?.length) items.push({ icon: '🛡️', label: 'Set', fn: () => beginPlace(iid, 'setMonster') })
       }
     }
     return items
@@ -306,7 +307,7 @@
   function buildContext(card, where, zoneIndex) {
     const items = cardActions(card, where, zoneIndex)
     if (card && card.name != null)
-      items.push({ label: 'Enlarge', fn: () => enlarge(card, where, zoneIndex) })
+      items.push({ icon: '🔍', label: 'Enlarge', fn: () => enlarge(card, where, zoneIndex) })
     return items
   }
   function openContext(e, card, where, zoneIndex) {
@@ -1000,15 +1001,15 @@
               <CardTile {card} />
             </div>
             {#if yourTurn && specialSummonable}
-              <button class="setbtn" onclick={() => specialSummon(card.iid)}>Sp. Summon</button>
+              <button class="setbtn" onclick={() => specialSummon(card.iid)}>✨ Sp. Summon</button>
             {:else if yourTurn && opts?.summon?.length}
-              <button class="setbtn" onclick={() => beginPlace(card.iid, 'summon')}>Summon</button>
+              <button class="setbtn" onclick={() => beginPlace(card.iid, 'summon')}>⚔️ Summon</button>
             {:else if yourTurn && activatable}
-              <button class="setbtn" onclick={() => activateSpell(card.iid)}>Activate</button>
+              <button class="setbtn" onclick={() => activateSpell(card.iid)}>⚡ Activate</button>
             {:else if yourTurn && settable}
-              <button class="setbtn" onclick={() => beginPlace(card.iid, 'set')}>Set</button>
+              <button class="setbtn" onclick={() => beginPlace(card.iid, 'set')}>🔽 Set</button>
             {:else if yourTurn && opts?.set?.length}
-              <button class="setbtn" onclick={() => beginPlace(card.iid, 'setMonster')}>Set</button>
+              <button class="setbtn" onclick={() => beginPlace(card.iid, 'setMonster')}>🛡️ Set</button>
             {/if}
           </div>
         {/each}
@@ -1154,7 +1155,9 @@
   ></button>
   <div class="ctxmenu" style="left:{ctx.x}px; top:{ctx.y}px">
     {#each ctx.items as item}
-      <button onclick={() => runCtx(item)}>{item.label}</button>
+      <button onclick={() => runCtx(item)}>
+        {#if item.icon}<span class="ctxicon">{item.icon}</span>{/if}{item.label}
+      </button>
     {/each}
   </div>
 {/if}
@@ -1194,7 +1197,7 @@
                 onclick={() => {
                   a.fn()
                   closePreview() // keep `placing` if the action started a zone pick
-                }}>{a.label}</button
+                }}><span class="zoomicon">{a.icon}</span>{a.label}</button
               >
             {/each}
           </div>
@@ -1926,6 +1929,15 @@
   }
   .zoomaction:hover {
     background: var(--accent-hover);
+  }
+  .zoomicon {
+    margin-right: 6px;
+  }
+  .ctxicon {
+    display: inline-block;
+    width: 1.3em;
+    margin-right: 6px;
+    text-align: center;
   }
 
   /* Right-click context menu. */

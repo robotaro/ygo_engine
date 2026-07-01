@@ -1,6 +1,4 @@
 <script>
-  import cardBack from '../assets/card_back.jpg'
-
   let { card = null, faceDown = false, defense = false, small = false, peek = false } = $props()
 
   // `peek`: your own face-down cards (whose identity you know) flip up on hover.
@@ -49,10 +47,8 @@
     role="presentation"
   >
     <div class="flip" style="transform: {transform}">
-      <!-- Back face: the real card back, shown while the card is face-down. -->
-      <div class="face back" title={card.name ?? 'Face-down card'}>
-        <img class="backimg" src={cardBack} alt="Face-down card" />
-      </div>
+      <!-- Back face: a clean, simplified card back (shown while face-down). -->
+      <div class="face back" title={card.name ?? 'Face-down card'}></div>
 
       <!-- Front face -->
       <div class="face front card" style="--accent:{accent}" title={card.text || card.name}>
@@ -142,15 +138,22 @@
     transform: rotateY(180deg);
   }
 
+  /* Simplified card back: a dark tile with a single amber diamond, matching the
+     Deck/Extra pile motif on the board. */
   .back {
-    background: #0a0a08;
-    border: 1px solid #5a4a1e;
+    background: linear-gradient(135deg, var(--surface-3, #25282d), var(--surface, #17191c));
+    border: 1px solid var(--line-strong, #3a3e44);
   }
-  .backimg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+  .back::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 42%;
+    aspect-ratio: 1;
+    transform: rotate(45deg);
+    border: 1px solid rgba(240, 180, 41, 0.5);
+    border-radius: 3px;
   }
 
   .card {
