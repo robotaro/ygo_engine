@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
+from enum import Enum
 
 from .cards import CardDef
 from .effects import (
@@ -92,6 +93,42 @@ def _has_gy_trigger(card: CardDef) -> bool:
     )
 
 
+class DeathCause(Enum):
+    """Why a monster made its last trip from the field to the Graveyard."""
+
+    BATTLE = "battle"  # destroyed by battle (Mystic Tomato recruits, Shinato burns, ...)
+    EFFECT = "effect"  # destroyed by a card effect (Babycerasaurus, Granadora, ...)
+
+
+@dataclass(frozen=True)
+class Departure:
+    """How and when a card last left the *field* by destruction — a single value
+    object replacing the four correlated death-cause flags a CardInstance used to
+    carry (``died_by_battle`` / ``died_by_effect`` / ``died_in_defense`` /
+    ``died_on_turn``). It is ``None`` for a card that never left the field, or left
+    by a non-destruction send (tribute, discard, mill, cost). Read via the back-compat
+    properties on CardInstance while it sits in the Graveyard."""
+
+    cause: DeathCause  # destroyed by BATTLE or by a card EFFECT
+    turn: int  # GameState.turn_count at the moment it happened
+    was_defense: bool = False  # it was in a Defense Position when destroyed
+
+
+@dataclass
+class TurnState:
+    """A monster's once-per-turn summon/battle bookkeeping, grouped so a single
+    ``TurnState()`` re-instantiation clears every field at once — the four reset
+    sites (turn start, control change, leaving the field) can't drift out of sync.
+    Reached through the CardInstance ``*_this_turn`` property shims."""
+
+    summoned: bool = False
+    attacked: bool = False
+    attacks_made: int = 0  # how many attacks declared this turn (multi-attackers)
+    attack_cost_paid: bool = False
+    position_changed: bool = False
+    destroyed_a_monster_by_battle: bool = False
+
+
 @dataclass
 class CardInstance:
     """A specific copy of a card as it exists in a duel."""
@@ -104,19 +141,13 @@ class CardInstance:
     zone_index: int = 0  # slot index within a positional zone (monster/spell-trap)
     position: Position | None = None  # only meaningful on the field
 
-    # Per-turn flags (reset by the engine each turn).
-    summoned_this_turn: bool = False
-    attacked_this_turn: bool = False
-    attacks_made_this_turn: int = 0  # how many attacks declared this turn (multi-attackers)
-    # A pay-to-attack cost (Dark Elf's LP, Panther Warrior's Tribute, Gravekeeper mill) is
-    # paid once at declaration. If that attack then fizzles into a replay — the target left
-    # the field before damage (Blast Sphere self-equips) — the monster re-declares, and this
-    # flag stops it from paying the cost a SECOND time. Cleared when the attack completes.
-    attack_cost_paid: bool = False
-    position_changed_this_turn: bool = False
-    # True once this monster has destroyed an opponent's monster by battle this turn
-    # (Insect Queen's End-Phase token recursion reads it). A per-turn flag.
-    destroyed_a_monster_by_battle_this_turn: bool = False
+    # Per-turn summon/battle bookkeeping (reset each turn / on leaving the field). Grouped
+    # into one TurnState so a single reset clears them all; the individual flags are still
+    # reached as ``inst.summoned_this_turn`` &c. through the property shims below. A
+    # pay-to-attack cost (Dark Elf's LP, Panther Warrior's Tribute, Gravekeeper mill) is
+    # paid once at declaration; ``turn.attack_cost_paid`` stops a fizzled-and-re-declared
+    # attack (Blast Sphere self-equips) from paying it a SECOND time.
+    turn: TurnState = field(default_factory=TurnState)
     # The turn on which a Spell/Trap was Set face-down (it can't activate that turn).
     set_on_turn: int | None = None
     # For an Equip card: the iid of the monster it is attached to.
@@ -158,27 +189,16 @@ class CardInstance:
     # Counters sitting on this card, keyed by type ("spell", ...). Cleared when the
     # card leaves the field (Royal Magical Library, Mythical Beast Cerberus).
     counters: dict[str, int] = field(default_factory=dict)
-    # True for a card sent to the GY *by battle* this trip (Mystic Tomato & friends
-    # recruit only when "destroyed by battle"). Stamped by send_to_graveyard, read
-    # by the engine's "destroyed_by_battle" trigger while draining the GY queue.
-    died_by_battle: bool = False
-    # True for a card destroyed *by a card effect* this trip (vs. a non-destruction send
-    # — tribute, discard, mill, cost). Stamped by send_to_graveyard(by_effect=True), which
-    # the Destroy* primitives pass; read by the "destroyed_by_effect" and unified
-    # "destroyed" triggers (Babycerasaurus, Granadora) while draining the GY queue.
-    died_by_effect: bool = False
+    # How this card last left the *field* by destruction (battle / effect, the turn, and
+    # whether it was in Defense), or None (never left the field, or left by a non-destruction
+    # send — tribute, discard, mill, cost). Stamped by send_to_graveyard, carried in the
+    # Graveyard, and read through the died_by_battle / died_by_effect / died_in_defense /
+    # died_on_turn back-compat properties below (Mystic Tomato, Babycerasaurus, Shinato, The
+    # Forgiving Maiden). A single value object in place of four correlated flags.
+    last_departure: Departure | None = None
     # True once this monster has declared an attack while its opponent controlled a face-up
     # Mirror Wall — its ATK stays halved while that Mirror Wall remains (read by _effective_stat).
     atk_halved_by_wall: bool = False
-    # True for a card that was in Defense Position when it was destroyed by battle this
-    # trip. Stamped by send_to_graveyard; read by Shinato's "destroyed a Defense-Position
-    # monster by battle" burn (its original ATK), which fires just after combat.
-    died_in_defense: bool = False
-    # The turn number on which this card was destroyed by battle (GameState.turn_count at
-    # the time), or None. Stamped by send_to_graveyard alongside ``died_by_battle`` and
-    # carried in the Graveyard, so an effect can tell a *this-turn* battle death from an
-    # older one (The Forgiving Maiden returns a monster destroyed by battle this turn).
-    died_on_turn: int | None = None
     # True while this monster is face-up on the field having reached it via a Special
     # Summon (vs. Normal/Tribute/Flip Summon or Set). Stamped True in state.special_summon
     # (and on a Token), reset to False by place_monster (Normal Summon/Set) and on leaving
@@ -220,13 +240,84 @@ class CardInstance:
 
     def reset_turn_flags(self) -> None:
         """Clear the once-per-turn summon/battle bookkeeping — at the start of a turn,
-        on a control change, and when the card leaves the field."""
-        self.summoned_this_turn = False
-        self.attacked_this_turn = False
-        self.attacks_made_this_turn = 0
-        self.attack_cost_paid = False
-        self.position_changed_this_turn = False
-        self.destroyed_a_monster_by_battle_this_turn = False
+        on a control change, and when the card leaves the field. A fresh TurnState resets
+        every per-turn flag at once, so the reset can't fall out of sync with the fields."""
+        self.turn = TurnState()
+
+    # --- Per-turn flag shims: read/write the grouped TurnState under the historical names,
+    # so the many call sites (moves/engine/effects, plus the trace + serialize snapshots)
+    # need no changes. ``*_this_turn`` reads and writes ``self.turn.*``.
+    @property
+    def summoned_this_turn(self) -> bool:
+        return self.turn.summoned
+
+    @summoned_this_turn.setter
+    def summoned_this_turn(self, value: bool) -> None:
+        self.turn.summoned = value
+
+    @property
+    def attacked_this_turn(self) -> bool:
+        return self.turn.attacked
+
+    @attacked_this_turn.setter
+    def attacked_this_turn(self, value: bool) -> None:
+        self.turn.attacked = value
+
+    @property
+    def attacks_made_this_turn(self) -> int:
+        return self.turn.attacks_made
+
+    @attacks_made_this_turn.setter
+    def attacks_made_this_turn(self, value: int) -> None:
+        self.turn.attacks_made = value
+
+    @property
+    def attack_cost_paid(self) -> bool:
+        return self.turn.attack_cost_paid
+
+    @attack_cost_paid.setter
+    def attack_cost_paid(self, value: bool) -> None:
+        self.turn.attack_cost_paid = value
+
+    @property
+    def position_changed_this_turn(self) -> bool:
+        return self.turn.position_changed
+
+    @position_changed_this_turn.setter
+    def position_changed_this_turn(self, value: bool) -> None:
+        self.turn.position_changed = value
+
+    @property
+    def destroyed_a_monster_by_battle_this_turn(self) -> bool:
+        return self.turn.destroyed_a_monster_by_battle
+
+    @destroyed_a_monster_by_battle_this_turn.setter
+    def destroyed_a_monster_by_battle_this_turn(self, value: bool) -> None:
+        self.turn.destroyed_a_monster_by_battle = value
+
+    # --- Death-cause shims: read the single Departure value object under the historical
+    # names. Read-only — the cause is stamped once, by send_to_graveyard.
+    @property
+    def died_by_battle(self) -> bool:
+        return self.last_departure is not None and self.last_departure.cause is DeathCause.BATTLE
+
+    @property
+    def died_by_effect(self) -> bool:
+        return self.last_departure is not None and self.last_departure.cause is DeathCause.EFFECT
+
+    @property
+    def died_in_defense(self) -> bool:
+        return (
+            self.last_departure is not None
+            and self.last_departure.cause is DeathCause.BATTLE
+            and self.last_departure.was_defense
+        )
+
+    @property
+    def died_on_turn(self) -> int | None:
+        if self.last_departure is not None and self.last_departure.cause is DeathCause.BATTLE:
+            return self.last_departure.turn
+        return None
 
     @property
     def effects_active(self) -> bool:
@@ -446,10 +537,7 @@ class GameState:
         inst.controller = player
         inst.zone_index = index
         inst.position = position
-        inst.died_by_battle = False  # a revived monster carries no stale battle-death flag
-        inst.died_by_effect = False  # nor a stale effect-destruction flag
-        inst.died_in_defense = False  # nor a stale Defense-death flag
-        inst.died_on_turn = None  # nor a stale battle-death turn stamp
+        inst.last_departure = None  # a revived monster carries no stale death-cause stamp
         inst.was_special_summoned = False  # Normal Summon/Set; special_summon re-stamps True
         inst.was_tribute_summoned = False  # moves._summon re-stamps True for a Tribute Summon
 
@@ -534,10 +622,7 @@ class GameState:
         inst.perm_atk = 0  # permanent stat changes (Zombyra, Slate Warrior, a debuffed
         inst.perm_def = 0  # killer) don't outlive the field — a revived copy is back to base
         inst.atk_halved_by_wall = False  # a fresh field copy is not yet caught by a Mirror Wall
-        inst.died_by_battle = False  # re-stamped by send_to_graveyard if a battle death
-        inst.died_by_effect = False  # re-stamped by send_to_graveyard if an effect destruction
-        inst.died_in_defense = False  # re-stamped by send_to_graveyard for a Defense battle death
-        inst.died_on_turn = None  # re-stamped by send_to_graveyard on a battle death
+        inst.last_departure = None  # re-stamped by send_to_graveyard if this is a destruction
         inst.was_special_summoned = False  # re-stamped by special_summon on a fresh summon
         inst.was_tribute_summoned = False  # re-stamped by moves._summon on a fresh Tribute Summon
         inst.tributed_iids = []  # the tribute-cost record doesn't outlive the field
@@ -626,10 +711,13 @@ class GameState:
         equipped = inst.equipped_to  # capture before flags clear (for an Equip's parting effect)
         self._clear_field_flags(inst)
         inst.last_equipped_to = equipped
-        inst.died_by_battle = by_battle and from_field
-        inst.died_by_effect = by_effect and from_field
-        inst.died_in_defense = by_battle and from_field and was_defense
-        inst.died_on_turn = self.turn_count if (by_battle and from_field) else None
+        # Stamp how this card left the field, as a single Departure value object. A battle
+        # destruction and an effect destruction are mutually exclusive at every call site;
+        # a non-destruction send (tribute/discard/mill/cost) leaves it None.
+        if from_field and by_battle:
+            inst.last_departure = Departure(DeathCause.BATTLE, self.turn_count, was_defense)
+        elif from_field and by_effect:
+            inst.last_departure = Departure(DeathCause.EFFECT, self.turn_count, was_defense)
         self.players[inst.owner].graveyard.append(iid)
         # Queue "sent from the field to the Graveyard" triggers for the engine. Every
         # monster is queued (cheap; the engine skips those with no such trigger), plus
@@ -673,6 +761,18 @@ class GameState:
         self._remove_from_current_location(iid)
         inst.zone = Zone.HAND
         self._clear_field_flags(inst)
+        self.players[inst.owner].hand.append(iid)
+
+    def move_to_hand(self, iid: int) -> None:
+        """Move a card from its current *pile* to its owner's hand — a Deck search
+        (Sangan, Reinforcement of the Army) or a Graveyard retrieval (Magician of Faith).
+        Collapses the copy-pasted ``pile.remove`` + ``hand.append`` + ``zone = HAND``
+        sequence. For a card leaving the *field*, use return_to_hand, which also clears
+        the on-field bookkeeping."""
+        inst = self.cards[iid]
+        self._remove_from_current_location(iid)
+        inst.zone = Zone.HAND
+        inst.position = None
         self.players[inst.owner].hand.append(iid)
 
     def return_to_deck(self, iid: int, to_top: bool = True) -> None:
@@ -722,34 +822,49 @@ class GameState:
                         if isinstance(mod, EquipMod):  # an Equip may also carry non-stat passives
                             yield mod, equip.controller
 
-    def _mod_delta(self, mod, controller: int, which: str, host_iid: int) -> int:
+    def _equip_scale_lp_megamorph(self, mod, controller, which, host_iid):
+        # Megamorph: the equipped monster's ATK becomes double its original ATK while
+        # your LP < the opponent's, or half while your LP > theirs (DEF untouched).
+        if which != "atk":
+            return 0
+        base = self.cards[host_iid].card.attack or 0
+        me, opp = self.players[controller].life_points, self.players[self.opponent_of(controller)].life_points
+        if me < opp:
+            return base  # base + base = double
+        if me > opp:
+            return -(base // 2)  # base - base/2 = half
+        return 0
+
+    def _equip_scale_face_up_monsters(self, mod, controller, which, host_iid):
         flat = mod.atk if which == "atk" else mod.defn
         per = mod.scale_atk if which == "atk" else mod.scale_defn
+        count = sum(
+            1 for i in self.players[controller].monster_zones if i is not None and self.cards[i].is_face_up
+        )
+        return flat + per * count
+
+    def _equip_scale_spell_trap(self, mod, controller, which, host_iid):
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        count = sum(1 for i in self.players[controller].spell_trap_zones if i is not None)
+        return flat + per * count
+
+    # EquipMod scaling name -> the method that computes its ATK/DEF contribution.
+    _EQUIP_MOD_SCALERS = {
+        "lp_megamorph": _equip_scale_lp_megamorph,
+        "face_up_monsters": _equip_scale_face_up_monsters,
+        "spell_trap": _equip_scale_spell_trap,
+    }
+
+    def _mod_delta(self, mod, controller: int, which: str, host_iid: int) -> int:
         if mod.scaling is None:
-            return flat
-        if mod.scaling == "lp_megamorph":
-            # Megamorph: the equipped monster's ATK becomes double its original ATK while
-            # your LP < the opponent's, or half while your LP > theirs (DEF untouched).
-            if which != "atk":
-                return 0
-            base = self.cards[host_iid].card.attack or 0
-            me, opp = self.players[controller].life_points, self.players[self.opponent_of(controller)].life_points
-            if me < opp:
-                return base  # base + base = double
-            if me > opp:
-                return -(base // 2)  # base - base/2 = half
-            return 0
-        if mod.scaling == "face_up_monsters":
-            count = sum(
-                1 for i in self.players[controller].monster_zones if i is not None and self.cards[i].is_face_up
-            )
-            return flat + per * count
-        if mod.scaling == "spell_trap":
-            count = sum(1 for i in self.players[controller].spell_trap_zones if i is not None)
-            return flat + per * count
-        # A non-None scaling that matched nothing above is an authoring typo — fail loudly
-        # rather than silently applying only the flat part.
-        raise ValueError(f"unknown EquipMod scaling {mod.scaling!r}")
+            return mod.atk if which == "atk" else mod.defn
+        scaler = self._EQUIP_MOD_SCALERS.get(mod.scaling)
+        if scaler is None:
+            # A non-None scaling that matched nothing is an authoring typo — fail loudly
+            # rather than silently applying only the flat part.
+            raise ValueError(f"unknown EquipMod scaling {mod.scaling!r}")
+        return scaler(self, mod, controller, which, host_iid)
 
     # ----- field/continuous layers (face-up Field & Continuous Spells) -----
     def _active_continuous_sources(self):
@@ -849,6 +964,159 @@ class GameState:
             return False
         return True
 
+    # --- SelfStatMod scalers: each computes one mod's ATK/DEF contribution for a monster.
+    # Signature (self, mod, monster_iid, inst, which) -> int. Table-driven below so a new
+    # scaling is one dict entry, not another elif; the ``flat + per * count`` shape is shared
+    # by all but ``absorbed_monster`` (which copies an absorbed monster's stat).
+    def _self_scale_face_up_attr_monsters(self, mod, monster_iid, inst, which):
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        count = sum(
+            1
+            for pl in self.players
+            for i in pl.monster_zones
+            if i is not None
+            and i != monster_iid
+            and self.cards[i].is_face_up
+            and (mod.count_attribute is None or self.cards[i].card.attribute == mod.count_attribute)
+        )
+        return flat + per * count
+
+    def _self_scale_graveyard_monsters(self, mod, monster_iid, inst, which):
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        gy = self.players[inst.controller].graveyard
+        count = sum(
+            1
+            for i in gy
+            if self.cards[i].card.is_monster
+            and (mod.count_attribute is None or self.cards[i].card.attribute == mod.count_attribute)
+            and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+            and (mod.count_name_contains is None or mod.count_name_contains in self.cards[i].card.name)
+        )
+        return flat + per * count
+
+    def _self_scale_controlled_monsters(self, mod, monster_iid, inst, which):
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        count = sum(
+            1
+            for i in self.players[inst.controller].monster_zones
+            if i is not None
+            and self.cards[i].is_face_up
+            and not (mod.count_exclude_self and i == monster_iid)
+            and (mod.count_attribute is None or self.cards[i].card.attribute == mod.count_attribute)
+            and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+            and (mod.count_name_contains is None or mod.count_name_contains in self.cards[i].card.name)
+        )
+        return flat + per * count
+
+    def _self_scale_equips_on_self(self, mod, monster_iid, inst, which):
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        count = sum(
+            1
+            for pl in self.players
+            for sid in pl.spell_trap_zones
+            if sid is not None
+            and self.cards[sid].equipped_to == monster_iid
+            and self.cards[sid].is_face_up
+        )
+        return flat + per * count
+
+    def _self_scale_race_on_field(self, mod, monster_iid, inst, which):
+        # Insect Queen: +scale per face-up monster of count_race anywhere on the
+        # field (both sides, including this card itself).
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        count = sum(
+            1
+            for pl in self.players
+            for i in pl.monster_zones
+            if i is not None
+            and self.cards[i].is_face_up
+            and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+        )
+        return flat + per * count
+
+    def _self_scale_opponent_monsters(self, mod, monster_iid, inst, which):
+        # Nuvia the Wicked: -scale per face-up monster the OPPONENT controls (none ->
+        # no change, which also covers the "if your opponent controls any" wording).
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        opp = self.opponent_of(inst.controller)
+        count = sum(
+            1 for i in self.players[opp].monster_zones
+            if i is not None and self.cards[i].is_face_up
+        )
+        return flat + per * count
+
+    def _self_scale_hand_size(self, mod, monster_iid, inst, which):
+        # Muka Muka (+300), Enraged Muka Muka (+400), Flash Assailant (-400): scale
+        # per card in the controller's hand. The source is on the field, never in
+        # hand, so it never counts itself.
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        return flat + per * len(self.players[inst.controller].hand)
+
+    def _self_scale_named_in_graveyards(self, mod, monster_iid, inst, which):
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        count = sum(
+            1
+            for pl in self.players
+            for i in pl.graveyard
+            if self.cards[i].card.name in mod.count_names
+        )
+        return flat + per * count
+
+    def _self_scale_absorbed_monster(self, mod, monster_iid, inst, which):
+        # Relinquished / Thousand-Eyes Restrict: this card's ATK/DEF become equal
+        # to the monster it has absorbed (equipped to it, sitting in a S/T zone).
+        total = 0
+        for pl in self.players:
+            for sid in pl.spell_trap_zones:
+                if sid is None:
+                    continue
+                eq = self.cards[sid]
+                if eq.equipped_to == monster_iid and eq.card.is_monster:
+                    total += (eq.card.attack or 0) if which == "atk" else (eq.card.defense or 0)
+        return total
+
+    def _self_scale_opponent_field_and_gy_race(self, mod, monster_iid, inst, which):
+        # Buster Blader: +500 ATK for every Dragon-Type the OPPONENT controls
+        # (face-up) AND every Dragon-Type in the opponent's Graveyard.
+        flat = mod.atk if which == "atk" else mod.defn
+        per = mod.scale_atk if which == "atk" else mod.scale_defn
+        opp = self.players[self.opponent_of(inst.controller)]
+        field = sum(
+            1
+            for i in opp.monster_zones
+            if i is not None
+            and self.cards[i].is_face_up
+            and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+        )
+        gy = sum(
+            1
+            for i in opp.graveyard
+            if self.cards[i].card.is_monster
+            and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
+        )
+        return flat + per * (field + gy)
+
+    _SELF_STAT_SCALERS = {
+        "face_up_attr_monsters": _self_scale_face_up_attr_monsters,
+        "graveyard_monsters": _self_scale_graveyard_monsters,
+        "controlled_monsters": _self_scale_controlled_monsters,
+        "equips_on_self": _self_scale_equips_on_self,
+        "race_on_field": _self_scale_race_on_field,
+        "opponent_monsters": _self_scale_opponent_monsters,
+        "hand_size": _self_scale_hand_size,
+        "named_in_graveyards": _self_scale_named_in_graveyards,
+        "absorbed_monster": _self_scale_absorbed_monster,
+        "opponent_field_and_gy_race": _self_scale_opponent_field_and_gy_race,
+    }
+
     def _self_stat_delta(self, monster_iid: int, which: str) -> int:
         """A monster's own continuous self-boost (SelfStatMod), e.g. Goggle Golem's
         unlocked ATK. Suppressed while the monster's effect is inactive (a Gemini
@@ -862,127 +1130,14 @@ class GameState:
                 continue
             if not self._self_mod_active(mod, inst.controller):
                 continue  # a gated boost (Boot-Up Soldier, Theban Nightmare) is dormant
-            flat = mod.atk if which == "atk" else mod.defn
-            if mod.scaling == "face_up_attr_monsters":
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                count = sum(
-                    1
-                    for pl in self.players
-                    for i in pl.monster_zones
-                    if i is not None
-                    and i != monster_iid
-                    and self.cards[i].is_face_up
-                    and (mod.count_attribute is None or self.cards[i].card.attribute == mod.count_attribute)
-                )
-                total += flat + per * count
-            elif mod.scaling == "graveyard_monsters":
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                gy = self.players[inst.controller].graveyard
-                count = sum(
-                    1
-                    for i in gy
-                    if self.cards[i].card.is_monster
-                    and (mod.count_attribute is None or self.cards[i].card.attribute == mod.count_attribute)
-                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
-                    and (mod.count_name_contains is None or mod.count_name_contains in self.cards[i].card.name)
-                )
-                total += flat + per * count
-            elif mod.scaling == "controlled_monsters":
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                count = sum(
-                    1
-                    for i in self.players[inst.controller].monster_zones
-                    if i is not None
-                    and self.cards[i].is_face_up
-                    and not (mod.count_exclude_self and i == monster_iid)
-                    and (mod.count_attribute is None or self.cards[i].card.attribute == mod.count_attribute)
-                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
-                    and (mod.count_name_contains is None or mod.count_name_contains in self.cards[i].card.name)
-                )
-                total += flat + per * count
-            elif mod.scaling == "equips_on_self":
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                count = sum(
-                    1
-                    for pl in self.players
-                    for sid in pl.spell_trap_zones
-                    if sid is not None
-                    and self.cards[sid].equipped_to == monster_iid
-                    and self.cards[sid].is_face_up
-                )
-                total += flat + per * count
-            elif mod.scaling == "race_on_field":
-                # Insect Queen: +scale per face-up monster of count_race anywhere on the
-                # field (both sides, including this card itself).
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                count = sum(
-                    1
-                    for pl in self.players
-                    for i in pl.monster_zones
-                    if i is not None
-                    and self.cards[i].is_face_up
-                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
-                )
-                total += flat + per * count
-            elif mod.scaling == "opponent_monsters":
-                # Nuvia the Wicked: -scale per face-up monster the OPPONENT controls (none ->
-                # no change, which also covers the "if your opponent controls any" wording).
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                opp = self.opponent_of(inst.controller)
-                count = sum(
-                    1 for i in self.players[opp].monster_zones
-                    if i is not None and self.cards[i].is_face_up
-                )
-                total += flat + per * count
-            elif mod.scaling == "hand_size":
-                # Muka Muka (+300), Enraged Muka Muka (+400), Flash Assailant (-400): scale
-                # per card in the controller's hand. The source is on the field, never in
-                # hand, so it never counts itself.
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                total += flat + per * len(self.players[inst.controller].hand)
-            elif mod.scaling == "named_in_graveyards":
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                count = sum(
-                    1
-                    for pl in self.players
-                    for i in pl.graveyard
-                    if self.cards[i].card.name in mod.count_names
-                )
-                total += flat + per * count
-            elif mod.scaling == "absorbed_monster":
-                # Relinquished / Thousand-Eyes Restrict: this card's ATK/DEF become equal
-                # to the monster it has absorbed (equipped to it, sitting in a S/T zone).
-                for pl in self.players:
-                    for sid in pl.spell_trap_zones:
-                        if sid is None:
-                            continue
-                        eq = self.cards[sid]
-                        if eq.equipped_to == monster_iid and eq.card.is_monster:
-                            total += (eq.card.attack or 0) if which == "atk" else (eq.card.defense or 0)
-            elif mod.scaling == "opponent_field_and_gy_race":
-                # Buster Blader: +500 ATK for every Dragon-Type the OPPONENT controls
-                # (face-up) AND every Dragon-Type in the opponent's Graveyard.
-                per = mod.scale_atk if which == "atk" else mod.scale_defn
-                opp = self.players[self.opponent_of(inst.controller)]
-                field = sum(
-                    1
-                    for i in opp.monster_zones
-                    if i is not None
-                    and self.cards[i].is_face_up
-                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
-                )
-                gy = sum(
-                    1
-                    for i in opp.graveyard
-                    if self.cards[i].card.is_monster
-                    and (mod.count_race is None or self.cards[i].card.race == mod.count_race)
-                )
-                total += flat + per * (field + gy)
-            elif mod.scaling is None:
-                total += flat  # a flat self-boost (Goggle Golem, the Gadgets) — no scaling
-            else:
-                # A non-None scaling that matched no branch is an authoring typo — fail loudly.
+            if mod.scaling is None:
+                total += mod.atk if which == "atk" else mod.defn  # flat self-boost (Gadgets)
+                continue
+            scaler = self._SELF_STAT_SCALERS.get(mod.scaling)
+            if scaler is None:
+                # A non-None scaling that matched no entry is an authoring typo — fail loudly.
                 raise ValueError(f"unknown SelfStatMod scaling {mod.scaling!r}")
+            total += scaler(self, mod, monster_iid, inst, which)
         return total
 
     def _spell_counter_delta(self, monster_iid: int, which: str) -> int:

@@ -44,7 +44,7 @@ from .effects import (
     DestroysBattledDragon,
     DestroyedByBattleAttack,
     DestroyEquipHostThenBurn,
-    DestroyAllFieldSpells,
+    fn_destroy_all_field_spells,
     DestroyAllOtherCards,
     DestroyAllSpecialSummoned,
     DestroyAllSpellTraps,
@@ -64,7 +64,7 @@ from .effects import (
     DrawAgainOnDraw,
     DrawTrigger,
     Effect,
-    EndBattlePhase,
+    fn_end_battle_phase,
     EndPhaseSummonSweep,
     EndPhaseTrigger,
     LifeGainTrigger,
@@ -97,7 +97,7 @@ from .effects import (
     ArmSoulExchange,
     HalvesAttackersAtk,
     LocksAttachedMonster,
-    AttachSelfToTarget,
+    fn_attach_self_to_target,
     NegateAttack,
     NegatePreviousLink,
     PayLifeForExtraNormalSummon,
@@ -106,25 +106,25 @@ from .effects import (
     PreventBattleDamageThisBattle,
     PreventBattleDamageThisTurn,
     PreventBattleDestructionThisTurn,
-    ReturnAllSetCardsToHand,
-    ReturnAllSpellTrapsToHand,
+    fn_return_all_set_cards_to_hand,
+    fn_return_all_spell_traps_to_hand,
     ReturnFromGraveyardToDeck,
     ReturnFromGraveyardToHand,
     ReturnOwnBattleDeadToHand,
     RacePositionLock,
     ForceAttackTarget,
     RedirectAttackToTarget,
-    ReflectBattleDamage,
+    fn_reflect_battle_damage,
     ReverseStatChangesThisTurn,
     ReturnFromHandToDeck,
     ReturnSelfToDeck,
-    ReturnSpellFromGraveyardToHand,
+    fn_return_spell_from_graveyard_to_hand,
     PlantSelfInOpponentDeck,
     LookAtTopReorderBestFirst,
     DestroyFaceUpMonstersOfDeclaredType,
     ShuffleHandIntoDeckThenDraw,
     AttackTributeCost,
-    ReturnEventAttackerToHand,
+    fn_return_event_attacker_to_hand,
     AbsorbMonsterAsEquip,
     NoBattleDamageWhileUmi,
     BanishInsteadOfGraveyard,
@@ -139,16 +139,16 @@ from .effects import (
     SwapControlWithTarget,
     SummonTokenIfDestroyedByBattle,
     SameNameAnthem,
-    DestroySelf,
+    Fn,
+    fn_destroy_self,
     NoNormalSummonWhileControllingMonster,
     CannotAttackUnlessControlRace,
     NameTreatedAs,
     SearchFromDeck,
-    SearchMonsterToHand,
     SelfStatMod,
     RevealRandomHandCardSummonOrGY,
     RevealTopSummonRestToHand,
-    SetEventAttackerAtkZero,
+    fn_set_event_attacker_atk_zero,
     ShuffleFieldMonstersThenExcavate,
     SpecialSummonFromDeck,
     SpecialSummonFromDeckAtkAtMostBattleDamage,
@@ -632,7 +632,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         _flip(target=TargetSpec(count=1, where="opponent_monsters"), resolve=(BounceTargetsToHand(),)),
     ),
     # Giant Trunade — return every Spell/Trap on the field to hand.
-    "Giant Trunade": (Effect(resolve=(ReturnAllSpellTrapsToHand(),)),),
+    "Giant Trunade": (Effect(resolve=(Fn(fn_return_all_spell_traps_to_hand),)),),
     # --- Effects Batch 11: "up to N" targeting (variable count) ---
     # FLIP effects that return up to N monsters to the hand (the player chooses how
     # many, 1..N). Reuses the bounce primitive with TargetSpec(up_to=True).
@@ -936,7 +936,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         Effect(
             timing="trigger",
             trigger=Trigger(kind="summon", by=SELF),
-            resolve=(ReturnAllSetCardsToHand(),),
+            resolve=(Fn(fn_return_all_set_cards_to_hand),),
         ),
     ),
     # --- Effects Batch 22: send-from-field-to-GY activation cost ---
@@ -1400,7 +1400,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
             speed=2,
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT),
-            resolve=(ReflectBattleDamage(),),
+            resolve=(Fn(fn_reflect_battle_damage),),
         ),
     ),
     # --- Batch 50: "selected as an attack target" gate + board-state-gated attack Traps ---
@@ -1652,7 +1652,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         # "regardless of position"
         _flip(target=TargetSpec(count=1, where="any_monster"), resolve=(DestroyTargets(),)),
     ),
-    "Magician of Faith": (_flip(resolve=(ReturnSpellFromGraveyardToHand(),)),),
+    "Magician of Faith": (_flip(resolve=(Fn(fn_return_spell_from_graveyard_to_hand),)),),
     # --- Effects Batch 4: more clean Flip effects (reuse the flip timing) ---
     "Poison Mummy": (_flip(resolve=(InflictDamage(OPPONENT, 500),)),),
     "Skelengel": (_flip(resolve=(Draw(count=1),)),),
@@ -1660,7 +1660,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
         # you select 2 to destroy
         _flip(target=TargetSpec(count=2, where="any_monster"), resolve=(DestroyTargets(),)),
     ),
-    "Sangan": (_on_sent_to_gy((SearchMonsterToHand(1500),)),),
+    "Sangan": (_on_sent_to_gy((SearchFromDeck(CardFilter(card_kind="monster", max_atk=1500)),)),),
     # Dandylion — sent from the field to the GY: 2 Fluff Tokens (Plant/WIND/L1/0/0).
     "Dandylion": (
         _on_sent_to_gy(
@@ -2221,7 +2221,7 @@ EFFECTS: dict[str, tuple[Effect, ...]] = {
     "Minor Goblin Official": (Effect(timing="ignition", condition=_opp_lp_at_most(3000)),),
     # Burning Land — Continuous Spell: activating it wipes every Field Spell, then
     # it burns the active player 500 each Standby (the burn lives in CONTINUOUS).
-    "Burning Land": (Effect(timing="ignition", resolve=(DestroyAllFieldSpells(),)),),
+    "Burning Land": (Effect(timing="ignition", resolve=(Fn(fn_destroy_all_field_spells),)),),
     # --- Slice 17: Toon World — Continuous Spell, pay 1000 LP to activate ---
     # While it's face-up it enables your Toon monsters (the engine checks for it by
     # name); if it leaves the field, your Toon monsters are destroyed.
@@ -4916,7 +4916,7 @@ _register(EFFECTS, {
         Effect(
             timing="trigger",
             trigger=Trigger(kind="destroyed_by_battle", by=SELF),
-            resolve=(EndBattlePhase(),),
+            resolve=(Fn(fn_end_battle_phase),),
         ),
     ),
 })
@@ -4945,7 +4945,7 @@ _register(EFFECTS, {
             speed=2,
             timing="trigger",
             trigger=Trigger(kind="attack_declared", by=OPPONENT, subject="attacker"),
-            resolve=(CoinFlip(win=(SetEventAttackerAtkZero(),)),),
+            resolve=(CoinFlip(win=(Fn(fn_set_event_attacker_atk_zero),)),),
         ),
     ),
     # Infinite Dismissal — Continuous Trap: activate it onto the field; the End-Phase
@@ -5368,7 +5368,7 @@ _register(EFFECTS, {
             speed=1,
             timing="trigger",
             trigger=Trigger(kind="attacked", by=OPPONENT),
-            resolve=(ReturnEventAttackerToHand(),),
+            resolve=(Fn(fn_return_event_attacker_to_hand),),
         ),
     ),
 })
@@ -5702,7 +5702,7 @@ _register(EFFECTS, {
         Effect(
             timing="trigger",
             trigger=Trigger(kind="summon", by=SELF, subject="monster", summon_kinds=frozenset({"normal"})),
-            resolve=(DestroySelf(),),
+            resolve=(Fn(fn_destroy_self),),
         ),
     ),
     # Aqua Chorus — a Continuous Trap: activating it just sets it face-up, where its
@@ -6008,7 +6008,7 @@ _register(EFFECTS, {
             speed=2,
             timing="quick",
             target=TargetSpec(count=1, where="opponent_monsters"),
-            resolve=(AttachSelfToTarget(),),
+            resolve=(Fn(fn_attach_self_to_target),),
         ),
     ),
 })

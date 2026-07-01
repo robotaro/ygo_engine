@@ -1,7 +1,7 @@
 """Effects Batch 78: deck-impact.
 
 Fairy Box reacts to an opponent's attack with a coin toss; on a win the attacking
-monster's ATK becomes 0 for the battle (``SetEventAttackerAtkZero``). Darklord Marie
+monster's ATK becomes 0 for the battle (``fn_set_event_attacker_atk_zero``). Darklord Marie
 drips 200 LP each of its owner's Standby Phases while in the Graveyard
 (``GraveyardStandbyGainLife``, extending the GY-Standby hook). Infinite Dismissal is an
 End-Phase floodgate: Level-3-or-lower monsters Normal/Flip Summoned this turn are

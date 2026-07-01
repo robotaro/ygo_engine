@@ -1114,45 +1114,58 @@ def _field_card_count(state: "GameState", player: int) -> int:
     return n
 
 
+def _count_own_graveyard(s, opp, ctx, card_filter) -> int:
+    gy = s.players[ctx.controller].graveyard
+    if card_filter is None:
+        return len(gy)
+    return sum(1 for i in gy if card_filter.matches(s.inst(i).card))
+
+
+def _count_own_monsters(s, opp, ctx, card_filter) -> int:
+    # Face-up monsters the controller controls (Elemental HERO Lady Heat's
+    # "for each face-up 'Elemental HERO' you control" burn). An optional
+    # card_filter narrows by name/race; with none, every face-up own monster.
+    zones = s.players[ctx.controller].monster_zones
+    return sum(
+        1
+        for i in zones
+        if i is not None
+        and s.inst(i).is_face_up
+        and (card_filter is None or card_filter.matches(s.inst(i).card))
+    )
+
+
+# CountTimes pool name -> a counter of (state, opponent_idx, ctx, card_filter). Table-driven
+# so a new pool is one entry, not another branch; an unknown pool still fails loudly.
+_COUNT_POOLS = {
+    "opponent_monsters": lambda s, opp, ctx, cf: sum(
+        1 for i in s.players[opp].monster_zones if i is not None
+    ),
+    "all_monsters": lambda s, opp, ctx, cf: sum(
+        1 for pl in (0, 1) for i in s.players[pl].monster_zones if i is not None
+    ),
+    "opponent_hand": lambda s, opp, ctx, cf: len(s.players[opp].hand),
+    "opponent_hand_and_field": lambda s, opp, ctx, cf: len(s.players[opp].hand)
+    + _field_card_count(s, opp),
+    "opponent_spell_trap": lambda s, opp, ctx, cf: sum(
+        1 for i in s.players[opp].spell_trap_zones if i is not None
+    )
+    + (1 if s.players[opp].field_zone is not None else 0),
+    "opponent_graveyard": lambda s, opp, ctx, cf: len(s.players[opp].graveyard),
+    "opponent_banished": lambda s, opp, ctx, cf: len(s.players[opp].banished),
+    "own_graveyard": _count_own_graveyard,
+    "own_monsters": _count_own_monsters,
+}
+
+
 def _count_pool(ctx: EffectContext, pool: str, card_filter=None) -> int:
     """Resolve a CountTimes pool name to a card count, relative to the controller."""
     s = ctx.state
-    opp = s.opponent_of(ctx.controller)
-    if pool == "opponent_monsters":
-        return sum(1 for i in s.players[opp].monster_zones if i is not None)
-    if pool == "all_monsters":
-        return sum(1 for pl in (0, 1) for i in s.players[pl].monster_zones if i is not None)
-    if pool == "opponent_hand":
-        return len(s.players[opp].hand)
-    if pool == "opponent_hand_and_field":
-        return len(s.players[opp].hand) + _field_card_count(s, opp)
-    if pool == "opponent_spell_trap":
-        return sum(1 for i in s.players[opp].spell_trap_zones if i is not None) + (
-            1 if s.players[opp].field_zone is not None else 0
-        )
-    if pool == "opponent_graveyard":
-        return len(s.players[opp].graveyard)
-    if pool == "opponent_banished":
-        return len(s.players[opp].banished)
-    if pool == "own_graveyard":
-        gy = s.players[ctx.controller].graveyard
-        if card_filter is None:
-            return len(gy)
-        return sum(1 for i in gy if card_filter.matches(s.inst(i).card))
-    if pool == "own_monsters":
-        # Face-up monsters the controller controls (Elemental HERO Lady Heat's
-        # "for each face-up 'Elemental HERO' you control" burn). An optional
-        # card_filter narrows by name/race; with none, every face-up own monster.
-        zones = s.players[ctx.controller].monster_zones
-        return sum(
-            1
-            for i in zones
-            if i is not None
-            and s.inst(i).is_face_up
-            and (card_filter is None or card_filter.matches(s.inst(i).card))
-        )
-    # An unrecognised pool is an authoring typo, not "count 0" — fail loudly.
-    raise ValueError(f"unknown CountTimes pool {pool!r}")
+    counter = _COUNT_POOLS.get(pool)
+    if counter is None:
+        # An unrecognised pool is an authoring typo, not "count 0" — fail loudly.
+        raise ValueError(f"unknown CountTimes pool {pool!r}")
+    return counter(s, s.opponent_of(ctx.controller), ctx, card_filter)
 
 
 # --------------------------------------------------------------------------- #
@@ -1161,6 +1174,21 @@ def _count_pool(ctx: EffectContext, pool: str, card_filter=None) -> int:
 class Primitive:
     def execute(self, ctx: EffectContext) -> None:  # pragma: no cover - interface
         raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class Fn(Primitive):
+    """Escape hatch for a genuinely one-off, imperative effect: wrap a plain
+    ``(ctx) -> None`` function instead of minting a single-use Primitive subclass just to
+    house a few lines of imperative code. The function does the work; ``label`` is an
+    optional human tag for tracing. Reach for a real Primitive when the verb is reusable or
+    parameterised — use ``Fn`` only for the truly bespoke."""
+
+    fn: Callable[["EffectContext"], None]
+    label: str = ""
+
+    def execute(self, ctx: EffectContext) -> None:
+        self.fn(ctx)
 
 
 @dataclass(frozen=True)
@@ -1319,13 +1347,10 @@ class DestroyTargets(Primitive):
                 ctx.state.send_to_graveyard(iid, by_effect=True)
 
 
-@dataclass(frozen=True)
-class DestroySelf(Primitive):
+def fn_destroy_self(ctx: EffectContext) -> None:
     """Destroy the source card (Nuvia the Wicked self-destructs when Normal Summoned)."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        if ctx.source_iid in ctx.state.cards:
-            ctx.state.send_to_graveyard(ctx.source_iid, by_effect=True)
+    if ctx.source_iid in ctx.state.cards:
+        ctx.state.send_to_graveyard(ctx.source_iid, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -1585,29 +1610,22 @@ class LookAtTopReorderBestFirst(Primitive):
         deck.append(best)  # move to the top — the controller's next draw
 
 
-@dataclass(frozen=True)
-class ReturnAllSpellTrapsToHand(Primitive):
+def fn_return_all_spell_traps_to_hand(ctx: EffectContext) -> None:
     """Giant Trunade: return every Spell/Trap on the field (both players', including
     Field Spells and the activating card itself) to its owner's hand."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        s = ctx.state
-        victims = s.field_cards(0, monsters=False) + s.field_cards(1, monsters=False)
-        for iid in victims:
-            s.return_to_hand(iid)
+    s = ctx.state
+    victims = s.field_cards(0, monsters=False) + s.field_cards(1, monsters=False)
+    for iid in victims:
+        s.return_to_hand(iid)
 
 
-@dataclass(frozen=True)
-class ReturnAllSetCardsToHand(Primitive):
+def fn_return_all_set_cards_to_hand(ctx: EffectContext) -> None:
     """Byser Shock: return every face-down (Set) card on the field — Set monsters
-    and Set Spells/Traps (and a Set Field Spell), both players' — to its owner's
-    hand."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        s = ctx.state
-        victims = s.field_cards(0, face_down_only=True) + s.field_cards(1, face_down_only=True)
-        for iid in victims:
-            s.return_to_hand(iid)
+    and Set Spells/Traps (and a Set Field Spell), both players' — to its owner's hand."""
+    s = ctx.state
+    victims = s.field_cards(0, face_down_only=True) + s.field_cards(1, face_down_only=True)
+    for iid in victims:
+        s.return_to_hand(iid)
 
 
 @dataclass(frozen=True)
@@ -1645,15 +1663,12 @@ class DestroyAllOtherCards(Primitive):
                 s.send_to_graveyard(iid, by_effect=True)
 
 
-@dataclass(frozen=True)
-class DestroyAllFieldSpells(Primitive):
+def fn_destroy_all_field_spells(ctx: EffectContext) -> None:
     """Burning Land: destroy every Field Spell on the field (both players')."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        for player in ctx.state.players:
-            fz = player.field_zone
-            if fz is not None:
-                ctx.state.send_to_graveyard(fz, by_effect=True)
+    for player in ctx.state.players:
+        fz = player.field_zone
+        if fz is not None:
+            ctx.state.send_to_graveyard(fz, by_effect=True)
 
 
 @dataclass(frozen=True)
@@ -2079,43 +2094,34 @@ class NegateAttack(Primitive):
         ctx.state.attack_negated = True
 
 
-@dataclass(frozen=True)
-class EndBattlePhase(Primitive):
+def fn_end_battle_phase(ctx: EffectContext) -> None:
     """End the current Battle Phase immediately (The Unhappy Maiden, when sent to the GY
     by battle). Sets ``state.battle_phase_ended``, which the engine's Battle-Phase loop
     reads to stop offering further attacks this turn."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        ctx.state.battle_phase_ended = True
+    ctx.state.battle_phase_ended = True
 
 
-@dataclass(frozen=True)
-class SetEventAttackerAtkZero(Primitive):
+def fn_set_event_attacker_atk_zero(ctx: EffectContext) -> None:
     """Fairy Box: the attacking monster's ATK becomes 0 for the battle — modelled by a
     temporary delta that cancels its current effective ATK. Reads the attacker from the
     triggering event; the combat step then reads the zeroed ATK at damage calculation.
     (The temp delta wears off at the End Phase rather than the Battle Phase's end — a
     harmless over-extension for a monster that has just been neutered in combat.)"""
-
-    def execute(self, ctx: EffectContext) -> None:
-        s = ctx.state
-        attacker = (ctx.event or {}).get("attacker")
-        inst = s.cards.get(attacker) if attacker is not None else None
-        if inst is not None and inst.zone is Zone.MONSTER:
-            inst.temp_atk -= s.effective_attack(attacker)
+    s = ctx.state
+    attacker = (ctx.event or {}).get("attacker")
+    inst = s.cards.get(attacker) if attacker is not None else None
+    if inst is not None and inst.zone is Zone.MONSTER:
+        inst.temp_atk -= s.effective_attack(attacker)
 
 
-@dataclass(frozen=True)
-class ReturnEventAttackerToHand(Primitive):
+def fn_return_event_attacker_to_hand(ctx: EffectContext) -> None:
     """Wall of Illusion: return the attacking monster (read from the triggering event) to
     its owner's hand. Fired from the attacked monster's own trigger, so the attacker comes
     from the event rather than a chosen target."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        attacker = (ctx.event or {}).get("attacker")
-        if attacker is not None and attacker in ctx.state.cards:
-            if ctx.state.cards[attacker].zone is Zone.MONSTER:
-                ctx.state.return_to_hand(attacker)
+    attacker = (ctx.event or {}).get("attacker")
+    if attacker is not None and attacker in ctx.state.cards:
+        if ctx.state.cards[attacker].zone is Zone.MONSTER:
+            ctx.state.return_to_hand(attacker)
 
 
 @dataclass(frozen=True)
@@ -2130,13 +2136,10 @@ class RedirectAttackToTarget(Primitive):
             ctx.state.attack_redirect = ctx.targets[0]
 
 
-@dataclass(frozen=True)
-class ReflectBattleDamage(Primitive):
+def fn_reflect_battle_damage(ctx: EffectContext) -> None:
     """Dimension Wall: the Battle Damage the controller would take from this battle is
     dealt to the attacking player instead. Read by moves._resolve_attack."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        ctx.state.reflect_battle_damage = True
+    ctx.state.reflect_battle_damage = True
 
 
 @dataclass(frozen=True)
@@ -2267,54 +2270,27 @@ class EquipToTarget(Primitive):
             ctx.state.send_to_graveyard(ctx.source_iid)  # nothing to equip -> to the GY
 
 
-@dataclass(frozen=True)
-class AttachSelfToTarget(Primitive):
+def fn_attach_self_to_target(ctx: EffectContext) -> None:
     """Attach the effect SOURCE (a Continuous Trap like Spellbinding Circle) to the targeted
     monster by setting its ``equipped_to`` — so its LocksAttachedMonster rider can find its
     victim and the engine's orphan cleanup destroys it when the monster leaves. Unlike
     EquipToTarget this skips the Gearfried 'destroys Equip Cards' check (the source is a Trap,
     not an Equip Card)."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        from .enums import Zone
-
-        target = ctx.targets[0] if ctx.targets else None
-        if target is not None and target in ctx.state.cards and ctx.state.inst(target).zone is Zone.MONSTER:
-            ctx.state.inst(ctx.source_iid).equipped_to = target
+    target = ctx.targets[0] if ctx.targets else None
+    if target is not None and target in ctx.state.cards and ctx.state.inst(target).zone is Zone.MONSTER:
+        ctx.state.inst(ctx.source_iid).equipped_to = target
 
 
 # --- Slice 4: monster-effect primitives ---
 @dataclass(frozen=True)
-class SearchMonsterToHand(Primitive):
-    """Sangan (auto): move the best Deck monster with ATK <= max_atk to hand, then shuffle."""
-
-    max_atk: int = 1500
-
-    def execute(self, ctx: EffectContext) -> None:
-        player = ctx.state.players[ctx.controller]
-        eligible = [
-            iid
-            for iid in player.deck
-            if ctx.state.inst(iid).card.is_monster
-            and (ctx.state.inst(iid).card.attack or 0) <= self.max_atk
-        ]
-        if eligible:
-            best = max(eligible, key=lambda i: ctx.state.inst(i).card.attack or 0)
-            player.deck.remove(best)
-            player.hand.append(best)
-            ctx.state.inst(best).zone = Zone.HAND
-        ctx.state.rng.shuffle(player.deck)
-
-
-@dataclass(frozen=True)
 class SearchFromDeck(Primitive):
     """Add 1 card matching ``filter`` from the controller's Deck to their hand, then
-    shuffle (Reinforcement of the Army, Terraforming, Fusion Sage). The pick is
-    deterministic — the highest-ATK match (so a monster fetch grabs the strongest
-    eligible body; non-monsters tie at 0 and the first in Deck order is taken),
-    mirroring ``SearchMonsterToHand`` since primitives have no agent to ask.
-    Activation is gated by a condition so there is always a match when it resolves;
-    with none it does nothing."""
+    shuffle (Reinforcement of the Army, Terraforming, Fusion Sage; and Sangan, which
+    fetches a monster with ATK <= 1500 via ``CardFilter(card_kind="monster", max_atk=…)``).
+    The pick is deterministic — the highest-ATK match (so a monster fetch grabs the
+    strongest eligible body; non-monsters tie at 0 and the first in Deck order is taken) —
+    since primitives have no agent to ask. Activation is gated by a condition so there is
+    usually a match when it resolves; with none it does nothing but shuffle."""
 
     card_filter: CardFilter = CardFilter()
 
@@ -2323,9 +2299,7 @@ class SearchFromDeck(Primitive):
         eligible = [i for i in player.deck if self.card_filter.matches(ctx.state.inst(i).card)]
         if eligible:
             pick = max(eligible, key=lambda i: ctx.state.inst(i).card.attack or 0)
-            player.deck.remove(pick)
-            player.hand.append(pick)
-            ctx.state.inst(pick).zone = Zone.HAND
+            ctx.state.move_to_hand(pick)
         ctx.state.rng.shuffle(player.deck)
 
 
@@ -2579,19 +2553,13 @@ class ReturnFromHandToDeck(Primitive):
             s.return_to_deck(iid, to_top=False)
 
 
-@dataclass(frozen=True)
-class ReturnSpellFromGraveyardToHand(Primitive):
+def fn_return_spell_from_graveyard_to_hand(ctx: EffectContext) -> None:
     """Magician of Faith (auto): return the most recently used Spell from your GY to hand."""
-
-    def execute(self, ctx: EffectContext) -> None:
-        player = ctx.state.players[ctx.controller]
-        spells = [iid for iid in player.graveyard if ctx.state.inst(iid).card.is_spell]
-        if not spells:
-            return
-        iid = spells[-1]
-        player.graveyard.remove(iid)
-        player.hand.append(iid)
-        ctx.state.inst(iid).zone = Zone.HAND
+    player = ctx.state.players[ctx.controller]
+    spells = [iid for iid in player.graveyard if ctx.state.inst(iid).card.is_spell]
+    if not spells:
+        return
+    ctx.state.move_to_hand(spells[-1])
 
 
 @dataclass(frozen=True)
@@ -2770,10 +2738,7 @@ class RevealTopSummonRestToHand(Primitive):
                     and s.special_summon(iid, pl, self.position)
                 )
                 if not summoned and s.inst(iid).zone is Zone.DECK:
-                    deck.remove(iid)
-                    s.players[pl].hand.append(iid)
-                    s.inst(iid).zone = Zone.HAND
-                    s.inst(iid).position = None
+                    s.move_to_hand(iid)
 
 
 @dataclass(frozen=True)

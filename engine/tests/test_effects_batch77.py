@@ -4,7 +4,7 @@ Dark Magician Girl gains 300 ATK per "Dark Magician"/"Magician of Black Chaos" i
 Graveyard (SelfStatMod ``named_in_graveyards``, exact-name match across both GYs). Giant
 Germ, destroyed by battle, burns 500 and Special Summons its Deck copies (a battle
 recruiter). The Unhappy Maiden, sent to the GY by battle, ends the Battle Phase
-immediately (``EndBattlePhase`` sets ``state.battle_phase_ended``, read by the loop).
+immediately (``fn_end_battle_phase`` sets ``state.battle_phase_ended``, read by the loop).
 """
 
 from __future__ import annotations

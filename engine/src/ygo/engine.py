@@ -576,7 +576,20 @@ class Engine:
         self._wipe_spell_counters_after_battle()  # Mythical Beast Cerberus
 
     def _declare_attack(self, action: DeclareAttack, tp: int) -> None:
-        """Declare an attack, open a response window, then resolve it if still valid."""
+        """Declare an attack, open a response window, then resolve it if still valid.
+        Orchestrates four steps: declaration + cost, the response/re-validation gauntlet,
+        the damage resolution, and the post-combat triggers."""
+        self._declare_and_pay(action, tp)
+        resolved = self._attack_response_gauntlet(action.attacker, action.target, tp)
+        if resolved is None:
+            return  # the attack was negated / fizzled / consumed inside the gauntlet
+        target, flip_pending = resolved
+        self._resolve_attack_damage(action.attacker, target, tp)
+        self._fire_post_combat_triggers(action.attacker, target, flip_pending)
+
+    def _declare_and_pay(self, action: DeclareAttack, tp: int) -> None:
+        """Step 1 — reset the transient attack flags, mark the attacker as having attacked,
+        pay any attack cost (once per attack), then announce the declaration."""
         s = self.state
         attacker, target = action.attacker, action.target
         s.attack_negated = False
@@ -630,16 +643,23 @@ class Engine:
         self._changed()
         self._pace_ai(tp)  # hold the banner so a human can read the bot's attack before it lands
 
+    def _attack_response_gauntlet(self, attacker: int, target: int | None, tp: int):
+        """Step 2 — run the response windows and the re-validation gauntlet: opponent's
+        response, the attacker's "declares an attack" Trigger, negation, redirect, the
+        attacked monster's reactive Trigger, and the Damage-Step window. Returns
+        ``(target, flip_pending)`` to resolve, or ``None`` if the attack does not proceed
+        (negated / fizzled / the attacker or target left the field)."""
+        s = self.state
         self._response_window(
             {"kind": "attack_declared", "player": tp, "attacker": attacker, "target": target}
         )
         if self.result is not None:
-            return
+            return None
 
         # The attacker's own "when this declares an attack" Trigger (Jirai Gumo) fires now.
         self._fire_attack_declared_trigger(attacker)
         if self.result is not None:
-            return
+            return None
 
         if s.attack_negated:
             # A negated attack still CONSUMES the attack (no replay) — unlike a target
@@ -651,12 +671,12 @@ class Engine:
                 neg.attack_cost_paid = False  # attack consumed; the next one pays its own cost
             self.log("  the attack is negated")
             self._changed()
-            return
+            return None
         atk = s.cards.get(attacker)
         if atk is None or atk.zone is not Zone.MONSTER or atk.position is not Position.FACE_UP_ATTACK:
             self.log("  the attacker is no longer able to attack")
             self._changed()
-            return
+            return None
         # A response may have redirected the attack to a different monster the defender
         # controls (Call of the Earthbound, Jam Defender).
         if s.attack_redirect is not None and s.attack_redirect in s.cards:
@@ -664,7 +684,7 @@ class Engine:
             self.log(f"  the attack is redirected to {s.inst(target).name}")
         if target is not None and target not in s.cards:
             self._changed()  # the target left the field; the attack fizzles
-            return
+            return None
 
         # "When this card is attacked" — the attacked monster's OWN reactive Trigger
         # fires before damage calculation (Blast Sphere equips itself to the attacker).
@@ -672,17 +692,17 @@ class Engine:
         if target is not None:
             self._fire_attacked_trigger(target, attacker)
             if self.result is not None:
-                return
+                return None
             tinst = s.cards.get(target)
             if tinst is None or tinst.zone is not Zone.MONSTER:
                 self.log("  the attack target is no longer on the field; the attack fizzles")
                 self._changed()
-                return
+                return None
             atk = s.cards.get(attacker)
             if atk is None or atk.zone is not Zone.MONSTER or atk.position is not Position.FACE_UP_ATTACK:
                 self.log("  the attacker is no longer able to attack")
                 self._changed()
-                return
+                return None
 
         # A face-down monster being attacked is flipped — note its Flip Effect first.
         flip_pending = None
@@ -697,8 +717,13 @@ class Engine:
         # quick effect prevents the battle damage (Kuriboh) before it is calculated.
         self._fire_damage_step_window(tp, attacker, target)
         if self.result is not None:
-            return
+            return None
+        return target, flip_pending
 
+    def _resolve_attack_damage(self, attacker: int, target: int | None, tp: int) -> None:
+        """Step 3 — snapshot life/field, run the damage calculation (via ``apply``), emit
+        the attack FX, and drain any monster combat sent to the Graveyard."""
+        s = self.state
         # Snapshot the field and life so we can tell the UI exactly what this
         # attack did (who was destroyed, who took how much damage) — detail a
         # plain board snapshot can't convey.
@@ -725,6 +750,10 @@ class Engine:
         self._changed()
         self._check_field_to_gy_triggers()  # combat may have sent a trigger monster to GY
 
+    def _fire_post_combat_triggers(self, attacker: int, target: int | None, flip_pending) -> None:
+        """Step 4 — resolve a pending Flip Effect and fire, in their load-bearing order, the
+        post-combat triggers that read the transient records combat just left on the state."""
+        s = self.state
         # Flip Effects resolve after damage (even if the monster was destroyed in battle).
         if flip_pending is not None and self.result is None:
             iid, controller, effect = flip_pending
