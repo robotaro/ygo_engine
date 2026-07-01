@@ -49,6 +49,7 @@
   let preview = null // a card shown enlarged for reading (left-click)
   let previewCtx = null // { where, zoneIndex } so the modal can offer that card's actions
   let placing = null // { iid, action, zoneType } while picking a zone to play a card into
+  let dropChoice = null // { iid, zoneIndex, x, y } — "Summon or Set?" after a drop
   let ctx = null // right-click context menu: { x, y, items[] }
 
   // The Launcher (deck picker / builder) shows until a duel starts.
@@ -217,6 +218,7 @@
   function closeOverlays() {
     closePreview()
     placing = null // Escape / backdrop cancels an in-progress placement too
+    dropChoice = null
   }
 
   // Click-to-place: pick a zone (highlighted) to play a card into, instead of
@@ -237,16 +239,7 @@
     placing = null
     if (!p) return
     if (p.zoneType === 'monster') {
-      const opts = summonOptions(p.iid)
-      const list = p.action === 'summon' ? opts?.summon : opts?.set
-      if (!list?.length) return
-      const kind = p.action === 'summon' ? 'summon' : 'set'
-      if (list.some((c) => c.length === 0)) {
-        sendIntent({ kind, iid: p.iid, tributes: [], zoneIndex })
-      } else {
-        // high-Level monster — keep the chosen zone, now pick tributes
-        pendingTribute = { iid: p.iid, zoneIndex, needed: list[0].length, chosen: [], mode: kind }
-      }
+      playMonster(p.iid, zoneIndex, p.action)
     } else if (p.action === 'activate') {
       beginActivate(p.iid, zoneIndex)
     } else {
@@ -328,17 +321,41 @@
   }
 
   // interactions
+  // The ways a hand monster can be played (face-up Summon / face-down Set).
+  function monsterPlays(iid) {
+    const opts = summonOptions(iid)
+    const plays = []
+    if (opts?.summon?.length) plays.push('summon')
+    if (opts?.set?.length) plays.push('setMonster')
+    return plays
+  }
+  // Commit a monster to a zone (handling Tributes for high-Level monsters).
+  function playMonster(iid, zoneIndex, action) {
+    const opts = summonOptions(iid)
+    const list = action === 'summon' ? opts?.summon : opts?.set
+    if (!list?.length) return
+    const kind = action === 'summon' ? 'summon' : 'set'
+    if (list.some((c) => c.length === 0)) {
+      sendIntent({ kind, iid, tributes: [], zoneIndex })
+    } else {
+      pendingTribute = { iid, zoneIndex, needed: list[0].length, chosen: [], mode: kind }
+    }
+  }
+
   function onDropSummon(e, zoneIndex) {
     e.preventDefault()
     if (!yourTurn || draggedIid == null) return
     const iid = draggedIid
     draggedIid = null
-    const opts = summonOptions(iid)
-    if (!opts) return
-    if (opts.summon.some((c) => c.length === 0)) {
-      sendIntent({ kind: 'summon', iid, tributes: [], zoneIndex })
-    } else if (opts.summon.length) {
-      pendingTribute = { iid, zoneIndex, needed: opts.summon[0].length, chosen: [], mode: 'summon' }
+    const plays = monsterPlays(iid)
+    if (plays.length === 0) return
+    if (plays.length === 1) return playMonster(iid, zoneIndex, plays[0])
+    // Both face-up Summon and face-down Set are possible — ask which.
+    dropChoice = {
+      iid,
+      zoneIndex,
+      x: Math.max(6, Math.min(e.clientX, window.innerWidth - 182)),
+      y: Math.max(6, Math.min(e.clientY, window.innerHeight - 96)),
     }
   }
 
@@ -1162,6 +1179,32 @@
   </div>
 {/if}
 
+{#if dropChoice}
+  <button
+    class="ctxbackdrop"
+    aria-label="Cancel"
+    onclick={() => (dropChoice = null)}
+    oncontextmenu={(e) => {
+      e.preventDefault()
+      dropChoice = null
+    }}
+  ></button>
+  <div class="ctxmenu" style="left:{dropChoice.x}px; top:{dropChoice.y}px">
+    <button
+      onclick={() => {
+        playMonster(dropChoice.iid, dropChoice.zoneIndex, 'summon')
+        dropChoice = null
+      }}><span class="ctxicon">⚔️</span>Summon (face-up)</button
+    >
+    <button
+      onclick={() => {
+        playMonster(dropChoice.iid, dropChoice.zoneIndex, 'setMonster')
+        dropChoice = null
+      }}><span class="ctxicon">🛡️</span>Set (face-down)</button
+    >
+  </div>
+{/if}
+
 {#if preview}
   {@const actions = cardActions(preview, previewCtx?.where, previewCtx?.zoneIndex)}
   <div class="cardzoom" role="presentation" onclick={closeOverlays} transition:fade={{ duration: 120 }}>
@@ -1346,28 +1389,32 @@
     width: 16px;
     height: 24px;
     border-radius: 3px;
-    background: linear-gradient(135deg, var(--surface-3), var(--surface));
-    box-shadow: inset 0 0 0 1px var(--line-strong);
+    background: #5f3d2f;
+    border: 1.5px solid #c6b78e;
+    box-sizing: border-box;
   }
   /* Each player's half is the canonical 7-column mat:
      [Field | Monster x5 | Graveyard] over [Extra | Spell/Trap x5 | Deck]. */
   .mat {
     display: grid;
-    grid-template-columns: repeat(7, 64px);
+    grid-template-columns: repeat(7, 90px);
     gap: 8px;
     justify-content: center;
   }
+  /* Square slots: wide enough that a card turned 90° for Defense fits without
+     overlapping its neighbour. Cards stay portrait (64×90), centred in the well. */
   .slot {
-    width: 64px;
+    width: 90px;
     height: 90px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--r);
   }
-  /* Empty play zone (the 2×5 Monster/Spell grid + Field): a raised, lit "well"
-     you place cards into — visually distinct from the recessed corner piles. */
-  .slot.drop {
+  /* The 2×5 Monster/Spell play grid: raised, lit square wells you place cards
+     into — visually distinct from the recessed corner piles. */
+  .slot.mon,
+  .slot.st {
     background: var(--surface-3);
     box-shadow: inset 0 0 0 1px var(--line);
   }
@@ -1509,25 +1556,27 @@
   .slot.pile.gy {
     cursor: pointer;
   }
+  /* Deck / Extra stacks show the classic card back (brown + pastel frame + a
+     dark central ellipse), matching CardTile's face-down back. */
   .pileback {
     position: relative;
     width: 64px;
     height: 90px;
     box-sizing: border-box;
     border-radius: var(--r);
-    border: 1px solid var(--line-strong);
-    background: linear-gradient(135deg, var(--surface-3), var(--surface));
+    border: 4px solid #c6b78e;
+    background: #5f3d2f;
   }
   .pileback::after {
     content: '';
     position: absolute;
     inset: 0;
     margin: auto;
-    width: 16px;
-    height: 16px;
-    transform: rotate(45deg);
-    border: 1px solid rgba(240, 180, 41, 0.5);
-    border-radius: 2px;
+    width: 55%;
+    height: 64%;
+    border-radius: 50%;
+    background: #201f1e;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
   }
   .slot.pile .count {
     position: absolute;
@@ -1543,15 +1592,17 @@
   }
   .zlabel {
     position: absolute;
-    bottom: 3px;
-    left: 0;
-    right: 0;
-    text-align: center;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--faint);
-    text-shadow: 0 1px 2px #000;
+    color: var(--muted);
+    background: rgba(0, 0, 0, 0.62);
+    padding: 1px 5px;
+    border-radius: var(--r-sm);
+    white-space: nowrap;
     pointer-events: none;
   }
   /* The Graveyard pile expands its contents as a flyout (for revive targets). */

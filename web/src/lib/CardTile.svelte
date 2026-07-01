@@ -107,9 +107,11 @@
     width: 64px;
     height: 90px;
   }
+  /* Empty slots are drawn by the board's zone well; the tile itself is a blank
+     spacer so it never double-borders inside the well. */
   .empty {
-    border: 1px dashed #3a3a45;
-    background: rgba(255, 255, 255, 0.02);
+    border: none;
+    background: none;
   }
   /* Full-size hand cards lift toward the player on hover. */
   .tile:not(.small):not(.empty):hover {
@@ -138,22 +140,23 @@
     transform: rotateY(180deg);
   }
 
-  /* Simplified card back: a dark tile with a single amber diamond, matching the
-     Deck/Extra pile motif on the board. */
+  /* Simplified classic card back: a brown card with a thick pastel frame and a
+     dark near-black ellipse in the centre. */
   .back {
-    background: linear-gradient(135deg, var(--surface-3, #25282d), var(--surface, #17191c));
-    border: 1px solid var(--line-strong, #3a3e44);
+    box-sizing: border-box;
+    background: #5f3d2f;
+    border: 4px solid #c6b78e;
   }
   .back::after {
     content: '';
     position: absolute;
     inset: 0;
     margin: auto;
-    width: 42%;
-    aspect-ratio: 1;
-    transform: rotate(45deg);
-    border: 1px solid rgba(240, 180, 41, 0.5);
-    border-radius: 3px;
+    width: 55%;
+    height: 64%;
+    border-radius: 50%;
+    background: #201f1e;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
   }
 
   .card {
