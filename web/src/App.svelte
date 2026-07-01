@@ -762,9 +762,8 @@
           {#if opp.graveyard.length}
             <CardTile card={opp.graveyard[opp.graveyard.length - 1]} faceDown small />
             <span class="count">{opp.graveyard.length}</span>
-          {:else}
-            <span class="zlabel">Graveyard</span>
           {/if}
+          <span class="zlabel">Graveyard</span>
         </div>
         {#each opp.monsterZones as slot, i (i)}
           <div
@@ -894,9 +893,8 @@
           {#if you.graveyard.length}
             <CardTile card={you.graveyard[you.graveyard.length - 1]} faceDown small />
             <span class="count">{you.graveyard.length}</span>
-          {:else}
-            <span class="zlabel">Graveyard</span>
           {/if}
+          <span class="zlabel">Graveyard</span>
         </div>
         <!-- back line: Extra Deck · Spell & Trap · Deck -->
         <div class="slot pile extra">
@@ -1710,6 +1708,7 @@
     bottom: 4px;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 3;
     font-size: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
