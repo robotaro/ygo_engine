@@ -48,6 +48,7 @@
   let unionSource = null // a Union monster picked, awaiting a host to equip to
   let preview = null // a card shown enlarged for reading (left-click)
   let previewCtx = null // { where, zoneIndex } so the modal can offer that card's actions
+  let placing = null // { iid, action, zoneType } while picking a zone to play a card into
   let ctx = null // right-click context menu: { x, y, items[] }
 
   // The Launcher (deck picker / builder) shows until a duel starts.
@@ -90,6 +91,8 @@
   $: draggingMonster = draggedIid != null && !!summonOptions(draggedIid)
   $: draggingSpellTrap = draggedIid != null && (canActivate(draggedIid) || canSet(draggedIid))
   $: draggingFieldSpell = draggedIid != null && isFieldSpell(draggedIid) && canActivate(draggedIid)
+  $: placingMonster = placing?.zoneType === 'monster'
+  $: placingSpellTrap = placing?.zoneType === 'spellTrap'
   $: if (phase !== 'battle_phase') selectedAttacker = null
   // Union: hosts the picked Union may equip to (highlighted while choosing).
   $: unionHosts = unionSource != null && $legal ? ($legal.unionEquippable?.[unionSource] ?? []) : []
@@ -206,10 +209,49 @@
       ctx = null
     }
   }
-  function closeOverlays() {
+  function closePreview() {
     preview = null
     previewCtx = null
     ctx = null
+  }
+  function closeOverlays() {
+    closePreview()
+    placing = null // Escape / backdrop cancels an in-progress placement too
+  }
+
+  // Click-to-place: pick a zone (highlighted) to play a card into, instead of
+  // auto-dropping it in the first free slot. Started from the card-read modal /
+  // right-click menu; finished by clicking a highlighted zone (placeInZone).
+  function beginPlace(iid, action) {
+    // action: 'summon' | 'setMonster' (-> monster zones) | 'set' | 'activate' (-> spell/trap zones)
+    preview = null
+    previewCtx = null
+    ctx = null
+    const zoneType = action === 'summon' || action === 'setMonster' ? 'monster' : 'spellTrap'
+    const hasRoom = zoneType === 'monster' ? firstEmptyZone() != null : firstEmptySpellZone() != null
+    if (!hasRoom) return // board full — nothing to highlight
+    placing = { iid, action, zoneType }
+  }
+  function placeInZone(zoneIndex) {
+    const p = placing
+    placing = null
+    if (!p) return
+    if (p.zoneType === 'monster') {
+      const opts = summonOptions(p.iid)
+      const list = p.action === 'summon' ? opts?.summon : opts?.set
+      if (!list?.length) return
+      const kind = p.action === 'summon' ? 'summon' : 'set'
+      if (list.some((c) => c.length === 0)) {
+        sendIntent({ kind, iid: p.iid, tributes: [], zoneIndex })
+      } else {
+        // high-Level monster — keep the chosen zone, now pick tributes
+        pendingTribute = { iid: p.iid, zoneIndex, needed: list[0].length, chosen: [], mode: kind }
+      }
+    } else if (p.action === 'activate') {
+      beginActivate(p.iid, zoneIndex)
+    } else {
+      sendIntent({ kind: 'set', iid: p.iid, zoneIndex }) // Spell/Trap Set face-down
+    }
   }
 
   // --- right-click context menu: a card's legal actions live here, so a plain
@@ -252,11 +294,11 @@
           items.push({ label: 'Unequip Union', fn: () => sendIntent({ kind: 'unionUnequip', union: iid }) })
       } else if (where === 'hand') {
         const opts = summonOptions(iid)
-        if (opts?.summon?.length) items.push({ label: 'Summon', fn: () => summonToFirstZone(iid) })
+        if (opts?.summon?.length) items.push({ label: 'Summon', fn: () => beginPlace(iid, 'summon') })
         if (canSpecialSummon(iid)) items.push({ label: 'Special Summon', fn: () => specialSummon(iid) })
         if (canActivate(iid)) items.push({ label: 'Activate', fn: () => activateSpell(iid) })
-        if (canSet(iid)) items.push({ label: 'Set', fn: () => setCard(iid) })
-        else if (opts?.set?.length) items.push({ label: 'Set', fn: () => onSet(iid) })
+        if (canSet(iid)) items.push({ label: 'Set', fn: () => beginPlace(iid, 'set') })
+        else if (opts?.set?.length) items.push({ label: 'Set', fn: () => beginPlace(iid, 'setMonster') })
       }
     }
     return items
@@ -426,7 +468,7 @@
 
   function onClickOwnMonster(iid) {
     if (!yourTurn) {
-      enlarge(findCard(iid))
+      enlarge(findCard(iid), 'ownMonster')
       return
     }
     if ($targetRequest) {
@@ -454,9 +496,9 @@
       selectedAttacker = selectedAttacker === iid ? null : iid
       return
     }
-    // Idle click just reads the card. Position change / Flip / Gemini / Union
-    // all live in the right-click menu now, so nothing happens by accident.
-    enlarge(findCard(iid))
+    // Idle click just reads the card (the modal offers its actions). Position
+    // change / Flip / Gemini / Union also live in the right-click menu.
+    enlarge(findCard(iid), 'ownMonster')
   }
 
   function onClickOppMonster(iid) {
@@ -616,7 +658,7 @@
 
   function onHandClick(iid) {
     if (mustDiscard) return sendIntent({ kind: 'discard', iid })
-    enlarge(findCard(iid))
+    enlarge(findCard(iid), 'hand')
   }
 
   function nextPhase() {
@@ -791,7 +833,7 @@
             class="slot mon"
             class:own={!!slot}
             class:drop={!slot}
-            class:armed={!slot && draggingMonster}
+            class:armed={!slot && (draggingMonster || placingMonster)}
             data-iid={slot?.iid}
             class:selected={slot && (selectedAttacker === slot.iid || unionSource === slot.iid)}
             class:tribute={slot && pendingTribute?.chosen.includes(slot.iid)}
@@ -813,7 +855,8 @@
               : slot && canUnionEquip(slot.iid)
                 ? 'Union — click, then click a host to equip'
                 : null}
-            onclick={() => slot && onClickOwnMonster(slot.iid)}
+            onclick={() =>
+              slot ? onClickOwnMonster(slot.iid) : placingMonster ? placeInZone(i) : null}
             oncontextmenu={(e) => slot && openContext(e, slot, 'ownMonster')}
             ondragover={(e) => !slot && e.preventDefault()}
             ondrop={(e) => !slot && onDropSummon(e, i)}
@@ -877,7 +920,8 @@
           {:else}
             <div
               class="slot st drop"
-              class:armed={draggingSpellTrap}
+              class:armed={draggingSpellTrap || placingSpellTrap}
+              onclick={() => placingSpellTrap && placeInZone(i)}
               ondragover={(e) => e.preventDefault()}
               ondrop={(e) => onDropSpellTrap(e, i)}
             >
@@ -980,6 +1024,13 @@
         {#each $logs as line}<div class="logline">{line}</div>{/each}
       </div>
     </aside>
+
+    {#if placing}
+      <div class="placebar">
+        <span>Choose a highlighted zone for <b>{findCard(placing.iid)?.name ?? 'this card'}</b></span>
+        <button onclick={() => (placing = null)}>Cancel</button>
+      </div>
+    {/if}
   {/if}
 
   {#if $ritualPrompt && $awaiting}
@@ -1140,7 +1191,7 @@
                 class="zoomaction"
                 onclick={() => {
                   a.fn()
-                  closeOverlays()
+                  closePreview() // keep `placing` if the action started a zone pick
                 }}>{a.label}</button
               >
             {/each}
@@ -1308,6 +1359,32 @@
   .slot.drop.armed {
     outline: 2px dashed #6cff9e;
     background: rgba(108, 255, 158, 0.08);
+    cursor: pointer;
+  }
+  /* Banner shown while choosing a zone to place a card into. */
+  .placebar {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface, #1c1c22);
+    border: 1px solid #6cff9e;
+    color: #e8ffe8;
+    padding: 9px 16px;
+    border-radius: 999px;
+    z-index: 60;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    font-size: 14px;
+  }
+  .placebar b {
+    color: #6cff9e;
+  }
+  .placebar button {
+    padding: 3px 12px;
+    font-size: 12px;
   }
   .slot.mon.own.actionable {
     cursor: pointer;
