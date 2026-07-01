@@ -1275,9 +1275,11 @@
     background: #d9bf7a;
   }
   .table {
-    background: radial-gradient(circle at center, #1f3a2a, #142016);
-    border: 1px solid #2c2c2c;
-    border-radius: 10px;
+    background:
+      radial-gradient(130% 90% at 50% 0%, rgba(240, 180, 41, 0.05), transparent 55%),
+      linear-gradient(180deg, var(--surface), var(--bg));
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
     padding: 14px;
     display: flex;
     flex-direction: column;
@@ -1288,11 +1290,12 @@
     align-items: center;
     gap: 14px;
     padding: 6px 10px;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.25);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .playerbar.targetable {
-    outline: 2px solid #ff6b6b;
+    outline: 2px solid var(--danger);
     cursor: crosshair;
   }
   .who {
@@ -1301,12 +1304,12 @@
   .lp {
     font-size: 18px;
     font-weight: 800;
-    color: #ffe08a;
+    color: var(--accent);
     transition: color 0.25s ease;
     transform-origin: left center;
   }
   .lp.hit {
-    color: #ff5a5a;
+    color: var(--danger);
     animation: lp-hit 0.5s ease;
   }
   @keyframes lp-hit {
@@ -1327,7 +1330,7 @@
   }
   .piles {
     font-size: 12px;
-    color: #bbb;
+    color: var(--muted);
   }
   .ohand {
     margin-left: auto;
@@ -1338,7 +1341,8 @@
     width: 16px;
     height: 24px;
     border-radius: 3px;
-    background: repeating-linear-gradient(45deg, #4a3a14, #4a3a14 3px, #5a4a1e 3px, #5a4a1e 6px);
+    background: linear-gradient(135deg, var(--surface-3), var(--surface));
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
   /* Each player's half is the canonical 7-column mat:
      [Field | Monster x5 | Graveyard] over [Extra | Spell/Trap x5 | Deck]. */
@@ -1354,11 +1358,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 7px;
+    border-radius: var(--r);
+  }
+  /* Empty play zone (the 2×5 Monster/Spell grid + Field): a raised, lit "well"
+     you place cards into — visually distinct from the recessed corner piles. */
+  .slot.drop {
+    background: var(--surface-3);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .slot.drop.armed {
-    outline: 2px dashed #6cff9e;
-    background: rgba(108, 255, 158, 0.08);
+    outline: 2px dashed var(--success);
+    background: var(--success-dim);
     cursor: pointer;
   }
   /* Banner shown while choosing a zone to place a card into. */
@@ -1370,17 +1380,17 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    background: var(--surface, #1c1c22);
-    border: 1px solid #6cff9e;
-    color: #e8ffe8;
+    background: var(--surface);
+    border: 1px solid var(--success);
+    color: var(--text);
     padding: 9px 16px;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     z-index: 60;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
     font-size: 14px;
   }
   .placebar b {
-    color: #6cff9e;
+    color: var(--success);
   }
   .placebar button {
     padding: 3px 12px;
@@ -1390,7 +1400,7 @@
     cursor: pointer;
   }
   .slot.mon.own.actionable:hover {
-    outline: 2px solid #d9bf7a;
+    outline: 2px solid var(--accent);
   }
   .slot.mon {
     position: relative;
@@ -1458,13 +1468,13 @@
     pointer-events: none;
   }
   .slot.selected {
-    outline: 2px solid #6cff9e;
+    outline: 2px solid var(--success);
   }
   .slot.tribute {
     outline: 2px solid #ff9e3d;
   }
   .slot.targetable {
-    outline: 2px solid #ff6b6b;
+    outline: 2px solid var(--danger);
     cursor: crosshair;
   }
   .slot.st.actionable {
@@ -1473,29 +1483,45 @@
   .slot.st.actionable:hover {
     outline: 2px solid #c9b3ff;
   }
+  /* The Field zone is a corner fixture (not part of the central 2×5), so it gets
+     the dark recessed look — flagged with a distinct violet edge, not a grey well. */
   .slot.field {
-    border: 1px solid #4a3f6a;
+    background: rgba(0, 0, 0, 0.45);
+    box-shadow: inset 0 0 0 1px #4a3f6a;
   }
   .slot.field.armed {
     outline: 2px dashed #c9b3ff;
-    background: rgba(201, 179, 255, 0.08);
+    background: rgba(201, 179, 255, 0.1);
   }
-  /* Corner piles: Deck, Extra Deck, Graveyard. */
+  /* Corner piles: Deck, Extra Deck, Graveyard — recessed & darker than the play
+     wells so they read as fixtures, never as a place you can drop a card. */
   .slot.pile {
     position: relative;
-    border: 1px solid #2f2f38;
-    background: rgba(0, 0, 0, 0.18);
+    box-shadow: inset 0 0 0 1px var(--line);
+    background: rgba(0, 0, 0, 0.45);
   }
   .slot.pile.gy {
     cursor: pointer;
   }
   .pileback {
+    position: relative;
     width: 64px;
     height: 90px;
     box-sizing: border-box;
-    border-radius: 7px;
-    border: 2px solid #7a5c1e;
-    background: repeating-linear-gradient(45deg, #4a3a14, #4a3a14 6px, #5a4a1e 6px, #5a4a1e 12px);
+    border-radius: var(--r);
+    border: 1px solid var(--line-strong);
+    background: linear-gradient(135deg, var(--surface-3), var(--surface));
+  }
+  .pileback::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 16px;
+    height: 16px;
+    transform: rotate(45deg);
+    border: 1px solid rgba(240, 180, 41, 0.5);
+    border-radius: 2px;
   }
   .slot.pile .count {
     position: absolute;
@@ -1503,10 +1529,10 @@
     right: 2px;
     z-index: 2;
     background: rgba(0, 0, 0, 0.8);
-    color: #ffe08a;
+    color: var(--accent);
     font-size: 10px;
     font-weight: 800;
-    border-radius: 3px;
+    border-radius: var(--r-sm);
     padding: 0 4px;
   }
   .zlabel {
@@ -1518,7 +1544,7 @@
     font-size: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #b9b9b9;
+    color: var(--faint);
     text-shadow: 0 1px 2px #000;
     pointer-events: none;
   }
